@@ -7,7 +7,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 
 ## Tom's decisions (31 Oct 2026)
 - **Name:** COP (plain-language alternatives were considered and declined).
-- **Address:** `cop.theintelligence.company` (Cloudflare Pages project `cop`).
+- **Address:** `cop.theintelligence.company` (Cloudflare Pages project `cop`, default address `cop-4gw.pages.dev`
+  because cop.pages.dev was taken). Squarespace DNS: `CNAME cop → cop-4gw.pages.dev` (added 31 Oct 2026). Repo
+  secrets `CLOUDFLARE_PAGES_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set 31 Oct; the build deploys every two hours.
 - **Private repo** (`metacog-osint/cop`). COP is the most likely product to earn money: the public site shows a free
   picture that makes it known while the code and details stay private. Never copy COP code into public repos.
 - **Commercial use:** every source carries `commercial_ok` in `config/sources.json` (true, false or unknown, with its
