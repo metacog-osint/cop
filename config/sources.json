@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "note": "Every source COP shows, with its licence and whether a paid COP could use it (Tom, 31 Oct 2026: a paid tier is possible later). commercial_ok is true, false or unknown; basis says why. The free public picture uses everything; the flag drives nothing yet. snapshot.py lists any source id seen in a feed but missing here as unregistered, so a new upstream (for example a non-commercial one) can't slip into a paid tier unnoticed. Tom reviews every value before anyone pays.",
+  "sources": {
+    "watchfloor-feed":  { "name": "Watchfloor", "licence": "Watchfloor terms of use", "commercial_ok": true, "basis": "Tom's own program." },
+    "context-feed":     { "name": "Context", "licence": "Context terms", "commercial_ok": true, "basis": "Tom's own program." },
+    "vigil-feed":       { "name": "Vigil", "licence": "Vigil terms of use", "commercial_ok": true, "basis": "Tom's own program." },
+    "noisefloor-feed":  { "name": "Noisefloor", "licence": "ODbL 1.0 for derived data; text CC BY 4.0", "commercial_ok": true, "basis": "Tom's own program; ODbL allows commercial use with attribution and share-alike on derived databases." },
+
+    "gdelt-events":     { "name": "The GDELT Project (Events)", "licence": "GDELT terms: free for any use with a citation and a link", "commercial_ok": true, "basis": "GDELT's terms as quoted in the Watchfloor and Context feeds; recheck gdeltproject.org before a sale." },
+    "gdelt-gkg":        { "name": "The GDELT Project (GKG)", "licence": "GDELT terms: free for any use with a citation and a link", "commercial_ok": true, "basis": "As gdelt-events." },
+    "vertex-gemini":    { "name": "Context summaries (Vertex AI Gemini)", "licence": "Generated for Context", "commercial_ok": "unknown", "basis": "Machine-written summaries from Context's own Google Cloud project; check Google's generative AI terms for resale before a paid tier." },
+    "adsblol-archive":  { "name": "adsb.lol", "licence": "ODbL 1.0", "commercial_ok": true, "basis": "ODbL 1.0 allows commercial use with attribution and share-alike." },
+    "ransomlook":       { "name": "RansomLook", "licence": "CC BY 4.0", "commercial_ok": true, "basis": "CC BY 4.0 allows commercial use with attribution." },
+    "cisa-kev":         { "name": "CISA Known Exploited Vulnerabilities", "licence": "US public domain", "commercial_ok": true, "basis": "US federal government work." },
+    "sec-edgar":        { "name": "US Securities and Exchange Commission (EDGAR)", "licence": "US public domain", "commercial_ok": true, "basis": "US federal government work." },
+    "first-epss":       { "name": "FIRST EPSS", "licence": "Free to use with attribution", "commercial_ok": "unknown", "basis": "FIRST's EPSS usage terms as quoted in Vigil's feed; confirm commercial use with FIRST before a paid tier." },
+    "ca-ag":            { "name": "California Attorney General breach notices", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
+    "wa-ag":            { "name": "Washington Attorney General breach notices", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
+    "or-ag":            { "name": "Oregon Department of Justice breach notices", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
+    "state-ag-notices": { "name": "State attorneys general (CA, WA, OR)", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
+    "vigil":            { "name": "Vigil, The Intelligence Company", "licence": "Vigil terms of use", "commercial_ok": true, "basis": "Tom's own program." }
+  }
+}

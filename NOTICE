@@ -1,0 +1,10 @@
+Third-party files in this repository keep their own licences:
+
+- site/vendor/maplibre-gl/  MapLibre GL JS 6.14.0, BSD 3-Clause (site/vendor/maplibre-gl/LICENSE.txt)
+- site/fonts/               IBM Plex Sans and Mono, SIL Open Font License 1.1 (site/fonts/OFL-ibm-plex.txt)
+- doctrine/kit/, site/vendor/tic-doctrine.js   The Intelligence Company doctrine kit, MIT (doctrine/kit/LICENSE)
+- site/shared/tic-time.*    The Intelligence Company shared time display (Tom's own code)
+
+Data shown on the site keeps its sources' terms: base map from OpenFreeMap (© OpenMapTiles, © OpenStreetMap
+contributors, ODbL); land outlines from Natural Earth (public domain); each program's findings under the licence named
+in its feed (see config/sources.json).
