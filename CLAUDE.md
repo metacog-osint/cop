@@ -10,12 +10,12 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - **Address:** `cop.theintelligence.company` (Cloudflare Pages project `cop`, default address `cop-4gw.pages.dev`
   because cop.pages.dev was taken). Squarespace DNS: `CNAME cop → cop-4gw.pages.dev` (added 31 Oct 2026). Repo
   secrets `CLOUDFLARE_PAGES_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set 31 Oct; the build deploys every two hours.
-- **Private repo** (`metacog-osint/cop`). COP is the most likely product to earn money: the public site shows a free
-  picture that makes it known while the code and details stay private. Never copy COP code into public repos.
-- **Commercial use:** every source carries `commercial_ok` in `config/sources.json` (true, false or unknown, with its
-  basis). The free picture uses everything; a paid tier may use only cleared sources. Tom reviews the values before
-  anyone pays. `snapshot.py` lists any feed source missing from the register as unregistered.
-- Hidden from search engines (meta, `X-Robots-Tag`, `robots.txt`) until Tom approves going public.
+- **Public and non-commercial for now** (Tom, 31 Oct 2026, later the same day): COP is open to everyone and to search
+  engines, like the other programs. If Tom ever markets it, the sources a paid version can't use get scrubbed first,
+  thoroughly and ethically. `config/sources.json` keeps `commercial_ok` for every source (true, false or unknown, with
+  its basis) so that scrub starts from a list; `snapshot.py` lists any feed source missing from the register.
+- **Repo** `metacog-osint/cop` (created private; Tom's call whether it goes public like Noisefloor and Vigil).
+- Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the four contract-v2 feeds in `config/programs.json` (Watchfloor,
