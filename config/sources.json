@@ -19,6 +19,15 @@
     "wa-ag":            { "name": "Washington Attorney General breach notices", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
     "or-ag":            { "name": "Oregon Department of Justice breach notices", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
     "state-ag-notices": { "name": "State attorneys general (CA, WA, OR)", "licence": "US state government public record", "commercial_ok": "unknown", "basis": "State public records; reuse terms vary by state." },
-    "vigil":            { "name": "Vigil, The Intelligence Company", "licence": "Vigil terms of use", "commercial_ok": true, "basis": "Tom's own program." }
+    "vigil":            { "name": "Vigil, The Intelligence Company", "licence": "Vigil terms of use", "commercial_ok": true, "basis": "Tom's own program." },
+    "elements-feed":    { "name": "Elements", "licence": "Elements code MIT; content per source", "commercial_ok": true, "basis": "Tom's own program." },
+    "cordon-feed":      { "name": "Cordon", "licence": "Cordon code MIT; content per source", "commercial_ok": true, "basis": "Tom's own program." },
+
+    "usgs-earthquakes": { "name": "US Geological Survey earthquake feeds", "licence": "US public domain", "commercial_ok": true, "basis": "US federal government work." },
+    "gdacs":            { "name": "GDACS (EC Joint Research Centre and UN OCHA)", "licence": "GDACS terms: reuse with attribution (not re-checked)", "commercial_ok": "unknown", "basis": "Elements' feed quotes the terms as reuse with attribution and notes they were not re-checked; confirm commercial reuse with GDACS before a paid tier." },
+    "copernicus-ems":   { "name": "Copernicus Emergency Management Service (European Union)", "licence": "Copernicus: free and open, with attribution (© European Union)", "commercial_ok": true, "basis": "Copernicus data policy: free, full and open access for any use, with attribution; recheck the EMS product terms before a sale." },
+    "state-travel-advisories": { "name": "US Department of State travel advisories", "licence": "US public domain (seals and logos restricted)", "commercial_ok": true, "basis": "US federal government work; don't reuse the seal or logos." },
+    "nga-navwarnings":  { "name": "US National Geospatial-Intelligence Agency navigational warnings", "licence": "US public domain", "commercial_ok": true, "basis": "US federal government work." },
+    "easa-czib":        { "name": "EASA conflict zone information bulletins", "licence": "EASA content, reusable with acknowledgement", "commercial_ok": "unknown", "basis": "EASA allows reuse with acknowledgement; commercial reuse not confirmed." }
   }
 }

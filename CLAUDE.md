@@ -22,8 +22,11 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
-- `tools/snapshot.py` (standard library) fetches the four contract-v2 feeds in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor; PropertyCast is not a COP layer), lints each with the vendored kit, merges them into
+- `tools/snapshot.py` (standard library) fetches the contract-v2 feeds in `config/programs.json` (Watchfloor,
+  Context, Vigil, Noisefloor, and from 31 Oct Elements and Cordon on GitHub Pages; PropertyCast is not a COP layer).
+  Per program: `country_mark` (fill shades the country, halo rings its label point), `area_style` (dashed for legal
+  areas), `freshness` ("feed" uses the feed's generated_at, for notice programs whose items carry issue dates) and
+  `routine_in_preset` (show routine items when that program's preset is chosen, for standing notices). It lints each with the vendored kit, merges them into
   `site/data/today.geojson` (itself contract v2, each item tagged `cop_program`), writes `picks.json`, `health.json`,
   `countries-today.geojson` and `world.geojson`. A failed feed keeps its last good items from the published snapshot,
   marked stale (grey); it never fails the build.
