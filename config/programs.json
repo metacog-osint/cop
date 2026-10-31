@@ -43,8 +43,8 @@
     },
     {
       "id": "elements", "name": "Elements", "family": "Natural hazards", "preset": "hazards",
-      "feed": "https://metacog-osint.github.io/elements/data/feed.geojson",
-      "site": "https://metacog-osint.github.io/elements/",
+      "feed": "https://elements.theintelligence.company/data/feed.geojson",
+      "site": "https://elements.theintelligence.company/",
       "fresh_hours": 12, "stale_hours": 48, "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [
@@ -56,8 +56,8 @@
     },
     {
       "id": "cordon", "name": "Cordon", "family": "Notices and advisories", "preset": "notices",
-      "feed": "https://metacog-osint.github.io/cordon/data/feed.geojson",
-      "site": "https://metacog-osint.github.io/cordon/",
+      "feed": "https://cordon.theintelligence.company/data/feed.geojson",
+      "site": "https://cordon.theintelligence.company/",
       "fresh_hours": 6, "stale_hours": 24, "freshness": "feed",
       "mark": "areas", "country_mark": "halo", "area_style": "dashed", "routine_in_preset": true,
       "strength": [{ "path": "measures.level", "label": "travel advisory level {v}" }],
