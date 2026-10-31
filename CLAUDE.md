@@ -14,7 +14,11 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   engines, like the other programs. If Tom ever markets it, the sources a paid version can't use get scrubbed first,
   thoroughly and ethically. `config/sources.json` keeps `commercial_ok` for every source (true, false or unknown, with
   its basis) so that scrub starts from a list; `snapshot.py` lists any feed source missing from the register.
-- **Repo** `metacog-osint/cop` (created private; Tom's call whether it goes public like Noisefloor and Vigil).
+- **Site public, repo private** (Tom, 31 Oct 2026). Opening the code is a one-way door, staying private costs little
+  (about 600 of the free 2,000 Actions minutes a month), and the cross-program integration is the part a paid version
+  would be. Never copy COP code into public repos. If it opens later: AGPL-3.0 like Noisefloor and Vigil.
+- **Review before v1:** the convergence layer (several programs agreeing over one place) is where aggregation starts
+  saying more than any single public source (the mosaic effect); review those flags before v1 ships.
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
