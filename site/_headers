@@ -4,6 +4,5 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
   Strict-Transport-Security: max-age=31536000
-  X-Robots-Tag: noindex, nofollow
 /data/*
   Cache-Control: no-cache
