@@ -153,6 +153,8 @@ def build(feeds, reports, previous, now):
             attribution, licence = prev_prog.get("attribution"), prev_prog.get("licence")
         newest = max((utc(i.get("properties", {}).get("data_as_of")) for i in items
                       if utc(i.get("properties", {}).get("data_as_of"))), default=None)
+        if feed is not None and prog.get("freshness") == "feed" and utc(feed.get("generated_at")):
+            newest = utc(feed.get("generated_at"))  # notice programs: items carry issue dates, the feed is current
         age = round((now - newest).total_seconds() / 3600, 1) if newest else None
         state = state_for(age, prog, feed is not None)
         unregistered = sorted({s.get("id") or s.get("publisher") for i in items
@@ -193,7 +195,8 @@ def build(feeds, reports, previous, now):
                 f = queue[round_]
                 p = f["properties"]
                 rank = "strongest" if round_ == 0 else "next strongest"
-                reason = f"{prog['name']}'s {rank} anomaly with a place"
+                owner = prog["name"] + ("'" if prog["name"].endswith("s") else "'s")
+                reason = f"{owner} {rank} anomaly with a place"
                 if p.get("cop_strength") is not None:
                     reason += f": {p['cop_strength_text']}"
                 picks.append({"n": len(picks) + 1, "id": p["id"], "program": prog["id"], "reason": reason})
@@ -216,6 +219,8 @@ def build(feeds, reports, previous, now):
         "language_key": LANGUAGE_KEY, "cop_programs": programs_block, "features": features,
     }
     public = [{k: p[k] for k in ("id", "name", "family", "preset", "site", "mark", "color")} |
+              {"country_mark": p.get("country_mark", "fill"), "area_style": p.get("area_style", "solid"),
+               "routine_in_preset": bool(p.get("routine_in_preset"))} |
               {"strength_labels": [r["label"] for r in p["strength"]]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
@@ -224,8 +229,11 @@ def build(feeds, reports, previous, now):
 
 
 def country_shapes(features):
-    """Outlines for every country named by a country-level item (only those, to keep the page light)."""
+    """Outlines for every country named by a country-level item of a program that shades countries (country_mark
+    'fill'); halo programs ring a label point instead. Only those countries, to keep the page light."""
+    fills = {p["id"] for p in CONFIG["programs"] if p.get("country_mark", "fill") == "fill"}
     wanted = {cc for f in features if f["properties"].get("precision_class") == "country"
+              and f["properties"].get("cop_program") in fills
               for cc in (f["properties"].get("countries") or [])}
     data = json.loads(COUNTRIES.read_text(encoding="utf-8"))
     out = []

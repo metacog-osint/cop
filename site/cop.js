@@ -84,24 +84,32 @@ function dotFor(pid, props = {}) {
 
 // ---------------------------------------------------------------- filters
 const visibleProgram = (pid) => state.preset === "all" || PROGS[pid].preset === state.preset;
-const visibleItem = (p) => visibleProgram(p.cop_program) && (state.routine || p.tier === "anomaly");
+// Standing notices are routine by nature: show them whenever their own preset is chosen.
+const routineShown = (pid) => state.routine || (state.preset !== "all" && PROGS[pid].routine_in_preset && visibleProgram(pid));
+const visibleItem = (p) => visibleProgram(p.cop_program) && (p.tier === "anomaly" || routineShown(p.cop_program));
 function baseFilter() {
   const ids = CFG.programs.filter((p) => visibleProgram(p.id)).map((p) => p.id);
   const f = ["all", ["in", ["get", "cop_program"], ["literal", ids]]];
-  if (!state.routine) f.push(["==", ["get", "tier"], "anomaly"]);
+  if (!state.routine) {
+    const keep = CFG.programs.filter((p) => routineShown(p.id)).map((p) => p.id);
+    f.push(["any", ["==", ["get", "tier"], "anomaly"], ["in", ["get", "cop_program"], ["literal", keep]]]);
+  }
   return f;
 }
 const POLY = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
 const POINT = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]];
-const haloIds = CFG.programs.filter((p) => p.mark === "halos").map((p) => p.id);
+const haloIds = CFG.programs.filter((p) => p.country_mark === "halo").map((p) => p.id);   // ring the label point
+const fillIds = CFG.programs.filter((p) => (p.country_mark || "fill") === "fill").map((p) => p.id);  // shade the country
+const dashIds = CFG.programs.filter((p) => p.area_style === "dashed").map((p) => p.id);   // legal or admin areas
 const IS_HALO = ["all", ["in", ["get", "cop_program"], ["literal", haloIds]], ["==", ["get", "precision_class"], "country"]];
+const IS_DASHED = ["in", ["get", "cop_program"], ["literal", dashIds]];
 
 function countryFills() {
   const shapes = new Map(countries.features.map((f) => [f.properties.cc, f.geometry]));
   const out = new Map();
   for (const f of today.features) {
     const p = f.properties;
-    if (p.precision_class !== "country" || haloIds.includes(p.cop_program) || !visibleItem(p)) continue;
+    if (p.precision_class !== "country" || !fillIds.includes(p.cop_program) || !visibleItem(p)) continue;
     for (const cc of p.countries || []) {
       const key = `${cc}|${p.cop_program}`;
       const prev = out.get(key);
@@ -119,6 +127,8 @@ function countryFills() {
 // can't be reached, the Natural Earth land carries every zoom and a note says so.
 const PANEL_W = 412;
 const DETAIL_ZOOM = 3.5;
+// The land only shows below DETAIL_ZOOM, so the worker never needs to tile it past zoom 5.
+const worldSource = () => ({ type: "geojson", data: new URL("data/world.geojson", location.href).href, maxzoom: 5, tolerance: 1 });
 const worldLayers = (b, maxzoom) => [
   { id: "cop-land", type: "fill", source: "cop_world", ...(maxzoom ? { maxzoom } : {}), paint: { "fill-color": b.land } },
   { id: "cop-borders", type: "line", source: "cop_world", ...(maxzoom ? { maxzoom } : {}),
@@ -126,7 +136,7 @@ const worldLayers = (b, maxzoom) => [
 ];
 function fallbackStyle() {
   const b = dark.matches ? CFG.basemaps.dark : CFG.basemaps.light;
-  return { version: 8, sources: { cop_world: { type: "geojson", data: new URL("data/world.geojson", location.href).href } },
+  return { version: 8, sources: { cop_world: worldSource() },
     layers: [{ id: "bg", type: "background", paint: { "background-color": b.water } }, ...worldLayers(b)] };
 }
 async function buildStyle() {
@@ -142,7 +152,7 @@ async function buildStyle() {
       l.minzoom = Math.max(l.minzoom || 0, DETAIL_ZOOM);
     }
   }
-  s.sources.cop_world = { type: "geojson", data: new URL("data/world.geojson", location.href).href };
+  s.sources.cop_world = worldSource();
   s.layers.splice(s.layers.findIndex((l) => l.type === "background") + 1, 0, ...worldLayers(b, DETAIL_ZOOM));
   return { style: s, fellBack: false };
 }
@@ -157,17 +167,22 @@ async function applyStyle(target) {
 }
 const map = new ml.Map({
   container: "map", style: await applyStyle(null), center: [20, 25], zoom: 1.4, dragRotate: false, pitchWithRotate: false,
-  attributionControl: { compact: true, customAttribution: "Findings: Watchfloor, Context, Vigil, Noisefloor (credits under Sources) · Land: Natural Earth" },
+  attributionControl: { compact: true, customAttribution: `Findings: ${CFG.programs.map((p) => p.name).join(", ")} (credits under Sources) · Land: Natural Earth` },
 });
 map.touchZoomRotate.disableRotation();
+// Time to the first fully drawn map, for checking load speed (readable in the console as copReadyMs).
+map.once("idle", () => { window.copReadyMs = Math.round(performance.now()); });
 map.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
 map.on("style.load", () => addLayers());
 dark.addEventListener("change", () => { applyStyle(map); renderLegend(); renderPanel(); });
 
-const LAYERS = ["cf-fill", "cf-line", "cells-fill", "cells-line", "halos", "points"];
+// The map gets only what it draws from; cards read the full item from BY_ID. Keeps the worker's work small.
+const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class"];
+const MAP_ITEMS = { type: "FeatureCollection", features: today.features.filter((f) => f.geometry).map((f) => ({
+  type: "Feature", geometry: f.geometry, properties: Object.fromEntries(MAP_KEYS.map((k) => [k, f.properties[k]])) })) };
 function addLayers() {
-  map.addSource("items", { type: "geojson", data: { type: "FeatureCollection", features: today.features.filter((f) => f.geometry) } });
-  map.addSource("countryfills", { type: "geojson", data: countryFills() });
+  map.addSource("items", { type: "geojson", data: MAP_ITEMS, maxzoom: 10 });
+  map.addSource("countryfills", { type: "geojson", data: countryFills(), maxzoom: 6 });
   const claimed = ["==", ["get", "status_class"], "claimed"];
   const anomaly = ["==", ["get", "tier"], "anomaly"];
   map.addLayer({ id: "cf-fill", type: "fill", source: "countryfills",
@@ -175,9 +190,11 @@ function addLayers() {
   map.addLayer({ id: "cf-line", type: "line", source: "countryfills",
     paint: { "line-color": colourExpr("line"), "line-width": 1.3, "line-dasharray": [3, 2] } });
   map.addLayer({ id: "cells-fill", type: "fill", source: "items", filter: ["all", baseFilter(), POLY],
-    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", claimed, 0.08, anomaly, 0.55, 0.22] } });
-  map.addLayer({ id: "cells-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY],
+    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", claimed, 0.08, IS_DASHED, 0.12, anomaly, 0.55, 0.22] } });
+  map.addLayer({ id: "cells-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY, ["!", IS_DASHED]],
     paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", claimed, 2, 1.3] } });
+  map.addLayer({ id: "areas-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY, IS_DASHED],
+    paint: { "line-color": colourExpr("line"), "line-width": 1.5, "line-dasharray": [4, 2] } });
   map.addLayer({ id: "halos", type: "circle", source: "items", filter: ["all", baseFilter(), POINT, IS_HALO],
     paint: { "circle-radius": ["case", anomaly, 12, 9], "circle-opacity": 0, "circle-stroke-color": colourExpr("fill"),
       "circle-stroke-width": ["case", anomaly, 3, 2], "circle-stroke-opacity": 0.95 } });
@@ -199,7 +216,9 @@ let handlersBound = false;
 function refreshLayers() {
   if (!map.getSource("items")) return;
   map.getSource("countryfills").setData(countryFills());
-  for (const [id, extra] of [["cells-fill", POLY], ["cells-line", POLY]]) map.setFilter(id, ["all", baseFilter(), extra]);
+  map.setFilter("cells-fill", ["all", baseFilter(), POLY]);
+  map.setFilter("cells-line", ["all", baseFilter(), POLY, ["!", IS_DASHED]]);
+  map.setFilter("areas-line", ["all", baseFilter(), POLY, IS_DASHED]);
   map.setFilter("halos", ["all", baseFilter(), POINT, IS_HALO]);
   map.setFilter("points", ["all", baseFilter(), POINT, ["!", IS_HALO]]);
   drawPins();
@@ -315,8 +334,11 @@ function renderPanel() {
   $("show-routine").checked = state.routine;
 
   const picks = PICKS.filter((p) => visibleProgram(p.program)).map((p) => BY_ID.get(p.id)).filter(Boolean);
-  $("picks").replaceChildren(...(picks.length ? picks.map((f) => rowFor(f, "pick"))
-    : [h("li", { class: "empty", text: "No findings with a place for this view today. See Off the map below." })]));
+  const standing = CFG.programs.filter((p) => routineShown(p.id) && p.routine_in_preset).map((p) => p.name);
+  const none = standing.length
+    ? `Nothing outside its usual range in this view today. The map shows ${standing.join(" and ")}'s standing notices.`
+    : "No findings with a place for this view today. See Off the map below.";
+  $("picks").replaceChildren(...(picks.length ? picks.map((f) => rowFor(f, "pick")) : [h("li", { class: "empty", text: none })]));
 
   const placed = today.features.filter((f) => f.geometry && f.properties.tier === "anomaly" && !PICK_OF.has(f.properties.id)
     && visibleProgram(f.properties.cop_program));
@@ -385,7 +407,8 @@ function renderLegend() {
     h("div", { class: "lg-items" },
       ...CFG.programs.map((p) => h("span", { class: "lg" }, dotFor(p.id), `${p.name} (${p.family})`)),
       h("span", { class: "lg" }, dotFor(CFG.programs[0].id, { status_class: "claimed" }), "Hollow: a claim"),
-      h("span", { class: "lg" }, h("span", { class: "swatch-dash", "aria-hidden": "true" }), "Dashed: country-level"),
+      h("span", { class: "lg" }, h("span", { class: "swatch-dash", "aria-hidden": "true" }), "Dashed: country-level or a legal area"),
+      h("span", { class: "lg" }, h("span", { class: "swatch-ring", "aria-hidden": "true" }), "Ring: country-level, at its label point"),
       h("span", { class: "lg" }, dotFor(CFG.programs[0].id, { cop_stale: true }), "Grey: no current data")));
   d.open = wasOpen;
   lg.replaceChildren(d);
