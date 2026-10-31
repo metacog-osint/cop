@@ -41,6 +41,11 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - **CSP** in `site/_headers` (Cloudflare Pages format): self only, plus `tiles.openfreemap.org` for connect and
   images; `worker-src 'self' blob:` (MapLibre's module worker). No inline styles or scripts; colours come from config
   through MapLibre paint or the CSSOM.
+- **Share card (v0.1, 31 Oct 2026):** `tools/card.py` draws today's picks as a 1200x627 page (map in Web Mercator
+  fitted to the picks, list on the right, fonts embedded, time in UTC with the zone named) and screenshots it with
+  headless Chrome (Edge locally) into `site/data/card.png`, the page's og:image. `--stamp-page` (build only) adds
+  `?v=<assessment time>` to the image address, since social sites cache previews by address. If no browser runs or
+  the size is wrong, it copies `site/card-fallback.png` (regenerate with `--generic`); it never fails the build.
 - **Kit:** vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
@@ -53,4 +58,4 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 
 ## Not in v0
 Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is
-wired into the card for when judgments appear), the 14-day timeline (daily snapshots are archived for it), share cards.
+wired into the card for when judgments appear), the 14-day timeline (daily snapshots are archived for it).

@@ -15,6 +15,9 @@ spec = importlib.util.spec_from_file_location("snapshot", ROOT / "tools" / "snap
 snap = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(snap)
 from tic_doctrine import lint as kitlint  # noqa: E402  (snapshot.py put the vendored kit on sys.path)
+spec = importlib.util.spec_from_file_location("card", ROOT / "tools" / "card.py")
+card = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(card)
 
 NOW = datetime(2026, 10, 31, 20, 30, tzinfo=timezone.utc)
 IDS = [p["id"] for p in snap.CONFIG["programs"]]
@@ -137,6 +140,46 @@ class Build(unittest.TestCase):
         _, _, health, _ = build()
         for h in health["programs"]:
             self.assertEqual(h["unregistered_sources"], [], h["id"])
+
+
+class Card(unittest.TestCase):
+    WORLD = {"features": [{"geometry": {"type": "Polygon", "coordinates": [[[0, 0], [40, 0], [40, 30], [0, 30], [0, 0]]]}}]}
+
+    def test_card_lists_every_placed_pick_and_escapes_titles(self):
+        def poison(f):
+            f["noisefloor"]["features"][0]["properties"]["title"] = "<script>x</script>"
+        today, picks, health, _ = build(mutate=poison)
+        page = card.build_html(picks, today, health, self.WORLD)
+        self.assertEqual(page.count("<li>"), len(picks["picks"]))
+        self.assertNotIn("<script>x", page)
+        self.assertIn("Assessed 31 Oct 2026, 20:30 UTC", page)
+        self.assertIn("Measurements, not warnings", page)
+
+    def test_view_keeps_every_pick_inside_the_map(self):
+        today, picks, health, _ = build()
+        by_id = {f["properties"]["id"]: f for f in today["features"]}
+        pts = [card.place_of(by_id[p["id"]]["geometry"]) for p in picks["picks"]]
+        view = card.View(pts, card.MAP_W, card.H)
+        for lon, lat in pts:
+            x, y = view.px(lon, lat)
+            self.assertTrue(0 < x < card.MAP_W and 0 < y < card.H, (lon, lat, x, y))
+
+    def test_spread_separates_pins(self):
+        out = card.spread([(100, 100), (101, 100), (100, 102)])
+        for i in range(3):
+            for j in range(i + 1, 3):
+                self.assertGreaterEqual(((out[i][0] - out[j][0]) ** 2 + (out[i][1] - out[j][1]) ** 2) ** 0.5, 39)
+
+    def test_page_stamp_versions_both_image_addresses(self):
+        page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+        stamped, n = card.stamp_page(page, "2026-10-31T22:08:05Z")
+        self.assertEqual(n, 2)
+        self.assertEqual(stamped.count("card.png?v=202610312208\""), 2)
+        again, _ = card.stamp_page(stamped, "2026-11-01T00:17:00Z")
+        self.assertEqual(again.count("card.png?v=202611010017\""), 2)
+
+    def test_fallback_card_is_committed_at_the_right_size(self):
+        self.assertEqual(card.png_size(card.FALLBACK), (card.W, card.H))
 
 
 class Design(unittest.TestCase):
