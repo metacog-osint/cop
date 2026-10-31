@@ -1,0 +1,52 @@
+name: build
+# Rebuilds COP every two hours and on every push to main: the tests, a fresh snapshot of the program feeds, a daily
+# archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), then a deploy of site/ to Cloudflare Pages
+# (project cop). Needs repo secrets CLOUDFLARE_PAGES_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; without
+# them everything runs except the deploy. A program feed that fails never fails the build (snapshot.py keeps its last
+# good copy, drawn grey).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - name: Tests
+        run: python tests/test_snapshot.py
+      - name: Kit copy is intact
+        run: python doctrine/kit/tic.py kitcheck
+      - name: Snapshot of the program feeds
+        run: python tools/snapshot.py --archive out/archive
+      - name: Keep today's snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="snapshots-$(date -u +%Y-%m)"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP snapshots $(date -u +%Y-%m)" \
+            --notes "One COP snapshot per UTC day (the last run of the day wins), kept for the 14-day timeline."
+          gh release upload "$TAG" out/archive/*.geojson.gz --clobber
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Deploy site/ to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Cloudflare secrets not set; skipping deploy"; exit 0
+          fi
+          npx --yes wrangler@4.151.3 pages deploy site --project-name cop --branch main \
+            --commit-hash "$GITHUB_SHA" --commit-message "build $GITHUB_SHA" --commit-dirty=true
