@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "note": "The programs COP reads. Colours are Okabe-Ito hues by program family (COP design spec, 29 Oct 2026); outlines carry the 3:1 contrast against each basemap. fresh_hours and stale_hours are measured from the newest data_as_of in the feed: older than fresh_hours is late, older than stale_hours (or no data at all) is stale and draws grey. strength rules say where an anomaly's size is found; the first rule whose 'when' matches applies, and rules rank in the order listed (so a program can put one kind of anomaly above another). Strength ranks a program's own anomalies only, never across programs.",
+  "programs": [
+    {
+      "id": "watchfloor", "name": "Watchfloor", "family": "Conflict", "preset": "conflict",
+      "feed": "https://mc-api-odg3xhcd4a-uc.a.run.app/feed",
+      "site": "https://watchfloor.theintelligence.company",
+      "fresh_hours": 36, "stale_hours": 72,
+      "mark": "zones",
+      "strength": [{ "path": "measures.score.z", "label": "z-score {v} against its usual coverage" }],
+      "color": { "fill": "#D55E00", "outline_light": "#6B2F00", "outline_dark": "#FFC9A3" }
+    },
+    {
+      "id": "context", "name": "Context", "family": "Information", "preset": "information",
+      "feed": "https://context.theintelligence.company/api/feed",
+      "site": "https://context.theintelligence.company",
+      "fresh_hours": 18, "stale_hours": 48,
+      "mark": "markers",
+      "strength": [{ "path": "measures.volume_12h", "label": "{v} articles in the last 12 hours" }],
+      "color": { "fill": "#CC79A7", "outline_light": "#5E2A4A", "outline_dark": "#F5CCE3" }
+    },
+    {
+      "id": "vigil", "name": "Vigil", "family": "Networks", "preset": "cyber",
+      "feed": "https://vigil.theintelligence.company/api/feed",
+      "site": "https://vigil.theintelligence.company",
+      "fresh_hours": 12, "stale_hours": 48,
+      "mark": "halos",
+      "strength": [{ "path": "measures.victims_7d", "label": "{v} victims claimed in 7 days" }],
+      "color": { "fill": "#0072B2", "outline_light": "#003A5C", "outline_dark": "#A9D8F5" }
+    },
+    {
+      "id": "noisefloor", "name": "Noisefloor", "family": "Spectrum and space", "preset": "spectrum",
+      "feed": "https://noisefloor.theintelligence.company/data/feed.geojson",
+      "site": "https://noisefloor.theintelligence.company",
+      "fresh_hours": 36, "stale_hours": 72,
+      "mark": "cells",
+      "strength": [
+        { "path": "measure.value", "label": "peak {v}% of aircraft with degraded GPS", "when": { "measure.name": "peak_degraded_aircraft" } },
+        { "path": "measure.value", "label": "at jamming scale on {v} of the last 7 days", "when": { "measure.name": "days_at_jamming_scale_last7" } }
+      ],
+      "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
+    }
+  ],
+  "presets": {
+    "all": "Everything",
+    "conflict": "Conflict",
+    "spectrum": "Spectrum and space",
+    "cyber": "Cyber",
+    "information": "Information"
+  },
+  "basemaps": {
+    "light": { "style": "https://tiles.openfreemap.org/styles/positron", "land": "#F2F3F0", "water": "#C2C8CA" },
+    "dark": { "style": "https://tiles.openfreemap.org/styles/dark", "land": "#0C0C0C", "water": "#1B1B1D" }
+  },
+  "stale_color": { "fill": "#8A8F96", "outline_light": "#3C4046", "outline_dark": "#D2D5DA" },
+  "max_picks": 5
+}
