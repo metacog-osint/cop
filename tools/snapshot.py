@@ -1,6 +1,7 @@
 """Build COP's snapshot from the program feeds.
 
-Fetches every program's contract-v2 feed (config/programs.json), lints it with the vendored doctrine kit, merges the
+Fetches every program's contract-v2 feed (the kit's suite registry; drawing rules in config/programs.json), lints it
+with the vendored doctrine kit, merges the
 items into one contract-v2 FeatureCollection, picks at most five anomalies for the Today view, and reports each
 feed's health. A feed that fails never fails the build: its last good items (from the previously published
 snapshot) are kept, marked stale, and drawn grey. Silence is never shown as quiet.
@@ -25,8 +26,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
+from tic_doctrine import tips as kittips  # noqa: E402
 
 CONFIG = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
+# Each program's name, family, feed, site and freshness windows come from the suite registry in the doctrine kit
+# (vocab/programs.json, kit 0.4.0, 1 Nov 2026), so every program reads one list; config/programs.json keeps only how
+# COP draws each program. A program missing from the registry stops the build here.
+REGISTRY_FIELDS = ("name", "family", "feed", "site", "fresh_hours", "stale_hours")
+REGISTRY = {p["id"]: p for p in kittips.registry()["programs"]}
+for _prog in CONFIG["programs"]:
+    _prog.update({k: REGISTRY[_prog["id"]][k] for k in REGISTRY_FIELDS})
 SOURCES = json.loads((ROOT / "config" / "sources.json").read_text(encoding="utf-8"))["sources"]
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PREVIOUS = "https://cop.theintelligence.company/data/today.geojson"
