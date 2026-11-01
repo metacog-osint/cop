@@ -196,6 +196,16 @@ class Design(unittest.TestCase):
         fills = [p["color"]["fill"] for p in snap.CONFIG["programs"]]
         self.assertEqual(len(fills), len(set(fills)))
 
+    def test_programs_come_from_the_suite_registry(self):
+        raw = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
+        for p in raw["programs"]:
+            self.assertFalse(set(snap.REGISTRY_FIELDS) & set(p), f"{p['id']}: keep these in the kit registry only")
+            reg = snap.REGISTRY[p["id"]]
+            self.assertEqual(reg["status"], "live", p["id"])
+            self.assertTrue(reg["feed"].startswith("https://"), p["id"])
+        for p in snap.CONFIG["programs"]:
+            self.assertTrue(all(p.get(k) for k in snap.REGISTRY_FIELDS), p["id"])
+
     def test_vendored_kit_js_matches_the_kit(self):
         a = (ROOT / "site" / "vendor" / "tic-doctrine.js").read_bytes().replace(b"\r\n", b"\n")
         b = (ROOT / "doctrine" / "kit" / "js" / "tic-doctrine.js").read_bytes().replace(b"\r\n", b"\n")

@@ -1,39 +1,31 @@
 {
   "version": 2,
-  "note": "The programs COP reads. Colours are Okabe-Ito hues by program family (COP design spec, 29 Oct 2026); outlines carry the 3:1 contrast against each basemap. Freshness: older than fresh_hours is late, older than stale_hours (or no data at all) is stale and draws grey; it is measured from the newest data_as_of in the feed, or from the feed's own generated_at when freshness is 'feed' (for notice programs, whose items carry issue dates). country_mark says how country-level items draw: 'fill' shades the country, 'halo' rings its label point. area_style 'dashed' draws polygons as legal or administrative areas. routine_in_preset shows a program's routine items whenever its own preset is chosen (for standing notices, which are routine by nature). strength rules say where an anomaly's size is found; the first rule whose 'when' matches applies, and rules rank in the order listed. Strength ranks a program's own anomalies only, never across programs.",
+  "note": "The programs COP reads and how it draws them. Each program's name, family, feed, site, fresh_hours and stale_hours live in the doctrine kit's suite registry (doctrine/kit/vocab/programs.json, kit 0.4.0, 1 Nov 2026); tools/snapshot.py merges them in, and a program missing there stops the build. Colours are Okabe-Ito hues by program family (COP design spec, 29 Oct 2026); outlines carry the 3:1 contrast against each basemap. Freshness: older than fresh_hours is late, older than stale_hours (or no data at all) is stale and draws grey; it is measured from the newest data_as_of in the feed, or from the feed's own generated_at when freshness is 'feed' (for notice programs, whose items carry issue dates). country_mark says how country-level items draw: 'fill' shades the country, 'halo' rings its label point. area_style 'dashed' draws polygons as legal or administrative areas. routine_in_preset shows a program's routine items whenever its own preset is chosen (for standing notices, which are routine by nature). strength rules say where an anomaly's size is found; the first rule whose 'when' matches applies, and rules rank in the order listed. Strength ranks a program's own anomalies only, never across programs.",
   "programs": [
     {
-      "id": "watchfloor", "name": "Watchfloor", "family": "Conflict", "preset": "conflict",
-      "feed": "https://mc-api-odg3xhcd4a-uc.a.run.app/feed",
-      "site": "https://watchfloor.theintelligence.company",
-      "fresh_hours": 36, "stale_hours": 72, "freshness": "data",
+      "id": "watchfloor", "preset": "conflict",
+      "freshness": "data",
       "mark": "zones", "country_mark": "fill", "area_style": "solid",
       "strength": [{ "path": "measures.score.z", "label": "z-score {v} against its usual coverage" }],
       "color": { "fill": "#D55E00", "outline_light": "#6B2F00", "outline_dark": "#FFC9A3" }
     },
     {
-      "id": "context", "name": "Context", "family": "Information", "preset": "information",
-      "feed": "https://context.theintelligence.company/api/feed",
-      "site": "https://context.theintelligence.company",
-      "fresh_hours": 18, "stale_hours": 48, "freshness": "data",
+      "id": "context", "preset": "information",
+      "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [{ "path": "measures.volume_12h", "label": "{v} articles in the last 12 hours" }],
       "color": { "fill": "#CC79A7", "outline_light": "#5E2A4A", "outline_dark": "#F5CCE3" }
     },
     {
-      "id": "vigil", "name": "Vigil", "family": "Networks", "preset": "cyber",
-      "feed": "https://vigil.theintelligence.company/api/feed",
-      "site": "https://vigil.theintelligence.company",
-      "fresh_hours": 12, "stale_hours": 48, "freshness": "data",
+      "id": "vigil", "preset": "cyber",
+      "freshness": "data",
       "mark": "halos", "country_mark": "halo", "area_style": "solid",
       "strength": [{ "path": "measures.victims_7d", "label": "{v} victims claimed in 7 days" }],
       "color": { "fill": "#0072B2", "outline_light": "#003A5C", "outline_dark": "#A9D8F5" }
     },
     {
-      "id": "noisefloor", "name": "Noisefloor", "family": "Spectrum and space", "preset": "spectrum",
-      "feed": "https://noisefloor.theintelligence.company/data/feed.geojson",
-      "site": "https://noisefloor.theintelligence.company",
-      "fresh_hours": 36, "stale_hours": 72, "freshness": "data",
+      "id": "noisefloor", "preset": "spectrum",
+      "freshness": "data",
       "mark": "cells", "country_mark": "fill", "area_style": "solid",
       "strength": [
         { "path": "measure.value", "label": "peak {v}% of aircraft with degraded GPS", "when": { "measure.name": "peak_degraded_aircraft" } },
@@ -42,10 +34,8 @@
       "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
     },
     {
-      "id": "elements", "name": "Elements", "family": "Natural hazards", "preset": "hazards",
-      "feed": "https://elements.theintelligence.company/data/feed.geojson",
-      "site": "https://elements.theintelligence.company/",
-      "fresh_hours": 12, "stale_hours": 48, "freshness": "data",
+      "id": "elements", "preset": "hazards",
+      "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [
         { "path": "measures.alert_score", "label": "GDACS alert score {v} of 3, still current", "when": { "measures.current": true } },
@@ -55,10 +45,8 @@
       "color": { "fill": "#009E73", "outline_light": "#004534", "outline_dark": "#A8EBD3" }
     },
     {
-      "id": "cordon", "name": "Cordon", "family": "Notices and advisories", "preset": "notices",
-      "feed": "https://cordon.theintelligence.company/data/feed.geojson",
-      "site": "https://cordon.theintelligence.company/",
-      "fresh_hours": 6, "stale_hours": 24, "freshness": "feed",
+      "id": "cordon", "preset": "notices",
+      "freshness": "feed",
       "mark": "areas", "country_mark": "halo", "area_style": "dashed", "routine_in_preset": true,
       "strength": [{ "path": "measures.level", "label": "travel advisory level {v}" }],
       "color": { "fill": "#56B4E9", "outline_light": "#174A68", "outline_dark": "#C6E7FA" }

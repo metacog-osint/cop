@@ -22,8 +22,12 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
-- `tools/snapshot.py` (standard library) fetches the contract-v2 feeds in `config/programs.json` (Watchfloor,
+- `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
   Context, Vigil, Noisefloor, and from 31 Oct Elements and Cordon on GitHub Pages; PropertyCast is not a COP layer).
+  **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
+  suite registry (`doctrine/kit/vocab/programs.json`, edited in `D:\Projects\tic-doctrine`); `config/programs.json`
+  keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
+  COP's `site/data/today.geojson` is also the suite's bus: other programs read it for tips (kit `tips.py`).
   Per program: `country_mark` (fill shades the country, halo rings its label point), `area_style` (dashed for legal
   areas), `freshness` ("feed" uses the feed's generated_at, for notice programs whose items carry issue dates) and
   `routine_in_preset` (show routine items when that program's preset is chosen, for standing notices). It lints each with the vendored kit, merges them into
