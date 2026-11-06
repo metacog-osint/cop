@@ -5,6 +5,12 @@ Third-party files in this repository keep their own licences:
 - doctrine/kit/, site/vendor/tic-doctrine.js   The Intelligence Company doctrine kit, MIT (doctrine/kit/LICENSE)
 - site/shared/tic-time.*    The Intelligence Company shared time display (Tom's own code)
 
+Bundled into the MCP server at /mcp at deploy time (installed from npm, pinned in package-lock.json, not stored here):
+
+- @modelcontextprotocol/server and @modelcontextprotocol/core 2.3.1, the official MCP TypeScript SDK, Apache 2.0
+  (parts still under MIT during the project's licence transition; see each package's LICENSE)
+- zod 4.6.7, MIT
+
 Data shown on the site keeps its sources' terms: base map from OpenFreeMap (© OpenMapTiles, © OpenStreetMap
 contributors, ODbL); land outlines from Natural Earth (public domain); each program's findings under the licence named
 in its feed (see config/sources.json).

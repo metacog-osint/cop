@@ -1,0 +1,7 @@
+# Cloudflare Pages config for COP (project cop). `wrangler pages deploy site` and `wrangler pages dev site` read it.
+# Only functions/mcp.js runs code (COP's MCP server, logic in mcp/); everything else under site/ is a static file.
+# The project has no bindings or environment variables, and this date is the one it already ran on (checked through
+# the Pages API, 6 Nov 2026), so this file changes nothing about how the site is served.
+name = "cop"
+pages_build_output_dir = "site"
+compatibility_date = "2026-10-31"

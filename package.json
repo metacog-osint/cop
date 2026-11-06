@@ -1,0 +1,16 @@
+{
+  "name": "cop",
+  "private": true,
+  "type": "module",
+  "description": "COP's MCP server (functions/mcp.js, mcp/). The site itself has no build step and no Node dependencies.",
+  "scripts": {
+    "test": "node --test \"mcp/*.test.js\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1"
+  }
+}

@@ -10,6 +10,9 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 - **Address:** `cop.theintelligence.company` (Cloudflare Pages project `cop`, default address `cop-4gw.pages.dev`
   because cop.pages.dev was taken). Squarespace DNS: `CNAME cop → cop-4gw.pages.dev` (added 31 Oct 2026). Repo
   secrets `CLOUDFLARE_PAGES_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set 31 Oct; the build deploys every two hours.
+  **The two-hour clock** (6 Nov 2026): GitHub fired the `17 */2` schedule only every 7 to 14 hours, so the hub's
+  `tic-dispatch` Worker starts `build.yml` at :20 past every even UTC hour (hub `dispatch/dispatch.js`). The cron
+  stays as a fallback; the `gate` job skips a scheduled run when a build succeeded in the last 45 minutes.
 - **Public and non-commercial for now** (Tom, 31 Oct 2026, later the same day): COP is open to everyone and to search
   engines, like the other programs. If Tom ever markets it, the sources a paid version can't use get scrubbed first,
   thoroughly and ethically. `config/sources.json` keeps `commercial_ok` for every source (true, false or unknown, with
@@ -53,11 +56,54 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 - **Kit:** vendored in `doctrine/kit/` with `python [local path] [local path]`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
+## MCP server (`/mcp`, built 6 Nov 2026)
+`https://cop.theintelligence.company/mcp` lets AI agents (Claude, ChatGPT, Gemini, Claude Code) query the picture:
+read-only, public, no sign-in. Tom chose the address (6 Nov 2026) over a separate project or a workers.dev address.
+Plan: `[local path]`; the reason for building it is gap 1 of
+`[local path] projects and gaps.md`. The server only serves data; no AI model is called.
+- **Data:** `tools/agent_index.py` runs after `snapshot.py` and writes `site/data/agent/`: `index.json` (one columnar
+  row per bus item: id, program, kind, tier, title, times, countries, a point and box, link, US-person label, stale,
+  shard), `items/00–31.json` (full items by id), `programs.json` (the whole suite registry, planned programs too,
+  with COP's health) and `verdict.json` (Verdict's `forecasts.json`, `scores.json` and calendar; a part that fails
+  keeps the last published copy, marked stale). Why the slices: the free plan allows 10 ms of CPU per request and
+  parsing the 1.5 MB bus takes about that. Measured 6 Nov on the real bus (956 items, 278 KB index): a cold request
+  costs about 2.1 ms (parse 1.5, two searches 0.6). The build annotates a warning past 600 KB (`INDEX_WARN_BYTES`).
+  `config/sources.json` (`commercial_ok`) is never read; licences reach agents per item from `sources[].licence`.
+- **Code:** `functions/mcp.js` (the only route that runs code; static files stay free and unlimited) calls
+  `mcp/server.js` (official MCP TypeScript SDK v2, `@modelcontextprotocol/server` `createMcpHandler`: serves protocol
+  2026-07-28 and, statelessly, 2025-era clients from the same tools), `mcp/tools.js` (the tool logic, plain
+  functions) and `mcp/data.js` (reads the slices through `env.ASSETS`, parsed once per isolate). Packages pinned
+  exactly in `package-lock.json`, each at least two weeks old when chosen: `@modelcontextprotocol/server` 2.3.1,
+  `zod` 4.6.7; dev only `@modelcontextprotocol/client` 2.3.1. `wrangler.toml` only names the output folder and keeps
+  the compatibility date the project already had (2026-10-31; no bindings or env vars, checked through the API).
+- **Tools** (fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier, text,
+  since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full item
+  with sources), `top_picks`, `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
+  `upcoming_events`. Every result carries `as_of`, `age_hours`, stale flags and the attribution lines to credit.
+  The server's instructions tell agents to cite ids and publishers, never call a measurement a warning, quote ICD 203
+  terms as given and check freshness.
+- **Limits:** Pages Functions share the free 100,000 requests a day with Workers. The project is "fail open", so past
+  the quota `/mcp` stops answering until 00:00 UTC while the map keeps serving. A browser opening `/mcp` gets a short
+  plain-text help page.
+- **Not yet checked:** a real Claude session using the server (the terminal `claude` sign-in had expired on 6 Nov;
+  the MCP Inspector 2.12.0 CLI and the SDK client both passed).
+
 ## Commands
 - `python tools/snapshot.py` (live) or `--fixtures tests/fixtures --now 2026-10-31T20:30:00Z` (offline);
-  `--dead <program>` simulates a failed feed.
+  `--dead <program>` simulates a failed feed. Then `python tools/agent_index.py` (or `--verdict
+  tests/fixtures/verdict` offline) for the MCP server's files.
 - `python tests/test_snapshot.py` (plain script; picks rule, dead feeds, contract validity, 3:1 outline contrast on
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
+- `python tests/test_agent_index.py` (every item once in the index and its shard, no field lost, row size, registry
+  order, Verdict's last-copy rule, nothing from `config/sources.json`).
+- `npm ci --ignore-scripts`, then `npm test` (`node --test "mcp/*.test.js"`; builds its data from the fixtures with
+  the two Python tools, so Python must be on the path): tool logic, both protocol eras, CORS and the help page, and a
+  CPU timing check. `COP_AGENT_DATA=<a site/data folder>` times the real snapshot instead of the fixtures.
+- Local run with Cloudflare's runtime, after building `site/data/`: `npx --yes wrangler@4.151.3 pages dev --port
+  8788 --ip 127.0.0.1 --compatibility-date 2026-10-26` (that Wrangler's local runtime stops at 26 Oct; production
+  runs 31 Oct). Check with `npx --yes @modelcontextprotocol/inspector@2.12.0 --cli http://127.0.0.1:8788/mcp
+  --transport http --method tools/list`. Afterwards stop the node, esbuild and workerd processes by PID and delete
+  `.wrangler/`.
 - `python tools/serve.py` serves `site/` on 5071 with `site/_headers` (browsers refuse 5060/5061, the SIP ports).
 
 ## Not in v0

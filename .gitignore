@@ -3,3 +3,4 @@ __pycache__/
 out/
 site/data/
 .wrangler/
+node_modules/
