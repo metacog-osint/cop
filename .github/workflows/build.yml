@@ -3,7 +3,13 @@ name: build
 # archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), then a deploy of site/ to Cloudflare Pages
 # (project cop). Needs repo secrets CLOUDFLARE_PAGES_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; without
 # them everything runs except the deploy. A program feed that fails never fails the build (snapshot.py keeps its last
-# good copy, drawn grey).
+# good copy, drawn grey). The deploy also carries functions/mcp.js, COP's MCP server at /mcp, which reads the
+# small files tools/agent_index.py writes to site/data/agent/ (wrangler.toml; packages pinned in package-lock.json).
+#
+# The clock: GitHub fired the "every two hours" schedule only every 7 to 14 hours (5-6 Nov 2026), so the hub's
+# tic-dispatch Worker starts this workflow at :20 past every even UTC hour (workflow_dispatch). The schedule stays as a
+# fallback, and the gate job skips a scheduled run when a build succeeded in the last 45 minutes, so the two clocks
+# don't double the private repo's Actions minutes.
 on:
   push:
     branches: [main]
@@ -16,19 +22,52 @@ concurrency:
   group: build
   cancel-in-progress: false
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      actions: read
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - id: check
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].updated_at // empty' || true)
+          if [ -n "$last" ] && [ $(( $(date -u +%s) - $(date -u -d "$last" +%s) )) -lt 2700 ]; then
+            echo "skip=yes" >> "$GITHUB_OUTPUT"
+            echo "A build finished at $last, under 45 minutes ago: skipping this run."
+          else
+            echo "Last successful build: ${last:-none found}. Running."
+          fi
   build:
+    needs: gate
+    if: needs.gate.outputs.skip != 'yes'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Packages for the MCP server (exact versions from package-lock.json)
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Tests
-        run: python tests/test_snapshot.py
+        run: |
+          python tests/test_snapshot.py
+          python tests/test_agent_index.py
+          npm test
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
       - name: Snapshot of the program feeds
         run: python tools/snapshot.py --archive out/archive
+      - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
+        run: python tools/agent_index.py
       - name: Share card (link-preview image; falls back to site/card-fallback.png, never fails the build)
         run: python tools/card.py --stamp-page
       - name: Keep today's snapshot
@@ -39,10 +78,7 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP snapshots $(date -u +%Y-%m)" \
             --notes "One COP snapshot per UTC day (the last run of the day wins), kept for the 14-day timeline."
           gh release upload "$TAG" out/archive/*.geojson.gz --clobber
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-      - name: Deploy site/ to Cloudflare Pages
+      - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

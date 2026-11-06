@@ -1,0 +1,152 @@
+// Protocol tests for COP's MCP server: the official v2 client (protocol 2026-07-28), hand-written 2025-era requests,
+// and the Cloudflare wrapper (CORS, the help page). Run with `node --test mcp/` from COP's root. No network.
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { makeHandler, handle, INSTRUCTIONS, VERSION } from "./server.js";
+import { makeData } from "./data.js";
+import { NOW, diskAssets, fakeEnv, fixtureData, legacyCall } from "./testkit.js";
+
+const dir = fixtureData();
+const clock = () => NOW;
+const handler = makeHandler(makeData(diskAssets(dir)), clock);
+const ORDER = [
+  "suite_status",
+  "search_items",
+  "get_item",
+  "top_picks",
+  "list_forecasts",
+  "forecast_record",
+  "upcoming_events",
+];
+
+async function client() {
+  const transport = new StreamableHTTPClientTransport(new URL("https://cop.test/mcp"), {
+    fetch: (url, init) => handler.fetch(new Request(url, init)),
+  });
+  const c = new Client({ name: "cop-test", version: "0" });
+  await c.connect(transport);
+  return c;
+}
+
+const body = (r) => r.structuredContent ?? JSON.parse(r.content[0].text);
+
+test("a 2026-07-28 client lists the seven tools in a fixed order, all read-only", async () => {
+  const c = await client();
+  const { tools } = await c.listTools();
+  assert.deepEqual(tools.map((t) => t.name), ORDER);
+  for (const t of tools) {
+    assert.equal(t.annotations.readOnlyHint, true, t.name);
+    assert.equal(t.annotations.destructiveHint, false, t.name);
+    assert.ok(t.description.length > 40, t.name);
+    assert.equal(t.inputSchema.type, "object", t.name);
+  }
+  const again = await c.listTools();
+  assert.deepEqual(again.tools.map((t) => t.name), ORDER);
+  await c.close();
+});
+
+test("the server names itself and gives its instructions", async () => {
+  const c = await client();
+  const info = c.getServerVersion();
+  assert.equal(info.name, "cop");
+  assert.equal(info.version, VERSION);
+  assert.equal(c.getInstructions(), INSTRUCTIONS);
+  await c.close();
+});
+
+test("every tool answers through the client", async () => {
+  const c = await client();
+  const status = body(await c.callTool({ name: "suite_status", arguments: {} }));
+  assert.ok(status.programs.some((p) => p.status === "planned"));
+
+  const search = body(await c.callTool({ name: "search_items", arguments: { program: ["cordon"], limit: 3 } }));
+  assert.equal(search.returned, 3);
+  assert.ok(search.items.every((r) => r.program === "cordon"));
+
+  const item = body(await c.callTool({ name: "get_item", arguments: { id: search.items[0].id } }));
+  assert.equal(item.item.properties.id, search.items[0].id);
+
+  const picks = body(await c.callTool({ name: "top_picks", arguments: {} }));
+  assert.ok(picks.picks.length > 0);
+
+  const forecasts = body(await c.callTool({ name: "list_forecasts", arguments: { status: "open" } }));
+  assert.equal(forecasts.count, 8);
+
+  const record = body(await c.callTool({ name: "forecast_record", arguments: {} }));
+  assert.equal(record.scores.resolved, 0);
+
+  const events = body(await c.callTool({ name: "upcoming_events", arguments: { days: 60 } }));
+  assert.ok(events.count > 0);
+  await c.close();
+});
+
+test("a miss or a bad filter comes back as a tool error, not a crash", async () => {
+  const c = await client();
+  const miss = await c.callTool({ name: "get_item", arguments: { id: "nope:1" } });
+  assert.equal(miss.isError, true);
+  assert.match(miss.content[0].text, /No item "nope:1"/);
+  const unknown = await c.callTool({ name: "search_items", arguments: { program: ["blackout"] } });
+  assert.equal(unknown.isError, true);
+  assert.match(unknown.content[0].text, /Unknown program/);
+  const tooMany = await c.callTool({ name: "search_items", arguments: { limit: 500 } }).catch((e) => ({ thrown: e }));
+  assert.ok(tooMany.thrown || tooMany.isError, "a limit over 50 is refused");
+  await c.close();
+});
+
+test("a 2025-era client is served statelessly from the same tools", async () => {
+  const f = (req) => handler.fetch(req);
+  const init = await legacyCall(f, {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "old-client", version: "1" } },
+  });
+  assert.equal(init.status, 200);
+  assert.equal(init.message.result.protocolVersion, "2025-11-25");
+  assert.equal(init.message.result.serverInfo.name, "cop");
+  assert.equal(init.message.result.instructions, INSTRUCTIONS);
+  assert.equal(init.headers.get("mcp-session-id"), null, "stateless: no session");
+
+  const list = await legacyCall(f, { jsonrpc: "2.0", id: 2, method: "tools/list" });
+  assert.deepEqual(list.message.result.tools.map((t) => t.name), ORDER);
+
+  const call = await legacyCall(f, {
+    jsonrpc: "2.0",
+    id: 3,
+    method: "tools/call",
+    params: { name: "search_items", arguments: { tier: "anomaly", limit: 2 } },
+  });
+  const res = call.message.result;
+  assert.notEqual(res.isError, true);
+  assert.ok(body(res).items.every((r) => r.tier === "anomaly"));
+});
+
+test("the Cloudflare wrapper adds CORS, answers preflight and shows people a help page", async () => {
+  const env = fakeEnv(dir);
+  const pre = await handle(new Request("https://cop.test/mcp", { method: "OPTIONS" }), env, clock);
+  assert.equal(pre.status, 204);
+  assert.equal(pre.headers.get("access-control-allow-origin"), "*");
+
+  const page = await handle(new Request("https://cop.test/mcp", { headers: { Accept: "text/html" } }), env, clock);
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /claude mcp add --transport http cop https:\/\/cop\.theintelligence\.company\/mcp/);
+
+  const res = await handle(
+    new Request("https://cop.test/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "x", version: "1" } },
+      }),
+    }),
+    env,
+    clock,
+  );
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("access-control-allow-origin"), "*");
+  assert.equal(res.headers.get("x-robots-tag"), "noindex");
+});
