@@ -24,6 +24,9 @@
 }
 
 * { box-sizing: border-box; }
+/* The shared Time dialog (tic-time.css) reads --line and --muted; COP calls them --rule and --mut. */
+.tic-time-dialog { --line: var(--rule); --muted: var(--mut); }
+
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--body); font: 400 15px/1.5 var(--sans); }
 a { color: var(--acc); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
