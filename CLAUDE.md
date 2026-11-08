@@ -26,7 +26,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, and from 31 Oct Elements and Cordon on GitHub Pages; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, and from 8 Nov 2026 Vis; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -38,8 +38,18 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   `countries-today.geojson` and `world.geojson`. A failed feed keeps its last good items from the published snapshot,
   marked stale (grey); it never fails the build.
 - **Picks:** anomalies with a place only; each program's own strongest first by its `strength` rules (rule order first,
-  then value), one program at a time, at most `max_picks` (5). Strength is never compared across programs. Every item
-  today is an observation, so picks are labelled measurements, never warnings.
+  then value), one program at a time, at most `max_picks` (5). Strength is never compared across programs. Picks are
+  measured anomalies only, so they are labelled measurements, never warnings.
+- **Forecasts: Vis** (8 Nov 2026, Tom chose "option A"). Vis's items are `kind: "forecast"` (31 points a run, at
+  airfields and ports in Watchfloor's zones) plus one summary observation without a place. They are never picks and
+  have no `strength` rules. Its Amber or Red forecasts carry tier `warning` and show in every view (`STANDS_OUT` in
+  `cop.js`; no other program sends warnings yet); the rest show with routine items or under its own "Weather" preset
+  (`routine_in_preset`, and `routine_label` names them in the panel: "Vis's forecast for every point"). The card
+  says "Forecast: a probability, not a measurement" (plus "Warning: Vis's judgment" at tier warning) and shows the
+  kit's likelihood and confidence chips. Colour: Okabe-Ito yellow `#F0E442`, the last unused hue, outlines `#5C5500`
+  and `#FFF8B8`. The MCP instructions say Vis's items are forecasts; `search_items` lists warnings first, so Vis's
+  Amber and Red lead an unfiltered search. Its three sources are in `config/sources.json` (Open-Meteo:
+  `commercial_ok` false, free API is non-commercial only).
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's

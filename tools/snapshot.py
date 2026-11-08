@@ -229,7 +229,8 @@ def build(feeds, reports, previous, now):
     }
     public = [{k: p[k] for k in ("id", "name", "family", "preset", "site", "mark", "color")} |
               {"country_mark": p.get("country_mark", "fill"), "area_style": p.get("area_style", "solid"),
-               "routine_in_preset": bool(p.get("routine_in_preset"))} |
+               "routine_in_preset": bool(p.get("routine_in_preset")),
+               "routine_label": p.get("routine_label", "standing notices")} |
               {"strength_labels": [r["label"] for r in p["strength"]]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],

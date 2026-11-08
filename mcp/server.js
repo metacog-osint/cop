@@ -13,11 +13,11 @@ import { makeData } from "./data.js";
 export const VERSION = "0.1.0";
 export const SITE = "https://cop.theintelligence.company";
 
-export const INSTRUCTIONS = `COP is The Intelligence Company's common operational picture: the latest findings of its public monitoring programs (Watchfloor and Context for conflict attention and press framing, Vigil for ransomware claims and exploited vulnerabilities, Noisefloor for GPS interference, Elements for natural hazards, Cordon for official notices and travel advisories) merged into one snapshot, plus Verdict, its public forecast ledger. Publicly available information only. Site: ${SITE}
+export const INSTRUCTIONS = `COP is The Intelligence Company's common operational picture: the latest findings of its public monitoring programs (Watchfloor and Context for conflict attention and press framing, Vigil for ransomware claims and exploited vulnerabilities, Noisefloor for GPS interference, Elements for natural hazards, Cordon for official notices and travel advisories, Vis for operational weather and night light in Watchfloor's conflict zones) merged into one snapshot, plus Verdict, its public forecast ledger. Publicly available information only. Site: ${SITE}
 
 How to use these tools well:
 1. Cite every claim with the item's id and link, and name the source publisher (get_item gives each item's sources with publisher, licence and grade).
-2. Snapshot items are measurements or reports (kind "observation"). Tier "anomaly" means unusual against that program's own baseline. None of them is a warning or a prediction; never present one as such.
+2. Most snapshot items are measurements or reports (kind "observation"). Tier "anomaly" means unusual against that program's own baseline; it is not a warning or a prediction, so never present one as such. Vis's items are forecasts (kind "forecast"): a probability with its ICD 203 likelihood term and a separate confidence, at indicative thresholds; tier "warning" marks Vis's Amber or Red. Quote them exactly, call them forecasts, and never present them as official forecasts or as fit for flight planning.
 3. Verdict forecasts carry a probability and its ICD 203 likelihood term, with confidence kept separate. Quote them exactly as given.
 4. Check freshness: every result has as_of and age_hours, and anything marked stale is a last good copy, not current data.
 5. us_person_data says whether an item names US organizations or individuals. Apply your own rules for handling US-person information.
