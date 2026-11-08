@@ -1,0 +1,737 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "vis",
+ "generated_at": "2026-10-31T08:25:00Z",
+ "licence": "Vis code GNU AGPL-3.0; ensemble data from Open-Meteo (CC BY 4.0), carrying NOAA NCEP GEFS (US public domain) and ECMWF open data (CC BY 4.0)",
+ "attribution": "Vis, The Intelligence Company. Ensemble weather: Open-Meteo (NOAA GEFS + ECMWF IFS).",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "dropped": [],
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "vis:2026-10-31:summary",
+    "program": "vis",
+    "title": "Vis, 2026-10-31: 2 of 16 conflict zones with Amber or Red operational weather in the next 72 hours at one or more of their 31 forecast points (82-member GEFS + ECMWF ensemble)",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-31T08:25:00Z",
+    "published_at": "2026-10-31T08:25:00Z",
+    "countries": [],
+    "precision_class": "none",
+    "requirement_ids": [
+     "VS-PIR-1",
+     "VS-PIR-2"
+    ],
+    "method_version": "vis-ensemble-1.0",
+    "coverage_fraction": 1.0,
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "military",
+     "physical_environment"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "sources": [
+     {
+      "id": "open-meteo-gefs",
+      "publisher": "Open-Meteo / NOAA NCEP",
+      "title": "NOAA GEFS 0.25 deg ensemble (31 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo); NOAA NCEP public domain",
+      "grade": "A2",
+      "independence_group": "noaa-ncep",
+      "source_type": "model",
+      "descriptor": "31-member global ensemble forecast (ncep_gefs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "open-meteo-ecmwf",
+      "publisher": "Open-Meteo / ECMWF",
+      "title": "ECMWF IFS 0.25 deg ensemble (51 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo and ECMWF open data)",
+      "grade": "A2",
+      "independence_group": "ecmwf",
+      "source_type": "model",
+      "descriptor": "51-member global ensemble forecast (ecmwf_ifs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "astro-meeus",
+      "publisher": "Vis, The Intelligence Company",
+      "title": "Computed solar and lunar ephemeris (Meeus)",
+      "url": "https://vis.theintelligence.company",
+      "licence": "Computed by Vis (code GNU AGPL-3.0)",
+      "grade": "A1",
+      "independence_group": "ephemeris",
+      "source_type": "derived",
+      "descriptor": "Deterministic solar twilight, moonrise/moonset, lunar disc fraction and low-light dark minutes.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     }
+    ],
+    "visual": {
+     "type": "table",
+     "url": "https://vis.theintelligence.company"
+    },
+    "link": "https://vis.theintelligence.company"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     30.895,
+     50.345
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "vis:2026-10-31:zone:01_Ukraine_Conflict",
+    "program": "vis",
+    "title": "Ukraine Conflict (Kyiv Boryspil UKBB): YELLOW 72h weather window — low cloud cover almost certain (100%) on 2026-10-31; tonight 12.2 h low-light dark",
+    "summary": "Across 51 ensemble members, low cloud cover at Kyiv Boryspil (UKBB) is almost certain (95-99%) to reach the amber threshold (80.0 %) on 2026-10-31 UTC (72-hour stoplight: Yellow). Tonight's lunar illumination is 0% with 12.2 hours of nautical darkness under low moon.",
+    "kind": "forecast",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "assessed",
+    "product_category": "estimative",
+    "data_as_of": "2026-10-31T08:25:00Z",
+    "published_at": "2026-10-31T08:25:00Z",
+    "valid_until": "2026-10-31T23:59:59Z",
+    "countries": [
+     "UA"
+    ],
+    "precision_class": "point",
+    "probability": 0.99,
+    "likelihood_term": "almost_certain",
+    "confidence": "moderate",
+    "confidence_basis": {
+     "rubric": "tic-confidence-1.0",
+     "factors": {
+      "independent_lines": 2,
+      "contradicted": false,
+      "coverage_fraction": 1.0,
+      "grades": [
+       "A1",
+       "A2"
+      ],
+      "alternatives_rejected": 2,
+      "method_scored": false,
+      "assumptions": "holds",
+      "ease_of_faking": "low",
+      "horizon_days": 3.0
+     },
+     "caps": [
+      "expertise"
+     ],
+     "raise_by": [
+      "a further independent line of evidence (have 2, High needs 3)",
+      "a scored Verdict record for this method version"
+     ]
+    },
+    "change_from_prior": "new",
+    "warning_problem_id": "VS-WP-1",
+    "requirement_ids": [
+     "VS-PIR-1",
+     "VS-PIR-2",
+     "VS-EEI-1"
+    ],
+    "method_version": "vis-ensemble-1.0",
+    "coverage_fraction": 1.0,
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "military",
+     "infrastructure",
+     "physical_environment"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "alternatives": [
+     {
+      "hypothesis": "Weather remains below the operational threshold or passes in brief (< 3 h) local showers",
+      "tell_apart": "Subsequent 00Z/12Z ensemble runs drop below 20% member agreement or METAR at UKBB stays under 80.0 %"
+     },
+     {
+      "hypothesis": "Single-model bias between NOAA GEFS and ECMWF IFS inflates the tail probability",
+      "tell_apart": "Spread between GEFS (31) and ECMWF (51) member fractions exceeds 35 percentage points"
+     }
+    ],
+    "resolution": {
+     "rule": "Yes if METARs from UKBB (Kyiv Boryspil) report broken or overcast (BKN or OVC) cloud below 10,000 ft for >= 3 hours on 2026-10-31 UTC.",
+     "source": "NOAA Aviation Weather Center METAR / SYNOP archive for UKBB (https://aviationweather.gov/data/metar/?ids=UKBB)",
+     "known_at": "2026-10-31T23:59:59Z",
+     "resolve_by": "2026-11-01T12:00:00Z"
+    },
+    "sources": [
+     {
+      "id": "open-meteo-gefs",
+      "publisher": "Open-Meteo / NOAA NCEP",
+      "title": "NOAA GEFS 0.25 deg ensemble (31 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo); NOAA NCEP public domain",
+      "grade": "A2",
+      "independence_group": "noaa-ncep",
+      "source_type": "model",
+      "descriptor": "31-member global ensemble forecast (ncep_gefs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "open-meteo-ecmwf",
+      "publisher": "Open-Meteo / ECMWF",
+      "title": "ECMWF IFS 0.25 deg ensemble (51 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo and ECMWF open data)",
+      "grade": "A2",
+      "independence_group": "ecmwf",
+      "source_type": "model",
+      "descriptor": "51-member global ensemble forecast (ecmwf_ifs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "astro-meeus",
+      "publisher": "Vis, The Intelligence Company",
+      "title": "Computed solar and lunar ephemeris (Meeus)",
+      "url": "https://vis.theintelligence.company",
+      "licence": "Computed by Vis (code GNU AGPL-3.0)",
+      "grade": "A1",
+      "independence_group": "ephemeris",
+      "source_type": "derived",
+      "descriptor": "Deterministic solar twilight, moonrise/moonset, lunar disc fraction and low-light dark minutes.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     }
+    ],
+    "measures": {
+     "icao": "UKBB",
+     "station": "Kyiv Boryspil",
+     "point_role": "reference",
+     "watchfloor_zone": "01_Ukraine_Conflict",
+     "stoplight_72h": "yellow",
+     "driver_hazard": "lowcloud",
+     "driver_day": "2026-10-31",
+     "ensemble_members": 51,
+     "p_amber": 1.0,
+     "p_red": 1.0,
+     "median": 100,
+     "p90": 100,
+     "moon_lit": 0.003,
+     "dark_low_light_min": 730
+    },
+    "visual": {
+     "type": "table",
+     "url": "https://vis.theintelligence.company/#zone-01_Ukraine_Conflict"
+    },
+    "link": "https://vis.theintelligence.company/#zone-01_Ukraine_Conflict"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125.67,
+     39.224
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "vis:2026-10-31:zone:03_Korea_Peninsula-ZKPY",
+    "program": "vis",
+    "title": "Korea Peninsula (Pyongyang Sunan ZKPY, alternate point): RED 72h weather window — poor visibility almost certain (100%) on 2026-10-31; tonight 11.8 h low-light dark",
+    "summary": "Across 31 ensemble members, poor visibility at Pyongyang Sunan (ZKPY) is almost certain (95-99%) to reach the red threshold (1000.0 m) on 2026-10-31 UTC (72-hour stoplight: Red). Tonight's lunar illumination is 1% with 11.8 hours of nautical darkness under low moon.",
+    "kind": "forecast",
+    "tier": "warning",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "assessed",
+    "product_category": "estimative",
+    "data_as_of": "2026-10-31T08:25:00Z",
+    "published_at": "2026-10-31T08:25:00Z",
+    "valid_until": "2026-10-31T23:59:59Z",
+    "countries": [
+     "KP"
+    ],
+    "precision_class": "point",
+    "probability": 0.99,
+    "likelihood_term": "almost_certain",
+    "confidence": "moderate",
+    "confidence_basis": {
+     "rubric": "tic-confidence-1.0",
+     "factors": {
+      "independent_lines": 2,
+      "contradicted": false,
+      "coverage_fraction": 1.0,
+      "grades": [
+       "A1",
+       "A2"
+      ],
+      "alternatives_rejected": 2,
+      "method_scored": false,
+      "assumptions": "holds",
+      "ease_of_faking": "low",
+      "horizon_days": 3.0
+     },
+     "caps": [
+      "expertise"
+     ],
+     "raise_by": [
+      "a further independent line of evidence (have 2, High needs 3)",
+      "a scored Verdict record for this method version"
+     ]
+    },
+    "change_from_prior": "new",
+    "warning_problem_id": "VS-WP-1",
+    "requirement_ids": [
+     "VS-PIR-1",
+     "VS-PIR-2",
+     "VS-EEI-1"
+    ],
+    "method_version": "vis-ensemble-1.0",
+    "coverage_fraction": 1.0,
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "military",
+     "infrastructure",
+     "physical_environment"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "alternatives": [
+     {
+      "hypothesis": "Weather remains below the operational threshold or passes in brief (< 3 h) local showers",
+      "tell_apart": "Subsequent 00Z/12Z ensemble runs drop below 20% member agreement or METAR at ZKPY stays under 1000.0 m"
+     },
+     {
+      "hypothesis": "Single-model bias between NOAA GEFS and ECMWF IFS inflates the tail probability",
+      "tell_apart": "Spread between GEFS (31) and ECMWF (51) member fractions exceeds 35 percentage points"
+     }
+    ],
+    "resolution": {
+     "rule": "Yes if ICAO station ZKPY (Pyongyang Sunan) reports poor visibility (visibility) <= 1000.0 m for >= 3 hours on 2026-10-31 UTC.",
+     "source": "NOAA Aviation Weather Center METAR / SYNOP archive for ZKPY (https://aviationweather.gov/data/metar/?ids=ZKPY)",
+     "known_at": "2026-10-31T23:59:59Z",
+     "resolve_by": "2026-11-01T12:00:00Z"
+    },
+    "sources": [
+     {
+      "id": "open-meteo-gefs",
+      "publisher": "Open-Meteo / NOAA NCEP",
+      "title": "NOAA GEFS 0.25 deg ensemble (31 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo); NOAA NCEP public domain",
+      "grade": "A2",
+      "independence_group": "noaa-ncep",
+      "source_type": "model",
+      "descriptor": "31-member global ensemble forecast (ncep_gefs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "open-meteo-ecmwf",
+      "publisher": "Open-Meteo / ECMWF",
+      "title": "ECMWF IFS 0.25 deg ensemble (51 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo and ECMWF open data)",
+      "grade": "A2",
+      "independence_group": "ecmwf",
+      "source_type": "model",
+      "descriptor": "51-member global ensemble forecast (ecmwf_ifs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "astro-meeus",
+      "publisher": "Vis, The Intelligence Company",
+      "title": "Computed solar and lunar ephemeris (Meeus)",
+      "url": "https://vis.theintelligence.company",
+      "licence": "Computed by Vis (code GNU AGPL-3.0)",
+      "grade": "A1",
+      "independence_group": "ephemeris",
+      "source_type": "derived",
+      "descriptor": "Deterministic solar twilight, moonrise/moonset, lunar disc fraction and low-light dark minutes.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     }
+    ],
+    "measures": {
+     "icao": "ZKPY",
+     "station": "Pyongyang Sunan",
+     "point_role": "alternate",
+     "watchfloor_zone": "03_Korea_Peninsula",
+     "stoplight_72h": "red",
+     "driver_hazard": "vis",
+     "driver_day": "2026-10-31",
+     "ensemble_members": 31,
+     "p_amber": 1.0,
+     "p_red": 1.0,
+     "median": 0.0,
+     "p90": 0.0,
+     "moon_lit": 0.006,
+     "dark_low_light_min": 705
+    },
+    "visual": {
+     "type": "table",
+     "url": "https://vis.theintelligence.company/#zone-03_Korea_Peninsula-ZKPY"
+    },
+    "link": "https://vis.theintelligence.company/#zone-03_Korea_Peninsula-ZKPY",
+    "indicator_id": "VS-IND-2",
+    "hypothesis_id": "VS-WP-1-H1",
+    "direction": "supports",
+    "indicator_state": "present",
+    "ncf": [
+     "transport_by_air",
+     "transport_by_vessel"
+    ],
+    "sector": [
+     "transportation_systems"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     95.978,
+     21.702
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "vis:2026-10-31:zone:16_Myanmar-VYMD",
+    "program": "vis",
+    "title": "Myanmar (Mandalay VYMD, alternate point): AMBER 72h weather window — heavy rain likely (71%) on 2026-11-01; tonight 11.1 h low-light dark",
+    "summary": "Across 82 ensemble members, heavy rain at Mandalay (VYMD) is likely (55-80%) to reach the amber threshold (25.0 mm/24h) on 2026-11-01 UTC (72-hour stoplight: Amber). Tonight's lunar illumination is 0% with 11.1 hours of nautical darkness under low moon.",
+    "kind": "forecast",
+    "tier": "warning",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "assessed",
+    "product_category": "estimative",
+    "data_as_of": "2026-10-31T08:25:00Z",
+    "published_at": "2026-10-31T08:25:00Z",
+    "valid_until": "2026-11-01T23:59:59Z",
+    "countries": [
+     "MM"
+    ],
+    "precision_class": "point",
+    "probability": 0.707,
+    "likelihood_term": "likely",
+    "confidence": "moderate",
+    "confidence_basis": {
+     "rubric": "tic-confidence-1.0",
+     "factors": {
+      "independent_lines": 2,
+      "contradicted": false,
+      "coverage_fraction": 1.0,
+      "grades": [
+       "A1",
+       "A2"
+      ],
+      "alternatives_rejected": 2,
+      "method_scored": false,
+      "assumptions": "holds",
+      "ease_of_faking": "low",
+      "horizon_days": 3.0
+     },
+     "caps": [
+      "expertise"
+     ],
+     "raise_by": [
+      "a further independent line of evidence (have 2, High needs 3)",
+      "a scored Verdict record for this method version"
+     ]
+    },
+    "change_from_prior": "new",
+    "warning_problem_id": "VS-WP-1",
+    "requirement_ids": [
+     "VS-PIR-1",
+     "VS-PIR-2",
+     "VS-EEI-1"
+    ],
+    "method_version": "vis-ensemble-1.0",
+    "coverage_fraction": 1.0,
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "military",
+     "infrastructure",
+     "physical_environment"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "alternatives": [
+     {
+      "hypothesis": "Weather remains below the operational threshold or passes in brief (< 3 h) local showers",
+      "tell_apart": "Subsequent 00Z/12Z ensemble runs drop below 20% member agreement or METAR at VYMD stays under 25.0 mm/24h"
+     },
+     {
+      "hypothesis": "Single-model bias between NOAA GEFS and ECMWF IFS inflates the tail probability",
+      "tell_apart": "Spread between GEFS (31) and ECMWF (51) member fractions exceeds 35 percentage points"
+     }
+    ],
+    "resolution": {
+     "rule": "Yes if ICAO station VYMD (Mandalay) records heavy rain >= 25.0 mm/24h on 2026-11-01 UTC.",
+     "source": "NOAA Aviation Weather Center METAR / SYNOP archive for VYMD (https://aviationweather.gov/data/metar/?ids=VYMD)",
+     "known_at": "2026-11-01T23:59:59Z",
+     "resolve_by": "2026-11-02T12:00:00Z"
+    },
+    "sources": [
+     {
+      "id": "open-meteo-gefs",
+      "publisher": "Open-Meteo / NOAA NCEP",
+      "title": "NOAA GEFS 0.25 deg ensemble (31 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo); NOAA NCEP public domain",
+      "grade": "A2",
+      "independence_group": "noaa-ncep",
+      "source_type": "model",
+      "descriptor": "31-member global ensemble forecast (ncep_gefs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "open-meteo-ecmwf",
+      "publisher": "Open-Meteo / ECMWF",
+      "title": "ECMWF IFS 0.25 deg ensemble (51 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo and ECMWF open data)",
+      "grade": "A2",
+      "independence_group": "ecmwf",
+      "source_type": "model",
+      "descriptor": "51-member global ensemble forecast (ecmwf_ifs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "astro-meeus",
+      "publisher": "Vis, The Intelligence Company",
+      "title": "Computed solar and lunar ephemeris (Meeus)",
+      "url": "https://vis.theintelligence.company",
+      "licence": "Computed by Vis (code GNU AGPL-3.0)",
+      "grade": "A1",
+      "independence_group": "ephemeris",
+      "source_type": "derived",
+      "descriptor": "Deterministic solar twilight, moonrise/moonset, lunar disc fraction and low-light dark minutes.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     }
+    ],
+    "measures": {
+     "icao": "VYMD",
+     "station": "Mandalay",
+     "point_role": "alternate",
+     "watchfloor_zone": "16_Myanmar",
+     "stoplight_72h": "amber",
+     "driver_hazard": "rain",
+     "driver_day": "2026-11-01",
+     "ensemble_members": 82,
+     "p_amber": 0.707,
+     "p_red": 0.073,
+     "median": 34.0,
+     "p90": 55.8,
+     "moon_lit": 0.005,
+     "dark_low_light_min": 665
+    },
+    "visual": {
+     "type": "table",
+     "url": "https://vis.theintelligence.company/#zone-16_Myanmar-VYMD"
+    },
+    "link": "https://vis.theintelligence.company/#zone-16_Myanmar-VYMD",
+    "indicator_id": "VS-IND-1",
+    "hypothesis_id": "VS-WP-1-H1",
+    "direction": "supports",
+    "indicator_state": "present",
+    "ncf": [
+     "transport_by_road",
+     "maintain_supply_chains"
+    ],
+    "sector": [
+     "critical_manufacturing",
+     "transportation_systems"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     118.759,
+     9.742
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "vis:2026-10-31:zone:08_South_China_Sea",
+    "program": "vis",
+    "title": "South China Sea (Puerto Princesa (Palawan) RPVP): GREEN 72h weather window — heavy rain almost no chance (2%) on 2026-11-02; tonight 10.7 h low-light dark",
+    "summary": "Across 82 ensemble members, heavy rain at Puerto Princesa (Palawan) (RPVP) is almost no chance (01-05%) to reach the amber threshold (25.0 mm/24h) on 2026-11-02 UTC (72-hour stoplight: Green). Tonight's lunar illumination is 1% with 10.7 hours of nautical darkness under low moon.",
+    "kind": "forecast",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "assessed",
+    "product_category": "estimative",
+    "data_as_of": "2026-10-31T08:25:00Z",
+    "published_at": "2026-10-31T08:25:00Z",
+    "valid_until": "2026-11-02T23:59:59Z",
+    "countries": [
+     "PH",
+     "VN"
+    ],
+    "precision_class": "point",
+    "probability": 0.024,
+    "likelihood_term": "almost_no_chance",
+    "confidence": "moderate",
+    "confidence_basis": {
+     "rubric": "tic-confidence-1.0",
+     "factors": {
+      "independent_lines": 2,
+      "contradicted": false,
+      "coverage_fraction": 1.0,
+      "grades": [
+       "A1",
+       "A2"
+      ],
+      "alternatives_rejected": 2,
+      "method_scored": false,
+      "assumptions": "holds",
+      "ease_of_faking": "low",
+      "horizon_days": 3.0
+     },
+     "caps": [
+      "expertise"
+     ],
+     "raise_by": [
+      "a further independent line of evidence (have 2, High needs 3)",
+      "a scored Verdict record for this method version"
+     ]
+    },
+    "change_from_prior": "new",
+    "warning_problem_id": "VS-WP-1",
+    "requirement_ids": [
+     "VS-PIR-1",
+     "VS-PIR-2",
+     "VS-EEI-1"
+    ],
+    "method_version": "vis-ensemble-1.0",
+    "coverage_fraction": 1.0,
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "military",
+     "infrastructure",
+     "physical_environment"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "alternatives": [
+     {
+      "hypothesis": "Weather remains below the operational threshold or passes in brief (< 3 h) local showers",
+      "tell_apart": "Subsequent 00Z/12Z ensemble runs drop below 20% member agreement or METAR at RPVP stays under 25.0 mm/24h"
+     },
+     {
+      "hypothesis": "Single-model bias between NOAA GEFS and ECMWF IFS inflates the tail probability",
+      "tell_apart": "Spread between GEFS (31) and ECMWF (51) member fractions exceeds 35 percentage points"
+     }
+    ],
+    "resolution": {
+     "rule": "Yes if ICAO station RPVP (Puerto Princesa (Palawan)) records heavy rain >= 25.0 mm/24h on 2026-11-02 UTC.",
+     "source": "NOAA Aviation Weather Center METAR / SYNOP archive for RPVP (https://aviationweather.gov/data/metar/?ids=RPVP)",
+     "known_at": "2026-11-02T23:59:59Z",
+     "resolve_by": "2026-11-03T12:00:00Z"
+    },
+    "sources": [
+     {
+      "id": "open-meteo-gefs",
+      "publisher": "Open-Meteo / NOAA NCEP",
+      "title": "NOAA GEFS 0.25 deg ensemble (31 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo); NOAA NCEP public domain",
+      "grade": "A2",
+      "independence_group": "noaa-ncep",
+      "source_type": "model",
+      "descriptor": "31-member global ensemble forecast (ncep_gefs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "open-meteo-ecmwf",
+      "publisher": "Open-Meteo / ECMWF",
+      "title": "ECMWF IFS 0.25 deg ensemble (51 members)",
+      "url": "https://open-meteo.com/en/docs/ensemble-api",
+      "licence": "CC BY 4.0 (Open-Meteo and ECMWF open data)",
+      "grade": "A2",
+      "independence_group": "ecmwf",
+      "source_type": "model",
+      "descriptor": "51-member global ensemble forecast (ecmwf_ifs025) at 0.25 deg, hourly out to 7 days.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     },
+     {
+      "id": "astro-meeus",
+      "publisher": "Vis, The Intelligence Company",
+      "title": "Computed solar and lunar ephemeris (Meeus)",
+      "url": "https://vis.theintelligence.company",
+      "licence": "Computed by Vis (code GNU AGPL-3.0)",
+      "grade": "A1",
+      "independence_group": "ephemeris",
+      "source_type": "derived",
+      "descriptor": "Deterministic solar twilight, moonrise/moonset, lunar disc fraction and low-light dark minutes.",
+      "accessed_at": "2026-10-31T08:25:00Z"
+     }
+    ],
+    "measures": {
+     "icao": "RPVP",
+     "station": "Puerto Princesa (Palawan)",
+     "point_role": "reference",
+     "watchfloor_zone": "08_South_China_Sea",
+     "stoplight_72h": "green",
+     "driver_hazard": "rain",
+     "driver_day": "2026-11-02",
+     "ensemble_members": 82,
+     "p_amber": 0.024,
+     "p_red": 0.0,
+     "median": 2.3,
+     "p90": 15.2,
+     "moon_lit": 0.006,
+     "dark_low_light_min": 640
+    },
+    "visual": {
+     "type": "table",
+     "url": "https://vis.theintelligence.company/#zone-08_South_China_Sea"
+    },
+    "link": "https://vis.theintelligence.company/#zone-08_South_China_Sea"
+   }
+  }
+ ]
+}

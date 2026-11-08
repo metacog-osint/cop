@@ -1,6 +1,6 @@
 // COP v0: the common operational picture. Reads the snapshot that tools/snapshot.py builds (data/*.json), draws each
 // program's findings on a muted base map, lists today's picks and shows every feed's health.
-// Rules kept here: measurements are never called warnings; claims draw hollow; grey means no current data; feed text
+// Rules kept here: measurements are never called warnings, and forecasts are always labelled forecasts; claims draw hollow; grey means no current data; feed text
 // is always inserted as text; no inline styles (CSP), colours come from config through MapLibre paint or the CSSOM.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { judgmentChips } from "./vendor/tic-doctrine.js";
@@ -86,13 +86,15 @@ function dotFor(pid, props = {}) {
 const visibleProgram = (pid) => state.preset === "all" || PROGS[pid].preset === state.preset;
 // Standing notices are routine by nature: show them whenever their own preset is chosen.
 const routineShown = (pid) => state.routine || (state.preset !== "all" && PROGS[pid].routine_in_preset && visibleProgram(pid));
-const visibleItem = (p) => visibleProgram(p.cop_program) && (p.tier === "anomaly" || routineShown(p.cop_program));
+// Shown in every view: measured anomalies, and warnings (today only Vis's Amber or Red forecasts).
+const STANDS_OUT = ["anomaly", "warning"];
+const visibleItem = (p) => visibleProgram(p.cop_program) && (STANDS_OUT.includes(p.tier) || routineShown(p.cop_program));
 function baseFilter() {
   const ids = CFG.programs.filter((p) => visibleProgram(p.id)).map((p) => p.id);
   const f = ["all", ["in", ["get", "cop_program"], ["literal", ids]]];
   if (!state.routine) {
     const keep = CFG.programs.filter((p) => routineShown(p.id)).map((p) => p.id);
-    f.push(["any", ["==", ["get", "tier"], "anomaly"], ["in", ["get", "cop_program"], ["literal", keep]]]);
+    f.push(["any", ["in", ["get", "tier"], ["literal", STANDS_OUT]], ["in", ["get", "cop_program"], ["literal", keep]]]);
   }
   return f;
 }
@@ -293,7 +295,10 @@ function renderCard(f) {
     p.summary ? h("p", { text: p.summary }) : null,
   );
   const badges = h("div", { class: "badges" });
-  if (p.tier === "anomaly") badges.append(h("span", { class: "badge measure", text: "Measured, not a warning" }));
+  if (p.kind === "forecast") {
+    badges.append(h("span", { class: "badge measure", text: "Forecast: a probability, not a measurement" }));
+    if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
+  } else if (p.tier === "anomaly") badges.append(h("span", { class: "badge measure", text: "Measured, not a warning" }));
   else if (p.tier === "routine") badges.append(h("span", { class: "badge", text: "Routine: inside its usual range" }));
   if (p.status_class) badges.append(h("span", { class: "badge", text: STATUS[p.status_class] || p.status_class }));
   if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: `No current data from ${prog.name}` }));
@@ -334,9 +339,10 @@ function renderPanel() {
   $("show-routine").checked = state.routine;
 
   const picks = PICKS.filter((p) => visibleProgram(p.program)).map((p) => BY_ID.get(p.id)).filter(Boolean);
-  const standing = CFG.programs.filter((p) => routineShown(p.id) && p.routine_in_preset).map((p) => p.name);
+  const standing = CFG.programs.filter((p) => routineShown(p.id) && p.routine_in_preset)
+    .map((p) => `${p.name}'s ${p.routine_label || "standing notices"}`);
   const none = standing.length
-    ? `Nothing outside its usual range in this view today. The map shows ${standing.join(" and ")}'s standing notices.`
+    ? `Nothing outside its usual range in this view today. The map shows ${standing.join(" and ")}.`
     : "No findings with a place for this view today. See Off the map below.";
   $("picks").replaceChildren(...(picks.length ? picks.map((f) => rowFor(f, "pick")) : [h("li", { class: "empty", text: none })]));
 
