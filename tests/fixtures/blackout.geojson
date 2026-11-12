@@ -1,0 +1,565 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "blackout",
+ "generated_at": "2026-10-31T19:11:25Z",
+ "mode": "live",
+ "licence": "CC BY 4.0 (IODA, OONI); provider status items quote the provider and link to it; Blackout code MIT",
+ "attribution": "Blackout, The Intelligence Company. Data: Georgia Tech IODA, OONI (CC BY 4.0); provider status feeds (AWS, Google Cloud, Azure, Starlink Statuspage) as each provider publishes them.",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     9.008,
+     33.687
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:outage:tn:2026-10-30T20",
+    "program": "blackout",
+    "title": "Tunisia: 38.1% connectivity drop (ping-slash24)",
+    "summary": "Tunisia (TN): 38.1% connectivity drop (BGP -8.6%, active probing -38.1%, darknet no drop) over 65 min, against the 7 days before. z-score -72.83 against the same 7 days. OONI shows no blocking at or above BO-IND-3 in this country, so the drop alone doesn't tell a shutdown (BO-H-1A) from a power or physical fault (BO-H-1B).",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T20:25:00Z",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "change_from_prior": "new",
+    "countries": [
+     "TN"
+    ],
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_routing",
+     "operate_core_network"
+    ],
+    "requirement_ids": [
+     "BO-PIR-1",
+     "BO-EEI-1"
+    ],
+    "warning_problem_id": "BO-WP-1",
+    "indicator_id": "BO-IND-1",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "neutral",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 0.55,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#TN"
+    },
+    "sources": [
+     {
+      "id": "ioda-gatech",
+      "publisher": "Georgia Tech IODA",
+      "title": "Internet Outage Detection and Analysis (BGP & Active Probing)",
+      "url": "https://api.ioda.inetintel.cc.gatech.edu/v2/",
+      "licence": "CC BY 4.0",
+      "grade": "A2",
+      "independence_group": "ioda-gatech",
+      "source_type": "telemetry",
+      "descriptor": "BGP prefix visibility and Trinocular /24 active probing relative to 7-day rolling baseline.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ],
+    "baseline_ref": {
+     "id": "ioda-7d-median",
+     "window": "the 7 days before the event, per IODA datasource",
+     "type": "rolling",
+     "version": "1"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     55.48,
+     -4.677
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:outage:sc:2026-10-30T13",
+    "program": "blackout",
+    "title": "Seychelles: 36.4% connectivity drop (merit-nt)",
+    "summary": "Seychelles (SC): 36.4% connectivity drop (BGP -2.2%, active probing no drop, darknet -36.4%) over 1781 min, against the 7 days before. z-score -0.64 against the same 7 days. BGP held steady, so this reads as a single-source dip (BO-IND-4), not a confirmed outage.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T13:30:00Z",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "change_from_prior": "new",
+    "countries": [
+     "SC"
+    ],
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_routing",
+     "operate_core_network"
+    ],
+    "requirement_ids": [
+     "BO-PIR-1",
+     "BO-EEI-1"
+    ],
+    "warning_problem_id": "BO-WP-1",
+    "indicator_id": "BO-IND-4",
+    "hypothesis_id": "BO-H-1C",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 0.45,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#SC"
+    },
+    "sources": [
+     {
+      "id": "ioda-gatech",
+      "publisher": "Georgia Tech IODA",
+      "title": "Internet Outage Detection and Analysis (BGP & Active Probing)",
+      "url": "https://api.ioda.inetintel.cc.gatech.edu/v2/",
+      "licence": "CC BY 4.0",
+      "grade": "A2",
+      "independence_group": "ioda-gatech",
+      "source_type": "telemetry",
+      "descriptor": "BGP prefix visibility and Trinocular /24 active probing relative to 7-day rolling baseline.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ],
+    "baseline_ref": {
+     "id": "ioda-7d-median",
+     "window": "the 7 days before the event, per IODA datasource",
+     "type": "rolling",
+     "version": "1"
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     54.931,
+     32.166
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:ooni:ir:2026-10-30",
+    "program": "blackout",
+    "title": "Iran: 37.3% OONI censorship anomaly rate",
+    "summary": "Iran (IR): OONI anomaly/blocking rate 37.3% (32132 confirmed blocks, 28340 anomalies in 161977 measurements, all tests, over the 7 days to 2026-10-30).",
+    "kind": "observation",
+    "tier": "anomaly",
+    "baseline_ref": {
+     "id": "bo-ind-3-threshold",
+     "window": "fixed: anomaly_rate >= 0.15 over >= 50 measurements (BO-IND-3)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T20:00:00Z",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "countries": [
+     "IR"
+    ],
+    "pmesii_pt": [
+     "information",
+     "political"
+    ],
+    "ascope": [
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_content_services",
+     "provide_internet_routing"
+    ],
+    "requirement_ids": [
+     "BO-PIR-3"
+    ],
+    "indicator_id": "BO-IND-3",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 0.65,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#IR"
+    },
+    "sources": [
+     {
+      "id": "ooni-api",
+      "publisher": "OONI (Open Observatory of Network Interference)",
+      "title": "OONI Probe Aggregation API",
+      "url": "https://api.ooni.io/api/v1/aggregation",
+      "licence": "CC BY 4.0",
+      "grade": "A2",
+      "independence_group": "ooni",
+      "source_type": "telemetry",
+      "descriptor": "Daily confirmed blocking and anomaly counts across Web Connectivity, Telegram, Signal, and Tor tests.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     44.686,
+     58.249
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:ooni:ru:2026-10-30",
+    "program": "blackout",
+    "title": "Russia: 31.0% OONI censorship anomaly rate",
+    "summary": "Russia (RU): OONI anomaly/blocking rate 31.0% (58492 confirmed blocks, 489863 anomalies in 1770440 measurements, all tests, over the 7 days to 2026-10-30).",
+    "kind": "observation",
+    "tier": "anomaly",
+    "baseline_ref": {
+     "id": "bo-ind-3-threshold",
+     "window": "fixed: anomaly_rate >= 0.15 over >= 50 measurements (BO-IND-3)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T20:00:00Z",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "countries": [
+     "RU"
+    ],
+    "pmesii_pt": [
+     "information",
+     "political"
+    ],
+    "ascope": [
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_content_services",
+     "provide_internet_routing"
+    ],
+    "requirement_ids": [
+     "BO-PIR-3"
+    ],
+    "indicator_id": "BO-IND-3",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 0.65,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#RU"
+    },
+    "sources": [
+     {
+      "id": "ooni-api",
+      "publisher": "OONI (Open Observatory of Network Interference)",
+      "title": "OONI Probe Aggregation API",
+      "url": "https://api.ooni.io/api/v1/aggregation",
+      "licence": "CC BY 4.0",
+      "grade": "A2",
+      "independence_group": "ooni",
+      "source_type": "telemetry",
+      "descriptor": "Daily confirmed blocking and anomaly counts across Web Connectivity, Telegram, Signal, and Tor tests.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     95.804,
+     21.574
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:ooni:mm:2026-10-30",
+    "program": "blackout",
+    "title": "Myanmar: 22.6% OONI censorship anomaly rate",
+    "summary": "Myanmar (MM): OONI anomaly/blocking rate 22.6% (24 confirmed blocks, 3212 anomalies in 14319 measurements, all tests, over the 7 days to 2026-10-30).",
+    "kind": "observation",
+    "tier": "anomaly",
+    "baseline_ref": {
+     "id": "bo-ind-3-threshold",
+     "window": "fixed: anomaly_rate >= 0.15 over >= 50 measurements (BO-IND-3)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T20:00:00Z",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "countries": [
+     "MM"
+    ],
+    "pmesii_pt": [
+     "information",
+     "political"
+    ],
+    "ascope": [
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_content_services",
+     "provide_internet_routing"
+    ],
+    "requirement_ids": [
+     "BO-PIR-3"
+    ],
+    "indicator_id": "BO-IND-3",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 0.65,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#MM"
+    },
+    "sources": [
+     {
+      "id": "ooni-api",
+      "publisher": "OONI (Open Observatory of Network Interference)",
+      "title": "OONI Probe Aggregation API",
+      "url": "https://api.ooni.io/api/v1/aggregation",
+      "licence": "CC BY 4.0",
+      "grade": "A2",
+      "independence_group": "ooni",
+      "source_type": "telemetry",
+      "descriptor": "Daily confirmed blocking and anomaly counts across Web Connectivity, Telegram, Signal, and Tor tests.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "blackout",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "countries": [],
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "warning_problem_id": "BO-WP-3",
+    "direction": "neutral",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "precision_class": "none",
+    "id": "blackout:provider-status:aws:multipleservices-me-south-1-1772430987",
+    "title": "AWS: Increased Error Rates (me-south-1)",
+    "summary": "AWS's status feed lists this incident as open (since 2026-02-18T01:56:27Z, last update 2026-09-03T06:22:28Z). Service disruption; Multiple services. Affected, as the provider lists them: me-south-1. Reported by the provider; Blackout does not assess its cause.",
+    "data_as_of": "2026-10-31T19:11:25Z",
+    "baseline_ref": {
+     "id": "bo-ind-7-open-incident",
+     "window": "fixed: the provider lists the incident as open on its own status feed (BO-IND-7)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "ncf": [
+     "provide_internet_content_services"
+    ],
+    "requirement_ids": [
+     "BO-PIR-4",
+     "BO-EEI-4"
+    ],
+    "indicator_id": "BO-IND-7",
+    "hypothesis_id": "BO-H-3B",
+    "coverage_fraction": 1.0,
+    "visual": {
+     "type": "list",
+     "url": "https://blackout.theintelligence.company/#provider-aws"
+    },
+    "sources": [
+     {
+      "id": "aws-health",
+      "publisher": "Amazon Web Services",
+      "title": "AWS Health Dashboard RSS (all services)",
+      "url": "https://status.aws.amazon.com/",
+      "licence": "No licence stated; title, times, affected areas and link only",
+      "grade": "B2",
+      "independence_group": "aws-health",
+      "source_type": "status_page",
+      "descriptor": "AWS's own status feed: what the provider says is open. It is not an outside measurement.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "blackout",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T19:11:25Z",
+    "valid_until": "2026-11-01T07:11:25Z",
+    "countries": [],
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "warning_problem_id": "BO-WP-3",
+    "direction": "neutral",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "precision_class": "none",
+    "id": "blackout:provider-status:aws:multipleservices-me-central-1-1772369485",
+    "title": "AWS: Increased Error Rates (me-central-1)",
+    "summary": "AWS's status feed lists this incident as open (since 2026-02-17T08:51:25Z, last update 2026-09-03T06:27:10Z). Service disruption; Multiple services. Affected, as the provider lists them: me-central-1. Reported by the provider; Blackout does not assess its cause.",
+    "data_as_of": "2026-10-31T19:11:25Z",
+    "baseline_ref": {
+     "id": "bo-ind-7-open-incident",
+     "window": "fixed: the provider lists the incident as open on its own status feed (BO-IND-7)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "ncf": [
+     "provide_internet_content_services"
+    ],
+    "requirement_ids": [
+     "BO-PIR-4",
+     "BO-EEI-4"
+    ],
+    "indicator_id": "BO-IND-7",
+    "hypothesis_id": "BO-H-3B",
+    "coverage_fraction": 1.0,
+    "visual": {
+     "type": "list",
+     "url": "https://blackout.theintelligence.company/#provider-aws"
+    },
+    "sources": [
+     {
+      "id": "aws-health",
+      "publisher": "Amazon Web Services",
+      "title": "AWS Health Dashboard RSS (all services)",
+      "url": "https://status.aws.amazon.com/",
+      "licence": "No licence stated; title, times, affected areas and link only",
+      "grade": "B2",
+      "independence_group": "aws-health",
+      "source_type": "status_page",
+      "descriptor": "AWS's own status feed: what the provider says is open. It is not an outside measurement.",
+      "accessed_at": "2026-10-31T19:11:25Z"
+     }
+    ]
+   }
+  }
+ ]
+}

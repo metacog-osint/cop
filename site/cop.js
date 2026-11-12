@@ -86,7 +86,8 @@ function dotFor(pid, props = {}) {
 const visibleProgram = (pid) => state.preset === "all" || PROGS[pid].preset === state.preset;
 // Standing notices are routine by nature: show them whenever their own preset is chosen.
 const routineShown = (pid) => state.routine || (state.preset !== "all" && PROGS[pid].routine_in_preset && visibleProgram(pid));
-// Shown in every view: measured anomalies, and warnings (today only Vis's Amber or Red forecasts).
+// Shown in every view: measured anomalies, and warnings (Vis's Amber or Red forecasts, Blackout's judged shutdowns
+// and cable-corridor outages).
 const STANDS_OUT = ["anomaly", "warning"];
 const visibleItem = (p) => visibleProgram(p.cop_program) && (STANDS_OUT.includes(p.tier) || routineShown(p.cop_program));
 function baseFilter() {
@@ -297,9 +298,11 @@ function renderCard(f) {
   const badges = h("div", { class: "badges" });
   if (p.kind === "forecast") {
     badges.append(h("span", { class: "badge measure", text: "Forecast: a probability, not a measurement" }));
-    if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
+  } else if (p.kind === "assessment") {
+    badges.append(h("span", { class: "badge measure", text: "Judgment: a probability, not a measurement" }));
   } else if (p.tier === "anomaly") badges.append(h("span", { class: "badge measure", text: "Measured, not a warning" }));
   else if (p.tier === "routine") badges.append(h("span", { class: "badge", text: "Routine: inside its usual range" }));
+  if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
   if (p.status_class) badges.append(h("span", { class: "badge", text: STATUS[p.status_class] || p.status_class }));
   if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: `No current data from ${prog.name}` }));
   for (const c of judgmentChips(p)) badges.append(h("span", { class: "badge", text: c.text }));

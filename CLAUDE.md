@@ -26,7 +26,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, and from 8 Nov 2026 Vis; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, and from 12 Nov 2026 Blackout; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `D:\Projects\tic-doctrine`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -50,6 +50,22 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   and `#FFF8B8`. The MCP instructions say Vis's items are forecasts; `search_items` lists warnings first, so Vis's
   Amber and Red lead an unfiltered search. Its three sources are in `config/sources.json` (Open-Meteo:
   `commercial_ok` false, free API is non-commercial only).
+- **Blackout** (12 Nov 2026, kit 0.4.3): internet outages (IODA, by country and on five watched ASNs), OONI
+  censorship rates and cloud and satellite providers' own status reports. Outage and OONI items are country-level
+  points, so `country_mark` "fill" shades the country; provider items have `geometry: null` and list under Off the
+  map. Its items carry no `measures`, so it has no `strength` rules and its pick is its feed's first placed anomaly
+  (Blackout lists outages by drop, largest first, then OONI by anomaly rate); the pick's reason carries no value.
+  `freshness` "feed": its items keep the event's or the OONI day's time, not the run's. Own preset "Internet
+  connectivity". Colour: Paul Tol's indigo `#332288` (outlines `#1E1452`, `#CBC3F5`), because the seven non-black
+  Okabe-Ito hues are taken and black at country-fill opacity looks like the stale grey. Its seven sources are in
+  `config/sources.json`: OONI `commercial_ok` false (its data licence is CC BY-NC-SA 4.0, github.com/ooni/license
+  `data/LICENSE.md`, read 12 Nov 2026), IODA and the providers "unknown" (no licence stated). Blackout's own feed
+  still says "CC BY 4.0 (IODA, OONI)" in its licence and attribution, and COP shows that text as Blackout sends it.
+  `tests/fixtures/blackout.geojson`: Blackout's live feed of 23:11 UTC 12 Nov, every date moved back 12 days 4 hours.
+  Blackout also publishes judgments (kind `assessment`, tier `warning`): a likely shutdown only with OONI-confirmed
+  blocking in the same country (BO-H-1A), and a cable-corridor outage (BO-H-2A). They show in every view like Vis's
+  warnings; the card says "Judgment: a probability, not a measurement" and "Warning: Blackout's judgment", and the MCP
+  instructions say the same. None was live on 12 Nov, so the fixture has none.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
