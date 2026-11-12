@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "note": "The programs COP reads and how it draws them. Each program's name, family, feed, site, fresh_hours and stale_hours live in the doctrine kit's suite registry (doctrine/kit/vocab/programs.json, kit 0.4.0, 1 Nov 2026); tools/snapshot.py merges them in, and a program missing there stops the build. Colours are Okabe-Ito hues by program family (COP design spec, 29 Oct 2026); outlines carry the 3:1 contrast against each basemap. Freshness: older than fresh_hours is late, older than stale_hours (or no data at all) is stale and draws grey; it is measured from the newest data_as_of in the feed, or from the feed's own generated_at when freshness is 'feed' (for notice programs, whose items carry issue dates). country_mark says how country-level items draw: 'fill' shades the country, 'halo' rings its label point. area_style 'dashed' draws polygons as legal or administrative areas. routine_in_preset shows a program's routine items whenever its own preset is chosen (for standing notices, which are routine by nature, and Vis's forecasts); routine_label names them in the panel (default 'standing notices'). strength rules say where an anomaly's size is found; the first rule whose 'when' matches applies, and rules rank in the order listed. Strength ranks a program's own anomalies only, never across programs. Forecasts (kind forecast, from Vis, 8 Nov 2026) are never picks, which are measured anomalies only, so Vis has no strength rules; a forecast at tier warning (Vis's Amber or Red) shows in every view, and the rest show with routine items or in Vis's own preset.",
+  "note": "The programs COP reads and how it draws them. Each program's name, family, feed, site, fresh_hours and stale_hours live in the doctrine kit's suite registry (doctrine/kit/vocab/programs.json, kit 0.4.0, 1 Nov 2026); tools/snapshot.py merges them in, and a program missing there stops the build. Colours are Okabe-Ito hues by program family (COP design spec, 29 Oct 2026); outlines carry the 3:1 contrast against each basemap. Freshness: older than fresh_hours is late, older than stale_hours (or no data at all) is stale and draws grey; it is measured from the newest data_as_of in the feed, or from the feed's own generated_at when freshness is 'feed' (for notice programs, whose items carry issue dates). country_mark says how country-level items draw: 'fill' shades the country, 'halo' rings its label point. area_style 'dashed' draws polygons as legal or administrative areas. routine_in_preset shows a program's routine items whenever its own preset is chosen (for standing notices, which are routine by nature, and Vis's forecasts); routine_label names them in the panel (default 'standing notices'). strength rules say where an anomaly's size is found; the first rule whose 'when' matches applies, and rules rank in the order listed. Strength ranks a program's own anomalies only, never across programs. Forecasts (kind forecast, from Vis, 8 Nov 2026) are never picks, which are measured anomalies only, so Vis has no strength rules; a forecast at tier warning (Vis's Amber or Red) shows in every view, and the rest show with routine items or in Vis's own preset. Blackout (12 Nov 2026, kit 0.4.3): its outage and censorship items are country-level points, so country_mark 'fill' shades the country; its providers' status items have no geometry and list under Off the map. Its items carry no measures, so it has no strength rules; its picks follow its feed's order, which is IODA outages by drop, largest first, then OONI countries by anomaly rate. Freshness 'feed', because its items keep the time of the event or the OONI day, not the run. Colour: all seven non-black Okabe-Ito hues are taken and black at country-fill opacity reads as the stale grey, so Blackout uses Paul Tol's indigo #332288 (from his colour-blind-safe muted scheme).",
   "programs": [
     {
       "id": "watchfloor", "preset": "conflict",
@@ -58,6 +58,13 @@
       "routine_label": "forecast for every point",
       "strength": [],
       "color": { "fill": "#F0E442", "outline_light": "#5C5500", "outline_dark": "#FFF8B8" }
+    },
+    {
+      "id": "blackout", "preset": "connectivity",
+      "freshness": "feed",
+      "mark": "zones", "country_mark": "fill", "area_style": "solid",
+      "strength": [],
+      "color": { "fill": "#332288", "outline_light": "#1E1452", "outline_dark": "#CBC3F5" }
     }
   ],
   "presets": {
@@ -68,7 +75,8 @@
     "information": "Information",
     "hazards": "Natural hazards",
     "notices": "Notices and advisories",
-    "weather": "Weather"
+    "weather": "Weather",
+    "connectivity": "Internet connectivity"
   },
   "basemaps": {
     "light": { "style": "https://tiles.openfreemap.org/styles/positron", "land": "#F2F3F0", "water": "#C2C8CA" },

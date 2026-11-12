@@ -74,9 +74,9 @@ test("search since keeps only newer data and refuses a bad time", () => {
 });
 
 test("search refuses an unknown program and names the real ones", () => {
-  assert.throws(() => T.searchItems(index, { program: ["blackout"] }, NOW), (e) => {
+  assert.throws(() => T.searchItems(index, { program: ["wake"] }, NOW), (e) => {
     assert.ok(e instanceof T.ToolError);
-    assert.match(e.message, /Unknown program "blackout".*cordon/);
+    assert.match(e.message, /Unknown program "wake".*cordon/);
     return true;
   });
 });
