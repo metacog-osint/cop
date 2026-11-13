@@ -31,7 +31,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   gets a dated line in `D:\Projects\CLAUDE_HANDOVER.md` saying what was released and to whom. Claude never copies a
   file out of `out/held/`, and no code path may be added that does.
 - **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; on the page and in the MCP server since step 5,
-  13 Nov 2026, on branch `convergence/outage-triage` until Tom merges it):** `JOIN["published"]` is on. The build
+  13 Nov 2026; merged to `main` and deployed on Tom's yes, `df1e431`, 05:34 UTC 13 Nov 2026):** `JOIN["published"]` is on. The build
   downloads this month's and last month's archive copies to `out/rates-archive` (never `out/archive`, which it
   uploads from), runs `triage_rates.py` (about 3 seconds) and then `triage.py --publish site/data`, which writes
   `site/data/triage.json` through the gate. A failure there never fails the build: without base rates the readings
@@ -143,8 +143,10 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - **Limits:** Pages Functions share the free 100,000 requests a day with Workers. The project is "fail open", so past
   the quota `/mcp` stops answering until 00:00 UTC while the map keeps serving. A browser opening `/mcp` gets a short
   plain-text help page.
-- **Not yet checked:** a real Claude session using the server (the terminal `claude` sign-in had expired on 6 Nov;
-  the MCP Inspector 2.12.0 CLI and the SDK client both passed).
+- **Checked live 13 Nov 2026:** the SDK client against `https://cop.theintelligence.company/mcp` listed the eight
+  tools and called `outage_triage` (all, one country, a country with no outage). **Not yet checked:** a Claude
+  session using the server (the terminal `claude` sign-in had expired on 6 Nov; a session that connected before a
+  deploy keeps the old tool list until it reconnects).
 
 ## Commands
 - `python tools/snapshot.py` (live) or `--fixtures tests/fixtures --now 2026-10-31T20:30:00Z` (offline);
