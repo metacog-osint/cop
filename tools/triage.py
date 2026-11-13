@@ -9,8 +9,10 @@ the pattern and drafts the Verdict question. It never states a probability: that
     python tools/triage.py --snapshot site/data/today.geojson
     python tools/triage.py --snapshot <file.geojson.gz> # an archived day
 
-NOT PUBLISHED. It writes under out/ (git-ignored) and refuses a path inside site/. It is not called by the build.
-Review class "open": hazards, outages, notices and press attention; no military activity is placed by this join.
+NOT PUBLISHED. Every write goes through tools/gate.py, which classes the join from the layers it declares and the
+items it cites, and refuses a deployed folder while "published" is off. It is not called by the build. It reads
+hazards, outages, travel and embassy notices and press attention; Cordon's navigation warnings and conflict-zone
+airspace bulletins are left out, because they place military activity and would make this join a held one.
 
 Standard-library Python only.
 """
@@ -24,12 +26,18 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gate  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PUBLISHED = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
-JOIN = {"id": "outage-triage", "version": "0.1", "review_class": "open", "published": False}
+# The gate decides the review class from these inputs; "published" stays off until Tom has reviewed the display.
+JOIN = {"id": "outage-triage", "version": "0.2", "published": False,
+        "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
+NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
 LAYERS = ("elements", "cordon", "watchfloor")
 # Windows, all measured from the outage's own time (its data_as_of).
 HAZARD_BEFORE_H = 72     # a hazard that began or was still running this long before the outage can explain it
@@ -169,6 +177,8 @@ def notices(features, cc, at):
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "cordon" or cc not in (p.get("countries") or []):
+            continue
+        if _kind(p.get("id")) not in NOTICE_KINDS:
             continue
         dated = utc(p.get("data_as_of"))
         m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
@@ -326,11 +336,9 @@ def main(argv=None):
     rates_file = Path(a.rates) if a.rates else out / "base-rates.json"
     rates = json.loads(rates_file.read_text(encoding="utf-8")) if rates_file.exists() else None
     doc = attach_rates(triage(load(a.snapshot)), rates)
-    out.mkdir(parents=True, exist_ok=True)
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
-    for name in (f"triage-{stamp}.json", "latest.json"):
-        (out / name).write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
-    print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}")
+    verdict = gate.write(JOIN, doc, out, (f"triage-{stamp}.json", "latest.json"))
+    print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}  gate: {verdict['review_class']}")
     for r in doc["records"]:
         L = r["layers"]
         print(f"{r['country']}  {r['reading']:<11} {r['outage']['title']}")

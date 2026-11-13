@@ -134,8 +134,7 @@ def main(argv=None):
     if not files:
         raise SystemExit(f"no *.geojson.gz in {a.archive}")
     doc = rates(tri.load(f) for f in files)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "base-rates.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+    tri.gate.write(tri.JOIN, doc, out, ("base-rates.json",))
     b = doc["background"]
     print(f"{doc['archive']['days']} days, {doc['archive']['first']} to {doc['archive']['last']}; "
           f"left out (a layer down): {doc['archive']['days_left_out_layer_down'] or 'none'}")
