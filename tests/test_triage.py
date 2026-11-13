@@ -293,7 +293,7 @@ class Triage(unittest.TestCase):
         for rel in ("tools/snapshot.py", "tools/agent_index.py"):
             self.assertNotIn("triage", (ROOT / rel).read_text(encoding="utf-8"), rel)
 
-    def test_the_public_document_has_every_layers_answer_and_no_verdict_draft(self):
+    def test_the_public_document_has_every_layers_answer_and_the_question_as_a_draft(self):
         haz = item("elements", "elements:gdacs:TC-1", ["TN"], "anomaly", "2026-11-11T06:00:00Z")
         doc = tri.attach_rates(tri.triage(snapshot(outage(), outage("SC", "BO-IND-4"), haz)), None)
         pub = tri.public(doc)
@@ -301,6 +301,13 @@ class Triage(unittest.TestCase):
         text = json.dumps(pub)
         self.assertNotIn("verdict_draft", text)
         self.assertNotIn("approved_by", text)
+        self.assertNotIn('"probability"', text, "no probability field, even an empty one")
+        for r in pub["records"]:
+            q = r["question_draft"]
+            self.assertEqual(q["status"], "draft, not registered")
+            self.assertIn("not a registered Verdict forecast", q["note"])
+            self.assertEqual(set(q), {"status", "note", "question", "window_ends", "rule_draft", "caution",
+                                      "rise_form"})
         self.assertIn("not a warning, not a forecast and not a finding of cause", pub["not_a_warning"])
         self.assertEqual(pub["readings"], tri.READINGS)
         for r in pub["records"]:
@@ -311,6 +318,15 @@ class Triage(unittest.TestCase):
         self.assertIn("1 significant hazard began", by["TN"]["layers"]["elements"]["showed"])
         self.assertTrue(by["SC"]["layers"]["elements"]["showed"].startswith("Nothing found"))
         self.assertEqual(gate.review(tri.JOIN, pub)["may_publish"], True)
+
+    def test_the_public_question_keeps_the_rise_form_and_its_caution(self):
+        ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3",
+                    title="Iran: 37.0% OONI censorship anomaly rate")
+        pub = tri.public(tri.attach_rates(tri.triage(snapshot(outage("IR"), ooni)), None))
+        q = pub["records"][0]["question_draft"]
+        self.assertIn("already", q["caution"])
+        self.assertIn("47.0%", q["rise_form"]["question"])
+        self.assertEqual(set(q["rise_form"]), {"question", "rule_draft", "notes"})
 
     def test_nothing_found_and_no_current_data_are_different_answers(self):
         quiet = one(tri.triage(snapshot(outage())))
@@ -351,15 +367,17 @@ class Triage(unittest.TestCase):
         self.assertEqual([p.name for p in (work / "pub").iterdir()], [tri.PUBLIC_NAME])
         pub = json.loads((work / "pub" / tri.PUBLIC_NAME).read_text(encoding="utf-8"))
         self.assertNotIn("verdict_draft", pub["records"][0])
+        self.assertIn("Will OONI confirm blocking in TN", pub["records"][0]["question_draft"]["question"])
         self.assertEqual(pub["gate"]["may_publish"], True)
         full = json.loads((work / "full" / "latest.json").read_text(encoding="utf-8"))
-        self.assertIn("verdict_draft", full["records"][0], "the draft stays in out/, for Tom")
+        self.assertIn("approved_by", full["records"][0]["verdict_draft"], "the working draft stays in out/")
 
     def test_the_page_and_the_mcp_server_show_the_wording_from_the_document(self):
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
         self.assertIn("data/triage.json", js)
         self.assertIn("triage.not_a_warning", js)
         self.assertIn("Not a warning or a forecast", js)
+        self.assertIn("a draft, not registered", js)
         self.assertNotIn("verdict_draft", js)
         page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="triage"', page)

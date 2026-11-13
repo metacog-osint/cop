@@ -103,6 +103,10 @@ button.tri-outage:hover, button.tri-outage:focus-visible, button.tri-item:hover,
 button.tri-item { cursor: pointer; }
 .tri-rate, .tri-caveat { margin: 8px 0 0; font-size: 13px; color: var(--mut); }
 .tri-rate strong { color: var(--ink); font-weight: 500; }
+.tri-q { margin-top: 8px; font-size: 13px; color: var(--mut); }
+.tri-q summary { cursor: pointer; color: var(--ink); font-weight: 500; }
+.tri-q p { margin: 6px 0 0; }
+.tri-q strong { color: var(--ink); font-weight: 500; }
 #triage-foot .note { margin-top: 8px; }
 
 /* detail card */
