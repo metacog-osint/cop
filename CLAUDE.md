@@ -37,8 +37,9 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   `site/data/triage.json` through the gate. A failure there never fails the build: without base rates the readings
   say so, and without the file the page and the server say triage is unavailable. The public document
   (`triage.public()`) has each record's reading, one `showed` line per layer ("Nothing found" and "No current
-  data." are different answers), the base rate and the caveats; it leaves out the drafted Verdict question, which
-  stays in `out/triage/` for Tom. The wording that a reading is not a warning, a forecast or a finding of cause
+  data." are different answers), the base rate, the caveats and, since Tom's yes of 13 Nov 2026, the drafted
+  Verdict question as `question_draft` (status "draft, not registered", no probability or approval field; the page
+  folds it under "Question to score it by"). The working draft with its empty probability stays in `out/triage/`. The wording that a reading is not a warning, a forecast or a finding of cause
   lives in `triage.py` (`NOT_A_WARNING`) and the page and the server print it from the document. Page: the
   "Outage triage" section of the panel (`renderTriage` in `cop.js`), shown with Blackout's preset and "all".
   MCP: the `outage_triage` tool (optional `country`). Rules approved by

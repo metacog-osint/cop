@@ -157,16 +157,20 @@ test("a Verdict part that could not be fetched is refused, not invented", () => 
   assert.throws(() => T.forecastRecord(broken, NOW), /could not be fetched/);
 });
 
-test("outage triage gives each layer's answer, the wording and no probability or Verdict draft", () => {
+test("outage triage gives each layer's answer, the wording, and the question only as a draft", () => {
   const res = T.outageTriage(index, triage, {}, NOW);
   assert.equal(res.count, 2);
   assert.match(res.note, /not a warning, not a forecast and not a finding of cause/);
+  assert.match(res.note, /question_draft .* not a registered Verdict forecast/);
   assert.equal(res.base_rates, null);
   assert.match(res.base_rates_note, /No base rates/);
   for (const r of res.records) {
     assert.deepEqual(Object.keys(r.layers), ["elements", "cordon", "watchfloor"]);
     for (const L of Object.values(r.layers)) assert.ok(L.showed.length > 10 && L.name, "each layer says what it showed");
-    assert.ok(!("verdict_draft" in r), "the drafted Verdict question is not public");
+    assert.ok(!("verdict_draft" in r), "the working draft, with its empty probability field, is not public");
+    assert.equal(r.question_draft.status, "draft, not registered");
+    assert.match(r.question_draft.question, /^Will OONI confirm blocking/);
+    assert.ok(r.question_draft.rule_draft && r.question_draft.window_ends);
     assert.ok(r.reading in res.readings);
   }
   assert.ok(!JSON.stringify(res.records).includes("probability"));

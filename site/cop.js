@@ -411,7 +411,23 @@ function triageRecord(r) {
     h("dl", { class: "tri-layers" }, ...layers),
     r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), r.base_rate.text) : null,
     r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
-    ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })));
+    ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })),
+    triageQuestion(r.question_draft));
+}
+// The drafted Verdict question: how this reading could be scored later. A draft, never shown as a forecast.
+function triageQuestion(q) {
+  if (!q) return null;
+  const rise = q.rise_form;
+  return h("details", { class: "tri-q" },
+    h("summary", { text: "Question to score it by (a draft, not registered)" }),
+    h("p", { text: q.note }),
+    h("p", {}, h("strong", { text: "Question. " }), q.question),
+    h("p", {}, h("strong", { text: "Settled by. " }), q.rule_draft),
+    h("p", {}, h("strong", { text: "Window ends. " }), timeEl(q.window_ends)),
+    q.caution ? h("p", { class: "tri-caveat", text: q.caution }) : null,
+    rise ? h("p", {}, h("strong", { text: "Rise form. " }), rise.question) : null,
+    rise ? h("p", {}, h("strong", { text: "Settled by. " }), rise.rule_draft) : null,
+    ...(rise ? rise.notes.map((n) => h("p", { class: "tri-caveat", text: n })) : []));
 }
 function renderTriage() {
   const sec = $("triage-sec");

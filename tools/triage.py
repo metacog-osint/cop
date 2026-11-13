@@ -11,8 +11,9 @@ the pattern and drafts the Verdict question. It never states a probability: that
     python tools/triage.py --snapshot site/data/today.geojson --publish site/data   # the build: writes triage.json
 
 PUBLISHED since step 5 (JOIN["published"]): the build runs it after the snapshot, and --publish writes the public
-document, triage.json, which the COP page and the MCP server show. The public document leaves out the drafted
-Verdict question: a question is Tom's to register. Every write goes through tools/gate.py, which classes the join
+document, triage.json, which the COP page and the MCP server show. The public document carries the drafted
+Verdict question (Tom, 13 Nov 2026) as "question_draft", labelled a draft that is not registered and has no
+probability; registering one stays Tom's. Every write goes through tools/gate.py, which classes the join
 from the layers it declares and the items it cites. It reads hazards, outages, travel and embassy notices and press
 attention; Cordon's navigation warnings and conflict-zone airspace bulletins are left out, because they place
 military activity and would make this join a held one.
@@ -40,7 +41,7 @@ UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
 # convergence branch; it reaches the site only when Tom merges that branch to main.
-JOIN = {"id": "outage-triage", "version": "0.4", "published": True,
+JOIN = {"id": "outage-triage", "version": "0.5", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
 NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
 LAYERS = ("elements", "cordon", "watchfloor")
@@ -453,18 +454,33 @@ WHAT = ("For each internet outage Blackout reports, what three other layers show
         "hour: natural hazards (Elements), travel and embassy notices (Cordon) and press attention (Watchfloor).")
 NOT_A_WARNING = ("A reading sorts public reports. It is not a warning, not a forecast and not a finding of cause, "
                  "and it carries no probability. \"Nothing found\" and \"No current data\" are different answers.")
+DRAFT_NOTE = ("A drafted question that would let this reading be scored later. It is not a registered Verdict "
+              "forecast and no likelihood is attached to it.")
+
+
+def question_draft(v):
+    """The drafted Verdict question as the public sees it: the question, its window and rule, and that it is a
+    draft. The empty probability and approval fields stay in out/: published, they would read as a forecast."""
+    rise = v.get("rise_form")
+    return {"status": "draft, not registered", "note": DRAFT_NOTE, "question": v["question"],
+            "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["caution"],
+            "rise_form": None if not rise else {"question": rise["question"], "rule_draft": rise["rule_draft"],
+                                                "notes": rise["notes"]}}
+
+
 RECORD_KEYS = ("join", "country", "outage", "layers", "no_current_data", "ooni_now", "reading", "reading_text",
                "caveats", "base_rate")
 
 
 def public(doc):
     """The document the page and the MCP server show: every record with one line per layer on what it showed, the
-    base rate and the caveats. The drafted Verdict question stays out."""
+    base rate, the caveats and the drafted Verdict question, marked a draft."""
     records = []
     for r in doc["records"]:
         rec = {k: r[k] for k in RECORD_KEYS}
         rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
                          for name, layer in r["layers"].items()}
+        rec["question_draft"] = question_draft(r["verdict_draft"])
         records.append(rec)
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
