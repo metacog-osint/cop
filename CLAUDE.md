@@ -30,12 +30,24 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `[local path]` saying what was released and to whom. Claude never copies a
   file out of `out/held/`, and no code path may be added that does.
-- **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; not published, not run by the build):** rules approved by
+- **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; on the page and in the MCP server since step 5,
+  13 Nov 2026, on branch `convergence/outage-triage` until Tom merges it):** `JOIN["published"]` is on. The build
+  downloads this month's and last month's archive copies to `out/rates-archive` (never `out/archive`, which it
+  uploads from), runs `triage_rates.py` (about 3 seconds) and then `triage.py --publish site/data`, which writes
+  `site/data/triage.json` through the gate. A failure there never fails the build: without base rates the readings
+  say so, and without the file the page and the server say triage is unavailable. The public document
+  (`triage.public()`) has each record's reading, one `showed` line per layer ("Nothing found" and "No current
+  data." are different answers), the base rate and the caveats; it leaves out the drafted Verdict question, which
+  stays in `out/triage/` for Tom. The wording that a reading is not a warning, a forecast or a finding of cause
+  lives in `triage.py` (`NOT_A_WARNING`) and the page and the server print it from the document. Page: the
+  "Outage triage" section of the panel (`renderTriage` in `cop.js`), shown with Blackout's preset and "all".
+  MCP: the `outage_triage` tool (optional `country`). Rules approved by
   Tom on 12 Nov 2026: a hazard counts only if it began in the 72 hours before the outage; a notice counts only if
   dated in the 48 hours before it and not lowered or re-issued at the same level; raised attention counts only where
   the country had it on under 25% of archived days. The windows are provisional. Rerun `triage_rates.py` about 28 Nov
   2026, when the archive holds 28 days, and look at the windows then. Watchfloor lags a day, so run triage a second
-  time the day after an outage (by hand until step 5).
+  time the day after an outage. The build now reruns triage every two hours, so the second look happens by itself
+  while the outage is still in Blackout's feed.
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
@@ -121,9 +133,10 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   exactly in `package-lock.json`, each at least two weeks old when chosen: `@modelcontextprotocol/server` 2.3.1,
   `zod` 4.6.7; dev only `@modelcontextprotocol/client` 2.3.1. `wrangler.toml` only names the output folder and keeps
   the compatibility date the project already had (2026-10-31; no bindings or env vars, checked through the API).
-- **Tools** (fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier, text,
-  since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full item
-  with sources), `top_picks`, `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
+- **Tools** (eight, fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier,
+  text, since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full
+  item with sources), `top_picks`, `outage_triage` (reads `data/triage.json` directly; a missing file is a tool
+  error that says triage was not built, not that there are no outages), `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
   `upcoming_events`. Every result carries `as_of`, `age_hours`, stale flags and the attribution lines to credit.
   The server's instructions tell agents to cite ids and publishers, never call a measurement a warning, quote ICD 203
   terms as given and check freshness.
@@ -139,6 +152,9 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   tests/fixtures/verdict` offline) for the MCP server's files.
 - `python tests/test_snapshot.py` (plain script; picks rule, dead feeds, contract validity, 3:1 outline contrast on
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
+- Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
+  --snapshot site/data/today.geojson --publish site/data`. Tests: `python tests/test_triage.py` (34),
+  `test_gate.py` (21), `test_three_signal.py` (19).
 - `python tests/test_agent_index.py` (every item once in the index and its shard, no field lost, row size, registry
   order, Verdict's last-copy rule, nothing from `config/sources.json`).
 - `npm ci --ignore-scripts`, then `npm test` (`node --test "mcp/*.test.js"`; builds its data from the fixtures with

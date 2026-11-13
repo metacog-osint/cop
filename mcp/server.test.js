@@ -15,6 +15,7 @@ const ORDER = [
   "search_items",
   "get_item",
   "top_picks",
+  "outage_triage",
   "list_forecasts",
   "forecast_record",
   "upcoming_events",
@@ -31,7 +32,7 @@ async function client() {
 
 const body = (r) => r.structuredContent ?? JSON.parse(r.content[0].text);
 
-test("a 2026-07-28 client lists the seven tools in a fixed order, all read-only", async () => {
+test("a 2026-07-28 client lists the eight tools in a fixed order, all read-only", async () => {
   const c = await client();
   const { tools } = await c.listTools();
   assert.deepEqual(tools.map((t) => t.name), ORDER);
@@ -69,6 +70,13 @@ test("every tool answers through the client", async () => {
 
   const picks = body(await c.callTool({ name: "top_picks", arguments: {} }));
   assert.ok(picks.picks.length > 0);
+
+  const triage = body(await c.callTool({ name: "outage_triage", arguments: {} }));
+  assert.equal(triage.join, "outage-triage");
+  assert.equal(triage.count, 2);
+  assert.match(triage.note, /not a warning, not a forecast/);
+  const one = body(await c.callTool({ name: "outage_triage", arguments: { country: "tn" } }));
+  assert.deepEqual(one.records.map((r) => r.country), ["TN"]);
 
   const forecasts = body(await c.callTool({ name: "list_forecasts", arguments: { status: "open" } }));
   assert.equal(forecasts.count, 8);

@@ -11,6 +11,7 @@ const index = readJson(dir, "agent/index.json");
 const programs = readJson(dir, "agent/programs.json");
 const verdict = readJson(dir, "agent/verdict.json");
 const picks = readJson(dir, "picks.json");
+const triage = readJson(dir, "triage.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -85,6 +86,7 @@ test("every result says when its data is from and whom to credit", () => {
   const results = [
     T.searchItems(index, {}, NOW),
     T.topPicks(index, picks, NOW),
+    T.outageTriage(index, triage, {}, NOW),
     T.listForecasts(verdict, {}, NOW),
     T.forecastRecord(verdict, NOW),
     T.upcomingEvents(verdict, {}, NOW),
@@ -153,6 +155,43 @@ test("upcoming events stay inside the window and can be filtered by origin", () 
 test("a Verdict part that could not be fetched is refused, not invented", () => {
   const broken = { ...verdict, scores: null, missing: ["scores"] };
   assert.throws(() => T.forecastRecord(broken, NOW), /could not be fetched/);
+});
+
+test("outage triage gives each layer's answer, the wording and no probability or Verdict draft", () => {
+  const res = T.outageTriage(index, triage, {}, NOW);
+  assert.equal(res.count, 2);
+  assert.match(res.note, /not a warning, not a forecast and not a finding of cause/);
+  assert.equal(res.base_rates, null);
+  assert.match(res.base_rates_note, /No base rates/);
+  for (const r of res.records) {
+    assert.deepEqual(Object.keys(r.layers), ["elements", "cordon", "watchfloor"]);
+    for (const L of Object.values(r.layers)) assert.ok(L.showed.length > 10 && L.name, "each layer says what it showed");
+    assert.ok(!("verdict_draft" in r), "the drafted Verdict question is not public");
+    assert.ok(r.reading in res.readings);
+  }
+  assert.ok(!JSON.stringify(res.records).includes("probability"));
+  const credit = res.attribution.join(" ");
+  for (const name of ["Blackout", "Elements", "Cordon", "Watchfloor"]) assert.match(credit, new RegExp(name));
+});
+
+test("outage triage: a country with no outage, a dead Blackout feed and a missing file are three different answers", () => {
+  const none = T.outageTriage(index, triage, { country: "fr" }, NOW);
+  assert.equal(none.count, 0);
+  assert.match(none.none, /No outage for FR/);
+  const dead = T.outageTriage(index, { ...triage, records: [], layer_states: { ...triage.layer_states, blackout: "stale" } }, {}, NOW);
+  assert.match(dead.none, /no current data/);
+  assert.match(dead.none, /not the same as no outages/);
+  assert.throws(() => T.outageTriage(index, null, {}, NOW), /was not built for this snapshot/);
+});
+
+test("a layer with no current data reads incomplete and says so, never quiet", () => {
+  const r = structuredClone(triage.records[0]);
+  // What tools/triage.py writes when Elements is stale (tests/test_triage.py covers the Python side).
+  r.reading = "incomplete";
+  r.layers.elements = { ...r.layers.elements, state: "stale", showed: "No current data." };
+  const res = T.outageTriage(index, { ...triage, records: [r] }, {}, NOW);
+  assert.equal(res.records[0].layers.elements.showed, "No current data.");
+  assert.match(res.readings.incomplete, /Silence is not quiet/);
 });
 
 // The free Workers plan allows about 10 ms of CPU per request. Node and workerd run the same V8, so time the work a

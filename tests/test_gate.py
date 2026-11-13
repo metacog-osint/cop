@@ -138,9 +138,12 @@ class Check(unittest.TestCase):
 
 
 class TriageThroughTheGate(unittest.TestCase):
-    def test_the_outage_triage_join_is_open_and_not_published(self):
+    def test_the_outage_triage_join_is_open_and_switched_on(self):
         v = gate.review(tri.JOIN)
-        self.assertEqual((v["review_class"], v["may_publish"]), ("open", False))
+        self.assertEqual((v["review_class"], v["may_publish"]), ("open", True))
+        # Switched off, the gate refuses it a deployed folder again.
+        off = gate.review(tri.JOIN | {"published": False})
+        self.assertIsNotNone(gate.allowed(off, ROOT / "site" / "data"))
 
     def test_triage_does_not_read_navigation_warnings_or_airspace_bulletins(self):
         at = "2026-11-12T00:25:00Z"

@@ -52,6 +52,9 @@ try {
   $("bar-times").textContent = "Today's picture could not be loaded. Try again in a few minutes.";
   throw err;
 }
+// Outage triage is COP's own join, built after the snapshot. The picture stands without it, so a miss is not an error.
+let triage = null;
+try { triage = await getJSON("data/triage.json"); } catch { triage = null; }
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
@@ -369,6 +372,7 @@ function renderPanel() {
       h("a", { href: p.site, rel: "noopener" }, `Open ${p.name}`))),
     ...(!off.length ? [h("li", { class: "empty", text: "None for this view." })] : []));
 
+  renderTriage();
   renderHealth();
   renderBar();
   renderCredits();
@@ -377,6 +381,67 @@ function renderPanel() {
     document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.setAttribute("aria-current", "true"));
   }
   renderTimes(document);
+}
+// Outage triage: for each Blackout outage, what Elements, Cordon and Watchfloor show under it. A reading sorts
+// reports; the section says so, and shows "nothing found" and "no current data" as the different answers they are.
+const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "raised" };
+function triageItem(row) {
+  return BY_ID.has(row.id)
+    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title)
+    : h("span", { class: "tri-item", text: row.title });
+}
+function triageRecord(r) {
+  const down = r.reading === "incomplete";
+  const layers = Object.entries(r.layers).map(([key, L]) => {
+    const dead = L.state === "stale" || L.state === "missing";
+    const cited = dead ? [] : (L[TRIAGE_LISTS[key]] || []).slice(0, 4);
+    return h("div", { class: "tri-layer" + (dead ? " dead" : "") },
+      h("dt", {}, dotFor(key, { cop_stale: dead }), L.name),
+      h("dd", {}, L.showed, cited.length ? h("span", { class: "tri-items" }, ...cited.map(triageItem)) : null));
+  });
+  return h("li", { class: "tri" },
+    BY_ID.has(r.outage.id)
+      ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, r.outage.title)
+      : h("span", { class: "tri-outage", text: r.outage.title }),
+    h("div", { class: "row-meta" }, "Outage at ", timeEl(r.outage.data_as_of)),
+    h("div", { class: "badges" },
+      h("span", { class: "badge" + (down ? " stale" : " measure"), text: `Reading: ${r.reading}` }),
+      h("span", { class: "badge", text: "Not a warning or a forecast" })),
+    h("p", { class: "tri-text", text: r.reading_text }),
+    h("dl", { class: "tri-layers" }, ...layers),
+    r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), r.base_rate.text) : null,
+    r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
+    ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })));
+}
+function renderTriage() {
+  const sec = $("triage-sec");
+  sec.hidden = !visibleProgram("blackout");
+  if (sec.hidden) return;
+  const list = $("triage");
+  const foot = $("triage-foot");
+  foot.replaceChildren();
+  if (!triage) {
+    $("triage-note").textContent = "Outage triage is not available for this picture.";
+    list.replaceChildren();
+    return;
+  }
+  $("triage-note").textContent = `${triage.what} ${triage.not_a_warning}`;
+  const state = (triage.layer_states || {}).blackout;
+  const none = state === "stale" || state === "missing"
+    ? "No current data from Blackout, so there is nothing to triage. That is not the same as no outages."
+    : "No outages in Blackout's current data.";
+  list.replaceChildren(...(triage.records.length ? triage.records.map(triageRecord) : [h("li", { class: "empty", text: none })]));
+  const b = triage.base_rates;
+  if (b) {
+    const pct = (x) => `${(x * 100).toFixed(1)}%`;
+    foot.append(h("p", { class: "note" },
+      `Base rates: over ${b.country_days.toLocaleString("en-US")} country-days in COP's archive, an outage would have read natural on ${pct(b.would_read.natural)}, ` +
+      `deliberate on ${pct(b.would_read.deliberate)} and open on ${pct(b.would_read.open)}, whatever its cause. `,
+      ...(b.cautions || []).map((c) => `${c} `),
+      triage.windows && triage.windows.provisional ? "The time windows are provisional." : null));
+  } else if (triage.records.length) {
+    foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
+  }
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {

@@ -1,4 +1,4 @@
-// COP's MCP server: seven read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
+// COP's MCP server: eight read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
 // functions/mcp.js at https://cop.theintelligence.company/mcp.
 //
 // Built on the official MCP TypeScript SDK v2 (@modelcontextprotocol/server). Its createMcpHandler serves
@@ -22,6 +22,7 @@ How to use these tools well:
 4. Check freshness: every result has as_of and age_hours, and anything marked stale is a last good copy, not current data.
 5. us_person_data says whether an item names US organizations or individuals. Apply your own rules for handling US-person information.
 6. Each item keeps its own program's licence. Credit the attribution lines each result gives. The picture is public and non-commercial.
+7. outage_triage is COP's own reading across layers: for each Blackout outage, whether a new natural hazard (Elements), a fresh travel or embassy notice (Cordon) or unusual press attention (Watchfloor) sits under it in that country around that hour. A reading (natural, deliberate, open, unconfirmed or incomplete) sorts public reports. It is not a warning, not a forecast and not a finding of cause, and it carries no probability, so never present one as such. Always give its base rate (how often an outage would have read that way whatever its cause) and its caveats with it. "Nothing found" and "No current data" are different answers: never report a layer with no current data as quiet.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -65,6 +66,14 @@ const SearchInput = z.object({
 
 const GetItemInput = z.object({ id: z.string().min(1).max(200).describe("An item id from search_items or top_picks.") });
 
+const TriageInput = z.object({
+  country: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/)
+    .optional()
+    .describe("ISO 3166-1 alpha-2 country code. Default: every outage in the snapshot."),
+});
+
 const ForecastInput = z.object({
   status: z.enum(T.FORECAST_STATUSES).optional().describe("open, resolved or all (default all)."),
 });
@@ -74,7 +83,8 @@ const EventsInput = z.object({
   origin: z.enum(["verdict", "cordon"]).optional().describe("Only events found by this program."),
 });
 
-// data: { index(), programs(), picks(), verdict(), shard(n) }, each a promise of the parsed file (see data.js).
+// data: { index(), programs(), picks(), triage(), verdict(), shard(n) }, each a promise of the parsed file (see
+// data.js; triage() resolves to null when the file is absent).
 export function buildServer(data, clock = Date.now) {
   const server = new McpServer(
     { name: "cop", title: "COP, The Intelligence Company", version: VERSION, websiteUrl: SITE },
@@ -141,6 +151,16 @@ export function buildServer(data, clock = Date.now) {
     async (_a, now) => T.topPicks(await data.index(), await data.picks(), now),
   );
   tool(
+    "outage_triage",
+    "Outage triage",
+    "COP's reading of each internet outage Blackout reports: what natural hazards (Elements), travel and embassy " +
+      "notices (Cordon) and press attention (Watchfloor) show for that country around that hour, including " +
+      "\"nothing found\" and \"no current data\", with the base rate and caveats. A reading is not a warning, a " +
+      "forecast or a finding of cause.",
+    TriageInput,
+    async (a, now) => T.outageTriage(await data.index(), await data.triage(), a, now),
+  );
+  tool(
     "list_forecasts",
     "Verdict forecasts",
     "Verdict's public forecasts: each question, its probability and ICD 203 likelihood term, confidence, the rule " +
@@ -184,7 +204,7 @@ const HELP = `This is COP's MCP server, for AI agents (Model Context Protocol, S
 Add it to an MCP client with this address: ${SITE}/mcp
 Claude Code: claude mcp add --transport http cop ${SITE}/mcp
 
-Seven read-only tools over COP's current snapshot and Verdict's forecast ledger. Public information only; no sign-in.
+Eight read-only tools over COP's current snapshot and Verdict's forecast ledger. Public information only; no sign-in.
 The map itself is at ${SITE}/
 `;
 

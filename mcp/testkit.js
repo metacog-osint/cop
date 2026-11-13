@@ -20,6 +20,10 @@ export function fixtureData() {
   const run = (args) => execFileSync(py, args, { cwd: ROOT, stdio: ["ignore", "ignore", "inherit"] });
   run(["tools/snapshot.py", "--fixtures", "tests/fixtures", "--out", dir, "--now", NOW_ISO]);
   run(["tools/agent_index.py", "--data", dir, "--verdict", "tests/fixtures/verdict", "--now", NOW_ISO]);
+  // Outage triage, as the build runs it. No base rates here: there is no archive beside the fixtures.
+  const out = path.join(dir, "triage-work");
+  run(["tools/triage.py", "--snapshot", path.join(dir, "today.geojson"), "--out", out,
+    "--rates", path.join(out, "none.json"), "--publish", dir]);
   built = dir;
   return dir;
 }

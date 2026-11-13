@@ -8,11 +8,14 @@ the pattern and drafts the Verdict question. It never states a probability: that
     python tools/triage.py                              # read the published snapshot, write out/triage/
     python tools/triage.py --snapshot site/data/today.geojson
     python tools/triage.py --snapshot <file.geojson.gz> # an archived day
+    python tools/triage.py --snapshot site/data/today.geojson --publish site/data   # the build: writes triage.json
 
-NOT PUBLISHED. Every write goes through tools/gate.py, which classes the join from the layers it declares and the
-items it cites, and refuses a deployed folder while "published" is off. It is not called by the build. It reads
-hazards, outages, travel and embassy notices and press attention; Cordon's navigation warnings and conflict-zone
-airspace bulletins are left out, because they place military activity and would make this join a held one.
+PUBLISHED since step 5 (JOIN["published"]): the build runs it after the snapshot, and --publish writes the public
+document, triage.json, which the COP page and the MCP server show. The public document leaves out the drafted
+Verdict question: a question is Tom's to register. Every write goes through tools/gate.py, which classes the join
+from the layers it declares and the items it cites. It reads hazards, outages, travel and embassy notices and press
+attention; Cordon's navigation warnings and conflict-zone airspace bulletins are left out, because they place
+military activity and would make this join a held one.
 
 Standard-library Python only.
 """
@@ -35,8 +38,9 @@ COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PUBLISHED = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
-# The gate decides the review class from these inputs; "published" stays off until Tom has reviewed the display.
-JOIN = {"id": "outage-triage", "version": "0.3", "published": False,
+# The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
+# convergence branch; it reaches the site only when Tom merges that branch to main.
+JOIN = {"id": "outage-triage", "version": "0.4", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
 NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
 LAYERS = ("elements", "cordon", "watchfloor")
@@ -395,6 +399,88 @@ def attach_rates(doc, rates):
     return doc
 
 
+def _n(n, one):
+    return f"{n} {one}{'' if n == 1 else 's'}"
+
+
+def showed(name, layer):
+    """One plain line on what a layer showed. "Nothing found" and "No current data" are different answers."""
+    if layer["state"] in ("stale", "missing"):
+        return "No current data."
+    if name == "elements":
+        sig, minor, standing = layer["significant"], layer["minor"], layer["standing"]
+        if sig:
+            parts = [f"{_n(len(sig), 'significant hazard')} began in the {HAZARD_BEFORE_H} hours before the outage."]
+        else:
+            parts = [f"Nothing found: no significant hazard began in the {HAZARD_BEFORE_H} hours before the outage."]
+        if minor:
+            parts.append(f"{_n(len(minor), 'minor hazard')} in the window (not counted).")
+        if standing:
+            parts.append(f"{_n(len(standing), 'hazard')} already running before that (standing, not counted).")
+        return " ".join(parts)
+    if name == "cordon":
+        if layer["recent"]:
+            parts = [f"{_n(len(layer['recent']), 'notice')} issued or raised in the {NOTICE_RECENT_H} hours before "
+                     "the outage."]
+        else:
+            parts = [f"Nothing found: no travel or embassy notice was issued or raised in the {NOTICE_RECENT_H} "
+                     "hours before the outage."]
+        if layer["recent_not_raised"]:
+            parts.append(f"{_n(len(layer['recent_not_raised']), 'notice')} lowered or re-issued at the same level "
+                         "(not counted).")
+        if layer["standing"]:
+            parts.append(f"{_n(len(layer['standing']), 'older notice')} standing (not counted).")
+        if layer["after"]:
+            parts.append(f"{_n(len(layer['after']), 'notice')} dated after the outage.")
+        return " ".join(parts)
+    own = layer["own_rate"]
+    if layer["raised"] and layer["unusual"]:
+        text = ("Press attention is raised, with no archive baseline to check it against." if own is None else
+                f"Press attention is raised, which is unusual here: raised on {own:.0%} of archived days.")
+    elif layer["raised"]:
+        text = f"Press attention is raised, but it is on {own:.0%} of archived days here, so it is not counted."
+    else:
+        text = "Nothing found: press attention is not raised."
+    if not layer["data_reaches_outage"]:
+        text += " Its newest data ends before the outage."
+    return text
+
+
+PUBLIC_NAME = "triage.json"
+LAYER_NAMES = {"elements": "Natural hazards (Elements)", "cordon": "Travel and embassy notices (Cordon)",
+               "watchfloor": "Press attention (Watchfloor)"}
+WHAT = ("For each internet outage Blackout reports, what three other layers show for that country around that "
+        "hour: natural hazards (Elements), travel and embassy notices (Cordon) and press attention (Watchfloor).")
+NOT_A_WARNING = ("A reading sorts public reports. It is not a warning, not a forecast and not a finding of cause, "
+                 "and it carries no probability. \"Nothing found\" and \"No current data\" are different answers.")
+RECORD_KEYS = ("join", "country", "outage", "layers", "no_current_data", "ooni_now", "reading", "reading_text",
+               "caveats", "base_rate")
+
+
+def public(doc):
+    """The document the page and the MCP server show: every record with one line per layer on what it showed, the
+    base rate and the caveats. The drafted Verdict question stays out."""
+    records = []
+    for r in doc["records"]:
+        rec = {k: r[k] for k in RECORD_KEYS}
+        rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
+                         for name, layer in r["layers"].items()}
+        records.append(rec)
+    return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
+            "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
+            "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
+            "records": records}
+
+
+def publish_folder(path):
+    """Where the public document may go: site/data and nowhere else under site/. The gate still has the last word."""
+    out = Path(path).resolve()
+    site = (ROOT / "site").resolve()
+    if (out == site or site in out.parents) and out != site / "data":
+        raise SystemExit("triage.py publishes only to site/data")
+    return out
+
+
 def safe_out(path):
     """The output folder, refused if it sits inside site/ (which the build deploys)."""
     out = Path(path).resolve()
@@ -409,12 +495,16 @@ def main(argv=None):
     ap.add_argument("--snapshot", default=PUBLISHED, help="snapshot URL, .geojson file or .geojson.gz archive copy")
     ap.add_argument("--out", default=str(ROOT / "out" / "triage"))
     ap.add_argument("--rates", default=None, help="base-rates.json from triage_rates.py (default: <out>/base-rates.json)")
+    ap.add_argument("--publish", default=None, metavar="FOLDER",
+                    help=f"also write the public document, {PUBLIC_NAME}, here (the build passes site/data)")
     a = ap.parse_args(argv)
     out = safe_out(a.out)
     rates_file = Path(a.rates) if a.rates else out / "base-rates.json"
     rates = json.loads(rates_file.read_text(encoding="utf-8")) if rates_file.exists() else None
     doc = attach_rates(triage(load(a.snapshot), (rates or {}).get("history")), rates)
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
+    if a.publish:
+        gate.write(JOIN, public(doc), publish_folder(a.publish), (PUBLIC_NAME,))
     verdict = gate.write(JOIN, doc, out, (f"triage-{stamp}.json", "latest.json"))
     print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}  gate: {verdict['review_class']}")
     for r in doc["records"]:
@@ -432,6 +522,8 @@ def main(argv=None):
     if not doc["records"]:
         print("no Blackout outages in this snapshot")
     print(f"wrote {out / 'latest.json'}")
+    if a.publish:
+        print(f"published {Path(a.publish) / PUBLIC_NAME}")
     return 0
 
 
