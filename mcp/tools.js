@@ -226,6 +226,52 @@ export function topPicks(index, picks, now) {
   };
 }
 
+// --- outage_triage --------------------------------------------------------------------------------------------------
+
+const TRIAGE_PROGRAMS = ["blackout", "elements", "cordon", "watchfloor"];
+
+export function outageTriage(index, triage, args, now) {
+  if (!triage) {
+    throw new ToolError(
+      "Outage triage was not built for this snapshot. That says nothing about outages: use search_items with " +
+        "program [\"blackout\"] for Blackout's own items.",
+    );
+  }
+  const country = args && args.country ? String(args.country).toUpperCase() : null;
+  const records = (triage.records || []).filter((r) => !country || r.country === country);
+  const blackout = (triage.layer_states || {}).blackout;
+  const dead = blackout === "stale" || blackout === "missing";
+  return {
+    as_of: triage.snapshot_generated_at,
+    age_hours: ageHours(triage.snapshot_generated_at, now),
+    source: index.bus_url,
+    join: triage.join.id,
+    what: triage.what,
+    note:
+      triage.not_a_warning +
+      " Quote a reading with its base_rate and caveats, and say what each layer showed in its own words (layers.*.showed). " +
+      "The readings: natural, deliberate, open, unconfirmed (a single-source dip, no reading given), incomplete (a layer " +
+      "has no current data). The time windows are provisional.",
+    readings: triage.readings,
+    layer_states: triage.layer_states,
+    windows: triage.windows,
+    base_rates: triage.base_rates,
+    ...(triage.base_rates ? {} : { base_rates_note: "No base rates were available for this snapshot; the readings stand without them." }),
+    count: records.length,
+    ...(records.length
+      ? {}
+      : {
+          none: dead
+            ? "Blackout has no current data, so there is nothing to triage. That is not the same as no outages."
+            : country
+              ? `No outage for ${country} in Blackout's current data.`
+              : "No outages in Blackout's current data.",
+        }),
+    records,
+    attribution: attributionFor(index, TRIAGE_PROGRAMS),
+  };
+}
+
 // --- Verdict --------------------------------------------------------------------------------------------------------
 
 function verdictPart(verdict, part) {

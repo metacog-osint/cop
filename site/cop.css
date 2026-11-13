@@ -88,6 +88,23 @@ a { color: var(--acc); }
 .empty { font-size: 13px; color: var(--mut); padding: 4px 0; }
 .more { font-size: 13px; color: var(--mut); padding: 4px 8px; }
 
+/* outage triage */
+.tri { border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px; }
+.tri-outage { display: block; width: 100%; text-align: left; background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--ink); font: 500 14px/1.35 var(--sans); }
+button.tri-outage:hover, button.tri-outage:focus-visible, button.tri-item:hover, button.tri-item:focus-visible { text-decoration: underline; }
+.tri-text { margin: 8px 0 0; font-size: 13px; }
+.tri-layers { margin: 8px 0 0; display: grid; gap: 6px; font-size: 13px; }
+.tri-layers dt { display: flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 500; }
+.tri-layers dd { margin: 1px 0 0 17px; color: var(--body); }
+.tri-layer.dead dd { color: var(--stale); }
+.tri-items { display: grid; gap: 2px; margin-top: 3px; }
+.tri-item { display: block; text-align: left; background: none; border: 0; padding: 0; color: var(--mut); font: 400 12px/1.4 var(--mono); }
+button.tri-item { cursor: pointer; }
+.tri-rate, .tri-caveat { margin: 8px 0 0; font-size: 13px; color: var(--mut); }
+.tri-rate strong { color: var(--ink); font-weight: 500; }
+#triage-foot .note { margin-top: 8px; }
+
 /* detail card */
 .card { border: 1px solid var(--ink); border-radius: 10px; padding: 13px 14px; margin-bottom: 14px; position: relative; }
 .card h3 { margin: 6px 0 4px; font-size: 17px; line-height: 1.3; color: var(--ink); font-weight: 600; padding-right: 26px; }

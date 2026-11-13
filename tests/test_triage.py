@@ -2,12 +2,14 @@
 
 import json
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+import gate  # noqa: E402
 import snapshot as snap  # noqa: E402
 import triage as tri  # noqa: E402
 import triage_rates as rates  # noqa: E402
@@ -277,13 +279,95 @@ class Triage(unittest.TestCase):
         self.assertEqual(doc["background"]["would_read_country_days"], n)
         self.assertEqual(doc["archive"]["days_counted_for_readings"], 1)
 
-    def test_the_build_and_the_page_do_not_know_about_it(self):
-        for rel in ("tools/snapshot.py", "tools/agent_index.py", "site/cop.js"):
-            self.assertNotIn("triage", (ROOT / rel).read_text(encoding="utf-8"), rel)
-        # The build runs the join's tests, never the join itself.
+    def test_the_build_runs_it_after_the_snapshot_and_before_the_gate(self):
         build = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
-        self.assertNotIn("tools/triage", build)
-        self.assertEqual(build.count("triage"), 1, "only tests/test_triage.py")
+        order = [build.index(s) for s in ("python tools/snapshot.py", "python tools/triage_rates.py",
+                                          "python tools/triage.py", "python tools/gate.py --check",
+                                          "pages deploy")]
+        self.assertEqual(order, sorted(order))
+        self.assertIn("--publish site/data", build)
+        # The archive for base rates is downloaded apart from out/archive, which the build uploads from.
+        self.assertIn("out/rates-archive", build)
+        self.assertNotIn("--dir out/archive", build)
+        # The snapshot and the agent index stay ignorant of the join: it reads them, they never read it.
+        for rel in ("tools/snapshot.py", "tools/agent_index.py"):
+            self.assertNotIn("triage", (ROOT / rel).read_text(encoding="utf-8"), rel)
+
+    def test_the_public_document_has_every_layers_answer_and_no_verdict_draft(self):
+        haz = item("elements", "elements:gdacs:TC-1", ["TN"], "anomaly", "2026-11-11T06:00:00Z")
+        doc = tri.attach_rates(tri.triage(snapshot(outage(), outage("SC", "BO-IND-4"), haz)), None)
+        pub = tri.public(doc)
+        self.assertEqual(len(pub["records"]), 2)
+        text = json.dumps(pub)
+        self.assertNotIn("verdict_draft", text)
+        self.assertNotIn("approved_by", text)
+        self.assertIn("not a warning, not a forecast and not a finding of cause", pub["not_a_warning"])
+        self.assertEqual(pub["readings"], tri.READINGS)
+        for r in pub["records"]:
+            self.assertEqual(set(r["layers"]), set(tri.LAYERS))
+            for layer in r["layers"].values():
+                self.assertTrue(layer["name"] and layer["showed"])
+        by = {r["country"]: r for r in pub["records"]}
+        self.assertIn("1 significant hazard began", by["TN"]["layers"]["elements"]["showed"])
+        self.assertTrue(by["SC"]["layers"]["elements"]["showed"].startswith("Nothing found"))
+        self.assertEqual(gate.review(tri.JOIN, pub)["may_publish"], True)
+
+    def test_nothing_found_and_no_current_data_are_different_answers(self):
+        quiet = one(tri.triage(snapshot(outage())))
+        dead = one(tri.triage(snapshot(outage(), states={"cordon": "stale"})))
+        for name in tri.LAYERS:
+            self.assertTrue(tri.showed(name, quiet["layers"][name]).startswith("Nothing found"), name)
+        self.assertEqual(tri.showed("cordon", dead["layers"]["cordon"]), "No current data.")
+        self.assertEqual(tri.public(tri.attach_rates({"join": tri.JOIN, "snapshot_generated_at": None,
+                                                      "layer_states": {}, "windows": {}, "baseline_given": False,
+                                                      "records": [dead]}, None))["records"][0]["reading"],
+                         "incomplete")
+
+    def test_what_a_layer_showed_says_what_was_counted_and_what_was_not(self):
+        wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
+                  "2026-11-11T23:59:59Z")
+        adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z", measures={"level": 2})
+        usual = one(tri.triage(snapshot(outage(), wf, adv), {"advisory_levels": {}, "attention_share": {"TN": 0.9}}))
+        text = tri.showed("watchfloor", usual["layers"]["watchfloor"])
+        self.assertIn("90% of archived days", text)
+        self.assertIn("not counted", text)
+        self.assertIn("ends before the outage", text)
+        self.assertIn("1 older notice standing (not counted)", tri.showed("cordon", usual["layers"]["cordon"]))
+        rare = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.1}}))
+        self.assertIn("unusual here", tri.showed("watchfloor", rare["layers"]["watchfloor"]))
+        blind = one(tri.triage(snapshot(outage(), wf)))
+        self.assertIn("no archive baseline", tri.showed("watchfloor", blind["layers"]["watchfloor"]))
+
+    def test_it_publishes_only_to_site_data_and_only_the_public_document(self):
+        for folder in (ROOT / "site", ROOT / "site" / "data" / "joins", ROOT / "site" / "vendor"):
+            with self.assertRaises(SystemExit, msg=str(folder)):
+                tri.publish_folder(folder)
+        self.assertEqual(tri.publish_folder(ROOT / "site" / "data"), (ROOT / "site" / "data").resolve())
+        work = Path(tempfile.mkdtemp())
+        snap_file = work / "s.geojson"
+        snap_file.write_text(json.dumps(snapshot(outage())), encoding="utf-8")
+        tri.main(["--snapshot", str(snap_file), "--out", str(work / "full"), "--rates", str(work / "none.json"),
+                  "--publish", str(work / "pub")])
+        self.assertEqual([p.name for p in (work / "pub").iterdir()], [tri.PUBLIC_NAME])
+        pub = json.loads((work / "pub" / tri.PUBLIC_NAME).read_text(encoding="utf-8"))
+        self.assertNotIn("verdict_draft", pub["records"][0])
+        self.assertEqual(pub["gate"]["may_publish"], True)
+        full = json.loads((work / "full" / "latest.json").read_text(encoding="utf-8"))
+        self.assertIn("verdict_draft", full["records"][0], "the draft stays in out/, for Tom")
+
+    def test_the_page_and_the_mcp_server_show_the_wording_from_the_document(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn("data/triage.json", js)
+        self.assertIn("triage.not_a_warning", js)
+        self.assertIn("Not a warning or a forecast", js)
+        self.assertNotIn("verdict_draft", js)
+        page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="triage"', page)
+        tools = (ROOT / "mcp" / "tools.js").read_text(encoding="utf-8")
+        self.assertIn("triage.not_a_warning", tools)
+        self.assertNotIn("verdict_draft", tools)
+        server = (ROOT / "mcp" / "server.js").read_text(encoding="utf-8")
+        self.assertIn("It is not a warning, not a forecast and not a finding of cause", server)
 
     def test_it_runs_on_a_snapshot_built_from_the_fixtures(self):
         ids = [p["id"] for p in snap.CONFIG["programs"]]

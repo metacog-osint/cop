@@ -16,8 +16,8 @@ each UTC day):
 
 RERUN about 28 Nov 2026, when the archive holds 28 days, and look at triage.py's provisional windows then.
 
-NOT PUBLISHED: every write goes through tools/gate.py (out/ only while the join is not switched on). Standard-library
-Python only.
+Writes to out/ only (the whole history stays there); triage.py copies the few numbers it shows into the public
+document. Every write goes through tools/gate.py. Standard-library Python only.
 """
 
 import argparse

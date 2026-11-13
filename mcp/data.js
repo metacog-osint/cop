@@ -9,6 +9,7 @@ export const PATHS = {
   programs: "/data/agent/programs.json",
   verdict: "/data/agent/verdict.json",
   picks: "/data/picks.json",
+  triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
 };
 
 export function shardPath(n) {
@@ -34,6 +35,7 @@ export function makeData(fetchAsset) {
     programs: () => get(PATHS.programs),
     verdict: () => get(PATHS.verdict),
     picks: () => get(PATHS.picks),
+    triage: () => get(PATHS.triage).catch(() => null), // the picture stands without it
     shard: (n) => get(shardPath(n)),
   };
 }
