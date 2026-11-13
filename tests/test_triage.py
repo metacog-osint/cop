@@ -189,8 +189,12 @@ class Triage(unittest.TestCase):
         self.assertIsNone(tri.attach_rates(tri.triage(snapshot(outage())), None)["records"][0]["base_rate"])
 
     def test_the_build_and_the_page_do_not_know_about_it(self):
-        for rel in ("tools/snapshot.py", "tools/agent_index.py", ".github/workflows/build.yml", "site/cop.js"):
+        for rel in ("tools/snapshot.py", "tools/agent_index.py", "site/cop.js"):
             self.assertNotIn("triage", (ROOT / rel).read_text(encoding="utf-8"), rel)
+        # The build runs the join's tests, never the join itself.
+        build = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        self.assertNotIn("tools/triage", build)
+        self.assertEqual(build.count("triage"), 1, "only tests/test_triage.py")
 
     def test_it_runs_on_a_snapshot_built_from_the_fixtures(self):
         ids = [p["id"] for p in snap.CONFIG["programs"]]

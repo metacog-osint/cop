@@ -22,6 +22,11 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   would be. Never copy COP code into public repos. If it opens later: AGPL-3.0 like Noisefloor and Vigil.
 - **Review before v1:** the convergence layer (several programs agreeing over one place) is where aggregation starts
   saying more than any single public source (the mosaic effect); review those flags before v1 ships.
+  **The gate (12 Nov 2026, `tools/gate.py`):** every join writes through it. A join is "open" only if every layer it
+  declares and every item it cites is on the gate's open list; Noisefloor, Vis and Cordon's navwarn and czib kinds are
+  military context, and any layer or kind not listed is held too. Held joins write only under `out/held/` and have no
+  switch that publishes them. `python tools/gate.py --check` runs before the deploy. A new program or item kind must be
+  added to one of the two lists there (a test fails until it is).
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
