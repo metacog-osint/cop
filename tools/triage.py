@@ -5,6 +5,14 @@ Blackout outage in a COP snapshot it records what Elements, Cordon and Watchfloo
 that hour, including "nothing found" and "no current data", which are different answers. It states a reading of
 the pattern and drafts the Verdict question. It never states a probability: that is the analyst's.
 
+US state power outages (Blackout's BO-IND-14: a state where ODIN's reporting utilities show more than 50,000 meters
+out) are read against Elements for that state, not the whole country (rules approved by Tom, 13 Nov 2026): NWS
+alerts by their own county codes, point hazards within STATE_NEAR_KM of the state, and warnings for hazards that
+take power lines down counted at Elements' Severe level. Cordon and Watchfloor carry nothing at US-state level, so
+they answer "Not covered" and such an outage reads natural, open or incomplete, never deliberate. Its drafted
+question asks whether the state is still over the line 24 hours later, in the exact form Verdict settles from
+EAGLE-I.
+
     python tools/triage.py                              # read the published snapshot, write out/triage/
     python tools/triage.py --snapshot site/data/today.geojson
     python tools/triage.py --snapshot <file.geojson.gz> # an archived day
@@ -36,12 +44,15 @@ import gate  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
+# County FIPS -> [state, name, lat, lon]: the Census 2025 Gazetteer's internal points, the copy Blackout places ODIN's
+# counties with (blackout/us_counties.json; Elements' catalog has the same points). Public domain.
+US_COUNTIES = ROOT / "config" / "us_counties.json"
 PUBLISHED = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
 # convergence branch; it reaches the site only when Tom merges that branch to main.
-JOIN = {"id": "outage-triage", "version": "0.5", "published": True,
+JOIN = {"id": "outage-triage", "version": "0.6", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
 NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
 LAYERS = ("elements", "cordon", "watchfloor")
@@ -60,6 +71,27 @@ OONI_RISE_POINTS = 10    # where OONI is already over its threshold, the questio
 BACKGROUND = {"firms", "usdm", "nifc", "spc"}
 CONFIRMED_OUTAGE = "BO-IND-1"   # Blackout: a drop seen by more than one signal
 OONI_BLOCKING = "BO-IND-3"      # Blackout: OONI rate at or above its fixed threshold
+POWER_OUTAGE = "BO-IND-14"      # Blackout: a US state with more than 50,000 meters out at ODIN's reporting utilities
+
+# US state power outages (Tom, 13 Nov 2026). The 72- and 6-hour windows above apply unchanged.
+STATE_NEAR_KM = 100      # a point hazard counts for a state within this of it (its nearest county internal point)
+# NWS warnings (VTEC phenomenon, significance W) for hazards that take power lines down. For a state power outage they
+# count at Elements' Severe level, which Elements files as routine; anything Elements rates anomaly counts as well.
+# Floods, freezes and marine warnings are not on the list. EH and WC are the codes Extreme Heat and Extreme Cold
+# had before NWS renamed them (2025 and 2024).
+POWER_HAZARDS = {"HW": "High Wind", "EW": "Extreme Wind", "WS": "Winter Storm", "IS": "Ice Storm", "BZ": "Blizzard",
+                 "LE": "Lake Effect Snow", "HU": "Hurricane", "TR": "Tropical Storm", "TY": "Typhoon",
+                 "SS": "Storm Surge", "TO": "Tornado", "SV": "Severe Thunderstorm", "EC": "Extreme Cold",
+                 "WC": "Extreme Cold", "XH": "Extreme Heat", "EH": "Extreme Heat", "FW": "Red Flag",
+                 "DS": "Dust Storm"}
+POWER_LINE = 50_000      # DOE-417 criterion 12, Blackout's line for BO-IND-14
+POWER_STILL_OUT_H = 24   # the drafted question: still over the line this long after ODIN's reading...
+POWER_CHECK_H = 2        # ...for an hour or more inside a window this long (EAGLE-I's rule needs 4 runs, an hour)
+EAGLEI_DOI = "10.6084/m9.figshare.24237376"
+# Volcano alert levels, ground alert first, then the aviation colour. USGS re-sends each volcano's status every day;
+# a re-send at the same or a lower level is not a new hazard (Tom, 13 Nov 2026, for every country).
+VOLCANO_ALERT = {"NORMAL": 0, "UNASSIGNED": 0, "ADVISORY": 1, "WATCH": 2, "WARNING": 3}
+VOLCANO_COLOUR = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
 
 READINGS = {
     "incomplete": "A layer has no current data, so this outage cannot be triaged yet. Silence is not quiet.",
@@ -70,6 +102,37 @@ READINGS = {
     "open": "No new hazard, no fresh notice and no unusual attention. Nothing here separates an accident from a "
             "deliberate cut.",
 }
+# A US state power outage: Cordon and Watchfloor don't cover US states, so these three are the only readings.
+POWER_READINGS = {
+    "incomplete": "Elements has no current data, so this outage cannot be triaged yet. Silence is not quiet.",
+    "natural": "A hazard that takes power lines down began in or near this state in the 72 hours before the reading. "
+               "A weather or natural cause has support.",
+    "open": "No hazard that takes power lines down began in or near this state in the 72 hours before the reading. "
+            "Nothing here separates a storm already past, failed equipment, a utility's planned shutoff or an attack.",
+}
+POWER_CAVEATS = (
+    "Cordon and Watchfloor carry nothing at US-state level, so no layer here can point to a deliberate cut: a state "
+    "power outage reads natural, open or incomplete, never deliberate.",
+    "One ODIN reading, summed over the state's utilities that report to ODIN. DOE's line is more than 50,000 "
+    "customers out for an hour or more, and a meter is close to, not the same as, a customer.",
+    "Elements carries active alerts only: a storm that passed before this snapshot is gone from it, so \"open\" can "
+    "mean the storm has passed.",
+)
+RED_FLAG = ("A Red Flag Warning counts as a hazard even where a utility cut power on purpose for fire safety (a "
+            "public-safety power shutoff): the hazard is still the reason.")
+VOLCANO_UNKNOWN = ("A volcano alert in the window has no earlier level in COP's archive, so it is counted without "
+                   "knowing whether it was raised.")
+NOT_COVERED = {
+    "cordon": "Not covered: Cordon carries travel advisories and embassy notices for other countries, nothing at "
+              "US-state level, so it cannot point to a deliberate cut here.",
+    "watchfloor": "Not covered: Watchfloor follows press attention in conflict zones, nothing at US-state level, so "
+                  "it cannot point to a deliberate cut here.",
+}
+EAGLEI_CAVEAT = ("EAGLE-I reads more utilities than ODIN (about 92% of US customers by 2022), so a state over the line "
+                 "at ODIN's reporting utilities alone is rarer still. Coverage grew over these years, so earlier "
+                 "years may count fewer.")
+EAGLEI_SOURCE = (f"ORNL's EAGLE-I outage history, 2018-2025 (figshare doi:{EAGLEI_DOI}, CC BY 4.0), as Blackout "
+                 "attaches it to the item.")
 
 
 def utc(s):
@@ -142,21 +205,88 @@ def _row(p, **extra):
 
 
 def _interval(p):
-    """(start, end) of what an item describes, from its own fields."""
+    """(start, end) of what an item describes, from its own fields. An NWS alert starts at its onset: its data_as_of
+    moves with every update of the same warning (Tom, 13 Nov 2026)."""
     m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
     at = utc(p.get("data_as_of"))
-    start = utc(m.get("from")) or at
+    onset = utc(m.get("onset")) if _kind(p.get("id")) == "nws" else None
+    start = utc(m.get("from")) or onset or at
     end = utc(m.get("to")) or utc(p.get("valid_until")) or at
     if start and end and end < start:
         end = start
     return start, end
 
 
-def hazards(features, cc, at):
+def volcano_level(p):
+    """A volcano item's level as one number (ground alert, then aviation colour), or None."""
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    alert = VOLCANO_ALERT.get(str(m.get("alert_level") or "").upper())
+    if alert is None:
+        return None
+    return alert * 10 + VOLCANO_COLOUR.get(str(m.get("aviation_color") or "").upper(), 0)
+
+
+def volcano_change(item_id, dated, level, levels):
+    """(raised | unchanged | lowered | unknown, since): a volcano's level against its earlier readings in COP's
+    archive, and since when it has been at this level. levels: {id: [[data_as_of, level], ...]} from
+    triage_rates.py, or None. Unknown when the archive has no earlier reading of it."""
+    earlier = sorted(((utc(d), lv) for d, lv in (levels or {}).get(item_id, []) if utc(d) and dated and utc(d) < dated),
+                     key=lambda r: r[0])
+    if level is None or not earlier:
+        return "unknown", None
+    since = dated
+    for d, lv in reversed(earlier):
+        if lv is None:
+            return "unknown", None
+        if lv != level:
+            return ("raised" if level > lv else "lowered"), iso(since)
+        since = d
+    return "unchanged", iso(since)
+
+
+def _power_warning(p):
+    """The VTEC phenomenon when an Elements NWS item is a warning for a hazard that takes power lines down."""
+    if _kind(p.get("id")) != "nws":
+        return None
+    parts = str((p.get("measures") or {}).get("vtec") or "").split(".")
+    return parts[1] if len(parts) >= 3 and parts[2] == "W" and parts[1] in POWER_HAZARDS else None
+
+
+def _classify(f, at, lo, hi, volcano_levels=None, power=False):
+    """(bucket, row) for one Elements item against the hazard window, or (None, None) outside it. significant: a
+    significant hazard that began inside the window; standing: one that began before it, or a volcano alert re-sent
+    at the same or a lower level; minor; background (the standing background kinds). power: a state power outage,
+    where warnings for hazards that take power lines down count too."""
+    p = f["properties"]
+    kind = _kind(p.get("id"))
+    start, end = _interval(p)
+    if not start or end < lo or start > hi:
+        return None, None
+    extra, standing_only = {}, False
+    if kind == "usgs-volcano":
+        change, since = volcano_change(p.get("id"), utc(p.get("data_as_of")), volcano_level(p), volcano_levels)
+        extra["level_change"] = change
+        if change == "raised":
+            start = utc(since) or start
+            extra["raised_at"] = since
+        elif change in ("unchanged", "lowered"):
+            standing_only = True
+    warning = _power_warning(p) if power else None
+    if warning:
+        extra["power_hazard"] = POWER_HAZARDS[warning]
+    row = _row(p, hours_before_outage=round((at - start).total_seconds() / 3600, 1), **extra)
+    if kind in BACKGROUND:
+        return "background", row
+    if p.get("tier") in ("anomaly", "warning") or warning:
+        return ("significant" if start >= lo and not standing_only else "standing"), row
+    return "minor", row
+
+
+def hazards(features, cc, at, volcano_levels=None):
     """Elements items under the outage: in or near the country, overlapping the hazard window. A significant hazard
     counts only if it began inside the window; one that began earlier and is still running is "standing"."""
     lo, hi = at - timedelta(hours=HAZARD_BEFORE_H), at + timedelta(hours=HAZARD_AFTER_H)
-    significant, standing, minor, background = [], [], [], []
+    out = {"significant": [], "standing": [], "minor": [], "background": []}
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "elements":
@@ -168,18 +298,156 @@ def hazards(features, cc, at):
             km = km_to_country(f.get("geometry"), cc)
             if km is None or km > HAZARD_NEAR_KM:
                 continue
-        start, end = _interval(p)
-        if not start or end < lo or start > hi:
+        bucket, row = _classify(f, at, lo, hi, volcano_levels)
+        if bucket:
+            row["km_from_country"] = None if km is None else round(km)
+            out[bucket].append(row)
+    return out
+
+
+_COUNTIES, _STATES = None, None
+
+
+def county_table():
+    """County FIPS -> [state, name, lat, lon] (config/us_counties.json)."""
+    global _COUNTIES
+    if _COUNTIES is None:
+        _COUNTIES = json.loads(US_COUNTIES.read_text(encoding="utf-8"))["counties"]
+    return _COUNTIES
+
+
+def us_states():
+    """{state: {"points": [(lat, lon), ...], "box": (min lat, max lat, min lon, max lon)}}, from the county table."""
+    global _STATES
+    if _STATES is None:
+        pts = {}
+        for st, _name, lat, lon in county_table().values():
+            pts.setdefault(st, []).append((lat, lon))
+        _STATES = {st: {"points": p, "box": (min(a for a, _ in p), max(a for a, _ in p),
+                                              min(b for _, b in p), max(b for _, b in p))}
+                   for st, p in sorted(pts.items())}
+    return _STATES
+
+
+def km_to_state(geometry, st):
+    """Distance in km from a Point, or the nearest point of a MultiPoint, to the state's nearest county internal
+    point, or None. A point inside a county lies within about that county's size of its internal point."""
+    if not isinstance(geometry, dict):
+        return None
+    if geometry.get("type") == "Point":
+        pts = [geometry["coordinates"]]
+    elif geometry.get("type") == "MultiPoint":
+        pts = geometry["coordinates"]
+    else:
+        return None
+    s = us_states().get(st)
+    if not s:
+        return None
+    lat0, lat1, lon0, lon1 = s["box"]
+    margin = STATE_NEAR_KM / 111.0 + 1.0   # degrees: a quick test before the distances
+    best = None
+    for x, y in (pt[:2] for pt in pts):
+        if not (lat0 - margin <= y <= lat1 + margin):
             continue
-        row = _row(p, hours_before_outage=round((at - start).total_seconds() / 3600, 1),
-                   km_from_country=None if km is None else round(km))
+        if not (lon0 - margin / max(math.cos(math.radians(y)), 0.2) <= x <= lon1 + margin / max(
+                math.cos(math.radians(y)), 0.2)) and lon1 - lon0 < 180:
+            continue
+        for lat, lon in s["points"]:
+            d = _km(y, x, lat, lon)
+            if best is None or d < best:
+                best = d
+    return best
+
+
+_NEAREST = {}
+
+
+def nearest_state(geometry):
+    """The state whose county internal point is nearest a Point (or any point of a MultiPoint): which state a point
+    inside the US lies in, near enough. It matters where counties are vast: Great Sitkin volcano, inside the
+    Aleutians West Census Area, is 292 km from that area's internal point."""
+    t = geometry.get("type") if isinstance(geometry, dict) else None
+    pts = [geometry["coordinates"]] if t == "Point" else geometry["coordinates"] if t == "MultiPoint" else []
+    found = set()
+    for pt in pts:
+        key = (round(pt[0], 4), round(pt[1], 4))
+        if key not in _NEAREST:
+            _NEAREST[key] = min((_km(key[1], key[0], lat, lon), st)
+                                for st, _name, lat, lon in county_table().values())[1]
+        found.add(_NEAREST[key])
+    return found
+
+
+def _in_polygon(lon, lat, geometry):
+    """Whether a point is inside a Polygon or MultiPolygon (even-odd over every ring, so holes stay outside)."""
+    t = geometry.get("type") if isinstance(geometry, dict) else None
+    polys = [geometry["coordinates"]] if t == "Polygon" else geometry["coordinates"] if t == "MultiPolygon" else []
+    for rings in polys:
+        inside = False
+        for ring in rings:
+            for i in range(len(ring)):
+                (x1, y1), (x2, y2) = ring[i - 1][:2], ring[i][:2]
+                if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
+                    inside = not inside
+        if inside:
+            return True
+    return False
+
+
+def _place(f, st, point):
+    """Where an Elements item sits for a US state, as a dict for its row, or None when it is not in or near it.
+    NWS alerts by their own county codes. A point Elements places in the US (or the territory) is in the state whose
+    county internal point is nearest; any point within STATE_NEAR_KM of the state's county points is near it. An area
+    by the state's county points, except the background kinds (SPC's risk areas, a forecast), which are listed only
+    over the outage's own point. An item for the whole US with no county or usable point is "country": it cannot be
+    placed in a state."""
+    p = f["properties"]
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    table = county_table()
+    codes = [c for c in m.get("counties") or [] if c in table]
+    if codes:
+        return {"placed": "county"} if any(table[c][0] == st for c in codes) else None
+    g = f.get("geometry") if isinstance(f.get("geometry"), dict) else None
+    cc = p.get("countries") or []
+    if not g or p.get("precision_class") in ("country", "none"):
+        return {"placed": "country"} if ("US" in cc or st in cc) else None
+    if g.get("type") in ("Point", "MultiPoint"):
+        km = km_to_state(g, st)
+        if km is not None and km <= STATE_NEAR_KM:
+            return {"placed": "near", "km_from_state": round(km)}
+        if ("US" in cc or st in cc) and st in nearest_state(g):
+            return {"placed": "in", "km_from_state": None if km is None else round(km)}
+        return None
+    if g.get("type") in ("Polygon", "MultiPolygon"):
         if _kind(p.get("id")) in BACKGROUND:
-            background.append(row)
-        elif p.get("tier") in ("anomaly", "warning"):
-            (significant if start >= lo else standing).append(row)
-        else:
-            minor.append(row)
-    return {"significant": significant, "standing": standing, "minor": minor, "background": background}
+            return {"placed": "over_outage"} if point and _in_polygon(point[0], point[1], g) else None
+        pts = us_states().get(st, {}).get("points", [])
+        return {"placed": "area"} if any(_in_polygon(lon, lat, g) for lat, lon in pts) else None
+    return None
+
+
+def state_hazards(features, st, at, point=None, volcano_levels=None):
+    """Elements items under a US state power outage: in or near the state, overlapping the hazard window. point:
+    the outage's own [lon, lat] (Blackout weights it by meters out), or None. unplaced: significant hazards for the
+    whole US that name no county or point, listed and never counted (minor ones are left out)."""
+    lo, hi = at - timedelta(hours=HAZARD_BEFORE_H), at + timedelta(hours=HAZARD_AFTER_H)
+    out = {"significant": [], "standing": [], "minor": [], "background": [], "unplaced": []}
+    for f in features:
+        if f["properties"].get("cop_program") != "elements":
+            continue
+        bucket, row = _classify(f, at, lo, hi, volcano_levels, power=True)
+        if not bucket:
+            continue
+        place = _place(f, st, point)
+        if not place:
+            continue
+        row.update(place)
+        if place["placed"] == "country":
+            if bucket in ("significant", "standing"):
+                out["unplaced"].append(row)
+            continue
+        out[bucket].append(row)
+    return out
 
 
 def _direction(item_id, dated, level, levels):
@@ -269,11 +537,135 @@ def _rate(title):
     return float(m.group(1)) if m else None
 
 
+def us_state_of(p):
+    """The state code of a Blackout BO-IND-14 item, from its id (blackout:us-power:<state>:<UTC day>), or None."""
+    parts = str(p.get("id")).split(":")
+    return parts[2].upper() if len(parts) >= 4 and parts[1] == "us-power" and parts[2] else None
+
+
+def _state_name(p, st):
+    """The state's name as Blackout's title gives it ("California: 13,723 meters ..."), or its code."""
+    name = str(p.get("title") or "").split(":")[0].strip()
+    return name if re.fullmatch(r"[A-Za-z .]+", name) else st
+
+
+def not_covered(pid, features, state):
+    """A layer that carries nothing at US-state level. Items for the whole US, if it ever carries any, are listed
+    and not counted."""
+    rows = []
+    for f in features:
+        p = f["properties"]
+        if p.get("cop_program") != pid or "US" not in (p.get("countries") or []):
+            continue
+        if pid == "cordon" and _kind(p.get("id")) not in NOTICE_KINDS:
+            continue
+        rows.append(_row(p))
+    return {"state": state, "covered": False, "found": False, "country_wide": rows}
+
+
+def eaglei_rule(st, name, start, end, line=POWER_LINE):
+    """The resolution in the exact form Verdict's auto-resolve reads (verdict tools/auto_resolve.py, EAGLEI_RE), the
+    same text as Blackout's eaglei.verdict_rule."""
+    f = "%Y-%m-%d %H:%M"
+    return (f"Yes if EAGLE-I's outage history (ORNL, figshare doi:{EAGLEI_DOI}) shows {name} ({st}) with more than "
+            f"{line:,} customers out, its counties summed in each 15-minute run, in 4 or more runs with no more than "
+            f"3 runs under the line between them, between {start.strftime(f)} and {end.strftime(f)} UTC. "
+            "No otherwise.")
+
+
+def eaglei_rate(br):
+    """The state's outage base rate from EAGLE-I's history, as Blackout attaches it to the item, or None."""
+    if not isinstance(br, dict) or not br.get("text"):
+        return None
+    keep = {k: br.get(k) for k in ("years", "per_year", "month", "in_month", "hours_median", "hours_p90", "text")}
+    return {**keep, "caveat": EAGLEI_CAVEAT, "source": EAGLEI_SOURCE}
+
+
+def power_question(st, name, at, br):
+    """The drafted Verdict question for a state power outage: still over the line 24 hours after ODIN's reading,
+    settled by EAGLE-I with the rule Verdict already reads (Tom, 13 Nov 2026)."""
+    base = at.replace(second=0, microsecond=0)
+    start = base + timedelta(hours=POWER_STILL_OUT_H)
+    end = start + timedelta(hours=POWER_CHECK_H)
+    year = (end - timedelta(minutes=1)).year
+    ref = (f"EAGLE-I, {br['years'][0]}-{br['years'][1]}: half of {name}'s outages over the line lasted about "
+           f"{br['hours_median']:g} hours or less, 1 in 10 more than about {br['hours_p90']:g} hours."
+           if isinstance(br, dict) and br.get("hours_median") is not None and br.get("hours_p90") is not None
+           and br.get("years") else "No EAGLE-I base rate came with this item.")
+    return {
+        "registered": False, "probability": None, "approved_by": None,
+        "question": f"Will {name} still have more than {POWER_LINE:,} customers out {POWER_STILL_OUT_H} hours after "
+                    f"ODIN's reading of {iso(at)}?",
+        "window_ends": iso(end),
+        "rule_draft": eaglei_rule(st, name, start, end),
+        "caution": None, "rise_form": None,
+        "reference": ref,
+        "known_at": f"{year + 1}-04-30T00:00:00Z",
+        "notes": [
+            f"EAGLE-I settles it only once figshare publishes {year}'s file, in the first months of {year + 1} "
+            "(2025's came on 24 Feb 2026).",
+            "EAGLE-I counts more utilities than ODIN (about 92% of US customers by 2022), so it can show the state "
+            "over the line when ODIN's utilities alone are not: the question leans Yes.",
+            "A new outage over the line inside the window would also settle it Yes.",
+            "ODIN's reading moves with each Blackout run (every 4 hours), so this window moves with it until the "
+            "question is registered.",
+        ],
+    }
+
+
+def power_record(f, features, states, history=None):
+    """One record for a Blackout BO-IND-14 item: a US state over the line, read against Elements for that state."""
+    p = f["properties"]
+    st, at = us_state_of(p), utc(p.get("data_as_of"))
+    if not st or not at:
+        return None
+    g = f.get("geometry") if isinstance(f.get("geometry"), dict) else {}
+    point = g["coordinates"][:2] if g.get("type") == "Point" else None
+    haz = state_hazards(features, st, at, point, (history or {}).get("volcano_levels"))
+    dead = ["elements"] if states["elements"] in ("stale", "missing") else []
+    reading = "incomplete" if dead else "natural" if haz["significant"] else "open"
+    name = _state_name(p, st)
+    ref = p.get("baseline_ref") if isinstance(p.get("baseline_ref"), dict) else {}
+    br = ref.get("base_rate")
+    caveats = list(POWER_CAVEATS)
+    if history is None:
+        caveats.append("No archive baseline was given: volcano alert levels are not compared with the ones they "
+                       "replaced. Run tools/triage_rates.py first.")
+    if any(h.get("level_change") == "unknown" for h in haz["significant"]):
+        caveats.append(VOLCANO_UNKNOWN)
+    if any(h.get("power_hazard") == "Red Flag" for h in haz["significant"]):
+        caveats.append(RED_FLAG)
+    if haz["standing"]:
+        caveats.append("A hazard that began before the window, or a volcano alert re-sent at the same level, is "
+                       "still running in or near this state. It is listed as standing and does not make the reading "
+                       "natural.")
+    if haz["unplaced"]:
+        caveats.append(f"{_n(len(haz['unplaced']), 'significant hazard')} in the US name no county or usable point, "
+                       "so they cannot be placed in this state and are not counted.")
+    return {
+        "join": JOIN["id"], "country": "US", "outage_kind": "power", "us_state": st, "us_state_name": name,
+        "outage": _row(p, confirmed=None, indicator_id=p.get("indicator_id"), summary=p.get("summary")),
+        "layers": {
+            "elements": {"state": states["elements"], "scope": "state", **haz,
+                         "found": bool(haz["significant"] or haz["minor"])},
+            "cordon": not_covered("cordon", features, states["cordon"]),
+            "watchfloor": not_covered("watchfloor", features, states["watchfloor"]),
+        },
+        "no_current_data": dead,
+        "ooni_now": None,
+        "reading": reading, "reading_text": POWER_READINGS[reading],
+        "caveats": caveats,
+        "eaglei": eaglei_rate(br),
+        "verdict_draft": power_question(st, name, at, br),
+    }
+
+
 def triage(snapshot, history=None):
     """One record per Blackout outage in the snapshot. history: triage_rates.py's "history" block (each advisory's
     earlier levels, each country's share of days with raised attention), or None when there is no archive."""
     levels = (history or {}).get("advisory_levels")
     shares = (history or {}).get("attention_share")
+    volcanoes = (history or {}).get("volcano_levels")
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: layer_state(snapshot, features, pid) for pid in LAYERS + ("blackout",)}
     ooni = {}
@@ -285,13 +677,20 @@ def triage(snapshot, history=None):
     records = []
     for f in features:
         p = f["properties"]
-        if p.get("cop_program") != "blackout" or _kind(p.get("id")) != "outage" or p.get("cop_stale"):
+        if p.get("cop_program") != "blackout" or p.get("cop_stale"):
+            continue
+        if p.get("indicator_id") == POWER_OUTAGE:
+            rec = power_record(f, features, states, history)
+            if rec:
+                records.append(rec)
+            continue
+        if _kind(p.get("id")) != "outage":
             continue
         at = utc(p.get("data_as_of"))
         for cc in p.get("countries") or []:
             if not at:
                 continue
-            haz, note = hazards(features, cc, at), notices(features, cc, at, levels)
+            haz, note = hazards(features, cc, at, volcanoes), notices(features, cc, at, levels)
             att = attention(features, cc, at, shares)
             dead = [pid for pid in LAYERS if states[pid] in ("stale", "missing")]
             confirmed = p.get("indicator_id") == CONFIRMED_OUTAGE
@@ -314,11 +713,13 @@ def triage(snapshot, history=None):
                                "is in.")
             if history is None:
                 caveats.append("No archive baseline was given: raised attention is counted without checking it "
-                               "against this country's own normal, and advisory levels are not compared with "
-                               "the ones they replaced. Run tools/triage_rates.py first.")
+                               "against this country's own normal, and advisory and volcano alert levels are not "
+                               "compared with the ones they replaced. Run tools/triage_rates.py first.")
             if any(n.get("direction") == "unknown" for n in note["recent"]):
                 caveats.append("An advisory in the window has no earlier level in the archive, so it is counted "
                                "without knowing whether it was raised.")
+            if any(h.get("level_change") == "unknown" for h in haz["significant"]):
+                caveats.append(VOLCANO_UNKNOWN)
             if haz["standing"]:
                 caveats.append("A hazard that began before the window is still running in this country. It is "
                                "listed as standing and does not make the reading natural.")
@@ -337,7 +738,8 @@ def triage(snapshot, history=None):
                               "Blackout's OONI rate covers the past 7 days, so a one-day rise shows up damped.",
                               f"The {OONI_RISE_POINTS}-point rise is provisional."]}
             records.append({
-                "join": JOIN["id"], "country": cc,
+                "join": JOIN["id"], "country": cc, "outage_kind": "internet", "us_state": None,
+                "us_state_name": None,
                 "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary")),
                 "layers": {
                     "elements": {"state": states["elements"], **haz,
@@ -349,6 +751,7 @@ def triage(snapshot, history=None):
                 "ooni_now": ooni.get(cc),
                 "reading": reading, "reading_text": READINGS[reading],
                 "caveats": caveats,
+                "eaglei": None,
                 "verdict_draft": {
                     "registered": False, "probability": None, "approved_by": None,
                     "question": f"Will OONI confirm blocking in {cc} within {OONI_WINDOW_H} hours of the outage "
@@ -365,7 +768,8 @@ def triage(snapshot, history=None):
                  reverse=False)
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"), "layer_states": states,
             "windows": {"hazard_before_hours": HAZARD_BEFORE_H, "hazard_after_hours": HAZARD_AFTER_H,
-                        "hazard_near_km": HAZARD_NEAR_KM, "notice_recent_hours": NOTICE_RECENT_H,
+                        "hazard_near_km": HAZARD_NEAR_KM, "state_near_km": STATE_NEAR_KM,
+                        "power_still_out_hours": POWER_STILL_OUT_H, "notice_recent_hours": NOTICE_RECENT_H,
                         "attention_usual_share": ATTENTION_USUAL_SHARE, "ooni_window_hours": OONI_WINDOW_H,
                         "ooni_rise_points": OONI_RISE_POINTS, "provisional": True},
             "baseline_given": history is not None,
@@ -381,9 +785,16 @@ def attach_rates(doc, rates):
         return doc
     b = rates["background"]
     n = b["would_read_country_days"]
+    sb = rates.get("state_background")
     doc["base_rates"] = {"country_days": n, "would_read": b["would_read"],
-                         "archive": rates["archive"], "cautions": rates["cautions"]}
+                         "archive": rates["archive"], "cautions": rates["cautions"],
+                         "states": None if not sb else {"state_days": sb["state_days"],
+                                                        "would_read": sb["would_read"],
+                                                        "cautions": sb["cautions"]}}
     for r in doc["records"]:
+        if r.get("outage_kind") == "power":
+            r["base_rate"] = _state_rate(r, sb)
+            continue
         share = b["would_read"].get(r["reading"])
         if share is None:
             r["base_rate"] = None
@@ -400,14 +811,51 @@ def attach_rates(doc, rates):
     return doc
 
 
+def _state_rate(r, sb):
+    """How often a US state power outage would have read the way this one did, whatever its cause, from COP's
+    archive (triage_rates.py's state_background), or None."""
+    share = (sb or {}).get("would_read", {}).get(r["reading"])
+    if share is None:
+        return None
+    n, days = sb["state_days"], sb.get("by_state_days") or 0
+    own = (sb.get("by_state") or {}).get(r["us_state"], {"natural": 0.0, "open": 1.0})
+    here = own.get(r["reading"])
+    return {"share_of_state_days": share, "share_of_this_states_days": here,
+            "text": f"A state power outage would have read \"{r['reading']}\" whatever its cause on {share:.1%} of "
+                    f"{n} state-days, and on {here:.0%} of {days} days in {r['us_state_name']}.",
+            "cautions": sb["cautions"]}
+
+
 def _n(n, one):
     return f"{n} {one}{'' if n == 1 else 's'}"
 
 
 def showed(name, layer):
-    """One plain line on what a layer showed. "Nothing found" and "No current data" are different answers."""
+    """One plain line on what a layer showed. "Nothing found", "No current data" and "Not covered" are different
+    answers."""
+    if layer.get("covered") is False:
+        text = NOT_COVERED[name]
+        if layer.get("country_wide"):
+            text += f" {_n(len(layer['country_wide']), 'item')} for the whole US listed, not counted."
+        return text
     if layer["state"] in ("stale", "missing"):
         return "No current data."
+    if name == "elements" and layer.get("scope") == "state":
+        sig, minor, standing = layer["significant"], layer["minor"], layer["standing"]
+        if sig:
+            parts = [f"{_n(len(sig), 'hazard')} that {'takes' if len(sig) == 1 else 'take'} power lines down began "
+                     f"in or near this state in the {HAZARD_BEFORE_H} hours before the reading."]
+        else:
+            parts = [f"Nothing found: no hazard that takes power lines down began in or near this state in the "
+                     f"{HAZARD_BEFORE_H} hours before the reading."]
+        if minor:
+            parts.append(f"{_n(len(minor), 'minor hazard')} in or near the state in the window (not counted).")
+        if standing:
+            parts.append(f"{_n(len(standing), 'hazard')} already running before that (standing, not counted).")
+        if layer.get("unplaced"):
+            parts.append(f"{_n(len(layer['unplaced']), 'hazard')} for the whole US with no place in a state (not "
+                         "counted).")
+        return " ".join(parts)
     if name == "elements":
         sig, minor, standing = layer["significant"], layer["minor"], layer["standing"]
         if sig:
@@ -451,7 +899,9 @@ PUBLIC_NAME = "triage.json"
 LAYER_NAMES = {"elements": "Natural hazards (Elements)", "cordon": "Travel and embassy notices (Cordon)",
                "watchfloor": "Press attention (Watchfloor)"}
 WHAT = ("For each internet outage Blackout reports, what three other layers show for that country around that "
-        "hour: natural hazards (Elements), travel and embassy notices (Cordon) and press attention (Watchfloor).")
+        "hour: natural hazards (Elements), travel and embassy notices (Cordon) and press attention (Watchfloor). "
+        "For each US state where ODIN's reporting utilities show more than 50,000 meters without power, the same "
+        "layers for that state: hazards in or near it, while Cordon and Watchfloor do not cover US states.")
 NOT_A_WARNING = ("A reading sorts public reports. It is not a warning, not a forecast and not a finding of cause, "
                  "and it carries no probability. \"Nothing found\" and \"No current data\" are different answers.")
 DRAFT_NOTE = ("A drafted question that would let this reading be scored later. It is not a registered Verdict "
@@ -462,14 +912,18 @@ def question_draft(v):
     """The drafted Verdict question as the public sees it: the question, its window and rule, and that it is a
     draft. The empty probability and approval fields stay in out/: published, they would read as a forecast."""
     rise = v.get("rise_form")
-    return {"status": "draft, not registered", "note": DRAFT_NOTE, "question": v["question"],
-            "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["caution"],
-            "rise_form": None if not rise else {"question": rise["question"], "rule_draft": rise["rule_draft"],
-                                                "notes": rise["notes"]}}
+    out = {"status": "draft, not registered", "note": DRAFT_NOTE, "question": v["question"],
+           "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["caution"],
+           "rise_form": None if not rise else {"question": rise["question"], "rule_draft": rise["rule_draft"],
+                                               "notes": rise["notes"]}}
+    if v.get("reference"):            # a state power outage: the EAGLE-I reference and the question's own notes
+        out["reference"] = v["reference"]
+        out["notes"] = v.get("notes") or []
+    return out
 
 
-RECORD_KEYS = ("join", "country", "outage", "layers", "no_current_data", "ooni_now", "reading", "reading_text",
-               "caveats", "base_rate")
+RECORD_KEYS = ("join", "country", "outage_kind", "us_state", "us_state_name", "outage", "layers", "no_current_data",
+               "ooni_now", "reading", "reading_text", "caveats", "base_rate", "eaglei")
 
 
 def public(doc):
@@ -483,7 +937,7 @@ def public(doc):
         rec["question_draft"] = question_draft(r["verdict_draft"])
         records.append(rec)
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
-            "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
+            "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
             "records": records}
 
@@ -525,9 +979,17 @@ def main(argv=None):
     print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}  gate: {verdict['review_class']}")
     for r in doc["records"]:
         L = r["layers"]
-        print(f"{r['country']}  {r['reading']:<11} {r['outage']['title']}")
+        print(f"{r['us_state'] or r['country']}  {r['reading']:<11} {r['outage']['title']}")
         if r["base_rate"]:
             print(f"    base rate: {r['base_rate']['text']}")
+        if r["outage_kind"] == "power":
+            E = L["elements"]
+            print(f"    elements in or near {r['us_state']}: {len(E['significant'])} significant, {len(E['minor'])} "
+                  f"minor, {len(E['standing'])} standing, {len(E['unplaced'])} unplaced | cordon and watchfloor: "
+                  "not covered")
+            if r["eaglei"]:
+                print(f"    EAGLE-I: {r['eaglei']['text']}")
+            continue
         print(f"    elements: {len(L['elements']['significant'])} significant, {len(L['elements']['minor'])} minor"
               f" | cordon: {len(L['cordon']['recent'])} recent, {len(L['cordon']['standing'])} standing"
               f" | watchfloor: {len(L['watchfloor']['raised'])} raised"

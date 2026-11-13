@@ -3,13 +3,16 @@
 Three things, from replaying tools/triage.py over the archive (GitHub releases snapshots-YYYY-MM, the last snapshot of
 each UTC day):
 
-1. History: each travel advisory's level on each date it was issued, and each country's share of days with raised
-   press attention. triage.py needs both: to tell a raised advisory from a lowered one, and to count raised attention
-   only where it is unusual for that country.
+1. History: each travel advisory's level on each date it was issued, each volcano's alert level on each day USGS
+   sent it, and each country's share of days with raised press attention. triage.py needs all three: to tell a
+   raised advisory or volcano alert from a lowered one or a re-send, and to count raised attention only where it is
+   unusual for that country.
 2. Replay: what reading did each real outage get? One row per outage (the newest day that saw it), counted by reading.
 3. Background: on an ordinary day, in how many countries would an outage have found a new hazard, a fresh notice or
    unusual attention anyway? A reading that fires for a third of the world says little; this is the number to hold
    each reading against. Every country in the kit's list, every archived day, at that snapshot's own time.
+4. State background: the same for US state power outages (Blackout's BO-IND-14), over every state in the county
+   table: on how many state-days would one have read natural anyway.
 
     gh release download snapshots-2026-11 --repo metacog-osint/cop --dir out/archive --pattern "*.geojson.gz"
     python tools/triage_rates.py --archive out/archive      # writes out/triage/base-rates.json
@@ -46,8 +49,9 @@ def _features(snapshot):
 
 
 def history(snapshots):
-    """What triage.py needs from the past: advisory levels by date, and how usual raised attention is per country."""
-    levels, raised_days, days = {}, Counter(), 0
+    """What triage.py needs from the past: advisory and volcano alert levels by date, and how usual raised attention
+    is per country."""
+    levels, volcanoes, raised_days, days = {}, {}, Counter(), 0
     for snap in snapshots:
         features = _features(snap)
         raised = set()
@@ -56,12 +60,16 @@ def history(snapshots):
             if p.get("cop_program") == "cordon" and tri._kind(p.get("id")) == "advisory" and p.get("data_as_of"):
                 m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
                 levels.setdefault(p["id"], {})[p["data_as_of"]] = m.get("level")
+            elif (p.get("cop_program") == "elements" and tri._kind(p.get("id")) == "usgs-volcano"
+                  and p.get("data_as_of")):
+                volcanoes.setdefault(p["id"], {})[p["data_as_of"]] = tri.volcano_level(p)
             elif p.get("cop_program") == "watchfloor" and p.get("tier") in ("anomaly", "warning"):
                 raised.update(p.get("countries") or [])
         if tri.layer_state(snap, features, "watchfloor") not in ("stale", "missing"):
             days += 1
             raised_days.update(raised)
     return {"advisory_levels": {k: [[d, lv] for d, lv in sorted(v.items())] for k, v in sorted(levels.items())},
+            "volcano_levels": {k: [[d, lv] for d, lv in sorted(v.items())] for k, v in sorted(volcanoes.items())},
             "attention_days": days,
             "attention_share": {cc: round(n / days, 4) for cc, n in sorted(raised_days.items())} if days else {}}
 
@@ -74,6 +82,7 @@ def background_day(snapshot, countries, hist=None):
     if not at or any(s in ("stale", "missing") for s in states.values()):
         return None  # a day with a layer down measures nothing: leave it out, and say so
     levels, shares = (hist or {}).get("advisory_levels"), (hist or {}).get("attention_share")
+    volcanoes = (hist or {}).get("volcano_levels")
     # Only items that could change a reading: this keeps the distance work small.
     haz = [f for f in features if f["properties"].get("cop_program") == "elements"
            and f["properties"].get("tier") in ("anomaly", "warning")
@@ -81,7 +90,7 @@ def background_day(snapshot, countries, hist=None):
     other = [f for f in features if f["properties"].get("cop_program") in ("cordon", "watchfloor")]
     hazard, standing, notice, raised, unusual, notice_kinds = set(), set(), set(), set(), set(), Counter()
     for cc in countries:
-        h = tri.hazards(haz, cc, at)
+        h = tri.hazards(haz, cc, at, volcanoes)
         if h["significant"]:
             hazard.add(cc)
         elif h["standing"]:
@@ -109,6 +118,24 @@ def background_day(snapshot, countries, hist=None):
             "_natural": natural, "_deliberate": deliberate}
 
 
+def state_background_day(snapshot, hist=None):
+    """For one snapshot: which US states would a state power outage at the snapshot's own time read natural in.
+    Only Elements decides that reading, so only a day with Elements down is left out."""
+    at = tri.utc(snapshot.get("generated_at"))
+    features = _features(snapshot)
+    if not at or tri.layer_state(snapshot, features, "elements") in ("stale", "missing"):
+        return None
+    # Only items that could make a natural reading: significant, or a warning for a hazard that takes lines down.
+    haz = [f for f in features if f["properties"].get("cop_program") == "elements"
+           and tri._kind(f["properties"].get("id")) not in tri.BACKGROUND
+           and (f["properties"].get("tier") in ("anomaly", "warning") or tri._power_warning(f["properties"]))]
+    volcanoes = (hist or {}).get("volcano_levels")
+    states = sorted(tri.us_states())
+    natural = {st for st in states if tri.state_hazards(haz, st, at, None, volcanoes)["significant"]}
+    return {"day": snapshot["generated_at"][:10], "snapshot": snapshot["generated_at"], "states": len(states),
+            "natural": len(natural), "natural_states": sorted(natural)}
+
+
 def _share(part, whole):
     return round(part / whole, 4) if whole else None
 
@@ -118,13 +145,16 @@ def rates(snapshots):
     snapshots = sorted(snapshots, key=lambda s: s.get("generated_at") or "")
     countries = all_countries()
     hist = history(snapshots)
-    outages, days, skipped = {}, [], []
+    outages, days, skipped, sdays, sskipped = {}, [], [], [], []
     for snap in snapshots:
         for r in tri.triage(snap, hist)["records"]:
             outages[r["outage"]["id"]] = {"outage": r["outage"]["id"], "country": r["country"],
-                                          "reading": r["reading"], "seen_in": snap["generated_at"]}
+                                          "us_state": r.get("us_state"), "reading": r["reading"],
+                                          "seen_in": snap["generated_at"]}
         row = background_day(snap, countries, hist)
         (days.append(row) if row else skipped.append((snap.get("generated_at") or "?")[:10]))
+        srow = state_background_day(snap, hist)
+        (sdays.append(srow) if srow else sskipped.append((snap.get("generated_at") or "?")[:10]))
     counted = [d for d in days if d["readings_counted"]]
     # A world rate hides where the signals live: a country under standing alerts reads "deliberate" every day.
     per = {}
@@ -148,6 +178,14 @@ def rates(snapshots):
         cautions.append(f"Only {len(outages)} real outages in the archive: the replay counts are examples, not rates.")
     kinds_first = {k: next(d["day"] for d in days if k in d["recent_notice_kinds"])
                    for k in sorted({k for d in days for k in d["recent_notice_kinds"]})}
+    # US states: how often a state power outage would have read natural whatever its cause.
+    sd = sum(d["states"] for d in sdays)
+    snat = sum(d["natural"] for d in sdays)
+    per_state = Counter(st for d in sdays for st in d["natural_states"])
+    scautions = ["The archive keeps one snapshot a day, so warnings that last about an hour (severe thunderstorm, "
+                 "tornado) are mostly missed: the real rate is higher."]
+    if len(sdays) < THIN_DAYS:
+        scautions.insert(0, f"Only {len(sdays)} archived days: a first look, not a settled rate.")
     return {
         "join": tri.JOIN,
         "archive": {"days": len(snapshots), "first": snapshots[0]["generated_at"] if snapshots else None,
@@ -175,6 +213,21 @@ def rates(snapshots):
             "by_country_note": "Share of counted days each country would have read natural or deliberate. A "
                                "country not listed read open on every day.",
             "days": days,
+        },
+        "state_background": {
+            "what": "Share of US state-days on which a state power outage would have met a hazard that takes power "
+                    "lines down, in or near the state, anyway: the natural reading. Cordon and Watchfloor don't "
+                    "cover US states, so the rest read open.",
+            "state_days": sd,
+            "days_left_out_elements_down": sskipped,
+            "would_read": {"natural": _share(snat, sd), "open": _share(sd - snat, sd)},
+            "by_state_days": len(sdays),
+            "by_state": {st: {"natural": _share(n, len(sdays)), "open": _share(len(sdays) - n, len(sdays))}
+                         for st, n in sorted(per_state.items())},
+            "by_state_note": "Share of archived days each state would have read natural. A state not listed read "
+                             "open on every day.",
+            "cautions": scautions,
+            "days": sdays,
         },
     }
 
@@ -210,6 +263,14 @@ def main(argv=None):
     nat = sorted(cc for cc, c in b["by_country"].items() if c["natural"] >= 0.75)
     print(f"  {len(b['by_country'])} countries ever read natural or deliberate; deliberate on 3 days in 4 or more: "
           f"{', '.join(often) or 'none'}; natural on 3 days in 4 or more: {', '.join(nat) or 'none'}")
+    s = doc["state_background"]
+    if s["state_days"]:
+        print(f"US states over {s['state_days']} state-days ({s['by_state_days']} days): a state power outage would "
+              f"read natural {s['would_read']['natural']:.1%}, open {s['would_read']['open']:.1%}")
+        for d in s["days"]:
+            print(f"  {d['day']}  natural in {d['natural']:>2}: {', '.join(d['natural_states']) or '-'}")
+        for c in s["cautions"]:
+            print("state caution: " + c)
     for c in doc["cautions"]:
         print("caution: " + c)
     print(f"wrote {out / 'base-rates.json'}")

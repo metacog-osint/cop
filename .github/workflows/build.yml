@@ -64,6 +64,7 @@ jobs:
           python tests/test_agent_index.py
           python tests/test_gate.py
           python tests/test_triage.py
+          python tests/test_triage_us_power.py
           python tests/test_three_signal.py
           npm test
       - name: Kit copy is intact

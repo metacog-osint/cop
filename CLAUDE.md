@@ -49,6 +49,31 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   2026, when the archive holds 28 days, and look at the windows then. Watchfloor lags a day, so run triage a second
   time the day after an outage. The build now reruns triage every two hours, so the second look happens by itself
   while the outage is still in Blackout's feed.
+  **US state power outages (join 0.6; seven rules approved by Tom on 13 Nov 2026, "Yes, build all seven"):** each
+  Blackout BO-IND-14 item (a state over 50,000 meters out at ODIN's reporting utilities; id
+  `blackout:us-power:<st>:<day>`) gets a record with `outage_kind` "power" and `us_state`. (1) Place: NWS alerts by
+  their own county codes; a point Elements puts in the US is in the state whose county internal point is nearest,
+  and any point within 100 km of a state's county points is near it (`config/us_counties.json`, Blackout's copy of
+  the Census 2025 Gazetteer; Great Sitkin sits 292 km from its census area's point, hence the nearest rule); US
+  items with no county or point are "unplaced", listed only if significant, never counted; SPC risk is background,
+  over the outage's own point only. (2) Size: NWS warnings for High Wind, Extreme Wind, Winter Storm, Ice Storm,
+  Blizzard, Lake Effect Snow, Hurricane, Tropical Storm, Typhoon, Storm Surge, Tornado, Severe Thunderstorm,
+  Extreme Cold, Extreme Heat, Red Flag and Dust Storm count at Elements' Severe level (`POWER_HAZARDS`), plus
+  anything Elements rates anomaly; floods, freezes and marine warnings are minor. (3) An NWS alert begins at its
+  onset, not its latest update (all NWS items). (4) A volcano alert counts only when its level was raised, from the
+  archive's `volcano_levels` (every country; a re-send at the same or a lower level is standing; no earlier level
+  counts, marked unknown). (5) Readings natural, open or incomplete (`POWER_READINGS`); Cordon and Watchfloor answer
+  "Not covered"; only Elements going dark makes it incomplete. (6) The drafted question: still over 50,000, 24 hours
+  after ODIN's reading (rule window +24 h to +26 h, `eaglei_rule`, the exact text Verdict's `EAGLEI_RE` settles;
+  settles in early 2027, leans Yes). (7) Two base rates: the state's EAGLE-I rate as Blackout attaches it
+  (`eaglei`) and a state-day rate from the archive (`triage_rates.py` `state_background`: 3.6% natural over 728
+  state-days, 31 Oct to 13 Nov, against 1.1% on Elements' own tier alone). Measured before the change: the US read
+  natural at country level on 13 of 14 archived days, from daily volcano re-sends and Alaska's blizzards; Cordon
+  and Watchfloor named the US on 0 of 6,154 item-days. Fixtures: `tests/fixtures/us_power` (MANIFEST.json; made by
+  `tests/make_us_power_fixtures.py` from Blackout's code on its recorded ODIN responses and COP's archive).
+  Limits: the archive is one snapshot a day, so hour-long warnings are missed in the rate; Elements carries active
+  alerts only, so "open" can mean the storm has passed. Follow-ups outside COP: Elements keeping expired NWS warnings
+  24 hours, and Blackout putting the outage counties' FIPS codes in the item for a county-level match.
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
@@ -170,8 +195,8 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - `python tests/test_snapshot.py` (plain script; picks rule, dead feeds, contract validity, 3:1 outline contrast on
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
-  --snapshot site/data/today.geojson --publish site/data`. Tests: `python tests/test_triage.py` (34),
-  `test_gate.py` (21), `test_three_signal.py` (19).
+  --snapshot site/data/today.geojson --publish site/data`. Tests: `python tests/test_triage.py` (35),
+  `test_triage_us_power.py` (24), `test_gate.py` (21), `test_three_signal.py` (19).
 - `python tests/test_agent_index.py` (every item once in the index and its shard, no field lost, row size, registry
   order, Verdict's last-copy rule, nothing from `config/sources.json`).
 - `npm ci --ignore-scripts`, then `npm test` (`node --test "mcp/*.test.js"`; builds its data from the fixtures with

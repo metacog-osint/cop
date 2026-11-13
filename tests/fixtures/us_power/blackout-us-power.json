@@ -1,0 +1,209 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -118.366,
+     34.549
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "blackout",
+    "id": "blackout:us-power:ca:2026-11-13",
+    "title": "California: 13,723 meters without power (ODIN's reporting utilities)",
+    "summary": "ODIN's reporting utilities showed 13,723 meters without power in California at 14:40 UTC, in 10 counties; most in Los Angeles County (11,231), Riverside County (789), Siskiyou County (530). Utilities: PACIFICORP, SOUTHERN CALIFORNIA EDISON CO. More than 50,000 is the size of loss DOE's form DOE-417 makes reportable (more than 50,000 customers for an hour or more); this is one reading, summed over the state, and a meter is close to but not the same as a customer. Only utilities that report to ODIN are counted, so the real number may be higher. Reported by the utilities through ODIN; Blackout does not assess the cause. Base rate: In EAGLE-I's record for 2018-2025, California had more than 50,000 customers out for an hour or more about 17 times a year (133 times in 8 years), about 2 times a year in November; half lasted about 6 hours or less, 1 in 10 more than about 2 days. EAGLE-I reads more utilities than ODIN (about 92% of US customers by 2022), so a state over the line at ODIN's reporting utilities alone is rarer still. Coverage grew over these years, so earlier years may count fewer.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-11-13T14:40:05Z",
+    "published_at": "2026-11-13T14:40:05Z",
+    "valid_until": "2026-11-14T02:40:05Z",
+    "countries": [
+     "US"
+    ],
+    "pmesii_pt": [
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "distribute_electricity"
+    ],
+    "requirement_ids": [
+     "BO-PIR-8"
+    ],
+    "warning_problem_id": "BO-WP-5",
+    "indicator_id": "BO-IND-14",
+    "hypothesis_id": "BO-H-5B",
+    "direction": "neutral",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "admin1",
+    "baseline_ref": {
+     "id": "doe-417-50k",
+     "window": "fixed: more than 50,000 customers out for 1 hour or more (form DOE-417, criterion 12), read here as meters out at ODIN's reporting utilities in a state, in one reading (BO-IND-14)",
+     "type": "fixed",
+     "version": "1",
+     "base_rate": {
+      "years": [
+       2018,
+       2025
+      ],
+      "per_year": 16.62,
+      "month": 11,
+      "in_month": 1.88,
+      "hours_median": 5.5,
+      "hours_p90": 43.3,
+      "text": "In EAGLE-I's record for 2018-2025, California had more than 50,000 customers out for an hour or more about 17 times a year (133 times in 8 years), about 2 times a year in November; half lasted about 6 hours or less, 1 in 10 more than about 2 days."
+     }
+    },
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#power/us-ca"
+    },
+    "sources": [
+     {
+      "id": "odin-ornl",
+      "publisher": "ODIN, Outage Data Initiative Nationwide (Oak Ridge National Laboratory for the US Department of Energy), from the reporting utilities",
+      "title": "ODIN county outage view",
+      "url": "https://odin.ornl.gov",
+      "licence": "No licence stated by ODIN (Oak Ridge National Laboratory for the US Department of Energy) for its public outage data; credited to ODIN and the reporting utilities",
+      "grade": "B2",
+      "independence_group": "odin",
+      "source_type": "dataset",
+      "descriptor": "Meters without power by county, as the utilities that report to ODIN state them (over 155 utilities, about 47 million customers, Feb 2026). Utilities that don't report to ODIN aren't counted.",
+      "accessed_at": "2026-11-13T14:40:05Z"
+     },
+     {
+      "id": "ornl-eaglei-history",
+      "publisher": "Oak Ridge National Laboratory, EAGLE-I (Brelsford et al., figshare)",
+      "title": "The Environment for Analysis of Geo-Located Energy Information's Recorded Electricity Outages 2014-2025",
+      "url": "https://doi.org/10.6084/m9.figshare.24237376",
+      "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0), as the figshare record states (doi:10.6084/m9.figshare.24237376, read 13 Nov 2026); Brelsford et al., Oak Ridge National Laboratory EAGLE-I; reduced by Blackout to state totals and episodes",
+      "grade": "B2",
+      "independence_group": "eaglei",
+      "source_type": "dataset",
+      "descriptor": "County customers out every 15 minutes, read by ORNL from utilities' public outage maps; Blackout reduced 2018-2025 to how often each state went over the line for an hour or more (the base rate only, not this reading). ODIN's data also feeds EAGLE-I.",
+      "accessed_at": "2026-11-13T18:47:47Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -75.253,
+     42.626
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "blackout",
+    "id": "blackout:us-power:ny:2026-11-13",
+    "title": "New York: 12,724 meters without power (ODIN's reporting utilities)",
+    "summary": "ODIN's reporting utilities showed 12,724 meters without power in New York at 14:40 UTC, in 32 counties; most in Schoharie County (3,017), Otsego County (2,922), Chenango County (2,869). Utilities: AVANGRID, CENTRAL HUDSON GAS & ELEC CORP, NATIONAL GRID. More than 50,000 is the size of loss DOE's form DOE-417 makes reportable (more than 50,000 customers for an hour or more); this is one reading, summed over the state, and a meter is close to but not the same as a customer. Only utilities that report to ODIN are counted, so the real number may be higher. Reported by the utilities through ODIN; Blackout does not assess the cause. Base rate: In EAGLE-I's record for 2018-2025, New York had more than 50,000 customers out for an hour or more about 6 times a year (48 times in 8 years), about once every 3 years in November; half lasted about 10 hours or less, 1 in 10 more than about 2 days. EAGLE-I reads more utilities than ODIN (about 92% of US customers by 2022), so a state over the line at ODIN's reporting utilities alone is rarer still. Coverage grew over these years, so earlier years may count fewer.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-11-13T14:40:05Z",
+    "published_at": "2026-11-13T14:40:05Z",
+    "valid_until": "2026-11-14T02:40:05Z",
+    "countries": [
+     "US"
+    ],
+    "pmesii_pt": [
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "distribute_electricity"
+    ],
+    "requirement_ids": [
+     "BO-PIR-8"
+    ],
+    "warning_problem_id": "BO-WP-5",
+    "indicator_id": "BO-IND-14",
+    "hypothesis_id": "BO-H-5B",
+    "direction": "neutral",
+    "indicator_state": "present",
+    "method_version": "blackout-1.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "admin1",
+    "baseline_ref": {
+     "id": "doe-417-50k",
+     "window": "fixed: more than 50,000 customers out for 1 hour or more (form DOE-417, criterion 12), read here as meters out at ODIN's reporting utilities in a state, in one reading (BO-IND-14)",
+     "type": "fixed",
+     "version": "1",
+     "base_rate": {
+      "years": [
+       2018,
+       2025
+      ],
+      "per_year": 6.0,
+      "month": 11,
+      "in_month": 0.38,
+      "hours_median": 10.5,
+      "hours_p90": 41.5,
+      "text": "In EAGLE-I's record for 2018-2025, New York had more than 50,000 customers out for an hour or more about 6 times a year (48 times in 8 years), about once every 3 years in November; half lasted about 10 hours or less, 1 in 10 more than about 2 days."
+     }
+    },
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#power/us-ny"
+    },
+    "sources": [
+     {
+      "id": "odin-ornl",
+      "publisher": "ODIN, Outage Data Initiative Nationwide (Oak Ridge National Laboratory for the US Department of Energy), from the reporting utilities",
+      "title": "ODIN county outage view",
+      "url": "https://odin.ornl.gov",
+      "licence": "No licence stated by ODIN (Oak Ridge National Laboratory for the US Department of Energy) for its public outage data; credited to ODIN and the reporting utilities",
+      "grade": "B2",
+      "independence_group": "odin",
+      "source_type": "dataset",
+      "descriptor": "Meters without power by county, as the utilities that report to ODIN state them (over 155 utilities, about 47 million customers, Feb 2026). Utilities that don't report to ODIN aren't counted.",
+      "accessed_at": "2026-11-13T14:40:05Z"
+     },
+     {
+      "id": "ornl-eaglei-history",
+      "publisher": "Oak Ridge National Laboratory, EAGLE-I (Brelsford et al., figshare)",
+      "title": "The Environment for Analysis of Geo-Located Energy Information's Recorded Electricity Outages 2014-2025",
+      "url": "https://doi.org/10.6084/m9.figshare.24237376",
+      "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0), as the figshare record states (doi:10.6084/m9.figshare.24237376, read 13 Nov 2026); Brelsford et al., Oak Ridge National Laboratory EAGLE-I; reduced by Blackout to state totals and episodes",
+      "grade": "B2",
+      "independence_group": "eaglei",
+      "source_type": "dataset",
+      "descriptor": "County customers out every 15 minutes, read by ORNL from utilities' public outage maps; Blackout reduced 2018-2025 to how often each state went over the line for an hour or more (the base rate only, not this reading). ODIN's data also feeds EAGLE-I.",
+      "accessed_at": "2026-11-13T18:47:47Z"
+     }
+    ]
+   }
+  }
+ ]
+}
