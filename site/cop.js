@@ -403,13 +403,15 @@ function triageRecord(r) {
     BY_ID.has(r.outage.id)
       ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, r.outage.title)
       : h("span", { class: "tri-outage", text: r.outage.title }),
-    h("div", { class: "row-meta" }, "Outage at ", timeEl(r.outage.data_as_of)),
+    h("div", { class: "row-meta" }, r.outage_kind === "power" ? "ODIN reading at " : "Outage at ", timeEl(r.outage.data_as_of)),
     h("div", { class: "badges" },
       h("span", { class: "badge" + (down ? " stale" : " measure"), text: `Reading: ${r.reading}` }),
       h("span", { class: "badge", text: "Not a warning or a forecast" })),
     h("p", { class: "tri-text", text: r.reading_text }),
     h("dl", { class: "tri-layers" }, ...layers),
     r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), r.base_rate.text) : null,
+    r.eaglei ? h("p", { class: "tri-rate" }, h("strong", { text: "How often this state goes over the line. " }),
+      `${r.eaglei.text} ${r.eaglei.caveat}`) : null,
     r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
     ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })),
     triageQuestion(r.question_draft));
@@ -424,6 +426,8 @@ function triageQuestion(q) {
     h("p", {}, h("strong", { text: "Question. " }), q.question),
     h("p", {}, h("strong", { text: "Settled by. " }), q.rule_draft),
     h("p", {}, h("strong", { text: "Window ends. " }), timeEl(q.window_ends)),
+    q.reference ? h("p", {}, h("strong", { text: "Reference. " }), q.reference) : null,
+    ...(q.notes || []).map((n) => h("p", { class: "tri-caveat", text: n })),
     q.caution ? h("p", { class: "tri-caveat", text: q.caution }) : null,
     rise ? h("p", {}, h("strong", { text: "Rise form. " }), rise.question) : null,
     rise ? h("p", {}, h("strong", { text: "Settled by. " }), rise.rule_draft) : null,
@@ -455,6 +459,10 @@ function renderTriage() {
       `deliberate on ${pct(b.would_read.deliberate)} and open on ${pct(b.would_read.open)}, whatever its cause. `,
       ...(b.cautions || []).map((c) => `${c} `),
       triage.windows && triage.windows.provisional ? "The time windows are provisional." : null));
+    const s = b.states;
+    if (s && s.state_days) foot.append(h("p", { class: "note" },
+      `US state power outages: over ${s.state_days.toLocaleString("en-US")} state-days, one would have read natural on ${pct(s.would_read.natural)} ` +
+      `and open on ${pct(s.would_read.open)}, whatever its cause. `, ...(s.cautions || []).map((c) => `${c} `)));
   } else if (triage.records.length) {
     foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
   }

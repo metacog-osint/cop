@@ -251,10 +251,15 @@ export function outageTriage(index, triage, args, now) {
       triage.not_a_warning +
       " Quote a reading with its base_rate and caveats, and say what each layer showed in its own words (layers.*.showed). " +
       "The readings: natural, deliberate, open, unconfirmed (a single-source dip, no reading given), incomplete (a layer " +
-      "has no current data). The time windows are provisional. question_draft is a drafted question that could score " +
+      "has no current data). Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
+      "ODIN's reporting utilities, us_state names the state): they are read against hazards in or near that state, " +
+      "Cordon and Watchfloor answer \"Not covered\" there (neither nothing found nor no data), so they read natural, " +
+      "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
+      "history. The time windows are provisional. question_draft is a drafted question that could score " +
       "the reading later: it is not a registered Verdict forecast and has no likelihood, so never quote it as a " +
       "forecast (list_forecasts has the registered ones).",
     readings: triage.readings,
+    ...(triage.power_readings ? { power_readings: triage.power_readings } : {}),
     layer_states: triage.layer_states,
     windows: triage.windows,
     base_rates: triage.base_rates,

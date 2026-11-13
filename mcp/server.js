@@ -22,7 +22,7 @@ How to use these tools well:
 4. Check freshness: every result has as_of and age_hours, and anything marked stale is a last good copy, not current data.
 5. us_person_data says whether an item names US organizations or individuals. Apply your own rules for handling US-person information.
 6. Each item keeps its own program's licence. Credit the attribution lines each result gives. The picture is public and non-commercial.
-7. outage_triage is COP's own reading across layers: for each Blackout outage, whether a new natural hazard (Elements), a fresh travel or embassy notice (Cordon) or unusual press attention (Watchfloor) sits under it in that country around that hour. A reading (natural, deliberate, open, unconfirmed or incomplete) sorts public reports. It is not a warning, not a forecast and not a finding of cause, and it carries no probability, so never present one as such. Always give its base rate (how often an outage would have read that way whatever its cause) and its caveats with it. "Nothing found" and "No current data" are different answers: never report a layer with no current data as quiet. Each record's question_draft is a drafted question, not a registered Verdict forecast, and has no likelihood.
+7. outage_triage is COP's own reading across layers: for each Blackout outage, whether a new natural hazard (Elements), a fresh travel or embassy notice (Cordon) or unusual press attention (Watchfloor) sits under it in that country around that hour; for each US state power outage (outage_kind "power"), whether a hazard that takes power lines down began in or near that state, where Cordon and Watchfloor answer "Not covered". A reading (natural, deliberate, open, unconfirmed or incomplete) sorts public reports. It is not a warning, not a forecast and not a finding of cause, and it carries no probability, so never present one as such. Always give its base rate (how often an outage would have read that way whatever its cause) and its caveats with it. "Nothing found" and "No current data" are different answers: never report a layer with no current data as quiet. Each record's question_draft is a drafted question, not a registered Verdict forecast, and has no likelihood.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -155,8 +155,9 @@ export function buildServer(data, clock = Date.now) {
     "Outage triage",
     "COP's reading of each internet outage Blackout reports: what natural hazards (Elements), travel and embassy " +
       "notices (Cordon) and press attention (Watchfloor) show for that country around that hour, including " +
-      "\"nothing found\" and \"no current data\", with the base rate and caveats. A reading is not a warning, a " +
-      "forecast or a finding of cause.",
+      "\"nothing found\" and \"no current data\", with the base rate and caveats; and of each US state where ODIN's " +
+      "reporting utilities show more than 50,000 meters without power, against hazards in or near that state. A " +
+      "reading is not a warning, a forecast or a finding of cause.",
     TriageInput,
     async (a, now) => T.outageTriage(await data.index(), await data.triage(), a, now),
   );

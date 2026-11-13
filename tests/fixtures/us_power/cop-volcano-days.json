@@ -1,0 +1,3699 @@
+[
+ {
+  "generated_at": "2026-10-31T22:36:09Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": []
+ },
+ {
+  "generated_at": "2026-11-01T22:02:51Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-01T19:52:46Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-31T20:36:30Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-10-31T18:50:39+00:00",
+       "accessed_at": "2026-11-01T19:52:46Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-10-31T18:50:39+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea remains paused following episode 55 on October 17. The forecast for episode 56 fountaining is now Nov. 3-10, 2026."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-01T19:52:46Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-31T18:26:13Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-10-31T18:23:27+00:00",
+       "accessed_at": "2026-11-01T19:52:46Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-10-31T18:23:27+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -163.9711,
+      54.7554
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-01T19:52:46Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311360",
+     "title": "Shishaldin: USGS volcano alert Advisory, aviation code Yellow (raised from Normal/Green)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-31T18:26:13Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-10-31T18:23:27+00:00",
+       "accessed_at": "2026-11-01T19:52:46Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-10-31T18:23:27+00:00",
+     "measures": {
+      "name": "Shishaldin",
+      "vnum": "311360",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "NORMAL",
+      "previous_aviation_color": "GREEN",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Shishaldin YELLOW/ADVISORY - Low-level unrest continues."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-01T19:52:46Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-29T23:23:07Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+       "accessed_at": "2026-11-01T19:52:46Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-02T20:22:33Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-02T17:23:56Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-01T20:17:32Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-01T18:45:57+00:00",
+       "accessed_at": "2026-11-02T17:23:56Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-01T18:45:57+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea remains paused following episode 55 on October 17. The forecast for episode 56 fountaining is Nov. 3-7, 2026."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-02T17:23:56Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-01T20:05:10Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-01T20:02:20+00:00",
+       "accessed_at": "2026-11-02T17:23:56Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-01T20:02:20+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -163.9711,
+      54.7554
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-02T17:23:56Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311360",
+     "title": "Shishaldin: USGS volcano alert Advisory, aviation code Yellow (raised from Normal/Green)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-01T20:05:10Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-01T20:02:20+00:00",
+       "accessed_at": "2026-11-02T17:23:56Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-01T20:02:20+00:00",
+     "measures": {
+      "name": "Shishaldin",
+      "vnum": "311360",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "NORMAL",
+      "previous_aviation_color": "GREEN",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Shishaldin YELLOW/ADVISORY - Low-level unrest continues."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-02T17:23:56Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-29T23:23:07Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+       "accessed_at": "2026-11-02T17:23:56Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-03T19:30:19Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "stale"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-03T15:26:17Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-03T00:06:36Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-02T22:41:59+00:00",
+       "accessed_at": "2026-11-03T15:26:17Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-02T22:41:59+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea ORANGE/WATCH - Precursory low-level eruptive activity before episode 56 of the ongoing Halemaʻumaʻu eruption began around 11:43 a.m. HST on Monday, November 2."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-03T15:26:17Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-02T23:05:13Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-02T23:03:15+00:00",
+       "accessed_at": "2026-11-03T15:26:17Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-02T23:03:15+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-03T15:26:17Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-29T23:23:07Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+       "accessed_at": "2026-11-03T15:26:17Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-04T23:40:12Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-04T20:51:15Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-04T20:38:53Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-04T20:38:18+00:00",
+       "accessed_at": "2026-11-04T20:51:15Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-04T20:38:18+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-04T20:51:15Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-04T20:03:18Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-04T18:24:28+00:00",
+       "accessed_at": "2026-11-04T20:51:15Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-04T18:24:28+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea ORANGE/WATCH - Intermittent lava flows have continued from the north vent over the past day. High fountaining remains a possibility today or anytime within the next few days."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-04T20:51:15Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-29T23:23:07Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+       "accessed_at": "2026-11-04T20:51:15Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-05T23:38:44Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-05T22:22:34Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-05T19:57:48Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-05T19:57:30+00:00",
+       "accessed_at": "2026-11-05T22:22:34Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-05T19:57:30+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-05T22:22:34Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-05T19:22:47Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-05T18:36:49+00:00",
+       "accessed_at": "2026-11-05T22:22:34Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-05T18:36:49+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea ORANGE/WATCH - Sporadic lava flows have continued from the north vent over the past day. High fountaining remains a possibility today or anytime within the next few days."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-05T22:22:34Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-10-29T23:23:07Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+       "accessed_at": "2026-11-05T22:22:34Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-10-29T23:21:48+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-06T22:21:21Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-06T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T21:10:36Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-06T18:31:13+00:00",
+       "accessed_at": "2026-11-06T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-06T18:31:13+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava continues within the summit crater associated with low-level seismicity."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-06T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T20:09:22Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-06T18:16:51+00:00",
+       "accessed_at": "2026-11-06T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-06T18:16:51+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea ORANGE/WATCH - Episode 56 lava fountaining occurred yesterday afternoon with fountains reaching 660 feet (200 meters), and the summit is now reinflating. The next episode of lava fountaining is likely several weeks away."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-06T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-06T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-07T22:39:25Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-07T22:36:05Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-07T18:50:05Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-07T18:49:50+00:00",
+       "accessed_at": "2026-11-07T22:36:05Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-07T18:49:50+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-07T22:36:05Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-07T18:24:50Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-07T17:46:41+00:00",
+       "accessed_at": "2026-11-07T22:36:05Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-07T17:46:41+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea is currently paused after episode 56 fountaining ended on November 5. The summit is reinflating and the next episode of lava fountaining is likely several weeks away."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-07T22:36:05Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-07T22:36:05Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-08T22:21:09Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-08T22:06:06Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-08T20:36:04Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-08T20:35:22+00:00",
+       "accessed_at": "2026-11-08T22:06:06Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-08T20:35:22+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava within the summit crater continues."
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-08T22:06:06Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-08T19:29:37Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-08T19:01:15+00:00",
+       "accessed_at": "2026-11-08T22:06:06Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-08T19:01:15+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea is currently paused after episode 56 fountaining ended on November 5. The summit is reinflating and the next episode of lava fountaining is likely several weeks away."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-08T22:06:06Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-08T22:06:06Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-09T22:21:11Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-09T22:06:07Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T21:09:11Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+       "accessed_at": "2026-11-09T22:06:07Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava likely continues; moving to Weekly Updates only"
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-09T22:06:07Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T18:43:38Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-09T18:22:07+00:00",
+       "accessed_at": "2026-11-09T22:06:07Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-09T18:22:07+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea is currently paused after episode 56 fountaining ended on November 5. The summit is reinflating and the next episode of lava fountaining is likely more than a week away."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-09T22:06:07Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-09T22:06:07Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-10T22:21:16Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-10T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-10T19:08:31Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-10T18:46:33+00:00",
+       "accessed_at": "2026-11-10T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-10T18:46:33+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea is currently paused after episode 56 fountaining ended on November 5. The summit is reinflating and the next episode of lava fountaining is likely more than a week away."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-10T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T21:09:11Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+       "accessed_at": "2026-11-10T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava likely continues; moving to Weekly Updates only"
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-10T22:06:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-10T22:06:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-11T22:21:16Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-11T22:06:14Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-11T18:25:51Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-11T17:28:12+00:00",
+       "accessed_at": "2026-11-11T22:06:14Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-11T17:28:12+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea remains paused following episode 56 fountaining on November 5. The summit is reinflating and the episode 57 forecast window is November 16-21."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-11T22:06:14Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T21:09:11Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+       "accessed_at": "2026-11-11T22:06:14Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava likely continues; moving to Weekly Updates only"
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-11T22:06:14Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-11T22:06:14Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-12T23:22:46Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   },
+   "blackout": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-12T23:06:04Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-12T18:32:28Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-12T17:56:34+00:00",
+       "accessed_at": "2026-11-12T23:06:04Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-12T17:56:34+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea remains paused following episode 56 fountaining on November 5. The summit is reinflating and the episode 57 forecast window is November 16-21."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-12T23:06:04Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T21:09:11Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+       "accessed_at": "2026-11-12T23:06:04Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava likely continues; moving to Weekly Updates only"
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-12T23:06:04Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-06T01:13:43Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+       "accessed_at": "2026-11-12T23:06:04Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-06T01:12:03+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - No signs of unrest in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ },
+ {
+  "generated_at": "2026-11-13T20:21:16Z",
+  "cop_programs": {
+   "watchfloor": {
+    "state": "fresh"
+   },
+   "context": {
+    "state": "fresh"
+   },
+   "vigil": {
+    "state": "fresh"
+   },
+   "noisefloor": {
+    "state": "fresh"
+   },
+   "elements": {
+    "state": "fresh"
+   },
+   "cordon": {
+    "state": "fresh"
+   },
+   "vis": {
+    "state": "fresh"
+   },
+   "blackout": {
+    "state": "fresh"
+   },
+   "headwind": {
+    "state": "fresh"
+   }
+  },
+  "features": [
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -155.287,
+      19.421
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-13T19:36:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:332010",
+     "title": "Kilauea: USGS volcano alert Advisory, aviation code Yellow (lowered from Watch/Orange)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-13T17:53:49Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-13T17:07:38+00:00",
+       "accessed_at": "2026-11-13T19:36:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-HVO-2026-11-13T17:07:38+00:00",
+     "measures": {
+      "name": "Kilauea",
+      "vnum": "332010",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "WATCH",
+      "previous_aviation_color": "ORANGE",
+      "change": "lowered",
+      "observatory": "Hawaiian Volcano Observatory",
+      "nvews_threat": "Very High Threat",
+      "synopsis": "HVO Kilauea YELLOW/ADVISORY - The Halema'uma'u eruption of Kīlauea remains paused following episode 56 fountaining on November 5. The summit is reinflating and the episode 57 forecast window is November 17-22."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      145.03,
+      20.437
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-13T19:36:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:284141",
+     "title": "Ahyi Seamount: USGS volcano alert Advisory, aviation code Yellow (previously unassigned)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-13T01:04:55Z",
+     "countries": [
+      "MP"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-13T01:03:27+00:00",
+       "accessed_at": "2026-11-13T19:36:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-NMI-2026-11-13T01:03:27+00:00",
+     "measures": {
+      "name": "Ahyi Seamount",
+      "vnum": "284141",
+      "alert_level": "ADVISORY",
+      "aviation_color": "YELLOW",
+      "previous_alert_level": "UNASSIGNED",
+      "previous_aviation_color": "UNASSIGNED",
+      "change": "raised",
+      "observatory": "USGS, Northern Mariana Islands",
+      "nvews_threat": "Very Low Threat",
+      "synopsis": "NMI Ahyi Seamount YELLOW/ADVISORY - Underwater plume detected in satellite data; no significant geophysical signals."
+     },
+     "response_stage": "usgs_volcano:advisory",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   },
+   {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      -176.1109,
+      52.0765
+     ]
+    },
+    "properties": {
+     "contract": "tic-feed/2",
+     "program": "elements",
+     "kind": "observation",
+     "status": "actual",
+     "msg_type": "new",
+     "human_review": "none",
+     "us_person_data": "none",
+     "status_class": "reported",
+     "method_version": "elements-feed-1.0",
+     "product_category": "current",
+     "published_at": "2026-11-13T19:36:08Z",
+     "precision_class": "point",
+     "ie_aspect": [
+      "physical"
+     ],
+     "pmesii_pt": [
+      "physical_environment"
+     ],
+     "ascope": [
+      "events"
+     ],
+     "id": "elements:usgs-volcano:311120",
+     "title": "Great Sitkin: USGS volcano alert Watch, aviation code Orange (raised from Advisory/Yellow)",
+     "tier": "anomaly",
+     "data_as_of": "2026-11-09T21:09:11Z",
+     "countries": [
+      "US"
+     ],
+     "requirement_ids": [
+      "EL-PIR-6"
+     ],
+     "baseline_ref": {
+      "id": "usgs-volcano-normal",
+      "type": "fixed",
+      "version": "1",
+      "window": "USGS volcano alert levels: NORMAL, ADVISORY, WATCH, WARNING (NORMAL is background)"
+     },
+     "sources": [
+      {
+       "id": "usgs-volcanoes",
+       "publisher": "USGS Volcano Hazards Program",
+       "licence": "US public domain",
+       "grade": "A1",
+       "independence_group": "usgs",
+       "source_type": "official alert",
+       "descriptor": "Volcano alert level and aviation colour code from the responsible USGS observatory",
+       "url": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+       "accessed_at": "2026-11-13T19:36:08Z"
+      }
+     ],
+     "link": "https://volcanoes.usgs.gov/hans2/view/notice/DOI-USGS-AVO-2026-11-09T20:51:49+00:00",
+     "measures": {
+      "name": "Great Sitkin",
+      "vnum": "311120",
+      "alert_level": "WATCH",
+      "aviation_color": "ORANGE",
+      "previous_alert_level": "ADVISORY",
+      "previous_aviation_color": "YELLOW",
+      "change": "raised",
+      "observatory": "Alaska Volcano Observatory",
+      "nvews_threat": "High Threat",
+      "synopsis": "AVO Great Sitkin ORANGE/WATCH - Slow eruption of lava likely continues; moving to Weekly Updates only"
+     },
+     "response_stage": "usgs_volcano:watch",
+     "cop_program": "elements",
+     "cop_stale": false,
+     "cop_strength": null,
+     "cop_strength_text": null,
+     "cop_pick": null
+    }
+   }
+  ]
+ }
+]
