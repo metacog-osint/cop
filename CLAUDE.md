@@ -57,10 +57,13 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   (Blackout lists outages by drop, largest first, then OONI by anomaly rate); the pick's reason carries no value.
   `freshness` "feed": its items keep the event's or the OONI day's time, not the run's. Own preset "Internet
   connectivity". Colour: Paul Tol's indigo `#332288` (outlines `#1E1452`, `#CBC3F5`), because the seven non-black
-  Okabe-Ito hues are taken and black at country-fill opacity looks like the stale grey. Its seven sources are in
+  Okabe-Ito hues are taken and black at country-fill opacity looks like the stale grey. Its fifteen sources are in
   `config/sources.json`: OONI `commercial_ok` false (its data licence is CC BY-NC-SA 4.0, github.com/ooni/license
-  `data/LICENSE.md`, read 12 Nov 2026), IODA and the providers "unknown" (no licence stated). Blackout's own feed
-  still says "CC BY 4.0 (IODA, OONI)" in its licence and attribution, and COP shows that text as Blackout sends it.
+  `data/LICENSE.md`, read 12 Nov 2026), IODA and the providers "unknown" (no licence stated).
+  Added 13 Nov 2026 with Blackout's new sources: Cloudflare Radar `commercial_ok` false (CC BY-NC 4.0); the
+  Microsoft 365, Cloudflare, Google Workspace, Apple, Akamai, Slack and Zoom status feeds "unknown" (Apple's
+  site terms bar republishing its content without consent; Blackout carries only facts and a link). Blackout's own feed
+  now states those licences itself (corrected 12 Nov 2026), and COP shows that text as Blackout sends it.
   `tests/fixtures/blackout.geojson`: Blackout's live feed of 23:11 UTC 12 Nov, every date moved back 12 days 4 hours.
   Blackout also publishes judgments (kind `assessment`, tier `warning`): a likely shutdown only with OONI-confirmed
   blocking in the same country (BO-H-1A), and a cable-corridor outage (BO-H-2A). They show in every view like Vis's
