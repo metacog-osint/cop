@@ -21,6 +21,7 @@ import argparse
 import gzip
 import json
 import math
+import re
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -35,16 +36,21 @@ PUBLISHED = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs; "published" stays off until Tom has reviewed the display.
-JOIN = {"id": "outage-triage", "version": "0.2", "published": False,
+JOIN = {"id": "outage-triage", "version": "0.3", "published": False,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
 NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
 LAYERS = ("elements", "cordon", "watchfloor")
-# Windows, all measured from the outage's own time (its data_as_of).
-HAZARD_BEFORE_H = 72     # a hazard that began or was still running this long before the outage can explain it
+# Windows, all measured from the outage's own time (its data_as_of). PROVISIONAL (Tom, 12 Nov 2026): first picks, not
+# validated; look at them again when the base rates are rerun on a deeper archive (about 28 Nov 2026).
+HAZARD_BEFORE_H = 72     # a hazard that BEGAN this long before the outage can explain it; one already running is
+                         # standing context (a volcano alert in Hawaii does not explain an outage in the US)
 HAZARD_AFTER_H = 6       # reports of a hazard trail the event a little
 HAZARD_NEAR_KM = 300     # a hazard with no country (an offshore earthquake) counts within this of the country
-NOTICE_RECENT_DAYS = 14  # an advisory, alert or bulletin dated this recently counts as recent
+NOTICE_RECENT_H = 48     # a notice dated this long before the outage counts; older ones are standing context
+ATTENTION_USUAL_SHARE = 0.25  # raised attention counts only where the country had it on fewer than this share of
+                              # archived days: against its own baseline, not the world's
 OONI_WINDOW_H = 72       # the Verdict question's window
+OONI_RISE_POINTS = 10    # where OONI is already over its threshold, the question asks about a rise this large
 # Elements items that are standing background, not an event that takes a network down.
 BACKGROUND = {"firms", "usdm", "nifc", "spc"}
 CONFIRMED_OUTAGE = "BO-IND-1"   # Blackout: a drop seen by more than one signal
@@ -54,10 +60,10 @@ READINGS = {
     "incomplete": "A layer has no current data, so this outage cannot be triaged yet. Silence is not quiet.",
     "unconfirmed": "Blackout calls this a single-source dip, not a confirmed outage. Context is listed, no reading.",
     "natural": "A significant natural hazard sits under this outage in place and time. A natural cause has support.",
-    "deliberate": "No significant hazard under it, and notices or press attention are raised. A deliberate cut is "
-                  "worth a call.",
-    "open": "No significant hazard, no recent notice and no raised attention. Nothing here separates an accident "
-            "from a deliberate cut.",
+    "deliberate": "No new hazard under it, and a notice was issued or raised in the two days before it, or press "
+                  "attention is above this country's own normal. A deliberate cut is worth a call.",
+    "open": "No new hazard, no fresh notice and no unusual attention. Nothing here separates an accident from a "
+            "deliberate cut.",
 }
 
 
@@ -142,9 +148,10 @@ def _interval(p):
 
 
 def hazards(features, cc, at):
-    """Elements items under the outage: in or near the country, overlapping the hazard window."""
+    """Elements items under the outage: in or near the country, overlapping the hazard window. A significant hazard
+    counts only if it began inside the window; one that began earlier and is still running is "standing"."""
     lo, hi = at - timedelta(hours=HAZARD_BEFORE_H), at + timedelta(hours=HAZARD_AFTER_H)
-    significant, minor, background = [], [], []
+    significant, standing, minor, background = [], [], [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "elements":
@@ -164,16 +171,33 @@ def hazards(features, cc, at):
         if _kind(p.get("id")) in BACKGROUND:
             background.append(row)
         elif p.get("tier") in ("anomaly", "warning"):
-            significant.append(row)
+            (significant if start >= lo else standing).append(row)
         else:
             minor.append(row)
-    return {"significant": significant, "minor": minor, "background": background}
+    return {"significant": significant, "standing": standing, "minor": minor, "background": background}
 
 
-def notices(features, cc, at):
-    """Cordon items for the country, each marked recent or standing against the outage's time."""
-    lo = at - timedelta(days=NOTICE_RECENT_DAYS)
-    recent, standing = [], []
+def _direction(item_id, dated, level, levels):
+    """raised, lowered, unchanged or unknown: an advisory's level against the one it replaced.
+
+    levels: {advisory id: [[date, level], ...]} from the archive (triage_rates.py), or None."""
+    earlier = [(d, lv) for d, lv in (levels or {}).get(item_id, []) if utc(d) and dated and utc(d) < dated]
+    if level is None or not earlier:
+        return "unknown"
+    before = max(earlier)[1]
+    if before is None:
+        return "unknown"
+    return "raised" if level > before else "lowered" if level < before else "unchanged"
+
+
+def notices(features, cc, at, levels=None):
+    """Cordon's travel and embassy notices for the country, against the outage's time.
+
+    recent: dated in the NOTICE_RECENT_H before the outage and not a lowering or a re-issue at the same level; these
+    count toward a reading. recent_not_raised: dated in the window but lowered or unchanged. standing: older.
+    after: dated after the outage. An advisory whose earlier level is not in the archive counts, marked "unknown"."""
+    lo = (at - timedelta(hours=NOTICE_RECENT_H)).replace(hour=0, minute=0, second=0, microsecond=0)  # dates are days
+    recent, not_raised, standing, after = [], [], [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "cordon" or cc not in (p.get("countries") or []):
@@ -182,13 +206,24 @@ def notices(features, cc, at):
             continue
         dated = utc(p.get("data_as_of"))
         m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
-        row = _row(p, kind=_kind(p.get("id")), level=m.get("level"))
-        (recent if dated and dated >= lo else standing).append(row)
-    return {"recent": recent, "standing": standing}
+        kind = _kind(p.get("id"))
+        row = _row(p, kind=kind, level=m.get("level"))
+        if kind == "advisory":
+            row["direction"] = _direction(p.get("id"), dated, m.get("level"), levels)
+        if not dated or dated < lo:
+            standing.append(row)
+        elif dated > at:
+            after.append(row)
+        elif row.get("direction") in ("lowered", "unchanged"):
+            not_raised.append(row)
+        else:
+            recent.append(row)
+    return {"recent": recent, "recent_not_raised": not_raised, "standing": standing, "after": after}
 
 
-def attention(features, cc, at):
-    """Watchfloor items naming the country, and whether that data reaches the outage's hour."""
+def attention(features, cc, at, shares=None):
+    """Watchfloor items naming the country, whether that data reaches the outage's hour, and whether raised
+    attention is unusual for this country. shares: {cc: share of archived days with raised attention}, or None."""
     raised, routine, newest = [], [], None
     for f in features:
         p = f["properties"]
@@ -200,7 +235,10 @@ def attention(features, cc, at):
         if cc not in (p.get("countries") or []):
             continue
         (raised if p.get("tier") in ("anomaly", "warning") else routine).append(_row(p, kind=_kind_wf(p.get("id"))))
+    own = None if shares is None else shares.get(cc, 0.0)
     return {"raised": raised, "routine": routine,
+            "own_rate": own,                       # None: no archive baseline was given
+            "unusual": bool(raised) and (own is None or own < ATTENTION_USUAL_SHARE),
             "data_reaches_outage": bool(newest and newest >= at),
             "newest_data": iso(newest) if newest else None}
 
@@ -221,8 +259,16 @@ def layer_state(snapshot, features, pid):
     return "stale" if all(f["properties"].get("cop_stale") for f in mine) else "fresh"
 
 
-def triage(snapshot):
-    """One record per Blackout outage in the snapshot."""
+def _rate(title):
+    m = re.search(r"(\d+(?:\.\d+)?)%", str(title))
+    return float(m.group(1)) if m else None
+
+
+def triage(snapshot, history=None):
+    """One record per Blackout outage in the snapshot. history: triage_rates.py's "history" block (each advisory's
+    earlier levels, each country's share of days with raised attention), or None when there is no archive."""
+    levels = (history or {}).get("advisory_levels")
+    shares = (history or {}).get("attention_share")
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: layer_state(snapshot, features, pid) for pid in LAYERS + ("blackout",)}
     ooni = {}
@@ -240,7 +286,8 @@ def triage(snapshot):
         for cc in p.get("countries") or []:
             if not at:
                 continue
-            haz, note, att = hazards(features, cc, at), notices(features, cc, at), attention(features, cc, at)
+            haz, note = hazards(features, cc, at), notices(features, cc, at, levels)
+            att = attention(features, cc, at, shares)
             dead = [pid for pid in LAYERS if states[pid] in ("stale", "missing")]
             confirmed = p.get("indicator_id") == CONFIRMED_OUTAGE
             if dead:
@@ -249,12 +296,41 @@ def triage(snapshot):
                 reading = "unconfirmed"
             elif haz["significant"]:
                 reading = "natural"
-            elif note["recent"] or att["raised"]:
+            elif note["recent"] or att["unusual"]:
                 reading = "deliberate"
             else:
                 reading = "open"
             until = at + timedelta(hours=OONI_WINDOW_H)
             blocked_now = cc in ooni
+            caveats = []
+            if not att["data_reaches_outage"] and "watchfloor" not in dead:
+                caveats.append(f"Watchfloor's newest data ({att['newest_data']}) ends before this outage, so it "
+                               "shows attention before the outage, not during it. Run again after its next day "
+                               "is in.")
+            if history is None:
+                caveats.append("No archive baseline was given: raised attention is counted without checking it "
+                               "against this country's own normal, and advisory levels are not compared with "
+                               "the ones they replaced. Run tools/triage_rates.py first.")
+            if any(n.get("direction") == "unknown" for n in note["recent"]):
+                caveats.append("An advisory in the window has no earlier level in the archive, so it is counted "
+                               "without knowing whether it was raised.")
+            if haz["standing"]:
+                caveats.append("A hazard that began before the window is still running in this country. It is "
+                               "listed as standing and does not make the reading natural.")
+            now_rate = _rate(ooni[cc]["title"]) if blocked_now else None
+            rise = None
+            if blocked_now and now_rate is not None:
+                target = round(now_rate + OONI_RISE_POINTS, 1)
+                rise = {
+                    "question": f"Will Blackout's OONI rate for {cc} reach {target}% or more within "
+                                f"{OONI_WINDOW_H} hours of the outage of {iso(at)}?",
+                    "rule_draft": f"Yes if a Blackout OONI reading for {cc} dated inside the window ending "
+                                  f"{iso(until)} is {target}% or more, a rise of {OONI_RISE_POINTS} points over the "
+                                  f"{now_rate}% reading at the outage. No otherwise.",
+                    "notes": ["The baseline is the reading at the outage, not a 30-day rate: COP's archive holds "
+                              "Blackout only since 12 Nov 2026.",
+                              "Blackout's OONI rate covers the past 7 days, so a one-day rise shows up damped.",
+                              f"The {OONI_RISE_POINTS}-point rise is provisional."]}
             records.append({
                 "join": JOIN["id"], "country": cc,
                 "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary")),
@@ -262,14 +338,12 @@ def triage(snapshot):
                     "elements": {"state": states["elements"], **haz,
                                  "found": bool(haz["significant"] or haz["minor"])},
                     "cordon": {"state": states["cordon"], **note, "found": bool(note["recent"])},
-                    "watchfloor": {"state": states["watchfloor"], **att, "found": bool(att["raised"])},
+                    "watchfloor": {"state": states["watchfloor"], **att, "found": bool(att["unusual"])},
                 },
                 "no_current_data": dead,
                 "ooni_now": ooni.get(cc),
                 "reading": reading, "reading_text": READINGS[reading],
-                "caveats": ([] if att["data_reaches_outage"] or "watchfloor" in dead else
-                            [f"Watchfloor's newest data ({att['newest_data']}) ends before this outage, so it shows "
-                             "attention before the outage, not during it. Run again after its next day is in."]),
+                "caveats": caveats,
                 "verdict_draft": {
                     "registered": False, "probability": None, "approved_by": None,
                     "question": f"Will OONI confirm blocking in {cc} within {OONI_WINDOW_H} hours of the outage "
@@ -278,15 +352,18 @@ def triage(snapshot):
                     "rule_draft": f"Yes if Blackout's OONI reading for {cc} is at or above its {OONI_BLOCKING} "
                                   f"threshold for a day inside the window ending {iso(until)}. No otherwise.",
                     "caution": ("OONI is already at or above the threshold here, so this question is settled "
-                                "before it is asked. Ask about a rise instead, or skip it.") if blocked_now else None,
+                                "before it is asked. Use the rise form instead, or skip it.") if blocked_now else None,
+                    "rise_form": rise,
                 },
             })
     records.sort(key=lambda r: (r["reading"] in ("incomplete", "unconfirmed"), r["outage"]["data_as_of"] or ""),
                  reverse=False)
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"), "layer_states": states,
             "windows": {"hazard_before_hours": HAZARD_BEFORE_H, "hazard_after_hours": HAZARD_AFTER_H,
-                        "hazard_near_km": HAZARD_NEAR_KM, "notice_recent_days": NOTICE_RECENT_DAYS,
-                        "ooni_window_hours": OONI_WINDOW_H},
+                        "hazard_near_km": HAZARD_NEAR_KM, "notice_recent_hours": NOTICE_RECENT_H,
+                        "attention_usual_share": ATTENTION_USUAL_SHARE, "ooni_window_hours": OONI_WINDOW_H,
+                        "ooni_rise_points": OONI_RISE_POINTS, "provisional": True},
+            "baseline_given": history is not None,
             "records": records}
 
 
@@ -298,7 +375,8 @@ def attach_rates(doc, rates):
             r["base_rate"] = None
         return doc
     b = rates["background"]
-    doc["base_rates"] = {"country_days": b["country_days"], "would_read": b["would_read"],
+    n = b["would_read_country_days"]
+    doc["base_rates"] = {"country_days": n, "would_read": b["would_read"],
                          "archive": rates["archive"], "cautions": rates["cautions"]}
     for r in doc["records"]:
         share = b["would_read"].get(r["reading"])
@@ -312,7 +390,7 @@ def attach_rates(doc, rates):
             "share_of_country_days": share,
             "share_of_this_countrys_days": here,
             "text": f"An outage would have read \"{r['reading']}\" whatever its cause on {share:.1%} of "
-                    f"{b['country_days']} country-days worldwide, and on {here:.0%} of {days} days in {r['country']}.",
+                    f"{n} country-days worldwide, and on {here:.0%} of {days} days in {r['country']}.",
             "cautions": rates["cautions"]}
     return doc
 
@@ -335,7 +413,7 @@ def main(argv=None):
     out = safe_out(a.out)
     rates_file = Path(a.rates) if a.rates else out / "base-rates.json"
     rates = json.loads(rates_file.read_text(encoding="utf-8")) if rates_file.exists() else None
-    doc = attach_rates(triage(load(a.snapshot)), rates)
+    doc = attach_rates(triage(load(a.snapshot), (rates or {}).get("history")), rates)
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     verdict = gate.write(JOIN, doc, out, (f"triage-{stamp}.json", "latest.json"))
     print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}  gate: {verdict['review_class']}")
@@ -347,6 +425,7 @@ def main(argv=None):
         print(f"    elements: {len(L['elements']['significant'])} significant, {len(L['elements']['minor'])} minor"
               f" | cordon: {len(L['cordon']['recent'])} recent, {len(L['cordon']['standing'])} standing"
               f" | watchfloor: {len(L['watchfloor']['raised'])} raised"
+              f"{' (usual here)' if L['watchfloor']['raised'] and not L['watchfloor']['unusual'] else ''}"
               f"{'' if L['watchfloor']['data_reaches_outage'] else ' (data ends before the outage)'}")
     if rates is None:
         print("no base rates: run tools/triage_rates.py first")

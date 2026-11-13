@@ -77,7 +77,7 @@ class Triage(unittest.TestCase):
         self.assertEqual(len(r["layers"]["elements"]["background"]), 1)
 
     def test_recent_notice_or_raised_attention_without_a_hazard_reads_deliberate(self):
-        alert = item("cordon", "cordon:alert:TN:abc", ["TN"], "routine", "2026-11-09T00:00:00Z")
+        alert = item("cordon", "cordon:alert:TN:abc", ["TN"], "routine", "2026-11-11T00:00:00Z")
         r = one(tri.triage(snapshot(outage(), alert)))
         self.assertEqual(r["reading"], "deliberate")
         wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
@@ -104,7 +104,7 @@ class Triage(unittest.TestCase):
             self.assertEqual(r["no_current_data"], ["elements"])
 
     def test_a_single_source_dip_gets_context_but_no_reading(self):
-        alert = item("cordon", "cordon:alert:SC:abc", ["SC"], "routine", "2026-11-09T00:00:00Z")
+        alert = item("cordon", "cordon:alert:SC:abc", ["SC"], "routine", "2026-11-11T00:00:00Z")
         r = one(tri.triage(snapshot(outage("SC", "BO-IND-4"), alert)))
         self.assertEqual(r["reading"], "unconfirmed")
         self.assertEqual(len(r["layers"]["cordon"]["recent"]), 1)
@@ -142,8 +142,8 @@ class Triage(unittest.TestCase):
     def test_background_counts_each_signal_once_per_country_day(self):
         day1 = snapshot(
             item("elements", "elements:gdacs:TC-1", ["TN"], "anomaly", "2026-11-12T20:00:00Z"),
-            item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-10T00:00:00Z"),   # hazard wins in TN
-            item("cordon", "cordon:alert:DZ:a", ["DZ"], "routine", "2026-11-10T00:00:00Z"),
+            item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-12T00:00:00Z"),   # hazard wins in TN
+            item("cordon", "cordon:alert:DZ:a", ["DZ"], "routine", "2026-11-12T00:00:00Z"),
             item("cordon", "cordon:advisory:FR", ["FR"], "routine", "2026-01-01T00:00:00Z"),  # standing: no signal
             item("watchfloor", "watchfloor:2026-11-12:country:AG:attention", ["DZ"], "anomaly",
                  "2026-11-12T23:59:59Z"),
@@ -152,8 +152,10 @@ class Triage(unittest.TestCase):
         n = len(rates.all_countries())
         d = doc["background"]["days"][0]
         self.assertEqual((d["hazard"], d["recent_notice"], d["raised_attention"]), (1, 2, 3))
-        self.assertEqual(d["would_read"], {"natural": 1, "deliberate": 3, "open": n - 4})
+        self.assertEqual(d["unusual_attention"], 0, "raised on the only archived day is this country's normal")
+        self.assertEqual(d["would_read"], {"natural": 1, "deliberate": 1, "open": n - 2})
         self.assertEqual(doc["background"]["country_days"], n)
+        self.assertEqual(doc["background"]["would_read_country_days"], n)
         self.assertEqual(d["recent_notice_kinds"], {"alert": 2})
         self.assertEqual(len(doc["cautions"]), 2, "one day and no outages: both cautions")
         by = doc["background"]["by_country"]
@@ -187,6 +189,93 @@ class Triage(unittest.TestCase):
         self.assertTrue(by["TN"]["base_rate"]["cautions"])
         self.assertIsNone(by["SC"]["base_rate"], "no reading was given, so there is no rate to quote")
         self.assertIsNone(tri.attach_rates(tri.triage(snapshot(outage())), None)["records"][0]["base_rate"])
+
+    def test_a_hazard_that_began_before_the_window_is_standing_not_natural(self):
+        volcano = item("elements", "elements:usgs-volcano:kilauea", ["TN"], "anomaly", "2026-11-11T12:00:00Z",
+                       measures={"from": "2026-10-01T00:00:00Z", "to": "2026-11-20T00:00:00Z"})
+        r = one(tri.triage(snapshot(outage(), volcano)))
+        self.assertEqual(r["reading"], "open")
+        self.assertEqual(r["layers"]["elements"]["significant"], [])
+        self.assertEqual(r["layers"]["elements"]["standing"][0]["id"], "elements:usgs-volcano:kilauea")
+        self.assertTrue(any("standing" in c for c in r["caveats"]))
+
+    def test_a_notice_older_than_two_days_or_dated_after_the_outage_does_not_count(self):
+        old = item("cordon", "cordon:alert:TN:old", ["TN"], "routine", "2026-11-07T00:00:00Z")
+        later = item("cordon", "cordon:alert:TN:later", ["TN"], "routine", "2026-11-12T09:00:00Z")
+        r = one(tri.triage(snapshot(outage(), old, later)))
+        self.assertEqual(r["reading"], "open")
+        c = r["layers"]["cordon"]
+        self.assertEqual(([x["id"] for x in c["standing"]], [x["id"] for x in c["after"]], c["recent"]),
+                         (["cordon:alert:TN:old"], ["cordon:alert:TN:later"], []))
+
+    def test_an_advisory_counts_when_raised_and_not_when_lowered_or_reissued(self):
+        adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-11T00:00:00Z", measures={"level": 3})
+        for before, direction, reading, bucket in ((2, "raised", "deliberate", "recent"),
+                                                   (4, "lowered", "open", "recent_not_raised"),
+                                                   (3, "unchanged", "open", "recent_not_raised")):
+            hist = {"advisory_levels": {"cordon:advisory:TN": [["2026-05-01T00:00:00Z", before],
+                                                               ["2026-11-11T00:00:00Z", 3]]},
+                    "attention_share": {}}
+            r = one(tri.triage(snapshot(outage(), adv), hist))
+            self.assertEqual(r["reading"], reading, direction)
+            self.assertEqual(r["layers"]["cordon"][bucket][0]["direction"], direction)
+
+    def test_an_advisory_with_no_earlier_level_counts_and_says_so(self):
+        adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-11T00:00:00Z", measures={"level": 3})
+        hist = {"advisory_levels": {"cordon:advisory:TN": [["2026-11-11T00:00:00Z", 3]]}, "attention_share": {}}
+        r = one(tri.triage(snapshot(outage(), adv), hist))
+        self.assertEqual(r["reading"], "deliberate")
+        self.assertEqual(r["layers"]["cordon"]["recent"][0]["direction"], "unknown")
+        self.assertTrue(any("no earlier level" in c for c in r["caveats"]))
+
+    def test_raised_attention_counts_only_where_it_is_unusual_for_the_country(self):
+        wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
+                  "2026-11-11T23:59:59Z")
+        usual = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.9}}))
+        self.assertEqual(usual["reading"], "open")
+        self.assertEqual((len(usual["layers"]["watchfloor"]["raised"]), usual["layers"]["watchfloor"]["unusual"]),
+                         (1, False))
+        rare = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.1}}))
+        self.assertEqual(rare["reading"], "deliberate")
+        never = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {}}))
+        self.assertEqual(never["reading"], "deliberate", "a country never raised in the archive: raised is unusual")
+
+    def test_without_an_archive_baseline_the_record_says_so(self):
+        r = one(tri.triage(snapshot(outage())))
+        self.assertTrue(any("No archive baseline" in c for c in r["caveats"]))
+        r = one(tri.triage(snapshot(outage()), {"advisory_levels": {}, "attention_share": {}}))
+        self.assertFalse(any("No archive baseline" in c for c in r["caveats"]))
+
+    def test_ooni_over_the_threshold_gets_a_rise_question(self):
+        ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3",
+                    title="Iran: 37.0% OONI censorship anomaly rate")
+        v = one(tri.triage(snapshot(outage("IR"), ooni)))["verdict_draft"]
+        self.assertIn("47.0%", v["rise_form"]["question"])
+        self.assertIn("37.0%", v["rise_form"]["rule_draft"])
+        self.assertIsNone(v["probability"])
+        self.assertIsNone(one(tri.triage(snapshot(outage())))["verdict_draft"]["rise_form"])
+
+    def test_history_keeps_each_advisory_level_and_each_countrys_attention_share(self):
+        a = snapshot(item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z",
+                          measures={"level": 2}),
+                     item("watchfloor", "watchfloor:2026-11-12:zone:x", ["LY"], "anomaly", "2026-11-12T23:59:59Z"))
+        b = snapshot(item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-13T00:00:00Z",
+                          measures={"level": 3}),
+                     item("watchfloor", "watchfloor:2026-11-13:summary", [], "routine", "2026-11-13T23:59:59Z"))
+        b["generated_at"] = "2026-11-14T00:21:12Z"
+        h = rates.history([a, b])
+        self.assertEqual(h["advisory_levels"]["cordon:advisory:TN"],
+                         [["2026-05-01T00:00:00Z", 2], ["2026-11-13T00:00:00Z", 3]])
+        self.assertEqual((h["attention_days"], h["attention_share"]), (2, {"LY": 0.5}))
+
+    def test_days_before_cordons_notices_changed_do_not_count_toward_readings(self):
+        early = snapshot()
+        early["generated_at"] = "2026-11-05T00:21:12Z"
+        doc = rates.rates([early, snapshot()])
+        n = len(rates.all_countries())
+        self.assertEqual(doc["background"]["country_days"], 2 * n)
+        self.assertEqual(doc["background"]["would_read_country_days"], n)
+        self.assertEqual(doc["archive"]["days_counted_for_readings"], 1)
 
     def test_the_build_and_the_page_do_not_know_about_it(self):
         for rel in ("tools/snapshot.py", "tools/agent_index.py", "site/cop.js"):

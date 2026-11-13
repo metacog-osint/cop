@@ -26,7 +26,16 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   declares and every item it cites is on the gate's open list; Noisefloor, Vis and Cordon's navwarn and czib kinds are
   military context, and any layer or kind not listed is held too. Held joins write only under `out/held/` and have no
   switch that publishes them. `python tools/gate.py --check` runs before the deploy. A new program or item kind must be
-  added to one of the two lists there (a test fails until it is).
+  added to one of the two lists there (a test fails until it is). Tom confirmed both lists on 12 Nov 2026.
+  **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
+  gets a dated line in `[local path]` saying what was released and to whom. Claude never copies a
+  file out of `out/held/`, and no code path may be added that does.
+- **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; not published, not run by the build):** rules approved by
+  Tom on 12 Nov 2026: a hazard counts only if it began in the 72 hours before the outage; a notice counts only if
+  dated in the 48 hours before it and not lowered or re-issued at the same level; raised attention counts only where
+  the country had it on under 25% of archived days. The windows are provisional. Rerun `triage_rates.py` about 28 Nov
+  2026, when the archive holds 28 days, and look at the windows then. Watchfloor lags a day, so run triage a second
+  time the day after an outage (by hand until step 5).
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
