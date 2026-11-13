@@ -53,7 +53,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, and from 12 Nov 2026 Blackout; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, and from 13 Nov 2026 Headwind; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -98,6 +98,20 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   blocking in the same country (BO-H-1A), and a cable-corridor outage (BO-H-2A). They show in every view like Vis's
   warnings; the card says "Judgment: a probability, not a measurement" and "Warning: Blackout's judgment", and the MCP
   instructions say the same. None was live on 12 Nov, so the fixture has none.
+- **Headwind** (13 Nov 2026, kit 0.4.6, which sets its registry entry live with its feed's own licence line):
+  currencies, energy and food prices against their own range, sanctions and screening-list changes, and BIS and
+  OFAC rules. Currency, local-food and country-tagged rule items are country-level points, drawn as rings at the
+  country's label point (`country_mark` "halo"; a routine reading exists for about forty countries at once, so
+  fills would shade half the map). Energy, FAO index and list-change items have `geometry: null` and list under
+  Off the map. Nearly every item is tier `routine`, so `routine_in_preset` shows them under its own preset,
+  "Economic stress" (`routine_label` "reading for every series"). Its `measures.z` is signed and `strength`
+  compares raw values, so it has no `strength` rules; its pick would be its feed's first placed anomaly. Give
+  `strength` an absolute-value option before ranking its anomalies by size. `freshness` "feed": its items carry
+  market dates and the ECB publishes on business days only. Colour: Paul Tol's wine `#882255` (outlines
+  `#4A0F2C`, `#F2BFD6`). Eight sources in `config/sources.json`, licences as Headwind's notes record them: the UN
+  list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
+  On the gate's open list (`tools/gate.py`), pending Tom's confirmation; no join reads it yet.
+  `tests/fixtures/headwind.geojson`: its live feed of 16:28 UTC 13 Nov, every timestamp moved back 12 days 21 hours.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's

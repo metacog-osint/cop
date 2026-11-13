@@ -36,6 +36,7 @@ OPEN = {
     "watchfloor": None,                            # press attention
     "context": None,                               # press framing
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
+    "headwind": None,                              # prices against their own range, sanctions-list and rule changes
     "cordon": {"advisory", "alert", "posture"},    # travel advisories, embassy alerts, embassy operating status
 }
 MILITARY = {
