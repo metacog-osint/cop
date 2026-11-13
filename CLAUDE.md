@@ -125,9 +125,9 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   Okabe-Ito hues already in use. Two sources in `config/sources.json`, licences as Orbit's
   `doctrine/sources.json` records them: GCAT (CC BY 4.0, cited as "Data from GCAT (J. McDowell,
   planet4589.org/space/gcat)") `commercial_ok` true; Launch Library 2 (no data licence stated; credited, images
-  not used) "unknown". **On the gate's MILITARY list** (`tools/gate.py`), pending Tom's confirmation: its launches
-  and schedules include national-security payloads (NRO, US Space Force, PLA) at named sites and times. No join
-  reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
+  not used) "unknown". **On the gate's open list** (`tools/gate.py`; Tom, 13 Nov 2026, after it was first held
+  because its launches include national-security payloads at named sites and times, all publicly announced).
+  No join reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
   scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
