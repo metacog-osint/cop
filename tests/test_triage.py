@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import snapshot as snap  # noqa: E402
 import triage as tri  # noqa: E402
+import triage_rates as rates  # noqa: E402
 
 AT = "2026-11-12T00:25:00Z"
 
@@ -137,6 +138,55 @@ class Triage(unittest.TestCase):
         with self.assertRaises(SystemExit):
             tri.safe_out(ROOT / "site")
         self.assertEqual(tri.safe_out(ROOT / "out" / "triage"), (ROOT / "out" / "triage").resolve())
+
+    def test_background_counts_each_signal_once_per_country_day(self):
+        day1 = snapshot(
+            item("elements", "elements:gdacs:TC-1", ["TN"], "anomaly", "2026-11-12T20:00:00Z"),
+            item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-10T00:00:00Z"),   # hazard wins in TN
+            item("cordon", "cordon:alert:DZ:a", ["DZ"], "routine", "2026-11-10T00:00:00Z"),
+            item("cordon", "cordon:advisory:FR", ["FR"], "routine", "2026-01-01T00:00:00Z"),  # standing: no signal
+            item("watchfloor", "watchfloor:2026-11-12:country:AG:attention", ["DZ"], "anomaly",
+                 "2026-11-12T23:59:59Z"),
+            item("watchfloor", "watchfloor:2026-11-12:zone:x", ["LY", "EG"], "anomaly", "2026-11-12T23:59:59Z"))
+        doc = rates.rates([day1])
+        n = len(rates.all_countries())
+        d = doc["background"]["days"][0]
+        self.assertEqual((d["hazard"], d["recent_notice"], d["raised_attention"]), (1, 2, 3))
+        self.assertEqual(d["would_read"], {"natural": 1, "deliberate": 3, "open": n - 4})
+        self.assertEqual(doc["background"]["country_days"], n)
+        self.assertEqual(d["recent_notice_kinds"], {"alert": 2})
+        self.assertEqual(len(doc["cautions"]), 2, "one day and no outages: both cautions")
+        by = doc["background"]["by_country"]
+        self.assertEqual(by["TN"], {"deliberate": 0.0, "natural": 1.0, "open": 0.0})
+        self.assertEqual(by["DZ"]["deliberate"], 1.0)
+        self.assertNotIn("FR", by, "a country that only ever read open is not listed")
+        self.assertNotIn("_natural", d)
+
+    def test_a_day_with_a_layer_down_is_left_out_of_the_rates(self):
+        good = snapshot()
+        bad = snapshot(states={"cordon": "stale"})
+        bad["generated_at"] = "2026-11-14T00:21:12Z"
+        doc = rates.rates([good, bad])
+        self.assertEqual(len(doc["background"]["days"]), 1)
+        self.assertEqual(doc["archive"]["days_left_out_layer_down"], ["2026-11-14"])
+
+    def test_replay_counts_an_outage_once_with_its_newest_reading(self):
+        first = snapshot(outage())
+        second = snapshot(outage(), item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-11T00:00:00Z"))
+        second["generated_at"] = "2026-11-14T00:21:12Z"
+        doc = rates.rates([second, first])
+        self.assertEqual(doc["replay"]["outages"], 1)
+        self.assertEqual(doc["replay"]["by_reading"], {"deliberate": 1})
+
+    def test_every_reading_with_a_rate_carries_it_and_its_cautions(self):
+        base = rates.rates([snapshot()])
+        doc = tri.attach_rates(tri.triage(snapshot(outage(), outage("SC", "BO-IND-4"))), base)
+        by = {r["country"]: r for r in doc["records"]}
+        self.assertEqual(by["TN"]["base_rate"]["share_of_country_days"], 1.0)
+        self.assertEqual(by["TN"]["base_rate"]["share_of_this_countrys_days"], 1.0)
+        self.assertTrue(by["TN"]["base_rate"]["cautions"])
+        self.assertIsNone(by["SC"]["base_rate"], "no reading was given, so there is no rate to quote")
+        self.assertIsNone(tri.attach_rates(tri.triage(snapshot(outage())), None)["records"][0]["base_rate"])
 
     def test_the_build_and_the_page_do_not_know_about_it(self):
         for rel in ("tools/snapshot.py", "tools/agent_index.py", ".github/workflows/build.yml", "site/cop.js"):

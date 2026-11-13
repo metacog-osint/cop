@@ -280,6 +280,33 @@ def triage(snapshot):
             "records": records}
 
 
+def attach_rates(doc, rates):
+    """Put the background rate beside every reading that has one. rates: triage_rates.py's document, or None."""
+    if not rates:
+        doc["base_rates"] = None
+        for r in doc["records"]:
+            r["base_rate"] = None
+        return doc
+    b = rates["background"]
+    doc["base_rates"] = {"country_days": b["country_days"], "would_read": b["would_read"],
+                         "archive": rates["archive"], "cautions": rates["cautions"]}
+    for r in doc["records"]:
+        share = b["would_read"].get(r["reading"])
+        if share is None:
+            r["base_rate"] = None
+            continue
+        days = b.get("by_country_days") or 0
+        own = (b.get("by_country") or {}).get(r["country"], {"natural": 0.0, "deliberate": 0.0, "open": 1.0})
+        here = own.get(r["reading"])
+        r["base_rate"] = {
+            "share_of_country_days": share,
+            "share_of_this_countrys_days": here,
+            "text": f"An outage would have read \"{r['reading']}\" whatever its cause on {share:.1%} of "
+                    f"{b['country_days']} country-days worldwide, and on {here:.0%} of {days} days in {r['country']}.",
+            "cautions": rates["cautions"]}
+    return doc
+
+
 def safe_out(path):
     """The output folder, refused if it sits inside site/ (which the build deploys)."""
     out = Path(path).resolve()
@@ -293,9 +320,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--snapshot", default=PUBLISHED, help="snapshot URL, .geojson file or .geojson.gz archive copy")
     ap.add_argument("--out", default=str(ROOT / "out" / "triage"))
+    ap.add_argument("--rates", default=None, help="base-rates.json from triage_rates.py (default: <out>/base-rates.json)")
     a = ap.parse_args(argv)
     out = safe_out(a.out)
-    doc = triage(load(a.snapshot))
+    rates_file = Path(a.rates) if a.rates else out / "base-rates.json"
+    rates = json.loads(rates_file.read_text(encoding="utf-8")) if rates_file.exists() else None
+    doc = attach_rates(triage(load(a.snapshot)), rates)
     out.mkdir(parents=True, exist_ok=True)
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     for name in (f"triage-{stamp}.json", "latest.json"):
@@ -304,10 +334,14 @@ def main(argv=None):
     for r in doc["records"]:
         L = r["layers"]
         print(f"{r['country']}  {r['reading']:<11} {r['outage']['title']}")
+        if r["base_rate"]:
+            print(f"    base rate: {r['base_rate']['text']}")
         print(f"    elements: {len(L['elements']['significant'])} significant, {len(L['elements']['minor'])} minor"
               f" | cordon: {len(L['cordon']['recent'])} recent, {len(L['cordon']['standing'])} standing"
               f" | watchfloor: {len(L['watchfloor']['raised'])} raised"
               f"{'' if L['watchfloor']['data_reaches_outage'] else ' (data ends before the outage)'}")
+    if rates is None:
+        print("no base rates: run tools/triage_rates.py first")
     if not doc["records"]:
         print("no Blackout outages in this snapshot")
     print(f"wrote {out / 'latest.json'}")
