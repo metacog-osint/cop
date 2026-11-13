@@ -37,6 +37,7 @@ OPEN = {
     "context": None,                               # press framing
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
     "headwind": None,                              # prices against their own range, sanctions-list and rule changes
+    "orbit": None,                                 # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026)
     "cordon": {"advisory", "alert", "posture"},    # travel advisories, embassy alerts, embassy operating status
 }
 MILITARY = {
@@ -44,9 +45,6 @@ MILITARY = {
     "vis": (None, "operational weather and night light in conflict zones: when forces can fly or move"),
     "cordon": ({"navwarn", "czib"}, "navigation warnings and conflict-zone airspace bulletins: firing areas, "
                                     "exercises and threats to aircraft"),
-    # Orbit (13 Nov 2026), held pending Tom's confirmation: no join reads it yet.
-    "orbit": (None, "orbital launches and schedules include national-security payloads (NRO, US Space Force, PLA) "
-                    "at named sites and times"),
 }
 
 _ITEM_ID = re.compile(r"^([a-z]+)(?:[:\-]([^:]*))?")
