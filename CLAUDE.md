@@ -55,8 +55,10 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   and `#FFF8B8`. The MCP instructions say Vis's items are forecasts; `search_items` lists warnings first, so Vis's
   Amber and Red lead an unfiltered search. Its three sources are in `config/sources.json` (Open-Meteo:
   `commercial_ok` false, free API is non-commercial only).
-- **Blackout** (12 Nov 2026, kit 0.4.3): internet outages (IODA, by country and on five watched ASNs), OONI
-  censorship rates and cloud and satellite providers' own status reports. Outage and OONI items are country-level
+- **Blackout** (12 Nov 2026, kit 0.4.3; kit 0.4.4 on 13 Nov 2026 brought its registry entry up to date with
+  Cloudflare Radar and eleven status feeds, and put Radar's CC BY-NC 4.0 in its `terms`): internet outages (IODA,
+  by country and on five watched ASNs; Cloudflare Radar's annotated outages and verified anomalies), OONI
+  censorship rates and cloud, software and satellite providers' own status reports. Outage and OONI items are country-level
   points, so `country_mark` "fill" shades the country; provider items have `geometry: null` and list under Off the
   map. Its items carry no `measures`, so it has no `strength` rules and its pick is its feed's first placed anomaly
   (Blackout lists outages by drop, largest first, then OONI by anomaly rate); the pick's reason carries no value.
