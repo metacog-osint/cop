@@ -53,7 +53,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, and from 13 Nov 2026 Headwind; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -112,6 +112,23 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
   On the gate's open list (`tools/gate.py`), pending Tom's confirmation; no join reads it yet.
   `tests/fixtures/headwind.geojson`: its live feed of 16:28 UTC 13 Nov, every timestamp moved back 12 days 21 hours.
+- **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
+  the launch site (GCAT site coordinates, precision `approximate`), scheduled launches at the pad (Launch Library
+  2), one reentry summary and catalog-change items (new entries, owner changes), the last two with `geometry:
+  null`, listed under Off the map. Describe it from what is live: no manoeuvres or counterspace events yet.
+  Every item is kind `observation`, tier `routine`, `us_person_data: organizations`, so it has no `strength` rules
+  and makes no picks; `routine_in_preset` shows its items under "Spectrum and space", the preset it shares with
+  Noisefloor (its registry family), and `routine_label` names them. `freshness` "feed": a launch item keeps the
+  launch time and a scheduled launch keeps Launch Library 2's last update, which can be months old. Registry
+  windows 24 h fresh and 72 h stale, as Headwind's: it runs every 6 h at :41 UTC and GitHub often fires late.
+  Colour: Paul Tol's olive `#999933` (outlines `#4D4D19`, `#E6E6B3`); his remaining hues sit too close to
+  Okabe-Ito hues already in use. Two sources in `config/sources.json`, licences as Orbit's
+  `doctrine/sources.json` records them: GCAT (CC BY 4.0, cited as "Data from GCAT (J. McDowell,
+  planet4589.org/space/gcat)") `commercial_ok` true; Launch Library 2 (no data licence stated; credited, images
+  not used) "unknown". **On the gate's MILITARY list** (`tools/gate.py`), pending Tom's confirmation: its launches
+  and schedules include national-security payloads (NRO, US Space Force, PLA) at named sites and times. No join
+  reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
+  scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
