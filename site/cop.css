@@ -147,6 +147,7 @@ button.tri-item { cursor: pointer; }
 .legend .lg { display: flex; align-items: center; gap: 7px; color: var(--body); }
 .legend .swatch-dash { width: 16px; height: 0; border-top: 2px dashed var(--mut); }
 .legend .swatch-ring { width: 13px; height: 13px; border-radius: 50%; border: 2.5px solid var(--mut); flex: none; }
+.legend .swatch-line { width: 16px; height: 0; border-top: 3px solid var(--mut); border-radius: 2px; }
 
 /* numbered pick pins (HTML markers) */
 .pin { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--panel); background: var(--ink); color: var(--panel);

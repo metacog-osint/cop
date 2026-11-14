@@ -54,14 +54,33 @@ def day(s):
     return f"{dt.day} {dt:%b}"
 
 
+def _positions_of(geom):
+    """The positions placeOf boxes: a polygon's outer ring, the first polygon of a multipolygon, every position of a
+    line or multipoint, the first part of a collection."""
+    t, c = geom.get("type"), geom.get("coordinates")
+    if t == "Point":
+        return [c]
+    if t in ("MultiPoint", "LineString"):
+        return c or []
+    if t == "Polygon":
+        return c[0] if c else []
+    if t == "MultiPolygon":
+        return c[0][0] if c and c[0] else []
+    if t == "MultiLineString":
+        return [p for line in c or [] for p in line]
+    if t == "GeometryCollection":
+        parts = geom.get("geometries") or []
+        return _positions_of(parts[0]) if parts else []
+    return []
+
+
 def place_of(geom):
-    """Same rule as cop.js placeOf: a point, or the middle of a polygon's outer ring's box."""
+    """Same rule as cop.js placeOf: a point, or the middle of the box around the shape's positions."""
     if not geom:
         return None
     if geom["type"] == "Point":
         return geom["coordinates"][:2]
-    ring = (geom["coordinates"][0] if geom["type"] == "Polygon"
-            else geom["coordinates"][0][0] if geom["type"] == "MultiPolygon" else None)
+    ring = _positions_of(geom)
     if not ring:
         return None
     xs, ys = [p[0] for p in ring], [p[1] for p in ring]

@@ -159,6 +159,18 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
   world tiles are ~1.5 MB each), OpenFreeMap positron or dark above it; if OpenFreeMap fails, the land carries every
   zoom and a note says so. Times through the hub's `shared/tic-time.js` (copy, keep the version line).
+- **Geometry types on the map** (13 Nov 2026, for Cordon's NGA warnings drawn in the shape their words give):
+  Point/MultiPoint (`points`, `halos`), Polygon/MultiPolygon (`cells-*`, `areas-line`) and, since this change,
+  LineString/MultiLineString: `lines-casing` (outline colour, for contrast) under `lines` (the program's fill
+  colour; a claim keeps only the fill colour), always solid whatever `area_style` says, plus an invisible 14 px
+  `lines-hit` layer that takes clicks and hover. All three use `baseFilter()`. A GeometryCollection (a warning
+  with both an area and a trackline) is split into one map feature per part at load (`parts` in `cop.js`), each
+  carrying the item's id, because MapLibre filters by the part's type. Shapes that cross 180 degrees carry
+  longitudes past +-180 (Cordon keeps them continuous); MapLibre draws them as given. `placeOf` (and `card.py`
+  `place_of`, same rule) puts a non-point item at the middle of the box around its positions; `three_signal.py`
+  `_points` reads every vertex of a MultiLineString and every part of a collection. Checked 13 Nov 2026 on a test
+  snapshot built from Cordon's then-uncommitted shapes (24 lines and one real collection, HYDROLANT 682/2024, plus
+  a made-up collection across 180 degrees): drawn, clickable, hidden by the presets that hide Cordon's routine items.
 - **CSP** in `site/_headers` (Cloudflare Pages format): self only, plus `tiles.openfreemap.org` for connect and
   images; `worker-src 'self' blob:` (MapLibre's module worker). No inline styles or scripts; colours come from config
   through MapLibre paint or the CSSOM.
@@ -213,7 +225,7 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --publish site/data`. Tests: `python tests/test_triage.py` (35),
-  `test_triage_us_power.py` (24), `test_gate.py` (21), `test_three_signal.py` (19).
+  `test_triage_us_power.py` (24), `test_gate.py` (21), `test_three_signal.py` (20).
 - `python tests/test_agent_index.py` (every item once in the index and its shard, no field lost, row size, registry
   order, Verdict's last-copy rule, nothing from `config/sources.json`).
 - `npm ci --ignore-scripts`, then `npm test` (`node --test "mcp/*.test.js"`; builds its data from the fixtures with

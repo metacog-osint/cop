@@ -74,11 +74,15 @@ def _points(geometry):
     if not isinstance(geometry, dict):
         return []
     t, c = geometry.get("type"), geometry.get("coordinates")
+    if t == "GeometryCollection":  # an NGA warning with both an area and a trackline
+        return [p for g in geometry.get("geometries") or [] for p in _points(g)]
     try:
         if t == "Point":
             return [c[:2]]
         if t in ("MultiPoint", "LineString"):
             return [p[:2] for p in c]
+        if t == "MultiLineString":  # tracklines: every vertex counts, no centre
+            return [p[:2] for line in c for p in line]
         if t == "Polygon":
             ring = [p[:2] for p in c[0]]
         elif t == "MultiPolygon":

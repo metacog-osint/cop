@@ -167,6 +167,19 @@ class ThreeSignal(unittest.TestCase):
         self.assertEqual(got["days_by_reading"]["incomplete"], 1)
 
 
+    def test_tracklines_and_collections_are_placed_by_every_vertex(self):
+        # Cordon draws NGA tracklines as lines, and a warning with an area and a trackline as a collection.
+        multi = {"type": "MultiLineString", "coordinates": [[[56, 26], [57, 26.5]], [[58, 25], [59, 24]]]}
+        self.assertEqual(ts._points(multi), [[56, 26], [57, 26.5], [58, 25], [59, 24]])
+        area = {"type": "Polygon", "coordinates": [[[0, 0], [2, 0], [2, 2], [0, 0]]]}
+        line = {"type": "LineString", "coordinates": [[177.0, 53.0], [180.5, 53.5], [184.0, 54.0]]}
+        gc = {"type": "GeometryCollection", "geometries": [area, line]}
+        self.assertEqual(ts._points(gc), ts._points(area) + ts._points(line))
+        self.assertEqual(ts._points({"type": "GeometryCollection", "geometries": []}), [])
+        # Longitudes past 180 (kept continuous across the antimeridian) still measure the short way round.
+        self.assertLess(ts.km_to_area(line, {"center": [-176.0, 54.0]}), 1)
+
+
 class Held(unittest.TestCase):
     def test_the_gate_holds_this_join_and_its_output(self):
         doc = ts.read(snapshot(jam(), navwarn(), outage(), vis()))
