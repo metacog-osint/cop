@@ -68,6 +68,19 @@ class Build(unittest.TestCase):
             self.assertTrue(h["attribution"], pid)
         self.assertEqual(len(today["features"]), sum(health_of(health, p)["items"] for p in IDS))
 
+    def test_strength_can_rank_a_signed_measure_by_its_size(self):
+        rules = [{"path": "measures.z", "abs": True, "label": "z-score {v} against its own range"}]
+        fall, rise = {"measures": {"z": -3.1}}, {"measures": {"z": 2.4}}
+        self.assertEqual(snap.strength(fall, rules), (-3.1, rules[0]["label"], 0, 3.1))
+        self.assertGreater(snap.strength(fall, rules)[3], snap.strength(rise, rules)[3])
+        plain = [{"path": "measures.z", "label": "{v}"}]
+        self.assertLess(snap.strength(fall, plain)[3], snap.strength(rise, plain)[3], "without abs a fall ranks low")
+        self.assertEqual(snap.strength({}, rules), (None, None, None, None))
+
+    def test_headwind_ranks_its_anomalies_by_the_size_of_z(self):
+        hw = next(p for p in snap.CONFIG["programs"] if p["id"] == "headwind")
+        self.assertEqual([(r["path"], r.get("abs")) for r in hw["strength"]], [("measures.z", True)])
+
     def test_picks_rule(self):
         today, picks, _, _ = build()
         ps = picks["picks"]

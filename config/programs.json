@@ -75,7 +75,7 @@
       "freshness": "feed",
       "mark": "halos", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
       "routine_label": "reading for every series",
-      "strength": [],
+      "strength": [{"path": "measures.z", "abs": true, "label": "z-score {v} against its own range"}],
       "color": { "fill": "#882255", "outline_light": "#4A0F2C", "outline_dark": "#F2BFD6" }
     },
     {

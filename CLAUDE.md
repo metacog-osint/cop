@@ -151,9 +151,11 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   country's label point (`country_mark` "halo"; a routine reading exists for about forty countries at once, so
   fills would shade half the map). Energy, FAO index and list-change items have `geometry: null` and list under
   Off the map. Nearly every item is tier `routine`, so `routine_in_preset` shows them under its own preset,
-  "Economic stress" (`routine_label` "reading for every series"). Its `measures.z` is signed and `strength`
-  compares raw values, so it has no `strength` rules; its pick would be its feed's first placed anomaly. Give
-  `strength` an absolute-value option before ranking its anomalies by size. `freshness` "feed": its items carry
+  "Economic stress" (`routine_label` "reading for every series"). Its `measures.z` is signed, so its one
+  `strength` rule has `"abs": true` (14 Nov 2026): its anomalies rank by the size of z, a fall as high as a rise of
+  the same size, and the pick's reason shows the signed value ("z-score -3.1 against its own range"). Any rule can
+  take `abs`. No Headwind anomaly was live or in the fixture when this was built (60 routine items), so it is tested
+  on the function only. `freshness` "feed": its items carry
   market dates and the ECB publishes on business days only. Colour: Paul Tol's wine `#882255` (outlines
   `#4A0F2C`, `#F2BFD6`). Eight sources in `config/sources.json`, licences as Headwind's notes record them: the UN
   list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
