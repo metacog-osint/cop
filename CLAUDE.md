@@ -224,8 +224,19 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - `python tests/test_snapshot.py` (plain script; picks rule, dead feeds, contract validity, 3:1 outline contrast on
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
-  --snapshot site/data/today.geojson --publish site/data`. Tests: `python tests/test_triage.py` (35),
-  `test_triage_us_power.py` (24), `test_gate.py` (21), `test_three_signal.py` (20).
+  --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
+  tests/test_triage.py` (35), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_gate.py` (21),
+  `test_three_signal.py` (20).
+- **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
+  with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
+  `tic-history/1`) and serves the items that ended in the last 7 days at `data/ended.geojson`. `snapshot.py` fetches
+  each program's `ended` URL (`config/programs.json`; Elements only so far) to `out/ended/<program>.geojson`, not
+  published and not drawn, and with `--archive` keeps `<day>.<program>-ended.json.gz` beside the day's snapshot (the
+  build uploads both). `triage.py --ended` adds those items to the hazard window (`with_ended`: never twice, marked
+  `cop_ended`; rows carry `ended_at`; the record's `ended_items` gives the list's state, and a missing or old list
+  is a caveat); `triage_rates.py` reads each day's list when the archive has it. Measured 1-14 Nov 2026 from
+  Elements' own git history: the live feed alone still held a power-line warning in 19% of the state-times when one
+  had begun in the 72-hour window, so base rates from days without the list run low and say so.
 - `python tests/test_agent_index.py` (every item once in the index and its shard, no field lost, row size, registry
   order, Verdict's last-copy rule, nothing from `config/sources.json`).
 - `npm ci --ignore-scripts`, then `npm test` (`node --test "mcp/*.test.js"`; builds its data from the fixtures with

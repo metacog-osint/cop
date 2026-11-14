@@ -255,13 +255,16 @@ export function outageTriage(index, triage, args, now) {
       "ODIN's reporting utilities, us_state names the state): they are read against hazards in or near that state, " +
       "Cordon and Watchfloor answer \"Not covered\" there (neither nothing found nor no data), so they read natural, " +
       "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
-      "history. The time windows are provisional. question_draft is a drafted question that could score " +
+      "history. A hazard row with ended_at had ended before the snapshot: it comes from Elements' list of items that " +
+      "ended in the last 7 days (ended_items gives that list's state; when it is missing the caveats say so). " +
+      "The time windows are provisional. question_draft is a drafted question that could score " +
       "the reading later: it is not a registered Verdict forecast and has no likelihood, so never quote it as a " +
       "forecast (list_forecasts has the registered ones).",
     readings: triage.readings,
     ...(triage.power_readings ? { power_readings: triage.power_readings } : {}),
     layer_states: triage.layer_states,
     windows: triage.windows,
+    ...(triage.ended_items ? { ended_items: triage.ended_items } : {}),
     base_rates: triage.base_rates,
     ...(triage.base_rates ? {} : { base_rates_note: "No base rates were available for this snapshot; the readings stand without them." }),
     count: records.length,

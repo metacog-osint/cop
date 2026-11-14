@@ -287,12 +287,42 @@ def write_json(path, obj, compact=True):
     tmp.replace(path)
 
 
+def fetch_ended(now, out, fixtures=None, archive=None):
+    """Each program's list of items that ended recently (config "ended": Elements' data/ended.geojson, its last 7
+    days), written to out/<program>.geojson for joins that ask what happened in a window. Not drawn and not
+    published: the map shows what is active. With an archive folder, a gzip copy per UTC day,
+    <day>.<program>-ended.json.gz, so base rates can read what had ended by each archived snapshot. A failed fetch
+    removes the old file, so a reader says so rather than reading an old list. Returns one line per program for the
+    log."""
+    lines = []
+    out.mkdir(parents=True, exist_ok=True)
+    for prog in CONFIG["programs"]:
+        if not prog.get("ended"):
+            continue
+        pid, dest = prog["id"], out / f"{prog['id']}.geojson"
+        data, rep = (read_local(Path(fixtures) / f"{prog['id']}-ended.geojson") if fixtures else fetch(prog["ended"]))
+        if not rep["ok"]:
+            dest.unlink(missing_ok=True)
+            lines.append(f"{pid} ended items: fetch failed ({rep.get('error')}); readers will say it is missing")
+            continue
+        data["cop_fetched_at"] = iso(now)
+        write_json(dest, data)
+        if archive:
+            archive.mkdir(parents=True, exist_ok=True)
+            with gzip.open(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", "wt", encoding="utf-8") as fh:
+                json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
+        lines.append(f"{pid} ended items: {len(data['features'])}, generated {data.get('generated_at')}")
+    return lines
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=str(ROOT / "site" / "data"))
     ap.add_argument("--fixtures", help="read <program>.geojson from this folder instead of fetching")
     ap.add_argument("--previous", default=None, help=f"last published snapshot, URL or file (live default: {PREVIOUS})")
     ap.add_argument("--archive", help="also write a gzip copy of today's snapshot here, named by its UTC day")
+    ap.add_argument("--ended-out", default=str(ROOT / "out" / "ended"),
+                    help="where each program's ended-items file goes (<program>.geojson; not published, not drawn)")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
     ap.add_argument("--dead", action="append", default=[], help="treat this program's feed as failed (tests)")
     a = ap.parse_args(argv)
@@ -322,6 +352,8 @@ def main(argv=None):
         arch.mkdir(parents=True, exist_ok=True)
         with gzip.open(arch / f"{now:%Y-%m-%d}.geojson.gz", "wt", encoding="utf-8") as fh:
             json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
+    for line in fetch_ended(now, Path(a.ended_out), a.fixtures, Path(a.archive) if a.archive else None):
+        print(line)
     for h in health["programs"]:
         lint = h["lint"] or {}
         print(f"{h['name']:<11} {h['state']:<6} items={h['items']:<4} anomalies={h['anomalies']:<3} "

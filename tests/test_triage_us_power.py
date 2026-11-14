@@ -296,7 +296,7 @@ class RatesAndPublic(unittest.TestCase):
         # level for Kilauea, so its alert counts, marked unknown (over the 14 archived days it is a re-send).
         self.assertEqual(s["days"][0]["natural_states"], ["AK", "CA", "HI", "NV"])
         self.assertEqual((s["state_days"], s["would_read"]["natural"]), (52, round(4 / 52, 4)))
-        self.assertTrue(any("one snapshot a day" in c for c in s["cautions"]))
+        self.assertTrue(any("1 of 1 days have no list of Elements' ended hazards" in c for c in s["cautions"]))
         self.assertIn("volcano_levels", doc["history"])
         replay = {o["us_state"]: o["reading"] for o in doc["replay"]["rows"] if o["us_state"]}
         self.assertEqual(replay, {"CA": "natural", "NY": "open"})

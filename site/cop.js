@@ -416,10 +416,12 @@ function renderPanel() {
 // Outage triage: for each Blackout outage, what Elements, Cordon and Watchfloor show under it. A reading sorts
 // reports; the section says so, and shows "nothing found" and "no current data" as the different answers they are.
 const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "raised" };
+// A hazard that ended before the snapshot (from Elements' ended list) says when it ended; it is not on the map.
 function triageItem(row) {
+  const ended = row.ended_at ? h("span", { class: "row-meta" }, " (ended ", timeEl(row.ended_at), ")") : null;
   return BY_ID.has(row.id)
-    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title)
-    : h("span", { class: "tri-item", text: row.title });
+    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title, ended)
+    : h("span", { class: "tri-item" }, row.title, ended);
 }
 function triageRecord(r) {
   const down = r.reading === "incomplete";

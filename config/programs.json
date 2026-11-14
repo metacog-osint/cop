@@ -34,7 +34,7 @@
       "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
     },
     {
-      "id": "elements", "preset": "hazards",
+      "id": "elements", "ended": "https://elements.theintelligence.company/data/ended.geojson", "preset": "hazards",
       "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [

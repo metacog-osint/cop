@@ -48,6 +48,20 @@ def _features(snapshot):
     return [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
 
 
+def _with_ended(snapshot, features):
+    """The day's live items plus Elements' items that had ended by that snapshot, when the archive kept that day's
+    ended list (<day>.elements-ended.json.gz, from 14 Nov 2026); the live items alone before that."""
+    return tri.with_ended(features, snapshot.get("cop_ended"), tri.utc(snapshot.get("generated_at")))[0]
+
+
+def attach_ended(snapshot, path):
+    """Put the archived ended list for a snapshot's day on it (cop_ended), when the file exists."""
+    ended = Path(str(path).replace(".geojson.gz", ".elements-ended.json.gz"))
+    if ended.exists():
+        snapshot["cop_ended"] = tri.load(ended)
+    return snapshot
+
+
 def history(snapshots):
     """What triage.py needs from the past: advisory and volcano alert levels by date, and how usual raised attention
     is per country."""
@@ -84,7 +98,7 @@ def background_day(snapshot, countries, hist=None):
     levels, shares = (hist or {}).get("advisory_levels"), (hist or {}).get("attention_share")
     volcanoes = (hist or {}).get("volcano_levels")
     # Only items that could change a reading: this keeps the distance work small.
-    haz = [f for f in features if f["properties"].get("cop_program") == "elements"
+    haz = [f for f in _with_ended(snapshot, features) if f["properties"].get("cop_program") == "elements"
            and f["properties"].get("tier") in ("anomaly", "warning")
            and tri._kind(f["properties"].get("id")) not in tri.BACKGROUND]
     other = [f for f in features if f["properties"].get("cop_program") in ("cordon", "watchfloor")]
@@ -109,7 +123,7 @@ def background_day(snapshot, countries, hist=None):
     natural = hazard
     deliberate = (notice | unusual) - hazard
     return {"day": day, "snapshot": snapshot["generated_at"], "countries": n,
-            "readings_counted": day >= NOTICE_VALID_FROM,
+            "readings_counted": day >= NOTICE_VALID_FROM, "ended_list": "cop_ended" in snapshot,
             "hazard": len(hazard), "standing_hazard_only": len(standing), "recent_notice": len(notice),
             "raised_attention": len(raised), "unusual_attention": len(unusual),
             "would_read": {"natural": len(natural), "deliberate": len(deliberate),
@@ -126,14 +140,14 @@ def state_background_day(snapshot, hist=None):
     if not at or tri.layer_state(snapshot, features, "elements") in ("stale", "missing"):
         return None
     # Only items that could make a natural reading: significant, or a warning for a hazard that takes lines down.
-    haz = [f for f in features if f["properties"].get("cop_program") == "elements"
+    haz = [f for f in _with_ended(snapshot, features) if f["properties"].get("cop_program") == "elements"
            and tri._kind(f["properties"].get("id")) not in tri.BACKGROUND
            and (f["properties"].get("tier") in ("anomaly", "warning") or tri._power_warning(f["properties"]))]
     volcanoes = (hist or {}).get("volcano_levels")
     states = sorted(tri.us_states())
     natural = {st for st in states if tri.state_hazards(haz, st, at, None, volcanoes)["significant"]}
     return {"day": snapshot["generated_at"][:10], "snapshot": snapshot["generated_at"], "states": len(states),
-            "natural": len(natural), "natural_states": sorted(natural)}
+            "ended_list": "cop_ended" in snapshot, "natural": len(natural), "natural_states": sorted(natural)}
 
 
 def _share(part, whole):
@@ -147,7 +161,7 @@ def rates(snapshots):
     hist = history(snapshots)
     outages, days, skipped, sdays, sskipped = {}, [], [], [], []
     for snap in snapshots:
-        for r in tri.triage(snap, hist)["records"]:
+        for r in tri.triage(snap, hist, snap.get("cop_ended"))["records"]:
             outages[r["outage"]["id"]] = {"outage": r["outage"]["id"], "country": r["country"],
                                           "us_state": r.get("us_state"), "reading": r["reading"],
                                           "seen_in": snap["generated_at"]}
@@ -176,14 +190,23 @@ def rates(snapshots):
                         "Cordon's notices took their present form): a first look, not a settled rate.")
     if len(outages) < THIN_OUTAGES:
         cautions.append(f"Only {len(outages)} real outages in the archive: the replay counts are examples, not rates.")
+    no_list = sum(1 for d in counted if not d["ended_list"])
+    if no_list:
+        cautions.append(f"{no_list} of the {len(counted)} counted days have no list of Elements' ended hazards (archived "
+                        "from 14 Nov 2026), so they miss a hazard that ended before that day's one snapshot: the natural "
+                        "rate is low.")
     kinds_first = {k: next(d["day"] for d in days if k in d["recent_notice_kinds"])
                    for k in sorted({k for d in days for k in d["recent_notice_kinds"]})}
     # US states: how often a state power outage would have read natural whatever its cause.
     sd = sum(d["states"] for d in sdays)
     snat = sum(d["natural"] for d in sdays)
     per_state = Counter(st for d in sdays for st in d["natural_states"])
-    scautions = ["The archive keeps one snapshot a day, so warnings that last about an hour (severe thunderstorm, "
-                 "tornado) are mostly missed: the real rate is higher."]
+    s_no_list = sum(1 for d in sdays if not d["ended_list"])
+    scautions = [f"{s_no_list} of {len(sdays)} days have no list of Elements' ended hazards (archived from 14 Nov 2026): "
+                 "on those days a warning that ran out before the day's one snapshot is missed, so most thunderstorm "
+                 "and tornado warnings (about an hour long) are, and the real rate is higher. Measured 1-14 Nov 2026: "
+                 "a power-line warning had begun in the 72-hour window in 12.6% of state-times, against 3.7% read "
+                 "from the live feed alone."] if s_no_list else []
     if len(sdays) < THIN_DAYS:
         scautions.insert(0, f"Only {len(sdays)} archived days: a first look, not a settled rate.")
     return {
@@ -238,10 +261,10 @@ def main(argv=None):
     ap.add_argument("--out", default=str(tri.ROOT / "out" / "triage"))
     a = ap.parse_args(argv)
     out = tri.safe_out(a.out)
-    files = sorted(Path(a.archive).glob("*.geojson.gz"))
+    files = sorted(f for f in Path(a.archive).glob("*.geojson.gz") if f.name.count(".") == 2)
     if not files:
         raise SystemExit(f"no *.geojson.gz in {a.archive}")
-    doc = rates(tri.load(f) for f in files)
+    doc = rates(attach_ended(tri.load(f), f) for f in files)
     tri.gate.write(tri.JOIN, doc, out, ("base-rates.json",))
     b, arc = doc["background"], doc["archive"]
     print(f"{arc['days']} days, {arc['first']} to {arc['last']}; left out (a layer down): "
