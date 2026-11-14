@@ -339,10 +339,18 @@ wired into the card for when judgments appear), the 14-day timeline (daily snaps
   the same one Elements keeps and every program is meant to adopt.
 - A lane is a program. A program counts as read when its state in the snapshot is fresh or late; a stale or failed
   program ends nothing. COP's own marks (`cop_pick`, `cop_strength`, `cop_stale`) are no change.
+- **Source lanes** (14 Nov 2026, Tom's "complete items 3-6"): where a program's feed has a per-source `health` block
+  (Cordon; Blackout since `d23e7a5`, 14 Nov), `snapshot.py` keeps `lanes` and `lanes_read` (the kit's `lanes_ok`) in
+  that program's `cop_programs` entry, and the lane is `<program>/<item's first source id>`, through the program's
+  `lane_map` in `config/programs.json` (Cordon: `usembassy-*` to `us-embassy-alerts`). An item ends only when its
+  program and its source were both read, so a Blackout source that failed while the feed came ends nothing. A source
+  the block does not name falls back to the program lane. Lanes are recomputed from each open item every build, so
+  items logged before the change moved over. Dry run on the live state, 21:41 UTC 14 Nov: 1,519 open, every Cordon
+  (9 lanes) and Blackout (8 in use of 21) item on its source lane, none fell back. Tests 16 to 22.
 - Files are assets of the release `ledger`: `state.json.gz` and one `YYYY-MM-DD.jsonl.gz` per UTC day. **Not
   published**: the ledger holds every layer side by side, so the tool refuses `site/`, `functions/` and `mcp/`.
   Anything drawn from it for the page or the MCP server is a join and goes through `tools/gate.py`.
 - Without the last state every item would be logged as new again, so the tool stops unless `--first` is passed, and
   the build step skips (with a warning) when a listed asset cannot be downloaded.
 - `python tools/ledger.py --replay out/archive --assets out/ledger-replay` rebuilds a ledger from the archived daily
-  snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (16).
+  snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (22).

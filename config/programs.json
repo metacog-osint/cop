@@ -45,7 +45,8 @@
       "color": { "fill": "#009E73", "outline_light": "#004534", "outline_dark": "#A8EBD3" }
     },
     {
-      "id": "cordon", "preset": "notices",
+      "id": "cordon",
+      "lane_map": {"usembassy-*": "us-embassy-alerts"}, "preset": "notices",
       "freshness": "feed",
       "mark": "areas", "country_mark": "halo", "area_style": "dashed", "routine_in_preset": true,
       "also_in": [{ "preset": "spectrum", "kinds": ["navwarn"],

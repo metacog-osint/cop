@@ -11,9 +11,15 @@ stage moved) or ended, with the full item, in the doctrine kit's history format 
 history-log.md). It is the suite's own historical record, for comparing now with the past (Tom, 13 Nov 2026: an item
 no longer active is not displayed, but every item is kept).
 
-A lane here is a program. A program counts as read on a build when its state in the snapshot is fresh or late; when a
-program's feed failed, or its data are stale, its missing items stay open and nothing of its ends. So an end in the
-ledger means the program's own feed stopped carrying the item, seen at COP's two-hour step. A program's own log
+A lane here is a program, or a program's source where its feed says which sources were read. A program counts as read
+on a build when its state in the snapshot is fresh or late; when a program's feed failed, or its data are stale, its
+missing items stay open and nothing of its ends. Since 14 Nov 2026, a program whose feed carries a per-source `health`
+block (Cordon, Blackout; the snapshot keeps it as `lanes` and `lanes_read` in cop_programs) has one lane per source,
+"<program>/<source id>" (the item's first source id, through the program's `lane_map` in config/programs.json): its
+item ends only when that source was read too, so a source that failed while the rest of the feed came ends nothing.
+An item whose source the block does not name falls back to the program's lane. Lanes are worked out again from each
+open item on every build, so items logged before the change move to their source lane. So an end in the ledger means
+the program's own feed stopped carrying the item while its source was read, seen at COP's two-hour step. A program's own log
 (Elements keeps one, the others as they adopt the kit's history) is finer and is the record of that program; the
 ledger is the one place with all of them, from the day it starts.
 
@@ -58,6 +64,37 @@ def programs_read(snapshot: dict) -> set:
             if isinstance(v, dict) and v.get("state") in READ_STATES}
 
 
+def _lane_maps() -> dict:
+    cfg = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
+    return {p["id"]: p["lane_map"] for p in cfg.get("programs") or [] if p.get("lane_map")}
+
+
+def lane_namer(snapshot: dict, lane_maps: dict | None = None):
+    """lane_of(feature) for this snapshot: "<program>/<source>" where the program's feed named its sources' health,
+    otherwise the program."""
+    lane_maps = _lane_maps() if lane_maps is None else lane_maps
+    known = {pid: set(v.get("lanes") or []) for pid, v in (snapshot.get("cop_programs") or {}).items()
+             if isinstance(v, dict) and v.get("lanes")}
+    source_of = {pid: history.mapped_lane(lane_maps.get(pid) or {}) for pid in known}
+
+    def lane_of(feature: dict):
+        pid = program_of(feature)
+        if pid not in known:
+            return pid
+        src = source_of[pid](feature)
+        return f"{pid}/{src}" if src in known[pid] else pid
+    return lane_of
+
+
+def lanes_read(snapshot: dict) -> set:
+    """Every lane read on this build: each program read, and each of its sources its own feed says was read."""
+    ok = set(programs_read(snapshot))
+    for pid, v in (snapshot.get("cop_programs") or {}).items():
+        if pid in ok and isinstance(v, dict):
+            ok |= {f"{pid}/{s}" for s in v.get("lanes_read") or []}
+    return ok
+
+
 def when(snapshot: dict) -> datetime:
     at = history._t(snapshot.get("generated_at"))
     if at is None:
@@ -67,12 +104,21 @@ def when(snapshot: dict) -> datetime:
 
 def step(state: dict, snapshot: dict, **extra) -> tuple[dict, list]:
     """(new state, lines) for one snapshot. extra members go on every line (a replay marks its lines)."""
-    new_state, lines = history.update(state, snapshot, None, when(snapshot), ok=programs_read(snapshot),
-                                      lane_of=program_of, volatile=VOLATILE)
+    lane_of = lane_namer(snapshot)
+    state = dict(state or {})
+    if state.get("open"):
+        # Lanes follow this build's health blocks, so an item logged under its program moves to its source lane.
+        state["open"] = {iid: dict(e, lane=lane_of(e["item"])) if e.get("item") else e
+                         for iid, e in state["open"].items()}
+    ok = lanes_read(snapshot)
+    new_state, lines = history.update(state, snapshot, None, when(snapshot), ok=ok,
+                                      lane_of=lane_of, volatile=VOLATILE)
     for x in lines:
-        x["program"] = x["lane"] or x.get("program")       # the snapshot's own `program` member is the item's too
+        # the snapshot's own `program` member is the item's too; the lane may name a source after the program
+        x["program"] = program_of(x.get("item") or {}) or (x.get("lane") or "").split("/")[0] or x.get("program")
         x.update(extra)
     new_state["programs_read"] = sorted(programs_read(snapshot))
+    new_state["lanes_read"] = sorted(ok)
     return new_state, lines
 
 
@@ -136,7 +182,8 @@ def counts(lines: list) -> dict:
 
 def _report(at: datetime, state: dict, lines: list) -> str:
     n = {c: sum(1 for x in lines if x["change"] == c) for c in ("new", "changed", "ended")}
-    not_read = sorted(set(e.get("lane") for e in state["open"].values()) - set(state.get("programs_read") or []))
+    read = set(state.get("lanes_read") or state.get("programs_read") or [])
+    not_read = sorted(set(e.get("lane") for e in state["open"].values()) - read)
     text = (f"ledger {at:%Y-%m-%dT%H:%MZ}: {n['new']} new, {n['changed']} changed, {n['ended']} ended; "
             f"{len(state['open'])} open")
     return text + (f"; not read, so nothing of theirs ended: {', '.join(str(x) for x in not_read)}" if not_read else "")
