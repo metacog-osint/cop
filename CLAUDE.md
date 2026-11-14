@@ -183,10 +183,14 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   its window (the area's polygon). Time-only coincidences stay on Launch's own page. Every item is kind
   `observation`, tier `routine`, precision `area`, `us_person_data: organizations`; no `strength` rules;
   `routine_in_preset` under "Spectrum and space" beside Orbit and Noisefloor. `mark` "areas", `area_style`
-  "dashed" (notices, as Cordon's), `country_mark` "halo", `freshness` "feed". Colour: Paul Tol's purple `#AA4499`
-  (outlines `#55224C`, `#DDB4D6`); Orbit's note above found Tol's remaining hues close to the Okabe-Ito ones in use
-  (this one to Context's `#CC79A7`), so the dashed outline is what sets Launch apart: not run through the colour
-  validator yet. Sources `faa-tfr` (US Government work, `commercial_ok` true) and `orbit-snapshot` ("unknown"), as
+  "dashed" (notices, as Cordon's), `country_mark` "halo", `freshness` "feed". Colour (changed 14 Nov 2026, item 5 of Tom's list): violet `#9933FF` (outlines `#4A1A80`, `#D9BFFF`). Paul
+  Tol's purple `#AA4499`, its first colour, failed the dataviz validator's normal-vision floor against Context
+  `#CC79A7` (ΔE 13.9) and Headwind `#882255` (13.4; floor 15) and sat in the colour-blind floor band against Vigil
+  (6.4 protan). A search over sRGB found 190 colours that pass against all ten other programs; `#9933FF`'s worst
+  pairs are Vigil, colour-blind ΔE 11.5 (target 8), and Context, normal 23.1, with contrast 4.41 on the light land
+  and 3.98 on the dark. The dashed outline still sets Launch's areas apart. The eleven colours together fail
+  all-pairs (Orbit and Watchfloor 3.9 deutan, Orbit and Noisefloor 12.4 normal), as any 11 hues would; outlines,
+  mark types and the panel's labels carry identity. Sources `faa-tfr` (US Government work, `commercial_ok` true) and `orbit-snapshot` ("unknown"), as
   Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list** (confirmed by Tom, 14 Nov 2026;
   Orbit was held first and later opened): closure areas and the launches they match include national-security launches and missile
   firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every

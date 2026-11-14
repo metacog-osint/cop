@@ -97,9 +97,9 @@
       "routine_label": "FAA space-operations TFRs and launch closure areas that coincide with scheduled launches",
       "strength": [],
       "color": {
-        "fill": "#AA4499",
-        "outline_light": "#55224C",
-        "outline_dark": "#DDB4D6"
+        "fill": "#9933FF",
+        "outline_light": "#4A1A80",
+        "outline_dark": "#D9BFFF"
       }
     }
   ],
