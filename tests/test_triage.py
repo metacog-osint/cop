@@ -447,6 +447,27 @@ class NewNoticeKinds(unittest.TestCase):
                          "raised")
         self.assertEqual(one(tri.triage(snapshot(outage(), down), hist))["reading"], "open")
 
+    def safetravel(self, tier, level="medium", note=None, when="2026-11-11T00:00:00Z"):
+        return item("cordon", "cordon:safetravel:TN", ["TN"], tier, when,
+                    measures={"level": level, "advice": "x", "regional_note": note, "updated": when[:10], "new": False})
+
+    def test_safetravel_counts_only_a_level_or_regional_note_change(self):
+        none = {"advisory_levels": {}, "attention_share": {}}
+        edit = one(tri.triage(snapshot(outage(), self.safetravel("routine")), none))
+        self.assertEqual((edit["reading"], edit["layers"]["cordon"]["recent_not_raised"][0]["direction"]),
+                         ("open", "unchanged"))
+        changed = one(tri.triage(snapshot(outage(), self.safetravel("anomaly")), none))
+        self.assertEqual((changed["reading"], changed["layers"]["cordon"]["recent"][0]["direction"]),
+                         ("deliberate", "unknown"))
+        hist = {"advisory_levels": {"cordon:safetravel:TN": [["2026-10-01T00:00:00Z", [2, 1]]]}, "attention_share": {}}
+        dropped_note = one(tri.triage(snapshot(outage(), self.safetravel("anomaly", "medium", None)), hist))
+        self.assertEqual(dropped_note["layers"]["cordon"]["recent_not_raised"][0]["direction"], "lowered")
+        up = one(tri.triage(snapshot(outage(), self.safetravel("anomaly", "high", None)), hist))
+        self.assertEqual((up["reading"], up["layers"]["cordon"]["recent"][0]["direction"]), ("deliberate", "raised"))
+        self.assertEqual(tri.notice_level(self.safetravel("routine", "avoid", "some areas")["properties"]), [4, 1])
+        self.assertIsNone(tri.notice_level(self.safetravel("routine", "unheard-of")["properties"]))
+        self.assertEqual(gate.review(tri.JOIN, {"records": [up]})["review_class"], "open")
+
     def test_cdc_health_notices_are_not_read(self):
         cdc = item("cordon", "cordon:cdc:measles-globe", ["TN", "DZ"], "anomaly", "2026-11-11T09:00:00Z",
                    measures={"level": 1})

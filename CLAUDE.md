@@ -28,7 +28,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   switch that publishes them. `python tools/gate.py --check` runs before the deploy. A new program or item kind must be
   added to one of the two lists there (a test fails until it is). Tom confirmed both lists on 12 Nov 2026.
   Cordon's `fcdo` (UK FCDO travel advice), `canada` (Global Affairs Canada) and `cdc` (CDC travel health notices)
-  kinds went on the open list on 14 Nov 2026 (Tom's "Yes, as proposed": notices of the same nature as State's).
+  kinds went on the open list on 14 Nov 2026 (Tom's "Yes, as proposed": notices of the same nature as State's), and
+  `safetravel` (New Zealand MFAT SafeTravel travel advice, Cordon `50800c8`) later the same day (Tom's "Yes, add
+  safetravel", relayed by the session that asked for this change).
   Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `D:\Projects\CLAUDE_HANDOVER.md` saying what was released and to whom. Claude never copies a
@@ -71,6 +73,16 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   archived outage changes reading. The base rates name `canada` and `fcdo` as added after 8 Nov
   (`notice_kinds_in_archive_from`). Live, 21:21 UTC 14 Nov: DR Congo's outage lists FCDO and Canada as standing
   beside State's advisory, reading unchanged, gate open.
+  **New Zealand SafeTravel (same join 0.7, 14 Nov 2026, Tom's "Yes, add safetravel"):** kind `safetravel` is read
+  exactly like `fcdo` and `canada` (in `NOTICE_KINDS`, `CHANGE_ONLY_KINDS`, `LEVELLED_KINDS`; declared input
+  `cordon:safetravel`). MFAT dates its advice by the day of any page update (no time), and Cordon marks an item
+  anomaly only when the level or the regional note changed, so a plain update day is an edit, not counted.
+  `notice_level` ranks it `[place in SAFETRAVEL_LEVELS, regional note 1/0]` (normal, low, medium, high, avoid, as
+  `cordon/safetravel.py` `ORDER`), so dropping a regional note at the same level is a lowering. Measured on the
+  archive with COP's 22:21 UTC copy of 14 Nov (120 SafeTravel items, all routine, newest dated 2 Nov, none in the
+  48-hour window): fresh notice 1.91%, natural 0.84%, deliberate 4.72%, open 94.44%, the same before and after; 14
+  Nov alone 6 notices and 12 deliberate of 239 both times. Live 22:21 UTC: DR Congo's outage lists SafeTravel as a
+  fourth standing notice, reading unchanged (unconfirmed), gate open.
   **US state power outages (join 0.6; seven rules approved by Tom on 13 Nov 2026, "Yes, build all seven"):** each
   Blackout BO-IND-14 item (a state over 50,000 meters out at ODIN's reporting utilities; id
   `blackout:us-power:<st>:<day>`) gets a record with `outage_kind` "power" and `us_state`. (1) Place: NWS alerts by
@@ -288,7 +300,7 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
-  tests/test_triage.py` (41), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_rebuild_ended.py`
+  tests/test_triage.py` (42), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_rebuild_ended.py`
   (8), `test_gate.py` (22), `test_three_signal.py` (20).
 - **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
   with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
