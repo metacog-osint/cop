@@ -37,6 +37,7 @@ OPEN = {
     "context": None,                               # press framing
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
     "headwind": None,                              # prices against their own range, sanctions-list and rule changes
+    "orbit": None,                                 # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026)
     "cordon": {"advisory", "alert", "posture"},    # travel advisories, embassy alerts, embassy operating status
 }
 MILITARY = {
