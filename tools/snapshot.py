@@ -16,6 +16,7 @@ Standard-library Python only.
 import argparse
 import gzip
 import json
+import re
 import sys
 import time
 import urllib.request
@@ -142,6 +143,14 @@ def state_for(age_hours, prog, fetched):
     return "stale"
 
 
+def also_in(p, prog):
+    """Presets besides the program's own that show this item (config also_in): kind listed and text matched."""
+    kind = (str(p.get("id") or "").split(":") + ["", ""])[1]
+    text = f"{p.get('title') or ''} {p.get('summary') or ''}"
+    return [r["preset"] for r in prog.get("also_in") or []
+            if kind in r.get("kinds", [kind]) and re.search(r["match"], text, re.I)]
+
+
 def build(feeds, reports, previous, now):
     """feeds: {program id: feed or None}. Returns (today, picks, health, countries)."""
     features, health, attributions = [], [], []
@@ -177,6 +186,10 @@ def build(feeds, reports, previous, now):
             value, label, rule = strength(p, prog["strength"])
             p.update({"cop_program": pid, "cop_stale": state == "stale", "cop_strength": value,
                       "cop_strength_text": label.replace("{v}", f"{value:g}") if value is not None else None})
+            p.pop("cop_also", None)
+            also = also_in(p, prog)
+            if also:
+                p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale":
@@ -230,7 +243,8 @@ def build(feeds, reports, previous, now):
     public = [{k: p[k] for k in ("id", "name", "family", "preset", "site", "mark", "color")} |
               {"country_mark": p.get("country_mark", "fill"), "area_style": p.get("area_style", "solid"),
                "routine_in_preset": bool(p.get("routine_in_preset")),
-               "routine_label": p.get("routine_label", "standing notices")} |
+               "routine_label": p.get("routine_label", "standing notices"),
+               "also_in": [{"preset": r["preset"], "label": r["label"]} for r in p.get("also_in") or []]} |
               {"strength_labels": [r["label"] for r in p["strength"]]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],

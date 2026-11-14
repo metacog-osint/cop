@@ -121,6 +121,33 @@ class Build(unittest.TestCase):
         errors = {k: v for k, v in rep["standards"].items() if v["error"]}
         self.assertEqual(errors, {}, errors)
 
+    def test_cordon_launch_warnings_also_show_under_spectrum(self):
+        def add(f):
+            base = f["cordon"]["features"][0]
+            def item(i, title, summary=""):
+                x = json.loads(json.dumps(base))
+                x["properties"].update({"id": i, "title": title, "summary": summary})
+                return x
+            f["cordon"]["features"] += [
+                item("cordon:navwarn:P-3249-2026", "HYDROPAC 3249/2026: HAZARDOUS OPERATIONS, SPACE DEBRIS 2215Z TO 0700Z"),
+                item("cordon:navwarn:4-1078-2026", "NAVAREA IV 1078/2026: NORTH ATLANTIC.",
+                     "1. HAZARDOUS OPERATIONS, ROCKET LAUNCHING 131754Z TO 131932Z NOV"),
+                item("cordon:navwarn:12-800-2026", "NAVAREA XII 800/2026: HAZARDOUS OPERATIONS, MISSILE FIRING"),
+                item("cordon:tfr:6-7113", "FAA TFR 6/7113 (space operations): Cape Canaveral, FL (Reentry)"),
+            ]
+        today, _, health, _ = build(mutate=add)
+        tags = {f["properties"]["id"]: f["properties"].get("cop_also") for f in today["features"]}
+        self.assertEqual(tags["cordon:navwarn:P-3249-2026"], ",spectrum,")
+        self.assertEqual(tags["cordon:navwarn:4-1078-2026"], ",spectrum,", "the summary counts too")
+        self.assertIsNone(tags["cordon:navwarn:12-800-2026"], "missile firings stay in Cordon's view")
+        self.assertIsNone(tags["cordon:tfr:6-7113"], "TFRs are not listed: Launch draws the space-operations ones")
+        self.assertEqual(sum(1 for v in tags.values() if v), 2, "nothing else is tagged")
+        cordon = next(p for p in health["config"]["programs"] if p["id"] == "cordon")
+        self.assertEqual(cordon["also_in"], [{"preset": "spectrum", "label": "launch, space-debris and reentry warnings"}])
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn('["coalesce", ["get", "cop_also"], ""]', js)
+        self.assertRegex(js, r'const MAP_KEYS = \[[^\]]*"cop_also"', "the map's copy of each item keeps the tag")
+
     def test_country_shapes_only_for_country_level_items(self):
         today, _, _, countries = build()
         wanted = {cc for f in today["features"] if f["properties"].get("precision_class") == "country"

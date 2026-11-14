@@ -92,7 +92,10 @@ const routineShown = (pid) => state.routine || (state.preset !== "all" && PROGS[
 // Shown in every view: measured anomalies, and warnings (Vis's Amber or Red forecasts, Blackout's judged shutdowns
 // and cable-corridor outages).
 const STANDS_OUT = ["anomaly", "warning"];
-const visibleItem = (p) => visibleProgram(p.cop_program) && (STANDS_OUT.includes(p.tier) || routineShown(p.cop_program));
+// A program's items tagged for another preset (config also_in, cop_also ",spectrum,") show there too, routine or not.
+const alsoHere = (p) => state.preset !== "all" && typeof p.cop_also === "string" && p.cop_also.includes(`,${state.preset},`);
+const visibleItem = (p) => (visibleProgram(p.cop_program) && (STANDS_OUT.includes(p.tier) || routineShown(p.cop_program)))
+  || alsoHere(p);
 function baseFilter() {
   const ids = CFG.programs.filter((p) => visibleProgram(p.id)).map((p) => p.id);
   const f = ["all", ["in", ["get", "cop_program"], ["literal", ids]]];
@@ -100,7 +103,8 @@ function baseFilter() {
     const keep = CFG.programs.filter((p) => routineShown(p.id)).map((p) => p.id);
     f.push(["any", ["in", ["get", "tier"], ["literal", STANDS_OUT]], ["in", ["get", "cop_program"], ["literal", keep]]]);
   }
-  return f;
+  if (state.preset === "all") return f;
+  return ["any", f, ["in", `,${state.preset},`, ["coalesce", ["get", "cop_also"], ""]]];
 }
 const POLY = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
 const POINT = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]];
@@ -187,7 +191,7 @@ dark.addEventListener("change", () => { applyStyle(map); renderLegend(); renderP
 // The map gets only what it draws from; cards read the full item from BY_ID. Keeps the worker's work small.
 // A GeometryCollection (an NGA warning with both an area and a trackline) becomes one feature per part, each with
 // the item's id, so every part is filtered, drawn and clicked as its own geometry type.
-const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class"];
+const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class", "cop_also"];
 const parts = (g) => (g && g.type === "GeometryCollection" ? (g.geometries || []).flatMap(parts) : g ? [g] : []);
 const MAP_ITEMS = { type: "FeatureCollection", features: today.features.flatMap((f) => parts(f.geometry).map((g) => ({
   type: "Feature", geometry: g, properties: Object.fromEntries(MAP_KEYS.map((k) => [k, f.properties[k]])) }))) };
@@ -377,7 +381,9 @@ function renderPanel() {
 
   const picks = PICKS.filter((p) => visibleProgram(p.program)).map((p) => BY_ID.get(p.id)).filter(Boolean);
   const standing = CFG.programs.filter((p) => routineShown(p.id) && p.routine_in_preset)
-    .map((p) => `${p.name}'s ${p.routine_label || "standing notices"}`);
+    .map((p) => `${p.name}'s ${p.routine_label || "standing notices"}`)
+    .concat(CFG.programs.flatMap((p) => (p.also_in || []).filter((r) => r.preset === state.preset)
+      .map((r) => `${p.name}'s ${r.label}`)));
   const none = standing.length
     ? `Nothing outside its usual range in this view today. The map shows ${standing.join(" and ")}.`
     : "No findings with a place for this view today. See Off the map below.";
