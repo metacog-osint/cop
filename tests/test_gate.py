@@ -37,7 +37,7 @@ class Layers(unittest.TestCase):
 
     def test_cordon_travel_advice_and_health_notices_are_open_and_faa_kinds_are_not(self):
         # Tom, 14 Nov 2026: UK FCDO, Canada and CDC notices are of the same nature as State's.
-        for kind in ("fcdo", "canada", "cdc"):
+        for kind in ("fcdo", "canada", "cdc", "safetravel"):
             self.assertEqual(gate.layer_class("cordon", kind)[0], "open", kind)
         for kind in ("tfr", "faa"):
             self.assertEqual(gate.layer_class("cordon", kind)[0], "held", kind)

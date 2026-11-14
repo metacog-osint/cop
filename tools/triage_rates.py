@@ -3,8 +3,8 @@
 Three things, from replaying tools/triage.py over the archive (GitHub releases snapshots-YYYY-MM, the last snapshot of
 each UTC day):
 
-1. History: each travel advisory's level on each date it was issued (State's; Canada's and the UK FCDO's as
-   triage.notice_level ranks them, from 14 Nov 2026), each volcano's alert level on each day USGS
+1. History: each travel advisory's level on each date it was issued (State's; Canada's, the UK FCDO's and New
+   Zealand SafeTravel's as triage.notice_level ranks them, from 14 Nov 2026), each volcano's alert level on each day USGS
    sent it, and each country's share of days with raised press attention. triage.py needs all three: to tell a
    raised advisory or volcano alert from a lowered one or a re-send, and to count raised attention only where it is
    unusual for that country.
