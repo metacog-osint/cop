@@ -289,6 +289,17 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   `.wrangler/`.
 - `python tools/serve.py` serves `site/` on 5071 with `site/_headers` (browsers refuse 5060/5061, the SIP ports).
 
+## The suite watchdog (14 Nov 2026, Tom's "Yes, add it")
+- `tools/suite_watch.py` reads COP's public snapshot and exits 1 when COP's own build is over 6 hours old, when a
+  program's state is not "fresh", or when a program's data time is more than 30 minutes in the future (Elements ran
+  1.6 h ahead on 12 Nov 2026 and read fresh). `.github/workflows/watch.yml` runs it on its own schedule
+  (`47 */3`, which GitHub fires late) and by hand; it never runs on a push and never deploys. A failed run is the
+  alert: GitHub mails the owner.
+- Optional repo secret `HC_PING_URL` (a Healthchecks.io check address, set by Tom, never written in a file): each run
+  pings it, and its `/fail` address on a problem, so Healthchecks.io can say when the watchdog itself stopped.
+- Not done: the hub's `tic-dispatch` Worker does not start it yet, so it is as slow as GitHub's schedule.
+- Tests: `python tests/test_suite_watch.py` (8).
+
 ## Not in v0
 Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is
 wired into the card for when judgments appear), the 14-day timeline (daily snapshots are archived for it).
