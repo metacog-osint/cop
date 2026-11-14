@@ -8,6 +8,7 @@ export const PATHS = {
   index: "/data/agent/index.json",
   programs: "/data/agent/programs.json",
   verdict: "/data/agent/verdict.json",
+  events: "/data/agent/events.json", // the programs' own dated events (Orbit's scheduled launches)
   picks: "/data/picks.json",
   triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
 };
@@ -34,6 +35,7 @@ export function makeData(fetchAsset) {
     index: () => get(PATHS.index),
     programs: () => get(PATHS.programs),
     verdict: () => get(PATHS.verdict),
+    events: () => get(PATHS.events).catch(() => null), // Verdict's calendar stands without it
     picks: () => get(PATHS.picks),
     triage: () => get(PATHS.triage).catch(() => null), // the picture stands without it
     shard: (n) => get(shardPath(n)),

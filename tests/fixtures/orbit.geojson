@@ -46,7 +46,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-255",
     "title": "Orbital launch: Falcon 9, USSF-627 (SBST R-5), from Vandenberg",
-    "summary": "Falcon 9 launched USSF-627 (SBST R-5) from South Base, Vandenberg Space Force Base, California pad SLC4E at 2026-11-12 04:36 UTC; GCAT launch 2026-255, agency SPX, category Sat LEO D. GCAT has cataloged 23 payload(s): USA 749 (US), USA 750 (US), USA 751 (US), USA 752 (US), USA 753 (US), USA 754 (US), USA 755 (US), USA 756 (US) and 15 more.",
+    "summary": "Falcon 9 launched USSF-627 (SBST R-5) from South Base, Vandenberg Space Force Base, California pad SLC4E at 2026-10-30 02:36 UTC; GCAT launch 2026-255, agency SPX, category Sat LEO D. GCAT has cataloged 23 payload(s): USA 749 (US), USA 750 (US), USA 751 (US), USA 752 (US), USA 753 (US), USA 754 (US), USA 755 (US), USA 756 (US) and 15 more.",
     "data_as_of": "2026-10-30T02:36:30Z",
     "countries": [
      "US"
@@ -116,7 +116,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-254",
     "title": "Orbital launch: Chang Zheng 2D, Tanluzhe, from Jiuquan",
-    "summary": "Chang Zheng 2D launched Tanluzhe from Jiuquan Space Center, Nei Monggol Zizhiqu, China pad LC43/94 at 2026-11-11 11:41 UTC; GCAT launch 2026-254, agency SAST, category Sat SSO D. GCAT has cataloged 4 payload(s): Tanluzhe A (CN), Tanluzhe B (CN), Tanluzhe C (CN), Tanluzhe D (CN).",
+    "summary": "Chang Zheng 2D launched Tanluzhe from Jiuquan Space Center, Nei Monggol Zizhiqu, China pad LC43/94 at 2026-10-29 09:41 UTC; GCAT launch 2026-254, agency SAST, category Sat SSO D. GCAT has cataloged 4 payload(s): Tanluzhe A (CN), Tanluzhe B (CN), Tanluzhe C (CN), Tanluzhe D (CN).",
     "data_as_of": "2026-10-29T09:41:00Z",
     "countries": [
      "CN"
@@ -186,7 +186,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-253",
     "title": "Orbital launch: Chang Zheng 12, WHDW 29, from Hainan CLS",
-    "summary": "Chang Zheng 12 launched WHDW 29 from Hainan Shangye Hangtian Fashe Chang (Hainan Commercial Space Launch Site) pad LC2 at 2026-11-08 20:24 UTC; GCAT launch 2026-253, agency ZHSH/SAST, category Sat LEO P. GCAT has cataloged 9 payload(s): WHDW 27-01 (CN), WHDW 27-02 (CN), WHDW 27-03 (CN), WHDW 27-04 (CN), WHDW 27-05 (CN), WHDW 27-06 (CN), WHDW 27-07 (CN), WHDW 27-08 (CN) and 1 more.",
+    "summary": "Chang Zheng 12 launched WHDW 29 from Hainan Shangye Hangtian Fashe Chang (Hainan Commercial Space Launch Site) pad LC2 at 2026-10-26 18:24 UTC; GCAT launch 2026-253, agency ZHSH/SAST, category Sat LEO P. GCAT has cataloged 9 payload(s): WHDW 27-01 (CN), WHDW 27-02 (CN), WHDW 27-03 (CN), WHDW 27-04 (CN), WHDW 27-05 (CN), WHDW 27-06 (CN), WHDW 27-07 (CN), WHDW 27-08 (CN) and 1 more.",
     "data_as_of": "2026-10-26T18:24:00Z",
     "countries": [
      "CN"
@@ -256,7 +256,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-252",
     "title": "Orbital launch: Soyuz-2-1B, Kosmos-2621 (Glonass), from Plesetsk",
-    "summary": "Soyuz-2-1B launched Kosmos-2621 (Glonass) from 1-y Gosudarstvenniy Ispitatelniy Kosmodrom MO RF pad LC43/3 at 2026-11-07 13:25 UTC (time approximate); GCAT launch 2026-252, agency FKA, category Sat MEO SO. GCAT has cataloged 1 payload(s): Kosmos-2621 (RU).",
+    "summary": "Soyuz-2-1B launched Kosmos-2621 (Glonass) from 1-y Gosudarstvenniy Ispitatelniy Kosmodrom MO RF pad LC43/3 at 2026-10-25 11:25 UTC (time approximate); GCAT launch 2026-252, agency FKA, category Sat MEO SO. GCAT has cataloged 1 payload(s): Kosmos-2621 (RU).",
     "data_as_of": "2026-10-25T11:25:00Z",
     "countries": [
      "RU"
@@ -326,7 +326,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-251",
     "title": "Orbital launch: Falcon 9, USSF-432 (SBST R-4), from Vandenberg",
-    "summary": "Falcon 9 launched USSF-432 (SBST R-4) from South Base, Vandenberg Space Force Base, California pad SLC4E at 2026-11-07 00:48 UTC; GCAT launch 2026-251, agency SPX, category Sat LEO D. GCAT has cataloged 23 payload(s): USA 726 (US), USA 727 (US), USA 728 (US), USA 729 (US), USA 730 (US), USA 731 (US), USA 732 (US), USA 733 (US) and 15 more.",
+    "summary": "Falcon 9 launched USSF-432 (SBST R-4) from South Base, Vandenberg Space Force Base, California pad SLC4E at 2026-10-24 22:48 UTC; GCAT launch 2026-251, agency SPX, category Sat LEO D. GCAT has cataloged 23 payload(s): USA 726 (US), USA 727 (US), USA 728 (US), USA 729 (US), USA 730 (US), USA 731 (US), USA 732 (US), USA 733 (US) and 15 more.",
     "data_as_of": "2026-10-24T22:48:42Z",
     "countries": [
      "US"
@@ -396,7 +396,7 @@
     "method_version": "orbit-2.0",
     "id": "orbit:launch:2026-250",
     "title": "Orbital launch: Gushenxing-2, Guanlan Shiyan, from Jiuquan",
-    "summary": "Gushenxing-2 launched Guanlan Shiyan from Jiuquan Space Center, Nei Monggol Zizhiqu, China at 2026-11-06 23:37 UTC; GCAT launch 2026-250, agency XIDO, category Sat LEO D. GCAT has cataloged 4 payload(s): Guanlan Shiyan Xing (CN), Yunyao-1 28 (CN), Zhongbei Daxue 1 (CN), Juntian-1 06A (CN).",
+    "summary": "Gushenxing-2 launched Guanlan Shiyan from Jiuquan Space Center, Nei Monggol Zizhiqu, China at 2026-10-24 21:37 UTC; GCAT launch 2026-250, agency XIDO, category Sat LEO D. GCAT has cataloged 4 payload(s): Guanlan Shiyan Xing (CN), Yunyao-1 28 (CN), Zhongbei Daxue 1 (CN), Juntian-1 06A (CN).",
     "data_as_of": "2026-10-24T21:37:00Z",
     "countries": [
      "CN"
@@ -465,8 +465,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:0f867f0c-5422-4d44-93b8-d7faaae7019b",
-    "title": "Scheduled launch: Starship | Starlink Group 31-2 (Starship Flight 15) (Go), 2026-11-13 22:47 UTC",
-    "summary": "Launch Library 2 lists Starship | Starlink Group 31-2 (Starship Flight 15) for 2026-11-13 22:47 UTC (status Go for Launch; NET precision Second) from Orbital Launch Pad 2, SpaceX Starbase, TX, USA. Provider SpaceX. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Starship | Starlink Group 31-2 (Starship Flight 15) (Go), 2026-10-31 20:47 UTC",
+    "summary": "Launch Library 2 lists Starship | Starlink Group 31-2 (Starship Flight 15) for 2026-10-31 20:47 UTC (status Go for Launch; NET precision Second) from Orbital Launch Pad 2, SpaceX Starbase, TX, USA. Provider SpaceX. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-31T19:58:18Z",
     "countries": [
      "US"
@@ -532,8 +532,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:bff2fc91-eddd-4dfc-af26-ac0674cfab4d",
-    "title": "Scheduled launch: Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others (Go), 2026-11-14 01:16 UTC",
-    "summary": "Launch Library 2 lists Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others for 2026-11-14 01:16 UTC (status Go for Launch; NET precision Minute) from Cosmodrome Site 1S, Vostochny Cosmodrome, Siberia, Russian Federation. Provider Russian Federal Space Agency (ROSCOSMOS). Mission: Technology, Sun-Synchronous Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others (Go), 2026-10-31 23:16 UTC",
+    "summary": "Launch Library 2 lists Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others for 2026-10-31 23:16 UTC (status Go for Launch; NET precision Minute) from Cosmodrome Site 1S, Vostochny Cosmodrome, Siberia, Russian Federation. Provider Russian Federal Space Agency (ROSCOSMOS). Mission: Technology, Sun-Synchronous Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-31T13:37:56Z",
     "countries": [
      "RU"
@@ -599,8 +599,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:db3500ac-965b-4ad8-b417-cb8d8d005586",
-    "title": "Scheduled launch: Electron | The Mountain God Rises (iQPS Launch 10) (Go), 2026-11-14 05:30 UTC",
-    "summary": "Launch Library 2 lists Electron | The Mountain God Rises (iQPS Launch 10) for 2026-11-14 05:30 UTC (status Go for Launch; NET precision Minute) from Rocket Lab Launch Complex 1A, Rocket Lab Launch Complex 1, Mahia Peninsula, New Zealand. Provider Rocket Lab. Mission: Earth Science, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Electron | The Mountain God Rises (iQPS Launch 10) (Go), 2026-11-01 03:30 UTC",
+    "summary": "Launch Library 2 lists Electron | The Mountain God Rises (iQPS Launch 10) for 2026-11-01 03:30 UTC (status Go for Launch; NET precision Minute) from Rocket Lab Launch Complex 1A, Rocket Lab Launch Complex 1, Mahia Peninsula, New Zealand. Provider Rocket Lab. Mission: Earth Science, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-30T22:15:49Z",
     "countries": [
      "NZ"
@@ -666,8 +666,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:ef9850ad-1096-425b-9d27-f7bbd186e61a",
-    "title": "Scheduled launch: Vulcan VC6L | Amazon Leo (LV-01) (Go), 2026-11-14 17:32 UTC",
-    "summary": "Launch Library 2 lists Vulcan VC6L | Amazon Leo (LV-01) for 2026-11-14 17:32 UTC (status Go for Launch; NET precision Second) from Space Launch Complex 41, Cape Canaveral SFS, FL, USA. Provider United Launch Alliance. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Vulcan VC6L | Amazon Leo (LV-01) (Go), 2026-11-01 15:32 UTC",
+    "summary": "Launch Library 2 lists Vulcan VC6L | Amazon Leo (LV-01) for 2026-11-01 15:32 UTC (status Go for Launch; NET precision Second) from Space Launch Complex 41, Cape Canaveral SFS, FL, USA. Provider United Launch Alliance. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-31T12:54:33Z",
     "countries": [
      "US"
@@ -733,8 +733,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:76617033-4dc0-4448-b50c-e5b0d5a18539",
-    "title": "Scheduled launch: Falcon 9 Block 5 | USSF-317 (Go), 2026-11-18 03:14 UTC",
-    "summary": "Launch Library 2 lists Falcon 9 Block 5 | USSF-317 for 2026-11-18 03:14 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Falcon 9 Block 5 | USSF-317 (Go), 2026-11-05 01:14 UTC",
+    "summary": "Launch Library 2 lists Falcon 9 Block 5 | USSF-317 for 2026-11-05 01:14 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-30T23:52:13Z",
     "countries": [
      "US"
@@ -800,8 +800,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:e0a11eb1-0bda-4872-b36b-140247fd5c60",
-    "title": "Scheduled launch: Long March 2D | Unknown Payload (Go), 2026-11-18 22:50 UTC",
-    "summary": "Launch Library 2 lists Long March 2D | Unknown Payload for 2026-11-18 22:50 UTC (status Go for Launch; NET precision Hour) from Launch Complex 9, Taiyuan Satellite Launch Center, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Unknown, Unknown. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Long March 2D | Unknown Payload (Go), 2026-11-05 20:50 UTC",
+    "summary": "Launch Library 2 lists Long March 2D | Unknown Payload for 2026-11-05 20:50 UTC (status Go for Launch; NET precision Hour) from Launch Complex 9, Taiyuan Satellite Launch Center, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Unknown, Unknown. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-30T17:18:17Z",
     "countries": [
      "CN"
@@ -867,8 +867,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:a2975167-7c6f-4403-99e1-b40df17c8140",
-    "title": "Scheduled launch: Long March 8A | SatNet LEO Group TBD? (TBC), 2026-11-20 11:00 UTC",
-    "summary": "Launch Library 2 lists Long March 8A | SatNet LEO Group TBD? for 2026-11-20 11:00 UTC (status To Be Confirmed; NET precision Hour) from Commercial LC-1, Wenchang Space Launch Site, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Long March 8A | SatNet LEO Group TBD? (TBC), 2026-11-07 09:00 UTC",
+    "summary": "Launch Library 2 lists Long March 8A | SatNet LEO Group TBD? for 2026-11-07 09:00 UTC (status To Be Confirmed; NET precision Hour) from Commercial LC-1, Wenchang Space Launch Site, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-17T11:59:24Z",
     "countries": [
      "CN"
@@ -934,8 +934,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:951a341f-236b-42fe-a667-4ab2fcf36eac",
-    "title": "Scheduled launch: Falcon 9 Block 5 | NROL-136 (Go), 2026-11-21 12:30 UTC",
-    "summary": "Launch Library 2 lists Falcon 9 Block 5 | NROL-136 for 2026-11-21 12:30 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Falcon 9 Block 5 | NROL-136 (Go), 2026-11-08 10:30 UTC",
+    "summary": "Launch Library 2 lists Falcon 9 Block 5 | NROL-136 for 2026-11-08 10:30 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-30T17:21:00Z",
     "countries": [
      "US"
@@ -1001,8 +1001,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:7bdc412b-c965-4517-a131-f57a01189803",
-    "title": "Scheduled launch: Ariane 64 Block 2 | Amazon Leo (LE-04) (TBD), 2026-11-23 00:00 UTC",
-    "summary": "Launch Library 2 lists Ariane 64 Block 2 | Amazon Leo (LE-04) for 2026-11-23 00:00 UTC (status To Be Determined; NET precision Day) from Ariane Launch Area 4, Guiana Space Centre, French Guiana. Provider Arianespace. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Ariane 64 Block 2 | Amazon Leo (LE-04) (TBD), 2026-11-09 22:00 UTC",
+    "summary": "Launch Library 2 lists Ariane 64 Block 2 | Amazon Leo (LE-04) for 2026-11-09 22:00 UTC (status To Be Determined; NET precision Day) from Ariane Launch Area 4, Guiana Space Centre, French Guiana. Provider Arianespace. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-02T03:35:18Z",
     "countries": [
      "FR"
@@ -1068,8 +1068,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:460d9db7-eaf6-4cd9-b095-cff433534c09",
-    "title": "Scheduled launch: Falcon 9 Block 5 | USSF-266 (Go), 2026-11-23 16:04 UTC",
-    "summary": "Launch Library 2 lists Falcon 9 Block 5 | USSF-266 for 2026-11-23 16:04 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Polar Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Falcon 9 Block 5 | USSF-266 (Go), 2026-11-10 14:04 UTC",
+    "summary": "Launch Library 2 lists Falcon 9 Block 5 | USSF-266 for 2026-11-10 14:04 UTC (status Go for Launch; NET precision Minute) from Space Launch Complex 4E, Vandenberg SFB, CA, USA. Provider SpaceX. Mission: Government/Top Secret, Polar Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-31T15:46:32Z",
     "countries": [
      "US"
@@ -1135,8 +1135,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:8dd5de11-831b-445f-86f0-bffefe0550d9",
-    "title": "Scheduled launch: Soyuz 2.1b | Progress MS-36 (97P) (TBC), 2026-11-24 05:03 UTC",
-    "summary": "Launch Library 2 lists Soyuz 2.1b | Progress MS-36 (97P) for 2026-11-24 05:03 UTC (status To Be Confirmed; NET precision Minute) from 31/6, Baikonur Cosmodrome, Republic of Kazakhstan. Provider Russian Federal Space Agency (ROSCOSMOS). Mission: Resupply, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Soyuz 2.1b | Progress MS-36 (97P) (TBC), 2026-11-11 03:03 UTC",
+    "summary": "Launch Library 2 lists Soyuz 2.1b | Progress MS-36 (97P) for 2026-11-11 03:03 UTC (status To Be Confirmed; NET precision Minute) from 31/6, Baikonur Cosmodrome, Republic of Kazakhstan. Provider Russian Federal Space Agency (ROSCOSMOS). Mission: Resupply, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-05-26T19:46:36Z",
     "countries": [
      "KZ"
@@ -1202,8 +1202,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:5ce59e3a-c343-430f-ae4e-e608ba536754",
-    "title": "Scheduled launch: Long March 12 | SatNet LEO Group TBD? (TBC), 2026-11-24 07:00 UTC",
-    "summary": "Launch Library 2 lists Long March 12 | SatNet LEO Group TBD? for 2026-11-24 07:00 UTC (status To Be Confirmed; NET precision Hour) from Commercial LC-2, Wenchang Space Launch Site, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Long March 12 | SatNet LEO Group TBD? (TBC), 2026-11-11 05:00 UTC",
+    "summary": "Launch Library 2 lists Long March 12 | SatNet LEO Group TBD? for 2026-11-11 05:00 UTC (status To Be Confirmed; NET precision Hour) from Commercial LC-2, Wenchang Space Launch Site, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Communications, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-17T11:59:29Z",
     "countries": [
      "CN"
@@ -1269,8 +1269,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:c9605b67-8a53-4239-a8ae-577fe3b79799",
-    "title": "Scheduled launch: Long March 2F/G | Shenzhou 24 (TBD), 2026-11-25 00:00 UTC",
-    "summary": "Launch Library 2 lists Long March 2F/G | Shenzhou 24 for 2026-11-25 00:00 UTC (status To Be Determined; NET precision Day) from Launch Area 91 (SLS-1 / 921), Jiuquan Satellite Launch Center, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Human Exploration, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Long March 2F/G | Shenzhou 24 (TBD), 2026-11-11 22:00 UTC",
+    "summary": "Launch Library 2 lists Long March 2F/G | Shenzhou 24 for 2026-11-11 22:00 UTC (status To Be Determined; NET precision Day) from Launch Area 91 (SLS-1 / 921), Jiuquan Satellite Launch Center, People's Republic of China. Provider China Aerospace Science and Technology Corporation. Mission: Human Exploration, Low Earth Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-11T12:00:00Z",
     "countries": [
      "CN"
@@ -1336,8 +1336,8 @@
     ],
     "method_version": "orbit-2.0",
     "id": "orbit:upcoming:dff42a2e-f047-48d7-b260-3888d3a4fe33",
-    "title": "Scheduled launch: Spectrum | AT-Astra and Others (Spectrum Flight 3) (TBC), 2026-11-26 20:00 UTC",
-    "summary": "Launch Library 2 lists Spectrum | AT-Astra and Others (Spectrum Flight 3) for 2026-11-26 20:00 UTC (status To Be Confirmed; NET precision Hour) from Orbital Launch Pad, Andøya Spaceport. Provider Isar Aerospace. Mission: Technology, Sun-Synchronous Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
+    "title": "Scheduled launch: Spectrum | AT-Astra and Others (Spectrum Flight 3) (TBC), 2026-11-13 18:00 UTC",
+    "summary": "Launch Library 2 lists Spectrum | AT-Astra and Others (Spectrum Flight 3) for 2026-11-13 18:00 UTC (status To Be Confirmed; NET precision Hour) from Orbital Launch Pad, Andøya Spaceport. Provider Isar Aerospace. Mission: Technology, Sun-Synchronous Orbit. A scheduled time is the provider's or press's, not Orbit's, and often moves.",
     "data_as_of": "2026-10-16T19:51:22Z",
     "countries": [
      "NO"

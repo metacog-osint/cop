@@ -137,6 +137,55 @@ class Verdict(unittest.TestCase):
         self.assertEqual(v["missing"], ["scores"])
 
 
+class ProgramEvents(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.today, _health = bus()
+        cls.doc = ai.build_events(cls.today, NOW)
+
+    @staticmethod
+    def launch(title_time="2026-11-14 17:32 UTC", precision="Minute", **extra):
+        return {"id": "orbit:upcoming:x", "title": f"Scheduled launch: Rocket | Payload (Go), {title_time}",
+                "summary": f"Launch Library 2 lists Rocket | Payload for {title_time} (status Go for Launch; "
+                           f"NET precision {precision}) from Pad 1.",
+                "countries": ["US"], "sources": [{"url": "https://ll.example/1"}], **extra}
+
+    def test_every_fixture_launch_becomes_an_event(self):
+        upcoming = [f for f in self.today["features"] if f["properties"]["id"].startswith("orbit:upcoming:")]
+        self.assertEqual(len(self.doc["events"]), len(upcoming))
+        self.assertEqual(self.doc["skipped"], {})
+        self.assertEqual(self.doc["programs"]["orbit"]["name"], "Orbit")
+        for e in self.doc["events"]:
+            self.assertEqual((e["origin"], e["kind"], e["verified"], e["occurred"]), ("orbit", "launch", False, False))
+            self.assertTrue(e["at"] is None or e["at"].startswith(e["date"]), e["id"])
+        keys = [(e["date"], e["at"] or "", e["id"]) for e in self.doc["events"]]
+        self.assertEqual(keys, sorted(keys))
+
+    def test_time_kept_only_to_the_stated_precision(self):
+        e, _ = ai.orbit_event(self.launch(precision="Minute"))
+        self.assertEqual((e["date"], e["at"], e["launch_status"]), ("2026-11-14", "2026-11-14T17:32:00Z", "Go for Launch"))
+        self.assertEqual(e["source_url"], "https://ll.example/1")
+        for day in ("Day", "Morning (local)"):
+            e, _ = ai.orbit_event(self.launch("2026-11-14 00:00 UTC", day))
+            self.assertEqual((e["date"], e["at"], e["net_precision"]), ("2026-11-14", None, day))
+        for coarse in ("Week", "Month", "1st Quarter"):
+            e, why = ai.orbit_event(self.launch("2026-12-01 00:00 UTC", coarse))
+            self.assertIsNone(e)
+            self.assertEqual(why, f"NET precision {coarse}")
+
+    def test_no_time_is_skipped_and_counted(self):
+        bad = self.launch()
+        bad["title"] = bad["summary"] = "Scheduled launch: Rocket | Payload (Go)"
+        today = {"features": [{"properties": bad}], "generated_at": "2026-11-06T14:00:00Z"}
+        doc = ai.build_events(today, NOW)
+        self.assertEqual(doc["events"], [])
+        self.assertEqual(doc["skipped"], {"no time in the title or summary": 1})
+
+    def test_an_items_own_event_object_wins(self):
+        e, _ = ai.orbit_event(self.launch(event={"date": "2026-11-15", "at": "2026-11-15T01:00:00Z"}))
+        self.assertEqual((e["date"], e["at"]), ("2026-11-15", "2026-11-15T01:00:00Z"))
+
+
 class EndToEnd(unittest.TestCase):
     def test_main_writes_every_file_and_nothing_private(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -144,7 +193,7 @@ class EndToEnd(unittest.TestCase):
             self.assertEqual(snap.main(["--fixtures", str(FIX), "--out", tmp, "--now", now]), 0)
             self.assertEqual(ai.main(["--data", tmp, "--verdict", str(FIX / "verdict"), "--now", now]), 0)
             agent = Path(tmp) / "agent"
-            for name in ("index.json", "programs.json", "verdict.json"):
+            for name in ("index.json", "programs.json", "verdict.json", "events.json"):
                 self.assertTrue((agent / name).exists(), name)
             self.assertEqual(len(list((agent / "items").glob("*.json"))), ai.SHARDS)
             for p in agent.rglob("*.json"):

@@ -10,6 +10,7 @@ const dir = fixtureData();
 const index = readJson(dir, "agent/index.json");
 const programs = readJson(dir, "agent/programs.json");
 const verdict = readJson(dir, "agent/verdict.json");
+const events = readJson(dir, "agent/events.json");
 const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
@@ -89,7 +90,7 @@ test("every result says when its data is from and whom to credit", () => {
     T.outageTriage(index, triage, {}, NOW),
     T.listForecasts(verdict, {}, NOW),
     T.forecastRecord(verdict, NOW),
-    T.upcomingEvents(verdict, {}, NOW),
+    T.upcomingEvents(verdict, events, {}, NOW),
   ];
   for (const r of results) {
     assert.ok(r.as_of, "as_of");
@@ -144,12 +145,55 @@ test("the record says plainly when nothing has resolved", () => {
 });
 
 test("upcoming events stay inside the window and can be filtered by origin", () => {
-  const res = T.upcomingEvents(verdict, { days: 30 }, NOW);
+  const res = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
   assert.deepEqual(res.window, { from: "2026-10-31", to: "2026-11-30" });
   assert.ok(res.count > 0);
   assert.ok(res.events.every((e) => e.date >= "2026-10-31" && e.date <= "2026-11-30"));
-  const cordon = T.upcomingEvents(verdict, { days: 366, origin: "cordon" }, NOW);
+  const cordon = T.upcomingEvents(verdict, events, { days: 366, origin: "cordon" }, NOW);
   assert.ok(cordon.count > 0 && cordon.events.every((e) => e.origin === "cordon"));
+});
+
+test("Orbit's scheduled launches join Verdict's calendar, in date order, credited to Orbit", () => {
+  const res = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
+  const launches = res.events.filter((e) => e.origin === "orbit");
+  assert.equal(launches.length, 14);
+  assert.ok(res.events.some((e) => e.origin === "verdict"));
+  const cmp = (a, b) => a.date.localeCompare(b.date) || (a.at || "").localeCompare(b.at || "") || a.id.localeCompare(b.id);
+  for (let i = 1; i < res.events.length; i++) assert.ok(cmp(res.events[i - 1], res.events[i]) < 0, res.events[i].id);
+  for (const e of launches) {
+    assert.equal(e.verified, false, e.id);
+    assert.match(e.id, /^orbit:upcoming:/);
+    assert.ok(e.at === null || e.at.startsWith(e.date), e.id);
+  }
+  assert.ok(launches.some((e) => e.at === null && e.net_precision === "Day"), "a day-only launch has no time");
+  assert.ok(res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")));
+  assert.equal(res.orbit.state, "fresh");
+  assert.match(res.note, /origin orbit marks scheduled orbital launches/);
+  const only = T.upcomingEvents(verdict, events, { days: 30, origin: "orbit" }, NOW);
+  assert.equal(only.count, 14);
+  assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
+});
+
+test("a launch whose stated time has passed is left out", () => {
+  const first = events.events[0]; // Starship, 20:47 UTC on the fixtures' own day
+  const before = T.upcomingEvents(verdict, events, { origin: "orbit" }, NOW);
+  assert.ok(before.events.some((e) => e.id === first.id));
+  const after = T.upcomingEvents(verdict, events, { origin: "orbit" }, Date.parse(first.at) + 60 * 1000);
+  assert.ok(!after.events.some((e) => e.id === first.id));
+});
+
+test("each half of the calendar stands without the other, and both missing is refused", () => {
+  const noCalendar = { ...verdict, calendar: null, missing: ["calendar"] };
+  const res = T.upcomingEvents(noCalendar, events, { days: 30 }, NOW);
+  assert.equal(res.count, 14);
+  assert.deepEqual(res.missing, ["verdict calendar"]);
+  assert.equal(res.as_of, events.bus_generated_at);
+  assert.throws(() => T.upcomingEvents(noCalendar, events, { origin: "verdict" }, NOW), /could not be fetched/);
+  const noEvents = T.upcomingEvents(verdict, null, { days: 30 }, NOW);
+  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit"));
+  assert.deepEqual(noEvents.missing, ["program events"]);
+  assert.throws(() => T.upcomingEvents(verdict, null, { origin: "orbit" }, NOW), /were not built/);
+  assert.throws(() => T.upcomingEvents(null, null, {}, NOW), /could not be fetched/);
 });
 
 test("a Verdict part that could not be fetched is refused, not invented", () => {
