@@ -3,7 +3,8 @@
 Three things, from replaying tools/triage.py over the archive (GitHub releases snapshots-YYYY-MM, the last snapshot of
 each UTC day):
 
-1. History: each travel advisory's level on each date it was issued, each volcano's alert level on each day USGS
+1. History: each travel advisory's level on each date it was issued (State's; Canada's and the UK FCDO's as
+   triage.notice_level ranks them, from 14 Nov 2026), each volcano's alert level on each day USGS
    sent it, and each country's share of days with raised press attention. triage.py needs all three: to tell a
    raised advisory or volcano alert from a lowered one or a re-send, and to count raised attention only where it is
    unusual for that country.
@@ -100,9 +101,9 @@ def history(snapshots):
         raised = set()
         for f in features:
             p = f["properties"]
-            if p.get("cop_program") == "cordon" and tri._kind(p.get("id")) == "advisory" and p.get("data_as_of"):
-                m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
-                levels.setdefault(p["id"], {})[p["data_as_of"]] = m.get("level")
+            if (p.get("cop_program") == "cordon" and tri._kind(p.get("id")) in tri.LEVELLED_KINDS
+                    and p.get("data_as_of")):
+                levels.setdefault(p["id"], {})[p["data_as_of"]] = tri.notice_level(p)
             elif (p.get("cop_program") == "elements" and tri._kind(p.get("id")) == "usgs-volcano"
                   and p.get("data_as_of")):
                 volcanoes.setdefault(p["id"], {})[p["data_as_of"]] = tri.volcano_level(p)
@@ -228,6 +229,21 @@ def rates(snapshots):
                     for r in [(snap.get("cop_ended") or {}).get("rebuilt")] if isinstance(r, dict) and r.get("log_from")),
                    default=None)
     cautions += _list_cautions(counted, "counted days", log_from)
+    # A notice kind Cordon added after NOTICE_VALID_FROM could not count on the days before it existed.
+    present = {}
+    for snap in snapshots:
+        for f in _features(snap):
+            p = f["properties"]
+            k = tri._kind(p.get("id"))
+            if p.get("cop_program") == "cordon" and k in tri.NOTICE_KINDS and k not in present:
+                present[k] = (snap.get("generated_at") or "?")[:10]
+    start = max(NOTICE_VALID_FROM, (snapshots[0].get("generated_at") or "")[:10]) if snapshots else NOTICE_VALID_FROM
+    late = sorted((d, k) for k, d in present.items() if d > start)
+    if late:
+        cautions.append("Cordon kinds added after " + NOTICE_VALID_FROM + ": "
+                        + ", ".join(f"{k} from {d}" for d, k in late)
+                        + ". Days before those could not count them, so the notice rate rests on fewer days for "
+                          "them.")
     kinds_first = {k: next(d["day"] for d in days if k in d["recent_notice_kinds"])
                    for k in sorted({k for d in days for k in d["recent_notice_kinds"]})}
     # US states: how often a state power outage would have read natural whatever its cause.
@@ -265,6 +281,7 @@ def rates(snapshots):
             "recent_notice": _share(sum(d["recent_notice"] for d in counted), rcd),
             "would_read": {k: _share(v, rcd) for k, v in total.items()},
             "notice_kinds_first_seen": kinds_first,
+            "notice_kinds_in_archive_from": dict(sorted(present.items())),
             "by_country_days": len(counted),
             "by_country": by_country,
             "by_country_note": "Share of counted days each country would have read natural or deliberate. A "

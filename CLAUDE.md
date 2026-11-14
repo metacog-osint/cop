@@ -27,6 +27,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   military context, and any layer or kind not listed is held too. Held joins write only under `out/held/` and have no
   switch that publishes them. `python tools/gate.py --check` runs before the deploy. A new program or item kind must be
   added to one of the two lists there (a test fails until it is). Tom confirmed both lists on 12 Nov 2026.
+  Cordon's `fcdo` (UK FCDO travel advice), `canada` (Global Affairs Canada) and `cdc` (CDC travel health notices)
+  kinds went on the open list on 14 Nov 2026 (Tom's "Yes, as proposed": notices of the same nature as State's).
+  Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `D:\Projects\CLAUDE_HANDOVER.md` saying what was released and to whom. Claude never copies a
   file out of `out/held/`, and no code path may be added that does.
@@ -49,6 +52,25 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   2026, when the archive holds 28 days, and look at the windows then. Watchfloor lags a day, so run triage a second
   time the day after an outage. The build now reruns triage every two hours, so the second look happens by itself
   while the outage is still in Blackout's feed.
+  **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
+  and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
+  change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;
+  `CHANGE_ONLY_KINDS`). Any other update is an edit, direction "unchanged", listed and not counted. Both sources
+  re-date a country for every edit: on the 14 Nov snapshot 16 of the 17 items in the 48-hour window were edits
+  (contacts, natural-disaster sections, air-traffic notes). Cordon's anomaly does not say up or down, so the level is
+  still compared with the archive (`notice_level`: Canada `[level, regional 1/0]`, so a regional advisory removed at
+  the same level is a lowering, as Mexico's of 12 Nov was; FCDO one flag per "advise against" statement, strongest
+  first, so adding one raises it). `triage_rates.py` keeps those ranks in `advisory_levels` beside State's; the
+  archive has them only from 14 Nov, so until it holds an earlier copy a change counts as "unknown", with the
+  caveat. CDC's notices are open at the gate but not read: a disease notice says nothing about a cut network, and
+  one update to CDC's global measles notice (235 countries) would put a fresh notice in every country.
+  Measured 14 Nov on the archive (31 Oct-14 Nov, 1,673 counted country-days): fresh notice 1.91%, readings natural
+  0.84%, deliberate 4.72%, open 94.44%, the same before and after; 14 Nov alone, 6 of 239 countries with a fresh
+  notice and 12 deliberate, both before and after (Canada's Mexico change, the only one, sits where a State notice
+  already was). Counting every update instead would have given 21 and 26 that day (2.81% and 5.56% overall). No
+  archived outage changes reading. The base rates name `canada` and `fcdo` as added after 8 Nov
+  (`notice_kinds_in_archive_from`). Live, 21:21 UTC 14 Nov: DR Congo's outage lists FCDO and Canada as standing
+  beside State's advisory, reading unchanged, gate open.
   **US state power outages (join 0.6; seven rules approved by Tom on 13 Nov 2026, "Yes, build all seven"):** each
   Blackout BO-IND-14 item (a state over 50,000 meters out at ODIN's reporting utilities; id
   `blackout:us-power:<st>:<day>`) gets a record with `outage_kind` "power" and `us_state`. (1) Place: NWS alerts by
@@ -260,8 +282,8 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
-  tests/test_triage.py` (35), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_rebuild_ended.py`
-  (8), `test_gate.py` (21), `test_three_signal.py` (20).
+  tests/test_triage.py` (41), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_rebuild_ended.py`
+  (8), `test_gate.py` (22), `test_three_signal.py` (20).
 - **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
   with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
   `tic-history/1`) and serves the items that ended in the last 7 days at `data/ended.geojson`. `snapshot.py` fetches
