@@ -133,7 +133,7 @@ class Archive(unittest.TestCase):
         self.assertIn("cop_ended", snap)
         without = rates.rates([day_snapshot()])["state_background"]
         withit = rates.rates([snap])["state_background"]
-        self.assertTrue(withit["days"][0]["ended_list"])
+        self.assertEqual(withit["days"][0]["ended_list"], "served")
         self.assertIn("NY", withit["days"][0]["natural_states"])
         self.assertNotIn("NY", without["days"][0]["natural_states"])
         self.assertEqual(withit["cautions"][1:], [], "every day has its list: no missing-list caution")

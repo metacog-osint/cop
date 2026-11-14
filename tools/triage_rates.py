@@ -54,6 +54,35 @@ def _with_ended(snapshot, features):
     return tri.with_ended(features, snapshot.get("cop_ended"), tri.utc(snapshot.get("generated_at")))[0]
 
 
+def ended_list_kind(snapshot):
+    """served (the list Elements served that day), rebuilt (from Elements' history log by rebuild_ended.py), short
+    (rebuilt from a log younger than the hazard window at that time) or none."""
+    e = snapshot.get("cop_ended")
+    if not isinstance(e, dict):
+        return "none"
+    r = e.get("rebuilt")
+    if not isinstance(r, dict):
+        return "served"
+    start, at = tri.utc(r.get("log_from")), tri.utc(snapshot.get("generated_at"))
+    return "short" if start and at and at - start < tri.timedelta(hours=tri.HAZARD_BEFORE_H) else "rebuilt"
+
+
+def _list_cautions(rows, label, log_from=None):
+    kinds = [r["ended_list"] for r in rows]
+    out = []
+    if kinds.count("none"):
+        return out
+    rebuilt = kinds.count("rebuilt") + kinds.count("short")
+    if rebuilt:
+        out.append(f"For {rebuilt} of the {len(rows)} {label} the list of Elements' ended hazards was rebuilt from "
+                   "Elements' history log (it was not served before 14 Nov 2026)"
+                   + (f"; the log starts {log_from}." if log_from else "."))
+    if kinds.count("short"):
+        out.append(f"On {kinds.count('short')} of them the log was younger than the {tri.HAZARD_BEFORE_H}-hour hazard "
+                   "window, so a hazard that ended before the log began is missed and those days run low.")
+    return out
+
+
 def attach_ended(snapshot, path):
     """Put the archived ended list for a snapshot's day on it (cop_ended), when the file exists."""
     ended = Path(str(path).replace(".geojson.gz", ".elements-ended.json.gz"))
@@ -123,7 +152,7 @@ def background_day(snapshot, countries, hist=None):
     natural = hazard
     deliberate = (notice | unusual) - hazard
     return {"day": day, "snapshot": snapshot["generated_at"], "countries": n,
-            "readings_counted": day >= NOTICE_VALID_FROM, "ended_list": "cop_ended" in snapshot,
+            "readings_counted": day >= NOTICE_VALID_FROM, "ended_list": ended_list_kind(snapshot),
             "hazard": len(hazard), "standing_hazard_only": len(standing), "recent_notice": len(notice),
             "raised_attention": len(raised), "unusual_attention": len(unusual),
             "would_read": {"natural": len(natural), "deliberate": len(deliberate),
@@ -147,7 +176,7 @@ def state_background_day(snapshot, hist=None):
     states = sorted(tri.us_states())
     natural = {st for st in states if tri.state_hazards(haz, st, at, None, volcanoes)["significant"]}
     return {"day": snapshot["generated_at"][:10], "snapshot": snapshot["generated_at"], "states": len(states),
-            "ended_list": "cop_ended" in snapshot, "natural": len(natural), "natural_states": sorted(natural)}
+            "ended_list": ended_list_kind(snapshot), "natural": len(natural), "natural_states": sorted(natural)}
 
 
 def _share(part, whole):
@@ -190,23 +219,28 @@ def rates(snapshots):
                         "Cordon's notices took their present form): a first look, not a settled rate.")
     if len(outages) < THIN_OUTAGES:
         cautions.append(f"Only {len(outages)} real outages in the archive: the replay counts are examples, not rates.")
-    no_list = sum(1 for d in counted if not d["ended_list"])
+    no_list = sum(1 for d in counted if d["ended_list"] == "none")
     if no_list:
         cautions.append(f"{no_list} of the {len(counted)} counted days have no list of Elements' ended hazards (archived "
                         "from 14 Nov 2026), so they miss a hazard that ended before that day's one snapshot: the natural "
                         "rate is low.")
+    log_from = min((r.get("log_from") for snap in snapshots
+                    for r in [(snap.get("cop_ended") or {}).get("rebuilt")] if isinstance(r, dict) and r.get("log_from")),
+                   default=None)
+    cautions += _list_cautions(counted, "counted days", log_from)
     kinds_first = {k: next(d["day"] for d in days if k in d["recent_notice_kinds"])
                    for k in sorted({k for d in days for k in d["recent_notice_kinds"]})}
     # US states: how often a state power outage would have read natural whatever its cause.
     sd = sum(d["states"] for d in sdays)
     snat = sum(d["natural"] for d in sdays)
     per_state = Counter(st for d in sdays for st in d["natural_states"])
-    s_no_list = sum(1 for d in sdays if not d["ended_list"])
+    s_no_list = sum(1 for d in sdays if d["ended_list"] == "none")
     scautions = [f"{s_no_list} of {len(sdays)} days have no list of Elements' ended hazards (archived from 14 Nov 2026): "
                  "on those days a warning that ran out before the day's one snapshot is missed, so most thunderstorm "
                  "and tornado warnings (about an hour long) are, and the real rate is higher. Measured 1-14 Nov 2026: "
                  "a power-line warning had begun in the 72-hour window in 12.6% of state-times, against 3.7% read "
                  "from the live feed alone."] if s_no_list else []
+    scautions += _list_cautions(sdays, "days", log_from)
     if len(sdays) < THIN_DAYS:
         scautions.insert(0, f"Only {len(sdays)} archived days: a first look, not a settled rate.")
     return {
