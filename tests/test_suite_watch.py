@@ -51,6 +51,27 @@ class Watch(unittest.TestCase):
     def test_an_unreadable_snapshot_exits_1(self):
         self.assertEqual(watch.main(["--snapshot", str(ROOT / "tests" / "no-such-file.geojson")]), 1)
 
+    def test_a_test_failure_exits_1_and_says_it_is_a_test(self):
+        import contextlib
+        import io
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "today.geojson"
+            path.write_text(json.dumps(snap()), encoding="utf-8")
+            args = ["--snapshot", str(path), "--cop-hours", "1e9"]
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(watch.main(args), 0, "the fixture alone must pass")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(watch.main(args + ["--test-failure"]), 1)
+        self.assertIn("TEST:", out.getvalue())
+
+    def test_dispatched_runs_never_test(self):
+        text = (ROOT / ".github" / "workflows" / "watch.yml").read_text(encoding="utf-8")
+        self.assertIn("default: false", text)
+        self.assertIn("inputs.test_failure", text)
+
     def test_the_workflow_runs_apart_from_the_build_and_keeps_the_ping_address_secret(self):
         text = (ROOT / ".github" / "workflows" / "watch.yml").read_text(encoding="utf-8")
         self.assertIn("python tools/suite_watch.py", text)

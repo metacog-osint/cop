@@ -10,10 +10,19 @@ name: watch
 # Optional: repo secret HC_PING_URL, a Healthchecks.io check address. With it, each run pings the check (and its
 # /fail address on a problem), so Healthchecks.io can say when this watchdog itself has stopped. Without it nothing
 # is sent anywhere. Tom sets the secret; the address is never written in a file.
+#
+# To test the alerts: Actions > watch > Run workflow, tick test_failure (or
+# gh workflow run watch.yml -f test_failure=true). The run fails with a line that says it is a test.
+# tic-dispatch sends no inputs, so its runs never test.
 on:
   schedule:
     - cron: "47 */3 * * *"
   workflow_dispatch:
+    inputs:
+      test_failure:
+        description: "Fail on purpose, to test that the alert mails arrive"
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -30,4 +39,5 @@ jobs:
       - name: Is every program current?
         env:
           HC_PING_URL: ${{ secrets.HC_PING_URL }}
-        run: python tools/suite_watch.py
+          TEST_FAILURE: ${{ inputs.test_failure && '--test-failure' || '' }}
+        run: python tools/suite_watch.py $TEST_FAILURE
