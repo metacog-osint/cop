@@ -1,0 +1,33 @@
+name: watch
+# The suite watchdog. Reads COP's public snapshot and fails when COP's own build is more than 6 hours old, when a
+# program is not fresh, or when a program's data time runs into the future (tools/suite_watch.py). A failed run is
+# the alert: GitHub mails the repository owner. It runs apart from build.yml because a build that has stopped
+# cannot report itself.
+#
+# The clock: GitHub fires schedules late (every 7 to 14 hours, measured 5-6 Nov 2026), so this is a slow check
+# until the hub's tic-dispatch Worker also starts it (workflow_dispatch is here for that).
+#
+# Optional: repo secret HC_PING_URL, a Healthchecks.io check address. With it, each run pings the check (and its
+# /fail address on a problem), so Healthchecks.io can say when this watchdog itself has stopped. Without it nothing
+# is sent anywhere. Tom sets the secret; the address is never written in a file.
+on:
+  schedule:
+    - cron: "47 */3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: watch
+  cancel-in-progress: true
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - name: Is every program current?
+        env:
+          HC_PING_URL: ${{ secrets.HC_PING_URL }}
+        run: python tools/suite_watch.py
