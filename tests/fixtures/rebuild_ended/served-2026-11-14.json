@@ -1,0 +1,363 @@
+{
+ "type": "FeatureCollection",
+ "format": "tic-history/1",
+ "program": "elements",
+ "generated_at": "2026-11-14T03:42:36Z",
+ "window_days": 7,
+ "what": "Elements items that ended in the last 7 days: they left the feed while their source was read successfully, or were NWS alerts issued and ended between two runs. Not active: not drawn on the map and not in the feed. Each keeps its last version; `history` gives first_seen, last_seen, ended_at (the first run without it, or the alert's own end) and end_reason. The full record is history/log/ in the Elements repository.",
+ "cop_fetched_at": "2026-11-14T03:44:03Z",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "MultiPoint",
+    "coordinates": [
+     [
+      -75.0288,
+      42.6298
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-13T17:36:16Z",
+    "precision_class": "approximate",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:KBGM.WS.W.0004.2026",
+    "title": "Winter Storm Warning for Otsego (NWS Binghamton NY)",
+    "tier": "routine",
+    "data_as_of": "2026-11-13T13:47:00Z",
+    "valid_until": "2026-11-13T18:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.b92f987caff0875ab1765fb1ecf0f1081e3cd1c4.001.1",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-13T17:36:16Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.b92f987caff0875ab1765fb1ecf0f1081e3cd1c4.001.1",
+    "measures": {
+     "event": "Winter Storm Warning",
+     "severity": "Severe",
+     "urgency": "Expected",
+     "certainty": "Likely",
+     "office": "NWS Binghamton NY",
+     "areas": [
+      "Otsego"
+     ],
+     "counties": [
+      "36077"
+     ],
+     "onset": "2026-11-13T13:47:00Z",
+     "ends": "2026-11-13T18:00:00Z",
+     "vtec": "KBGM.WS.W.0004.2026"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-13T03:06:36Z",
+    "last_seen": "2026-11-13T17:36:38Z",
+    "ended_at": "2026-11-13T18:00:00Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+     [
+      [
+       [
+        -73.616,
+        40.241
+       ],
+       [
+        -73.648,
+        40.236
+       ],
+       [
+        -73.751,
+        39.803
+       ],
+       [
+        -73.839,
+        39.533
+       ],
+       [
+        -73.871,
+        39.489
+       ],
+       [
+        -75.41,
+        39.64
+       ],
+       [
+        -75.65,
+        40.1
+       ],
+       [
+        -75.52,
+        40.48
+       ],
+       [
+        -75.04,
+        40.7
+       ],
+       [
+        -73.91,
+        40.43
+       ],
+       [
+        -73.616,
+        40.241
+       ]
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-13T00:36:08Z",
+    "precision_class": "area",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:spc:day1:slgt",
+    "title": "SPC Day 1 convective outlook: Slight Risk (level 2 of 5)",
+    "tier": "routine",
+    "data_as_of": "2026-11-12T20:00:00Z",
+    "valid_until": "2026-11-13T12:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "spc-outlook",
+      "publisher": "NOAA Storm Prediction Center",
+      "url": "https://www.spc.noaa.gov/products/outlook/day1otlk.html",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official forecast",
+      "descriptor": "Day 1 categorical convective outlook (risk of organised severe thunderstorms)",
+      "accessed_at": "2026-11-13T00:36:08Z"
+     }
+    ],
+    "link": "https://www.spc.noaa.gov/products/outlook/day1otlk.html",
+    "measures": {
+     "category": "SLGT",
+     "name": "Slight Risk",
+     "level": 2,
+     "valid": "2026-11-12T20:00:00Z",
+     "expires": "2026-11-13T12:00:00Z",
+     "fill": "#FFE066"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-12T16:36:47Z",
+    "last_seen": "2026-11-13T00:36:44Z",
+    "ended_at": "2026-11-13T01:06:38Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -73.91,
+       40.58
+      ],
+      [
+       -73.88,
+       40.58
+      ],
+      [
+       -73.86,
+       40.6
+      ],
+      [
+       -73.86,
+       40.62
+      ],
+      [
+       -73.85,
+       40.62
+      ],
+      [
+       -73.85,
+       40.63
+      ],
+      [
+       -73.75,
+       40.68
+      ],
+      [
+       -73.72,
+       40.66
+      ],
+      [
+       -73.74,
+       40.64
+      ],
+      [
+       -73.77,
+       40.62
+      ],
+      [
+       -73.76,
+       40.61
+      ],
+      [
+       -73.74,
+       40.6
+      ],
+      [
+       -73.81,
+       40.57
+      ],
+      [
+       -73.88,
+       40.55
+      ],
+      [
+       -73.91,
+       40.58
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-12T18:36:06Z",
+    "precision_class": "area",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:KOKX.TO.W.0006.2026",
+    "title": "Tornado Warning for Queens, NY (NWS Upton NY)",
+    "tier": "anomaly",
+    "data_as_of": "2026-11-12T18:14:00Z",
+    "valid_until": "2026-11-12T19:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.389e8bc2535501aa1f54e6c4b7f0e23250d73e9e.001.1",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-12T18:36:06Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.389e8bc2535501aa1f54e6c4b7f0e23250d73e9e.001.1",
+    "measures": {
+     "event": "Tornado Warning",
+     "severity": "Extreme",
+     "urgency": "Immediate",
+     "certainty": "Observed",
+     "office": "NWS Upton NY",
+     "areas": [
+      "Queens, NY"
+     ],
+     "counties": [
+      "36081"
+     ],
+     "onset": "2026-11-12T18:14:00Z",
+     "ends": "2026-11-12T19:00:00Z",
+     "vtec": "KOKX.TO.W.0006.2026"
+    },
+    "baseline_ref": {
+     "id": "cap-severity",
+     "type": "fixed",
+     "version": "1",
+     "window": "CAP severity: Minor, Moderate, Severe, Extreme"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-12T18:36:44Z",
+    "last_seen": "2026-11-12T18:36:44Z",
+    "ended_at": "2026-11-12T19:00:00Z",
+    "end_reason": "left the feed",
+    "peak_tier": "anomaly",
+    "updates": 0
+   }
+  }
+ ]
+}

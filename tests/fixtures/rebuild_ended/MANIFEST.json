@@ -1,0 +1,5 @@
+{
+ "made_by": "tests/make_rebuild_fixture.py",
+ "log.jsonl": "13 whole lines of Elements' history log (commit 2e9a5e1): every line for ['elements:nws:KOKX.TO.W.0006.2026', 'elements:nws:KBGM.WS.W.0004.2026', 'elements:spc:day1:slgt'], and the log's first line",
+ "served-2026-11-14.json": "the ended list Elements served, generated 2026-11-14T03:42:36Z (COP release snapshots-2026-11, 2026-11-14.elements-ended.json.gz), trimmed to 3 whole features for the same ids"
+}

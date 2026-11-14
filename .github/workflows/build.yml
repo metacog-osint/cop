@@ -66,6 +66,7 @@ jobs:
           python tests/test_triage.py
           python tests/test_triage_us_power.py
           python tests/test_triage_ended.py
+          python tests/test_rebuild_ended.py
           python tests/test_three_signal.py
           npm test
       - name: Kit copy is intact
