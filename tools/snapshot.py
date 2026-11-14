@@ -69,15 +69,17 @@ def dig(obj, path):
 
 
 def strength(props, rules):
-    """(value, label, rule index) from the first rule whose 'when' matches and whose path holds a number.
-    Rules rank in the order listed, so a lower index outranks any value under a higher one."""
+    """(value, label, rule index, rank) from the first rule whose 'when' matches and whose path holds a number.
+    Rules rank in the order listed, so a lower index outranks any value under a higher one. Within a rule, rank is
+    the value, or its size when the rule says "abs": true (14 Nov 2026, for signed measures such as Headwind's z, where
+    a fall and a rise of the same size are equally unusual). The label always shows the signed value."""
     for i, rule in enumerate(rules):
         if any(dig(props, k) != v for k, v in (rule.get("when") or {}).items()):
             continue
         v = dig(props, rule["path"])
         if isinstance(v, (int, float)) and not isinstance(v, bool):
-            return v, rule["label"], i
-    return None, None, None
+            return v, rule["label"], i, abs(v) if rule.get("abs") else v
+    return None, None, None, None
 
 
 def fetch(url, timeout=45):
@@ -196,7 +198,7 @@ def build(feeds, reports, previous, now):
             p = dict(item.get("properties") or {})
             for k in DROP:
                 p.pop(k, None)
-            value, label, rule = strength(p, prog["strength"])
+            value, label, rule, rank = strength(p, prog["strength"])
             p.update({"cop_program": pid, "cop_stale": state == "stale", "cop_strength": value,
                       "cop_strength_text": label.replace("{v}", f"{value:g}") if value is not None else None})
             p.pop("cop_also", None)
@@ -206,7 +208,7 @@ def build(feeds, reports, previous, now):
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale":
-                ranked.append((99 if rule is None else rule, -(value or 0), order, feature))
+                ranked.append((99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:3])]
         if attribution:
             attributions.append(attribution)
