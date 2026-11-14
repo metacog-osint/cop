@@ -81,6 +81,22 @@
       "routine_label": "launches, scheduled launches, reentries and catalog changes",
       "strength": [],
       "color": { "fill": "#999933", "outline_light": "#4D4D19", "outline_dark": "#E6E6B3" }
+    },
+    {
+      "id": "launch",
+      "preset": "spectrum",
+      "freshness": "feed",
+      "mark": "areas",
+      "country_mark": "halo",
+      "area_style": "dashed",
+      "routine_in_preset": true,
+      "routine_label": "FAA space-operations TFRs and launch closure areas that coincide with scheduled launches",
+      "strength": [],
+      "color": {
+        "fill": "#AA4499",
+        "outline_light": "#55224C",
+        "outline_dark": "#DDB4D6"
+      }
     }
   ],
   "presets": {
