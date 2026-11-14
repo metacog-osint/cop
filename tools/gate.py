@@ -36,7 +36,7 @@ OPEN = {
     "watchfloor": None,                            # press attention
     "context": None,                               # press framing
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
-    "headwind": None,                              # prices against their own range, sanctions-list and rule changes
+    "headwind": None,                              # prices against their own range, sanctions-list and rule changes (Tom, 14 Nov 2026)
     "orbit": None,                                 # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026)
     "cordon": {"advisory", "alert", "posture"},    # travel advisories, embassy alerts, embassy operating status
 }
@@ -45,7 +45,7 @@ MILITARY = {
     "vis": (None, "operational weather and night light in conflict zones: when forces can fly or move"),
     "cordon": ({"navwarn", "czib"}, "navigation warnings and conflict-zone airspace bulletins: firing areas, "
                                     "exercises and threats to aircraft"),
-    # Launch (14 Nov 2026), held pending Tom's confirmation, as Orbit was: no join reads it yet.
+    # Launch (14 Nov 2026; held, confirmed by Tom the same day): no join reads it yet.
     "launch": (None, "launch and reentry closure areas and the scheduled launches they coincide with, including "
                      "national-security launches and missile firings"),
 }

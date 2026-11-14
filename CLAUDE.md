@@ -135,7 +135,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   market dates and the ECB publishes on business days only. Colour: Paul Tol's wine `#882255` (outlines
   `#4A0F2C`, `#F2BFD6`). Eight sources in `config/sources.json`, licences as Headwind's notes record them: the UN
   list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
-  On the gate's open list (`tools/gate.py`), pending Tom's confirmation; no join reads it yet.
+  On the gate's open list (`tools/gate.py`; confirmed by Tom, 14 Nov 2026); no join reads it yet.
   `tests/fixtures/headwind.geojson`: its live feed of 16:28 UTC 13 Nov, every timestamp moved back 12 days 21 hours.
 - **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
   the launch site (GCAT site coordinates, precision `approximate`), scheduled launches at the pad (Launch Library
@@ -165,8 +165,8 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   (outlines `#55224C`, `#DDB4D6`); Orbit's note above found Tol's remaining hues close to the Okabe-Ito ones in use
   (this one to Context's `#CC79A7`), so the dashed outline is what sets Launch apart: not run through the colour
   validator yet. Sources `faa-tfr` (US Government work, `commercial_ok` true) and `orbit-snapshot` ("unknown"), as
-  Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list** pending Tom's confirmation,
-  as Orbit was first: closure areas and the launches they match include national-security launches and missile
+  Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list** (confirmed by Tom, 14 Nov 2026;
+  Orbit was held first and later opened): closure areas and the launches they match include national-security launches and missile
   firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every
   timestamp moved back 13 days 18 h 9 min. A local live build 14 Nov read it fresh, 3 items, no lint errors.
 - **Items shown in a second preset (`also_in`, 14 Nov 2026, Tom's "Yes, add the filter"):** Cordon's NGA
