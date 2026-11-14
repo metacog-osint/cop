@@ -169,6 +169,17 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   as Orbit was first: closure areas and the launches they match include national-security launches and missile
   firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every
   timestamp moved back 13 days 18 h 9 min. A local live build 14 Nov read it fresh, 3 items, no lint errors.
+- **Items shown in a second preset (`also_in`, 14 Nov 2026, Tom's "Yes, add the filter"):** Cordon's NGA
+  warnings that name rocket launching, space debris, a space vehicle or spacecraft, or reentry (kind `navwarn`,
+  title or summary, Orbit's `navwarn` pattern) also show under "Spectrum and space", in Cordon's blue dashed style,
+  whether or not the routine switch is on. `snapshot.py` tags them `cop_also: ",spectrum,"` (a string, because
+  MapLibre's `in` tests strings; it must stay in `MAP_KEYS` in `cop.js`, or the map's copy loses it and nothing
+  draws); `baseFilter()` adds them in that preset and the panel names them. Why not Orbit's feed: Cordon already
+  carries the same NGA warnings (19 of 19 on 14 Nov), so Orbit items would draw each area twice. TFRs are not
+  tagged: Launch draws the space-operations ones in that preset (Cordon's copies show under Everything and
+  Notices, so those seven TFRs appear twice in Everything). The gate is unchanged: no join reads `cop_also`, and
+  Cordon's `navwarn` kind stays on the MILITARY list. Checked 14 Nov on a local live build: 19 tagged, drawn
+  and clickable under Spectrum and space, no console errors.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
