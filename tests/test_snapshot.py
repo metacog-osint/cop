@@ -155,6 +155,25 @@ class Card(unittest.TestCase):
         self.assertIn("Assessed 31 Oct 2026, 20:30 UTC", page)
         self.assertIn("Measurements, not warnings", page)
 
+    def test_place_of_lines_and_collections(self):
+        # Same rule as cop.js placeOf: the middle of the box around a line's positions, a collection's first part.
+        line = {"type": "LineString", "coordinates": [[177.0, 53.0], [180.5, 53.5], [184.0, 54.0]]}
+        self.assertEqual(card.place_of(line), [180.5, 53.5])
+        multi = {"type": "MultiLineString", "coordinates": [[[0, 0], [2, 1]], [[4, 3], [6, 2]]]}
+        self.assertEqual(card.place_of(multi), [3.0, 1.5])
+        area = {"type": "Polygon", "coordinates": [[[10, 10], [12, 10], [12, 14], [10, 10]]]}
+        self.assertEqual(card.place_of({"type": "GeometryCollection", "geometries": [area, line]}), [11.0, 12.0])
+        self.assertIsNone(card.place_of({"type": "GeometryCollection", "geometries": []}))
+        self.assertEqual(card.place_of({"type": "MultiPoint", "coordinates": [[0, 0], [4, 2]]}), [2.0, 1.0])
+
+    def test_page_draws_lines_and_splits_collections(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn('["LineString", "MultiLineString"]', js)
+        for layer in ("lines-casing", "lines", "lines-hit"):
+            self.assertIn(f'id: "{layer}"', js)
+        self.assertIn('"lines-hit", "halos", "points"', js, "clicks on a line open its card")
+        self.assertIn('g.type === "GeometryCollection"', js)
+
     def test_view_keeps_every_pick_inside_the_map(self):
         today, picks, health, _ = build()
         by_id = {f["properties"]["id"]: f for f in today["features"]}

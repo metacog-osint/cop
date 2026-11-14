@@ -104,6 +104,8 @@ function baseFilter() {
 }
 const POLY = ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]];
 const POINT = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]];
+// Lines: tracklines in NGA warnings (cable routes, ice limits, cleared tracks), drawn solid whatever area_style says.
+const LINE = ["in", ["geometry-type"], ["literal", ["LineString", "MultiLineString"]]];
 const haloIds = CFG.programs.filter((p) => p.country_mark === "halo").map((p) => p.id);   // ring the label point
 const fillIds = CFG.programs.filter((p) => (p.country_mark || "fill") === "fill").map((p) => p.id);  // shade the country
 const dashIds = CFG.programs.filter((p) => p.area_style === "dashed").map((p) => p.id);   // legal or admin areas
@@ -183,9 +185,12 @@ map.on("style.load", () => addLayers());
 dark.addEventListener("change", () => { applyStyle(map); renderLegend(); renderPanel(); });
 
 // The map gets only what it draws from; cards read the full item from BY_ID. Keeps the worker's work small.
+// A GeometryCollection (an NGA warning with both an area and a trackline) becomes one feature per part, each with
+// the item's id, so every part is filtered, drawn and clicked as its own geometry type.
 const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class"];
-const MAP_ITEMS = { type: "FeatureCollection", features: today.features.filter((f) => f.geometry).map((f) => ({
-  type: "Feature", geometry: f.geometry, properties: Object.fromEntries(MAP_KEYS.map((k) => [k, f.properties[k]])) })) };
+const parts = (g) => (g && g.type === "GeometryCollection" ? (g.geometries || []).flatMap(parts) : g ? [g] : []);
+const MAP_ITEMS = { type: "FeatureCollection", features: today.features.flatMap((f) => parts(f.geometry).map((g) => ({
+  type: "Feature", geometry: g, properties: Object.fromEntries(MAP_KEYS.map((k) => [k, f.properties[k]])) }))) };
 function addLayers() {
   map.addSource("items", { type: "geojson", data: MAP_ITEMS, maxzoom: 10 });
   map.addSource("countryfills", { type: "geojson", data: countryFills(), maxzoom: 6 });
@@ -201,6 +206,16 @@ function addLayers() {
     paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", claimed, 2, 1.3] } });
   map.addLayer({ id: "areas-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY, IS_DASHED],
     paint: { "line-color": colourExpr("line"), "line-width": 1.5, "line-dasharray": [4, 2] } });
+  // Lines: a casing in the outline colour (contrast with the base map) under the program's fill colour; a claim
+  // keeps only the fill colour, as cells-line does. lines-hit is invisible and wide, so a thin line is easy to click.
+  map.addLayer({ id: "lines-casing", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", anomaly, 5, 3.6] } });
+  map.addLayer({ id: "lines", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": colourExpr("fill"), "line-width": ["case", anomaly, 2.8, 1.8] } });
+  map.addLayer({ id: "lines-hit", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
+    paint: { "line-color": "#000000", "line-opacity": 0, "line-width": 14 } });
   map.addLayer({ id: "halos", type: "circle", source: "items", filter: ["all", baseFilter(), POINT, IS_HALO],
     paint: { "circle-radius": ["case", anomaly, 12, 9], "circle-opacity": 0, "circle-stroke-color": colourExpr("fill"),
       "circle-stroke-width": ["case", anomaly, 3, 2], "circle-stroke-opacity": 0.95 } });
@@ -210,7 +225,7 @@ function addLayers() {
       "circle-stroke-width": ["case", claimed, 2.2, 1.4] } });
   if (!handlersBound) {  // layer handlers survive a style change, so bind them once
     handlersBound = true;
-    for (const id of ["cells-fill", "halos", "points", "cf-fill"]) {
+    for (const id of ["cells-fill", "lines-hit", "halos", "points", "cf-fill"]) {
       map.on("click", id, (e) => { if (e.features[0]) select(e.features[0].properties.id, { fly: false }); });
       map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
@@ -225,6 +240,7 @@ function refreshLayers() {
   map.setFilter("cells-fill", ["all", baseFilter(), POLY]);
   map.setFilter("cells-line", ["all", baseFilter(), POLY, ["!", IS_DASHED]]);
   map.setFilter("areas-line", ["all", baseFilter(), POLY, IS_DASHED]);
+  for (const id of ["lines-casing", "lines", "lines-hit"]) map.setFilter(id, ["all", baseFilter(), LINE]);
   map.setFilter("halos", ["all", baseFilter(), POINT, IS_HALO]);
   map.setFilter("points", ["all", baseFilter(), POINT, ["!", IS_HALO]]);
   drawPins();
@@ -232,14 +248,29 @@ function refreshLayers() {
 
 // numbered pins for today's picks (HTML markers, so they need no map fonts)
 let pins = [];
+// A point is its own place; anything else sits at the middle of the box around its positions (a polygon's outer
+// ring, the first polygon of a multipolygon, every position of a line or multipoint, the first part of a
+// collection). tools/card.py place_of keeps the same rule. Shapes across 180 degrees carry longitudes past +-180
+// (Cordon keeps them continuous), so the middle can be past 180 too; MapLibre draws it on the next world copy.
+function positionsOf(g) {
+  if (!g) return [];
+  switch (g.type) {
+    case "Point": return [g.coordinates];
+    case "MultiPoint": case "LineString": return g.coordinates;
+    case "Polygon": return g.coordinates[0] || [];
+    case "MultiPolygon": return (g.coordinates[0] || [])[0] || [];
+    case "MultiLineString": return g.coordinates.flat();
+    case "GeometryCollection": return positionsOf((g.geometries || [])[0]);
+    default: return [];
+  }
+}
 function placeOf(f) {
   const g = f && f.geometry;
-  if (!g) return null;
-  if (g.type === "Point") return g.coordinates;
-  const ring = g.type === "Polygon" ? g.coordinates[0] : g.type === "MultiPolygon" ? g.coordinates[0][0] : null;
-  if (!ring) return null;
-  let [x0, y0, x1, y1] = [180, 90, -180, -90];
-  for (const [x, y] of ring) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  if (g && g.type === "Point") return g.coordinates;
+  const pts = positionsOf(g);
+  if (!pts.length) return null;
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
   return [(x0 + x1) / 2, (y0 + y1) / 2];
 }
 function drawPins() {
@@ -296,7 +327,7 @@ function renderCard(f) {
     h("button", { type: "button", class: "card-close", "aria-label": "Close", onclick: closeCard }, "×"),
     h("div", { class: "card-prog" }, dotFor(p.cop_program, p), `${prog.name} · ${prog.family}`),
     h("h3", { text: p.title }),
-    p.summary ? h("p", { text: p.summary }) : null,
+    ...(p.summary ? [h("p", { text: p.summary })] : []),  // append(null) would print "null"
   );
   const badges = h("div", { class: "badges" });
   if (p.kind === "forecast") {
@@ -507,6 +538,7 @@ function renderLegend() {
       h("span", { class: "lg" }, dotFor(CFG.programs[0].id, { status_class: "claimed" }), "Hollow: a claim"),
       h("span", { class: "lg" }, h("span", { class: "swatch-dash", "aria-hidden": "true" }), "Dashed: country-level or a legal area"),
       h("span", { class: "lg" }, h("span", { class: "swatch-ring", "aria-hidden": "true" }), "Ring: country-level, at its label point"),
+      h("span", { class: "lg" }, h("span", { class: "swatch-line", "aria-hidden": "true" }), "Line: a route or trackline in a notice"),
       h("span", { class: "lg" }, dotFor(CFG.programs[0].id, { cop_stale: true }), "Grey: no current data")));
   d.open = wasOpen;
   lg.replaceChildren(d);
