@@ -24,7 +24,11 @@ Verdict question (Tom, 13 Nov 2026) as "question_draft", labelled a draft that i
 probability; registering one stays Tom's. Every write goes through tools/gate.py, which classes the join
 from the layers it declares and the items it cites. It reads hazards, outages, travel and embassy notices and press
 attention; Cordon's navigation warnings and conflict-zone airspace bulletins are left out, because they place
-military activity and would make this join a held one.
+military activity and would make this join a held one. Its notices are the State Department's advisories, embassy
+alerts and operating status, and since 14 Nov 2026 UK FCDO and Global Affairs Canada travel advice, counted only
+when Cordon saw their level or advice change. CDC's travel health notices are open at the gate but not read: a
+disease notice says nothing about whether a network was cut, and one update to CDC's global measles notice
+would put a fresh notice in 235 countries.
 
 Standard-library Python only.
 """
@@ -52,9 +56,20 @@ UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
 # convergence branch; it reaches the site only when Tom merges that branch to main.
-JOIN = {"id": "outage-triage", "version": "0.6", "published": True,
-        "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture"]}
-NOTICE_KINDS = {"advisory", "alert", "posture"}   # the Cordon kinds on the gate's open list
+JOIN = {"id": "outage-triage", "version": "0.7", "published": True,
+        "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture",
+                   "cordon:fcdo", "cordon:canada"]}
+# The Cordon kinds triage reads, all on the gate's open list. CDC (kind cdc) is open there too but not read here.
+NOTICE_KINDS = {"advisory", "alert", "posture", "fcdo", "canada"}
+# Travel advice that is re-dated for every edit (contacts, a natural-disaster section, an air-traffic note): it
+# counts only when Cordon marks the item anomaly, i.e. Cordon saw its level or its advice change (Tom, 14 Nov
+# 2026). Measured on the 14 Nov snapshot: 16 of the 17 FCDO and Canada items dated in the 48-hour window were
+# such edits. Cordon's anomaly is not direction-aware, so the level is still compared with the archive.
+CHANGE_ONLY_KINDS = {"fcdo", "canada"}
+# FCDO's "advise against" statements, strongest first. A country's rank is which of them are in force, compared
+# in this order, so adding any statement raises it and removing one without adding a stronger one lowers it.
+FCDO_STATEMENTS = ("avoid_all_travel_to_whole_country", "avoid_all_but_essential_travel_to_whole_country",
+                   "avoid_all_travel_to_parts", "avoid_all_but_essential_travel_to_parts")
 LAYERS = ("elements", "cordon", "watchfloor")
 # Windows, all measured from the outage's own time (its data_as_of). PROVISIONAL (Tom, 12 Nov 2026): first picks, not
 # validated; look at them again when the base rates are rerun on a deeper archive (about 28 Nov 2026).
@@ -499,12 +514,33 @@ def _direction(item_id, dated, level, levels):
     return "raised" if level > before else "lowered" if level < before else "unchanged"
 
 
+def notice_level(p):
+    """A notice's level for comparing it with the one it replaced, or None. State's advisories: their level (1-4).
+    Canada: [level, regional advisories 1 or 0], so removing a regional advisory at the same level is a lowering.
+    FCDO: [1 or 0 for each of FCDO_STATEMENTS]. Lists compare in order, as the archive stores them."""
+    kind = _kind(p.get("id"))
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    if kind == "advisory":
+        return m.get("level")
+    if kind == "canada":
+        return None if m.get("level") is None else [m["level"], 1 if m.get("regional") else 0]
+    if kind == "fcdo":
+        st = m.get("alert_status")
+        return [1 if s in st else 0 for s in FCDO_STATEMENTS] if isinstance(st, list) else None
+    return None
+
+
+LEVELLED_KINDS = {"advisory", "canada", "fcdo"}
+
+
 def notices(features, cc, at, levels=None):
     """Cordon's travel and embassy notices for the country, against the outage's time.
 
     recent: dated in the NOTICE_RECENT_H before the outage and not a lowering or a re-issue at the same level; these
     count toward a reading. recent_not_raised: dated in the window but lowered or unchanged. standing: older.
-    after: dated after the outage. An advisory whose earlier level is not in the archive counts, marked "unknown"."""
+    after: dated after the outage. An advisory whose earlier level is not in the archive counts, marked "unknown".
+    FCDO and Canada travel advice that Cordon did not mark as changed is an edit at the same level: direction
+    "unchanged", not counted."""
     lo = (at - timedelta(hours=NOTICE_RECENT_H)).replace(hour=0, minute=0, second=0, microsecond=0)  # dates are days
     recent, not_raised, standing, after = [], [], [], []
     for f in features:
@@ -517,8 +553,10 @@ def notices(features, cc, at, levels=None):
         m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
         kind = _kind(p.get("id"))
         row = _row(p, kind=kind, level=m.get("level"))
-        if kind == "advisory":
-            row["direction"] = _direction(p.get("id"), dated, m.get("level"), levels)
+        if kind in CHANGE_ONLY_KINDS and p.get("tier") not in ("anomaly", "warning"):
+            row["direction"] = "unchanged"     # Cordon saw no change of level or advice: an edit
+        elif kind in LEVELLED_KINDS:
+            row["direction"] = _direction(p.get("id"), dated, notice_level(p), levels)
         if not dated or dated < lo:
             standing.append(row)
         elif dated > at:
@@ -757,8 +795,8 @@ def triage(snapshot, history=None, ended=None):
                                "against this country's own normal, and advisory and volcano alert levels are not "
                                "compared with the ones they replaced. Run tools/triage_rates.py first.")
             if any(n.get("direction") == "unknown" for n in note["recent"]):
-                caveats.append("An advisory in the window has no earlier level in the archive, so it is counted "
-                               "without knowing whether it was raised.")
+                caveats.append("An advisory or travel advice in the window has no earlier level in the archive, so "
+                               "it is counted without knowing whether it was raised.")
             if any(h.get("level_change") == "unknown" for h in haz["significant"]):
                 caveats.append(VOLCANO_UNKNOWN)
             if haz["standing"]:
@@ -926,8 +964,8 @@ def showed(name, layer):
             parts = [f"Nothing found: no travel or embassy notice was issued or raised in the {NOTICE_RECENT_H} "
                      "hours before the outage."]
         if layer["recent_not_raised"]:
-            parts.append(f"{_n(len(layer['recent_not_raised']), 'notice')} lowered or re-issued at the same level "
-                         "(not counted).")
+            parts.append(f"{_n(len(layer['recent_not_raised']), 'notice')} lowered, re-issued at the same level "
+                         "or edited without a change of level or advice (not counted).")
         if layer["standing"]:
             parts.append(f"{_n(len(layer['standing']), 'older notice')} standing (not counted).")
         if layer["after"]:
@@ -950,7 +988,9 @@ PUBLIC_NAME = "triage.json"
 LAYER_NAMES = {"elements": "Natural hazards (Elements)", "cordon": "Travel and embassy notices (Cordon)",
                "watchfloor": "Press attention (Watchfloor)"}
 WHAT = ("For each internet outage Blackout reports, what three other layers show for that country around that "
-        "hour: natural hazards (Elements), travel and embassy notices (Cordon) and press attention (Watchfloor). "
+        "hour: natural hazards (Elements), travel and embassy notices (Cordon: the State Department's advisories "
+        "and embassy notices, and UK and Canadian travel advice when its level or advice changes) and press "
+        "attention (Watchfloor). "
         "For each US state where ODIN's reporting utilities show more than 50,000 meters without power, the same "
         "layers for that state: hazards in or near it, while Cordon and Watchfloor do not cover US states.")
 NOT_A_WARNING = ("A reading sorts public reports. It is not a warning, not a forecast and not a finding of cause, "

@@ -403,5 +403,75 @@ class Triage(unittest.TestCase):
             self.assertEqual(set(r["layers"]), set(tri.LAYERS))
 
 
+class NewNoticeKinds(unittest.TestCase):
+    """UK FCDO and Canada travel advice count only as a change Cordon saw; CDC health notices are not read."""
+
+    def fcdo(self, tier, statuses=("avoid_all_travel_to_parts",), when="2026-11-11T09:00:00Z"):
+        return item("cordon", "cordon:fcdo:tunisia", ["TN"], tier, when,
+                    measures={"alert_status": list(statuses), "advice": "x", "new": False})
+
+    def canada(self, tier, level=2, regional=False, when="2026-11-11T09:00:00Z"):
+        return item("cordon", "cordon:canada:TN", ["TN"], tier, when, measures={"level": level, "regional": regional})
+
+    def test_an_edit_without_a_change_is_not_counted(self):
+        for f in (self.fcdo("routine"), self.canada("routine")):
+            r = one(tri.triage(snapshot(outage(), f), {"advisory_levels": {}, "attention_share": {}}))
+            self.assertEqual(r["reading"], "open", f["properties"]["id"])
+            c = r["layers"]["cordon"]
+            self.assertEqual((c["recent"], c["recent_not_raised"][0]["direction"]), ([], "unchanged"))
+            self.assertIn("edited without a change", tri.showed("cordon", c))
+
+    def test_a_change_with_no_earlier_level_counts_and_says_so(self):
+        for f in (self.fcdo("anomaly"), self.canada("anomaly")):
+            r = one(tri.triage(snapshot(outage(), f), {"advisory_levels": {}, "attention_share": {}}))
+            self.assertEqual(r["reading"], "deliberate", f["properties"]["id"])
+            self.assertEqual(r["layers"]["cordon"]["recent"][0]["direction"], "unknown")
+            self.assertTrue(any("no earlier level" in c for c in r["caveats"]))
+            self.assertEqual(gate.review(tri.JOIN, {"records": [r]})["review_class"], "open")
+
+    def test_a_change_is_compared_with_the_archive(self):
+        # Canada: a regional advisory removed at the same level is a lowering (Mexico, 12 Nov 2026).
+        f = self.canada("anomaly", level=1, regional=False)
+        hist = {"advisory_levels": {"cordon:canada:TN": [["2026-11-01T00:00:00Z", [1, 1]]]}, "attention_share": {}}
+        r = one(tri.triage(snapshot(outage(), f), hist))
+        self.assertEqual((r["reading"], r["layers"]["cordon"]["recent_not_raised"][0]["direction"]), ("open", "lowered"))
+        raised = one(tri.triage(snapshot(outage(), self.canada("anomaly", level=2)), hist))
+        self.assertEqual((raised["reading"], raised["layers"]["cordon"]["recent"][0]["direction"]),
+                         ("deliberate", "raised"))
+        # FCDO: adding a statement raises it; removing one lowers it.
+        before = tri.notice_level(self.fcdo("routine", ("avoid_all_travel_to_parts",))["properties"])
+        hist = {"advisory_levels": {"cordon:fcdo:tunisia": [["2026-11-01T00:00:00Z", before]]}, "attention_share": {}}
+        up = self.fcdo("anomaly", ("avoid_all_travel_to_parts", "avoid_all_but_essential_travel_to_parts"))
+        down = self.fcdo("anomaly", ())
+        self.assertEqual(one(tri.triage(snapshot(outage(), up), hist))["layers"]["cordon"]["recent"][0]["direction"],
+                         "raised")
+        self.assertEqual(one(tri.triage(snapshot(outage(), down), hist))["reading"], "open")
+
+    def test_cdc_health_notices_are_not_read(self):
+        cdc = item("cordon", "cordon:cdc:measles-globe", ["TN", "DZ"], "anomaly", "2026-11-11T09:00:00Z",
+                   measures={"level": 1})
+        r = one(tri.triage(snapshot(outage(), cdc), {"advisory_levels": {}, "attention_share": {}}))
+        c = r["layers"]["cordon"]
+        self.assertEqual((r["reading"], c["recent"], c["recent_not_raised"], c["standing"]), ("open", [], [], []))
+        self.assertNotIn("cordon:cdc", tri.JOIN["inputs"])
+
+    def test_every_notice_kind_is_declared_and_open(self):
+        for kind in tri.NOTICE_KINDS:
+            self.assertIn(f"cordon:{kind}", tri.JOIN["inputs"])
+            self.assertEqual(gate.layer_class("cordon", kind)[0], "open", kind)
+
+    def test_base_rate_history_keeps_travel_advice_levels_and_names_late_kinds(self):
+        def day(d, *features):
+            return {"generated_at": f"{d}T22:00:00Z", "features": list(features),
+                    "cop_programs": {k: {"state": "fresh"} for k in ("elements", "cordon", "watchfloor", "blackout")}}
+        snaps = [day("2026-11-09"),
+                 day("2026-11-14", self.canada("routine", level=1, regional=True, when="2026-11-14T09:00:00Z"))]
+        h = rates.history(snaps)
+        self.assertEqual(h["advisory_levels"]["cordon:canada:TN"], [["2026-11-14T09:00:00Z", [1, 1]]])
+        doc = rates.rates(snaps)
+        self.assertTrue(any("canada from 2026-11-14" in c for c in doc["cautions"]), doc["cautions"])
+        self.assertEqual(doc["background"]["notice_kinds_in_archive_from"], {"canada": "2026-11-14"})
+
+
 if __name__ == "__main__":
     unittest.main()

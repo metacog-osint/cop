@@ -38,7 +38,9 @@ OPEN = {
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
     "headwind": None,                              # prices against their own range, sanctions-list and rule changes
     "orbit": None,                                 # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026)
-    "cordon": {"advisory", "alert", "posture"},    # travel advisories, embassy alerts, embassy operating status
+    # travel advisories, embassy alerts, embassy operating status; UK FCDO and Global Affairs Canada travel advice
+    # and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as State's, not military context)
+    "cordon": {"advisory", "alert", "posture", "fcdo", "canada", "cdc"},
 }
 MILITARY = {
     "noisefloor": (None, "GPS interference: most of it comes from military jamming and spoofing"),
