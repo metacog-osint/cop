@@ -1,0 +1,479 @@
+{
+ "type": "FeatureCollection",
+ "format": "tic-history/1",
+ "program": "elements",
+ "generated_at": "2026-11-14T02:33:34Z",
+ "window_days": 7,
+ "what": "Elements items that ended in the last 7 days: they left the feed while their source was read successfully, or were NWS alerts issued and ended between two runs. Not active: not drawn on the map and not in the feed. Each keeps its last version; `history` gives first_seen, last_seen, ended_at (the first run without it, or the alert's own end) and end_reason. The full record is history/log/ in the Elements repository.",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-14T01:36:07Z",
+    "precision_class": "none",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:PAFG.UP.W.2425.2026",
+    "title": "Heavy Freezing Spray Warning for Western US Arctic Offshore (NWS Fairbanks AK)",
+    "tier": "routine",
+    "data_as_of": "2026-11-13T00:45:00Z",
+    "valid_until": "2026-11-14T02:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.4caf877c88602b82391262da83d202b819ba4cee.001.2",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-14T01:36:07Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.4caf877c88602b82391262da83d202b819ba4cee.001.2",
+    "measures": {
+     "event": "Heavy Freezing Spray Warning",
+     "severity": "Severe",
+     "urgency": "Expected",
+     "certainty": "Likely",
+     "office": "NWS Fairbanks AK",
+     "areas": [
+      "Western US Arctic Offshore"
+     ],
+     "counties": [
+      "58500"
+     ],
+     "onset": "2026-11-13T01:00:00Z",
+     "ends": "2026-11-14T02:00:00Z",
+     "vtec": "PAFG.UP.W.2425.2026"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.4caf877c88602b82391262da83d202b819ba4cee.001.2"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-13T01:06:38Z",
+    "last_seen": "2026-11-14T01:36:32Z",
+    "ended_at": "2026-11-14T02:00:00Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 0
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "MultiPoint",
+    "coordinates": [
+     [
+      -75.0288,
+      42.6298
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-13T17:36:16Z",
+    "precision_class": "approximate",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:KBGM.WS.W.0004.2026",
+    "title": "Winter Storm Warning for Otsego (NWS Binghamton NY)",
+    "tier": "routine",
+    "data_as_of": "2026-11-13T13:47:00Z",
+    "valid_until": "2026-11-13T18:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.b92f987caff0875ab1765fb1ecf0f1081e3cd1c4.001.1",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-13T17:36:16Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.b92f987caff0875ab1765fb1ecf0f1081e3cd1c4.001.1",
+    "measures": {
+     "event": "Winter Storm Warning",
+     "severity": "Severe",
+     "urgency": "Expected",
+     "certainty": "Likely",
+     "office": "NWS Binghamton NY",
+     "areas": [
+      "Otsego"
+     ],
+     "counties": [
+      "36077"
+     ],
+     "onset": "2026-11-13T13:47:00Z",
+     "ends": "2026-11-13T18:00:00Z",
+     "vtec": "KBGM.WS.W.0004.2026"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-13T03:06:36Z",
+    "last_seen": "2026-11-13T17:36:38Z",
+    "ended_at": "2026-11-13T18:00:00Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "MultiPoint",
+    "coordinates": [
+     [
+      -123.981,
+      41.7499
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-13T17:10:16Z",
+    "precision_class": "approximate",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:KEKA.HW.W.0003.2026",
+    "title": "High Wind Warning for Coastal Del Norte (NWS Eureka CA)",
+    "tier": "routine",
+    "data_as_of": "2026-11-13T15:17:00Z",
+    "valid_until": "2026-11-13T21:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.583ef610567defa09a3c5d38739b1ba47269031a.001.1",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-13T17:10:16Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.583ef610567defa09a3c5d38739b1ba47269031a.001.1",
+    "measures": {
+     "event": "High Wind Warning",
+     "severity": "Severe",
+     "urgency": "Expected",
+     "certainty": "Likely",
+     "office": "NWS Eureka CA",
+     "areas": [
+      "Coastal Del Norte"
+     ],
+     "counties": [
+      "06015"
+     ],
+     "onset": "2026-11-13T15:17:00Z",
+     "ends": "2026-11-13T21:00:00Z",
+     "vtec": "KEKA.HW.W.0003.2026"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-12T22:36:35Z",
+    "last_seen": "2026-11-13T17:10:47Z",
+    "ended_at": "2026-11-13T17:36:38Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -73.91,
+       40.58
+      ],
+      [
+       -73.88,
+       40.58
+      ],
+      [
+       -73.86,
+       40.6
+      ],
+      [
+       -73.86,
+       40.62
+      ],
+      [
+       -73.85,
+       40.62
+      ],
+      [
+       -73.85,
+       40.63
+      ],
+      [
+       -73.75,
+       40.68
+      ],
+      [
+       -73.72,
+       40.66
+      ],
+      [
+       -73.74,
+       40.64
+      ],
+      [
+       -73.77,
+       40.62
+      ],
+      [
+       -73.76,
+       40.61
+      ],
+      [
+       -73.74,
+       40.6
+      ],
+      [
+       -73.81,
+       40.57
+      ],
+      [
+       -73.88,
+       40.55
+      ],
+      [
+       -73.91,
+       40.58
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-12T18:36:06Z",
+    "precision_class": "area",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:nws:KOKX.TO.W.0006.2026",
+    "title": "Tornado Warning for Queens, NY (NWS Upton NY)",
+    "tier": "anomaly",
+    "data_as_of": "2026-11-12T18:14:00Z",
+    "valid_until": "2026-11-12T19:00:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "EL-PIR-7"
+    ],
+    "sources": [
+     {
+      "id": "nws-alerts",
+      "publisher": "NOAA National Weather Service",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.389e8bc2535501aa1f54e6c4b7f0e23250d73e9e.001.1",
+      "licence": "US public domain",
+      "grade": "A1",
+      "independence_group": "noaa",
+      "source_type": "official warning",
+      "descriptor": "CAP alert (warning, watch or advisory) rated Severe or Extreme, from api.weather.gov",
+      "accessed_at": "2026-11-12T18:36:06Z"
+     }
+    ],
+    "link": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.389e8bc2535501aa1f54e6c4b7f0e23250d73e9e.001.1",
+    "measures": {
+     "event": "Tornado Warning",
+     "severity": "Extreme",
+     "urgency": "Immediate",
+     "certainty": "Observed",
+     "office": "NWS Upton NY",
+     "areas": [
+      "Queens, NY"
+     ],
+     "counties": [
+      "36081"
+     ],
+     "onset": "2026-11-12T18:14:00Z",
+     "ends": "2026-11-12T19:00:00Z",
+     "vtec": "KOKX.TO.W.0006.2026"
+    },
+    "baseline_ref": {
+     "id": "cap-severity",
+     "type": "fixed",
+     "version": "1",
+     "window": "CAP severity: Minor, Moderate, Severe, Extreme"
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-12T18:36:44Z",
+    "last_seen": "2026-11-12T18:36:44Z",
+    "ended_at": "2026-11-12T19:00:00Z",
+    "end_reason": "left the feed",
+    "peak_tier": "anomaly",
+    "updates": 0
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -75.298,
+     -4.51
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "elements",
+    "kind": "observation",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "method_version": "elements-feed-1.0",
+    "product_category": "current",
+    "published_at": "2026-11-13T17:36:16Z",
+    "precision_class": "point",
+    "ie_aspect": [
+     "physical"
+    ],
+    "pmesii_pt": [
+     "physical_environment"
+    ],
+    "ascope": [
+     "events"
+    ],
+    "id": "elements:emsc:20261113_0000124",
+    "title": "M4.7 earthquake, Northern Peru (EMSC)",
+    "tier": "routine",
+    "data_as_of": "2026-11-13T10:55:13Z",
+    "countries": [
+     "PE"
+    ],
+    "requirement_ids": [
+     "EL-PIR-1"
+    ],
+    "sources": [
+     {
+      "id": "emsc",
+      "publisher": "European-Mediterranean Seismological Centre (EMSC)",
+      "url": "https://www.seismicportal.eu/eventdetails.html?unid=20261113_0000124",
+      "licence": "CC BY 4.0",
+      "grade": "A1",
+      "independence_group": "emsc",
+      "source_type": "official measurement",
+      "descriptor": "Earthquake origin and magnitude (seismicportal.eu FDSN event service)",
+      "accessed_at": "2026-11-13T17:36:16Z"
+     }
+    ],
+    "link": "https://www.seismicportal.eu/eventdetails.html?unid=20261113_0000124",
+    "measures": {
+     "magnitude": 4.7,
+     "magnitude_type": "m",
+     "place": "Northern Peru",
+     "depth_km": 10.0,
+     "authority": "GFZ",
+     "usgs_match": false
+    }
+   },
+   "history": {
+    "first_seen": "2026-11-13T11:36:42Z",
+    "last_seen": "2026-11-13T17:36:38Z",
+    "ended_at": "2026-11-13T18:06:33Z",
+    "end_reason": "left the feed",
+    "peak_tier": "routine",
+    "updates": 0
+   }
+  }
+ ]
+}

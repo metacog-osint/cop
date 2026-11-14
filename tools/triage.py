@@ -115,9 +115,15 @@ POWER_CAVEATS = (
     "power outage reads natural, open or incomplete, never deliberate.",
     "One ODIN reading, summed over the state's utilities that report to ODIN. DOE's line is more than 50,000 "
     "customers out for an hour or more, and a meter is close to, not the same as, a customer.",
-    "Elements carries active alerts only: a storm that passed before this snapshot is gone from it, so \"open\" can "
-    "mean the storm has passed.",
 )
+# Elements' feed carries active items only; its list of items that ended in the last 7 days (data/ended.geojson,
+# written from its history log) brings back a warning that ran out before this snapshot. Measured 1-14 Nov 2026: the
+# live feed alone still held a power-line warning in 19% of the state-times when one had begun in the 72-hour window.
+ENDED_STALE_H = 12
+ENDED_MISSING = ("Elements' list of hazards that ended in the last 7 days could not be read, so a hazard that ended "
+                 "before this snapshot is missing: \"open\" can mean the storm has passed.")
+ENDED_OLD = (f"Elements' list of hazards that ended is more than {ENDED_STALE_H} hours older than this snapshot, so a "
+             "hazard that ended in between is missing.")
 RED_FLAG = ("A Red Flag Warning counts as a hazard even where a utility cut power on purpose for fire safety (a "
             "public-safety power shutoff): the hazard is still the reason.")
 VOLCANO_UNKNOWN = ("A volcano alert in the window has no earlier level in COP's archive, so it is counted without "
@@ -200,8 +206,38 @@ def _kind(item_id):
 def _row(p, **extra):
     row = {"id": p.get("id"), "title": p.get("title"), "tier": p.get("tier"), "data_as_of": p.get("data_as_of"),
            "link": p.get("link")}
+    if isinstance(p.get("cop_ended"), dict):
+        row["ended_at"] = p["cop_ended"].get("ended_at")
     row.update(extra)
     return row
+
+
+def with_ended(features, ended, snapshot_at=None):
+    """(features, info): the snapshot's items plus a program's recently ended ones (Elements' data/ended.geojson),
+    each marked cop_ended with its history (first_seen, last_seen, ended_at, end_reason). An item still live in the
+    snapshot is not added twice. info: the list's state (fresh, old: generated more than ENDED_STALE_H hours before
+    the snapshot, or missing), how many items it added and when it was generated."""
+    if not isinstance(ended, dict) or not isinstance(ended.get("features"), list):
+        return features, {"state": "missing", "added": 0, "generated_at": None}
+    pid = ended.get("program") or "elements"
+    live = {f["properties"].get("id") for f in features}
+    extra = []
+    for f in ended["features"]:
+        p = f.get("properties") if isinstance(f, dict) else None
+        if not isinstance(p, dict) or not p.get("id") or p.get("id") in live:
+            continue
+        q = {**p, "cop_program": pid, "cop_ended": f.get("history") if isinstance(f.get("history"), dict) else {}}
+        extra.append({"type": "Feature", "geometry": f.get("geometry"), "properties": q})
+        live.add(p["id"])
+    gen = utc(ended.get("generated_at"))
+    old = bool(gen and snapshot_at and snapshot_at - gen > timedelta(hours=ENDED_STALE_H))
+    return features + extra, {"state": "old" if old else "fresh", "added": len(extra),
+                              "generated_at": ended.get("generated_at")}
+
+
+def ended_caveat(info):
+    return None if (info or {}).get("state") == "fresh" else ENDED_OLD if (info or {}).get("state") == "old" \
+        else ENDED_MISSING
 
 
 def _interval(p):
@@ -613,7 +649,7 @@ def power_question(st, name, at, br):
     }
 
 
-def power_record(f, features, states, history=None):
+def power_record(f, features, states, history=None, ended_info=None):
     """One record for a Blackout BO-IND-14 item: a US state over the line, read against Elements for that state."""
     p = f["properties"]
     st, at = us_state_of(p), utc(p.get("data_as_of"))
@@ -628,6 +664,8 @@ def power_record(f, features, states, history=None):
     ref = p.get("baseline_ref") if isinstance(p.get("baseline_ref"), dict) else {}
     br = ref.get("base_rate")
     caveats = list(POWER_CAVEATS)
+    if ended_caveat(ended_info):
+        caveats.append(ended_caveat(ended_info))
     if history is None:
         caveats.append("No archive baseline was given: volcano alert levels are not compared with the ones they "
                        "replaced. Run tools/triage_rates.py first.")
@@ -660,14 +698,17 @@ def power_record(f, features, states, history=None):
     }
 
 
-def triage(snapshot, history=None):
+def triage(snapshot, history=None, ended=None):
     """One record per Blackout outage in the snapshot. history: triage_rates.py's "history" block (each advisory's
-    earlier levels, each country's share of days with raised attention), or None when there is no archive."""
+    earlier levels, each country's share of days with raised attention), or None when there is no archive. ended:
+    Elements' list of items that ended in the last 7 days (data/ended.geojson), or None when it could not be read;
+    the layer states come from the live snapshot alone."""
     levels = (history or {}).get("advisory_levels")
     shares = (history or {}).get("attention_share")
     volcanoes = (history or {}).get("volcano_levels")
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: layer_state(snapshot, features, pid) for pid in LAYERS + ("blackout",)}
+    features, ended_info = with_ended(features, ended, utc(snapshot.get("generated_at")))
     ooni = {}
     for f in features:
         p = f["properties"]
@@ -680,7 +721,7 @@ def triage(snapshot, history=None):
         if p.get("cop_program") != "blackout" or p.get("cop_stale"):
             continue
         if p.get("indicator_id") == POWER_OUTAGE:
-            rec = power_record(f, features, states, history)
+            rec = power_record(f, features, states, history, ended_info)
             if rec:
                 records.append(rec)
             continue
@@ -706,7 +747,7 @@ def triage(snapshot, history=None):
                 reading = "open"
             until = at + timedelta(hours=OONI_WINDOW_H)
             blocked_now = cc in ooni
-            caveats = []
+            caveats = [ended_caveat(ended_info)] if ended_caveat(ended_info) else []
             if not att["data_reaches_outage"] and "watchfloor" not in dead:
                 caveats.append(f"Watchfloor's newest data ({att['newest_data']}) ends before this outage, so it "
                                "shows attention before the outage, not during it. Run again after its next day "
@@ -772,7 +813,7 @@ def triage(snapshot, history=None):
                         "power_still_out_hours": POWER_STILL_OUT_H, "notice_recent_hours": NOTICE_RECENT_H,
                         "attention_usual_share": ATTENTION_USUAL_SHARE, "ooni_window_hours": OONI_WINDOW_H,
                         "ooni_rise_points": OONI_RISE_POINTS, "provisional": True},
-            "baseline_given": history is not None,
+            "baseline_given": history is not None, "ended_items": ended_info,
             "records": records}
 
 
@@ -830,6 +871,14 @@ def _n(n, one):
     return f"{n} {one}{'' if n == 1 else 's'}"
 
 
+def _ended_note(rows):
+    n = sum(1 for r in rows if r.get("ended_at"))
+    if not n:
+        return []
+    return [f"{'It' if len(rows) == 1 else (str(n) + ' of them' if n < len(rows) else 'All of them')} had ended "
+            "before this snapshot."]
+
+
 def showed(name, layer):
     """One plain line on what a layer showed. "Nothing found", "No current data" and "Not covered" are different
     answers."""
@@ -848,6 +897,7 @@ def showed(name, layer):
         else:
             parts = [f"Nothing found: no hazard that takes power lines down began in or near this state in the "
                      f"{HAZARD_BEFORE_H} hours before the reading."]
+        parts += _ended_note(sig)
         if minor:
             parts.append(f"{_n(len(minor), 'minor hazard')} in or near the state in the window (not counted).")
         if standing:
@@ -862,6 +912,7 @@ def showed(name, layer):
             parts = [f"{_n(len(sig), 'significant hazard')} began in the {HAZARD_BEFORE_H} hours before the outage."]
         else:
             parts = [f"Nothing found: no significant hazard began in the {HAZARD_BEFORE_H} hours before the outage."]
+        parts += _ended_note(sig)
         if minor:
             parts.append(f"{_n(len(minor), 'minor hazard')} in the window (not counted).")
         if standing:
@@ -939,7 +990,7 @@ def public(doc):
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
-            "records": records}
+            "ended_items": doc.get("ended_items"), "records": records}
 
 
 def publish_folder(path):
@@ -965,18 +1016,29 @@ def main(argv=None):
     ap.add_argument("--snapshot", default=PUBLISHED, help="snapshot URL, .geojson file or .geojson.gz archive copy")
     ap.add_argument("--out", default=str(ROOT / "out" / "triage"))
     ap.add_argument("--rates", default=None, help="base-rates.json from triage_rates.py (default: <out>/base-rates.json)")
+    ap.add_argument("--ended", default=None,
+                    help="Elements' ended items (data/ended.geojson): URL or file; without it the readings say the "
+                         "ended hazards are missing")
     ap.add_argument("--publish", default=None, metavar="FOLDER",
                     help=f"also write the public document, {PUBLIC_NAME}, here (the build passes site/data)")
     a = ap.parse_args(argv)
     out = safe_out(a.out)
     rates_file = Path(a.rates) if a.rates else out / "base-rates.json"
     rates = json.loads(rates_file.read_text(encoding="utf-8")) if rates_file.exists() else None
-    doc = attach_rates(triage(load(a.snapshot), (rates or {}).get("history")), rates)
+    ended = None
+    if a.ended and (str(a.ended).startswith("http") or Path(a.ended).exists()):
+        try:
+            ended = load(a.ended)
+        except Exception as e:  # noqa: BLE001 - an unreadable list is a missing list, and the records say so
+            print(f"ended items unreadable: {type(e).__name__}")
+    doc = attach_rates(triage(load(a.snapshot), (rates or {}).get("history"), ended), rates)
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     if a.publish:
         gate.write(JOIN, public(doc), publish_folder(a.publish), (PUBLIC_NAME,))
     verdict = gate.write(JOIN, doc, out, (f"triage-{stamp}.json", "latest.json"))
     print(f"snapshot {doc['snapshot_generated_at']}  layers {doc['layer_states']}  gate: {verdict['review_class']}")
+    e = doc["ended_items"]
+    print(f"ended items: {e['state']}, {e['added']} added (generated {e['generated_at']})")
     for r in doc["records"]:
         L = r["layers"]
         print(f"{r['us_state'] or r['country']}  {r['reading']:<11} {r['outage']['title']}")

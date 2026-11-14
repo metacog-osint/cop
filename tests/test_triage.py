@@ -159,7 +159,8 @@ class Triage(unittest.TestCase):
         self.assertEqual(doc["background"]["country_days"], n)
         self.assertEqual(doc["background"]["would_read_country_days"], n)
         self.assertEqual(d["recent_notice_kinds"], {"alert": 2})
-        self.assertEqual(len(doc["cautions"]), 2, "one day and no outages: both cautions")
+        self.assertEqual(len(doc["cautions"]), 3, "one day, no outages, no ended list: three cautions")
+        self.assertTrue(any("no list of Elements' ended hazards" in c for c in doc["cautions"]))
         by = doc["background"]["by_country"]
         self.assertEqual(by["TN"], {"deliberate": 0.0, "natural": 1.0, "open": 0.0})
         self.assertEqual(by["DZ"]["deliberate"], 1.0)
