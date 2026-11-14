@@ -156,6 +156,19 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours, and from 14 Nov
   the "YYYY-MM-DD HH:MM UTC" times in titles and summaries too, so scheduled launches sit after the fixture's time.
   Its scheduled launches also reach the MCP tool `upcoming_events` (14 Nov 2026; see the MCP server section).
+- **Launch** (14 Nov 2026, kit 0.4.9, which adds its registry entry live): FAA space-operations TFRs (polygons) and
+  scheduled launches that coincide with a launch closure area in time and place, or that GCAT has since dated inside
+  its window (the area's polygon). Time-only coincidences stay on Launch's own page. Every item is kind
+  `observation`, tier `routine`, precision `area`, `us_person_data: organizations`; no `strength` rules;
+  `routine_in_preset` under "Spectrum and space" beside Orbit and Noisefloor. `mark` "areas", `area_style`
+  "dashed" (notices, as Cordon's), `country_mark` "halo", `freshness` "feed". Colour: Paul Tol's purple `#AA4499`
+  (outlines `#55224C`, `#DDB4D6`); Orbit's note above found Tol's remaining hues close to the Okabe-Ito ones in use
+  (this one to Context's `#CC79A7`), so the dashed outline is what sets Launch apart: not run through the colour
+  validator yet. Sources `faa-tfr` (US Government work, `commercial_ok` true) and `orbit-snapshot` ("unknown"), as
+  Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list** pending Tom's confirmation,
+  as Orbit was first: closure areas and the launches they match include national-security launches and missile
+  firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every
+  timestamp moved back 13 days 18 h 9 min. A local live build 14 Nov read it fresh, 3 items, no lint errors.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's

@@ -1,0 +1,540 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "launch",
+ "generated_at": "2026-10-31T20:05:00Z",
+ "method_version": "launch-1.0",
+ "licence": "FAA TFRs: US Government work. Orbit's items keep their sources' terms (GCAT CC BY 4.0).",
+ "attribution": "Launch, The Intelligence Company. FAA TFRs; Orbit (Launch Library 2, GCAT by J. McDowell, NGA, Japan Coast Guard)",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -97.2,
+       26.01666667
+      ],
+      [
+       -97.16666667,
+       25.93333333
+      ],
+      [
+       -97,
+       26
+      ],
+      [
+       -96.91666667,
+       26
+      ],
+      [
+       -96.91666667,
+       26.1
+      ],
+      [
+       -97.11666667,
+       26.06666667
+      ],
+      [
+       -97.2,
+       26.01666667
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "launch",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:05:00Z",
+    "valid_until": "2026-11-02T20:05:00Z",
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "provide_satellite_access"
+    ],
+    "method_version": "launch-1.0",
+    "id": "launch:tfr:6/7131",
+    "title": "FAA space operations TFR FDC 6/7131: STARBASE, TX, Saturday, November 14, 2026 through Saturday, November 14, 2026 Local",
+    "summary": "The FAA lists FDC 6/7131 (space operations, ZHU, TX), created 11/11/2026: STARBASE, TX, Saturday, November 14, 2026 through Saturday, November 14, 2026 Local. Limits: Area A: 0 FT HEI to 999 FL ALT. The FAA's XML gives the expiry as 2026-11-15T00:14:00 in time zone CST. Not for navigation.",
+    "data_as_of": "2026-10-31T20:05:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "LA-PIR-1"
+    ],
+    "coverage_fraction": 1.0,
+    "precision_class": "area",
+    "visual": {
+     "type": "map",
+     "url": "https://launch.theintelligence.company/#live"
+    },
+    "sources": [
+     {
+      "id": "faa-tfr",
+      "publisher": "US Federal Aviation Administration",
+      "title": "Temporary Flight Restrictions",
+      "url": "https://tfr.faa.gov/tfr3/?page=detail_6_7131",
+      "licence": "US Government work",
+      "grade": "A1",
+      "independence_group": "faa",
+      "source_type": "official",
+      "accessed_at": "2026-10-31T20:05:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -80.84555556,
+       28.81944444
+      ],
+      [
+       -80.78361111,
+       28.63361111
+      ],
+      [
+       -80.73027778,
+       28.5225
+      ],
+      [
+       -80.69555556,
+       28.41694444
+      ],
+      [
+       -80.63305556,
+       28.41694444
+      ],
+      [
+       -80.50805556,
+       28.41694444
+      ],
+      [
+       -80.26666667,
+       28.225
+      ],
+      [
+       -80.25734983,
+       28.22706186
+      ],
+      [
+       -80.22022142,
+       28.25590147
+      ],
+      [
+       -80.18605238,
+       28.28748785
+      ],
+      [
+       -80.15510291,
+       28.3215829
+      ],
+      [
+       -80.12760965,
+       28.35792938
+      ],
+      [
+       -80.10378379,
+       28.3962528
+      ],
+      [
+       -80.08380945,
+       28.43626347
+      ],
+      [
+       -80.06784217,
+       28.47765859
+      ],
+      [
+       -80.05600764,
+       28.52012455
+      ],
+      [
+       -80.04840061,
+       28.56333926
+      ],
+      [
+       -80.04508404,
+       28.60697456
+      ],
+      [
+       -80.04608845,
+       28.65069868
+      ],
+      [
+       -80.05141156,
+       28.69417879
+      ],
+      [
+       -80.06101811,
+       28.73708351
+      ],
+      [
+       -80.07484001,
+       28.77908544
+      ],
+      [
+       -80.09277665,
+       28.81986369
+      ],
+      [
+       -80.11469555,
+       28.85910636
+      ],
+      [
+       -80.14043326,
+       28.89651293
+      ],
+      [
+       -80.16979646,
+       28.93179665
+      ],
+      [
+       -80.20256339,
+       28.96468674
+      ],
+      [
+       -80.23848542,
+       28.99493057
+      ],
+      [
+       -80.277289,
+       29.0222956
+      ],
+      [
+       -80.31867766,
+       29.04657125
+      ],
+      [
+       -80.36233436,
+       29.06757058
+      ],
+      [
+       -80.40792392,
+       29.08513178
+      ],
+      [
+       -80.4550957,
+       29.09911944
+      ],
+      [
+       -80.5,
+       29.125
+      ],
+      [
+       -80.70527778,
+       28.85444444
+      ],
+      [
+       -80.78722222,
+       28.85444444
+      ],
+      [
+       -80.84555556,
+       28.81944444
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "launch",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:05:00Z",
+    "valid_until": "2026-11-02T20:05:00Z",
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "provide_satellite_access"
+    ],
+    "method_version": "launch-1.0",
+    "id": "launch:tfr:6/7114",
+    "title": "FAA space operations TFR FDC 6/7114: Cape Canaveral, FL, Sunday, November 15, 2026 Local",
+    "summary": "The FAA lists FDC 6/7114 (space operations, ZJX, FL), created 11/11/2026: Cape Canaveral, FL, Sunday, November 15, 2026 Local. Limits: Area A: 0 FT HEI to 180 FL ALT. The FAA's XML gives the expiry as 2026-11-15T18:50:00 in time zone EST. Not for navigation.",
+    "data_as_of": "2026-10-31T20:05:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "LA-PIR-1"
+    ],
+    "coverage_fraction": 1.0,
+    "precision_class": "area",
+    "visual": {
+     "type": "map",
+     "url": "https://launch.theintelligence.company/#live"
+    },
+    "sources": [
+     {
+      "id": "faa-tfr",
+      "publisher": "US Federal Aviation Administration",
+      "title": "Temporary Flight Restrictions",
+      "url": "https://tfr.faa.gov/tfr3/?page=detail_6_7114",
+      "licence": "US Government work",
+      "grade": "A1",
+      "independence_group": "faa",
+      "source_type": "official",
+      "accessed_at": "2026-10-31T20:05:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -80.84555556,
+       28.81944444
+      ],
+      [
+       -80.78361111,
+       28.63361111
+      ],
+      [
+       -80.73027778,
+       28.5225
+      ],
+      [
+       -80.69555556,
+       28.41694444
+      ],
+      [
+       -80.63305556,
+       28.41694444
+      ],
+      [
+       -80.50805556,
+       28.41694444
+      ],
+      [
+       -80.26666667,
+       28.225
+      ],
+      [
+       -80.25734983,
+       28.22706186
+      ],
+      [
+       -80.22022142,
+       28.25590147
+      ],
+      [
+       -80.18605238,
+       28.28748785
+      ],
+      [
+       -80.15510291,
+       28.3215829
+      ],
+      [
+       -80.12760965,
+       28.35792938
+      ],
+      [
+       -80.10378379,
+       28.3962528
+      ],
+      [
+       -80.08380945,
+       28.43626347
+      ],
+      [
+       -80.06784217,
+       28.47765859
+      ],
+      [
+       -80.05600764,
+       28.52012455
+      ],
+      [
+       -80.04840061,
+       28.56333926
+      ],
+      [
+       -80.04508404,
+       28.60697456
+      ],
+      [
+       -80.04608845,
+       28.65069868
+      ],
+      [
+       -80.05141156,
+       28.69417879
+      ],
+      [
+       -80.06101811,
+       28.73708351
+      ],
+      [
+       -80.07484001,
+       28.77908544
+      ],
+      [
+       -80.09277665,
+       28.81986369
+      ],
+      [
+       -80.11469555,
+       28.85910636
+      ],
+      [
+       -80.14043326,
+       28.89651293
+      ],
+      [
+       -80.16979646,
+       28.93179665
+      ],
+      [
+       -80.20256339,
+       28.96468674
+      ],
+      [
+       -80.23848542,
+       28.99493057
+      ],
+      [
+       -80.277289,
+       29.0222956
+      ],
+      [
+       -80.31867766,
+       29.04657125
+      ],
+      [
+       -80.36233436,
+       29.06757058
+      ],
+      [
+       -80.40792392,
+       29.08513178
+      ],
+      [
+       -80.4550957,
+       29.09911944
+      ],
+      [
+       -80.5,
+       29.125
+      ],
+      [
+       -80.70527778,
+       28.85444444
+      ],
+      [
+       -80.78722222,
+       28.85444444
+      ],
+      [
+       -80.84555556,
+       28.81944444
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "launch",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:05:00Z",
+    "valid_until": "2026-11-02T20:05:00Z",
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "provide_satellite_access"
+    ],
+    "method_version": "launch-1.0",
+    "id": "launch:tfr:6/7113",
+    "title": "FAA space operations TFR FDC 6/7113: Cape Canaveral, FL, Sunday, November 15, 2026 Local",
+    "summary": "The FAA lists FDC 6/7113 (space operations, ZMA, FL), created 11/11/2026: Cape Canaveral, FL, Sunday, November 15, 2026 Local. Limits: Area A: 0 FT HEI to 180 FL ALT. The FAA's XML gives the expiry as 2026-11-15T18:50:00 in time zone EST. Not for navigation.",
+    "data_as_of": "2026-10-31T20:05:00Z",
+    "countries": [
+     "US"
+    ],
+    "requirement_ids": [
+     "LA-PIR-1"
+    ],
+    "coverage_fraction": 1.0,
+    "precision_class": "area",
+    "visual": {
+     "type": "map",
+     "url": "https://launch.theintelligence.company/#live"
+    },
+    "sources": [
+     {
+      "id": "faa-tfr",
+      "publisher": "US Federal Aviation Administration",
+      "title": "Temporary Flight Restrictions",
+      "url": "https://tfr.faa.gov/tfr3/?page=detail_6_7113",
+      "licence": "US Government work",
+      "grade": "A1",
+      "independence_group": "faa",
+      "source_type": "official",
+      "accessed_at": "2026-10-31T20:05:00Z"
+     }
+    ]
+   }
+  }
+ ]
+}
