@@ -297,8 +297,13 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   alert: GitHub mails the owner.
 - Optional repo secret `HC_PING_URL` (a Healthchecks.io check address, set by Tom, never written in a file): each run
   pings it, and its `/fail` address on a problem, so Healthchecks.io can say when the watchdog itself stopped.
-- Not done: the hub's `tic-dispatch` Worker does not start it yet, so it is as slow as GitHub's schedule.
-- Tests: `python tests/test_suite_watch.py` (8).
+- The hub's `tic-dispatch` Worker starts it every three hours at :00 (01, 04, ... 22 UTC; hub `15caf79`, deployed
+  14 Nov 2026); the cron stays as a fallback. Dispatched runs send no inputs.
+- **Testing the alerts** (14 Nov 2026, Tom's yes): Actions > watch > Run workflow with `test_failure` ticked, or
+  `gh workflow run watch.yml --repo metacog-osint/cop -f test_failure=true`. `--test-failure` adds one problem that
+  says it is a test, so the run fails, GitHub mails the owner and Healthchecks.io gets `/fail`. The next normal run
+  turns the check green again.
+- Tests: `python tests/test_suite_watch.py` (10).
 
 ## Not in v0
 Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is

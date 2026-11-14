@@ -10,6 +10,8 @@ It checks three things the picture cannot say about itself:
      ahead looks fresh for ever).
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
 pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
+--test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
+(GitHub's failed-run mail and Healthchecks.io's /fail mail) without anything being wrong.
 Standard library only. Run by .github/workflows/watch.yml, apart from the build, because a build that has
 stopped cannot report itself. Tests: python tests/test_suite_watch.py
 """
@@ -64,6 +66,8 @@ def main(argv=None):
     ap.add_argument("--snapshot", default=SNAPSHOT)
     ap.add_argument("--cop-hours", type=float, default=6.0)
     ap.add_argument("--future-minutes", type=float, default=30.0)
+    ap.add_argument("--test-failure", action="store_true",
+                    help="fail on purpose, to test that the alerts arrive")
     a = ap.parse_args(argv)
     now = datetime.now(timezone.utc)
     try:
@@ -75,6 +79,8 @@ def main(argv=None):
         problems = check(snap, now, a.cop_hours, a.future_minutes)
     except Exception as e:
         problems = [f"COP: the snapshot could not be read ({type(e).__name__}: {e})"]
+    if a.test_failure:
+        problems.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
     text = "\n".join(problems) if problems else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"
     print(text)
     url = os.environ.get("HC_PING_URL", "").rstrip("/")
