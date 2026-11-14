@@ -1,7 +1,8 @@
 """The suite ledger (tools/ledger.py): python tests/test_ledger.py
 
 The line format and its rules are the doctrine kit's (tic-history/1; tested in the kit and, on recorded data, in
-Elements). These tests cover what is COP's own: a program is the lane, a program that was not read ends nothing, COP's
+Elements). These tests cover what is COP's own: a program is the lane (a program's source, where its feed
+names its sources' health), a program that was not read ends nothing, COP's
 own marks are no change, the files, the refusal to start over without a state, and that the ledger is never published.
 """
 
@@ -35,6 +36,71 @@ def snap(at, *items, states=None):
 
 
 A, B, C = "2026-11-14T00:21:00Z", "2026-11-14T02:21:00Z", "2026-11-14T04:21:00Z"
+
+
+def sourced(program, iid, source):
+    return item(program, iid, sources=[{"id": source, "accessed_at": "2026-11-14T00:00:00Z"}])
+
+
+def with_lanes(s, program, lanes, read):
+    s["cop_programs"][program].update({"lanes": sorted(lanes), "lanes_read": sorted(read)})
+    return s
+
+
+class SourceLanes(unittest.TestCase):
+    """A program whose feed says which sources were read ends an item only when that item's source was read."""
+
+    def test_an_item_from_a_failed_source_stays_open_while_the_rest_of_its_program_ends(self):
+        lanes = {"ooni-api", "ioda-gatech"}
+        s1, lines = ledger.step({}, with_lanes(snap(A, sourced("blackout", "blackout:ooni:ir", "ooni-api"),
+                                                    sourced("blackout", "blackout:outage:ly", "ioda-gatech")),
+                                               "blackout", lanes, lanes))
+        self.assertEqual(sorted(x["lane"] for x in lines), ["blackout/ioda-gatech", "blackout/ooni-api"])
+        self.assertEqual({x["program"] for x in lines}, {"blackout"})
+        # OONI failed this run, so Blackout dropped its item; IODA was read and its outage is over.
+        s2, lines = ledger.step(s1, with_lanes(snap(B, states={"blackout": "fresh"}), "blackout", lanes, {"ioda-gatech"}))
+        self.assertEqual([(x["change"], x["id"]) for x in lines], [("ended", "blackout:outage:ly")])
+        self.assertIn("blackout:ooni:ir", s2["open"])
+        _, lines = ledger.step(s2, with_lanes(snap(C, states={"blackout": "fresh"}), "blackout", lanes, lanes))
+        self.assertEqual([x["id"] for x in lines], ["blackout:ooni:ir"])
+
+    def test_the_lane_map_names_cordons_embassy_sources(self):
+        s = with_lanes(snap(A, sourced("cordon", "cordon:alert:x", "usembassy-ly")), "cordon",
+                       {"us-embassy-alerts"}, {"us-embassy-alerts"})
+        _, lines = ledger.step({}, s)
+        self.assertEqual(lines[0]["lane"], "cordon/us-embassy-alerts")
+
+    def test_a_source_the_block_does_not_name_falls_back_to_the_program(self):
+        s = with_lanes(snap(A, sourced("cordon", "cordon:new:1", "brand-new-source")), "cordon", {"easa-czib"}, set())
+        _, lines = ledger.step({}, s)
+        self.assertEqual(lines[0]["lane"], "cordon")
+
+    def test_items_logged_under_their_program_move_to_their_source_lane(self):
+        s1, _ = ledger.step({}, snap(A, sourced("blackout", "blackout:ooni:ir", "ooni-api")))
+        self.assertEqual(s1["open"]["blackout:ooni:ir"]["lane"], "blackout")
+        s2, lines = ledger.step(s1, with_lanes(snap(B, states={"blackout": "fresh"}), "blackout",
+                                               {"ooni-api"}, set()))
+        self.assertEqual(lines, [], "OONI was not read, so its old item does not end")
+        self.assertEqual(s2["open"]["blackout:ooni:ir"]["lane"], "blackout/ooni-api")
+
+    def test_a_program_not_read_ends_nothing_whatever_its_sources_say(self):
+        lanes = {"ooni-api"}
+        s1, _ = ledger.step({}, with_lanes(snap(A, sourced("blackout", "blackout:ooni:ir", "ooni-api")),
+                                           "blackout", lanes, lanes))
+        _, lines = ledger.step(s1, with_lanes(snap(B, states={"blackout": "stale"}), "blackout", lanes, lanes))
+        self.assertEqual(lines, [])
+
+
+class SnapshotLanes(unittest.TestCase):
+    def test_the_snapshot_keeps_which_sources_a_feed_says_were_read(self):
+        import snapshot
+        t = "2026-11-14T21:00:00Z"
+        got = snapshot.source_lanes({"health": {
+            "a": {"state": "fresh", "last_ok": t, "checked_at": t},
+            "b": {"state": "failed", "last_ok": "2026-11-14T17:00:00Z", "checked_at": t},
+            "c": {"state": "stale", "last_ok": t, "checked_at": t}}})
+        self.assertEqual(got, {"lanes": ["a", "b", "c"], "lanes_read": ["a"]})
+        self.assertIsNone(snapshot.source_lanes({"features": []}))
 
 
 class Step(unittest.TestCase):

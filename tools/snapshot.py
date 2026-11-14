@@ -26,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 from tic_doctrine import contract  # noqa: E402
+from tic_doctrine import history  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
 from tic_doctrine import tips as kittips  # noqa: E402
 
@@ -151,10 +152,21 @@ def also_in(p, prog):
             if kind in r.get("kinds", [kind]) and re.search(r["match"], text, re.I)]
 
 
+def source_lanes(feed) -> dict | None:
+    """{"lanes": [...], "lanes_read": [...]} from a feed's own per-source `health` block (Cordon's, Blackout's), or
+    None when it has none. The suite ledger ends a program's item only when the item's own lane was read; the kit's
+    lanes_ok decides read (last success is the last check, and the entry's state, if any, is fresh, late or up)."""
+    h = feed.get("health")
+    if not isinstance(h, dict) or not h:
+        return None
+    return {"lanes": sorted(h), "lanes_read": sorted(history.lanes_ok(h))}
+
+
 def build(feeds, reports, previous, now):
     """feeds: {program id: feed or None}. Returns (today, picks, health, countries)."""
     features, health, attributions = [], [], []
     candidates = {}
+    lanes_by_program = {}
     for prog in CONFIG["programs"]:
         pid = prog["id"]
         feed, rep = feeds.get(pid), reports[pid]
@@ -163,6 +175,7 @@ def build(feeds, reports, previous, now):
             items = feed["features"]
             lint = lint_feed(feed)
             attribution, licence = feed.get("attribution"), feed.get("licence")
+            lanes_by_program[pid] = source_lanes(feed)
         else:
             items = [f for f in (previous or {}).get("features", []) if f.get("properties", {}).get("cop_program") == pid]
             from_previous = bool(items)
@@ -233,6 +246,7 @@ def build(feeds, reports, previous, now):
     countries = country_shapes(features)
     programs_block = {h["id"]: {"name": h["name"], "state": h["state"], "data_as_of": h["data_as_of"],
                                 "attribution": h["attribution"], "licence": h["licence"], "site": h["site"]}
+                      | (lanes_by_program.get(h["id"]) or {})
                       for h in health}
     today = {
         "type": "FeatureCollection", "contract": "tic-feed/2", "program": "cop", "generated_at": iso(now),
