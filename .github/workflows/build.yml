@@ -1,6 +1,7 @@
 name: build
 # Rebuilds COP every two hours and on every push to main: the tests, a fresh snapshot of the program feeds, a daily
-# archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), outage triage (COP's own reading of each
+# archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), the suite ledger (release ledger: what is
+# new, changed or ended since the last build), outage triage (COP's own reading of each
 # Blackout outage, with base rates from the archived days), then a deploy of site/ to Cloudflare Pages
 # (project cop). Needs repo secrets CLOUDFLARE_PAGES_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; without
 # them everything runs except the deploy. A program feed that fails never fails the build (snapshot.py keeps its last
@@ -68,6 +69,7 @@ jobs:
           python tests/test_triage_ended.py
           python tests/test_rebuild_ended.py
           python tests/test_three_signal.py
+          python tests/test_ledger.py
           npm test
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
@@ -87,6 +89,38 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP snapshots $(date -u +%Y-%m)" \
             --notes "One COP snapshot per UTC day (the last run of the day wins), kept for the 14-day timeline."
           gh release upload "$TAG" out/archive/*.geojson.gz $(ls out/archive/*-ended.json.gz 2>/dev/null) --clobber
+      # The suite ledger: what is new, changed or ended in the picture since the last build, with each full item
+      # (tools/ledger.py, the kit's tic-history/1). Kept as assets of the release "ledger" (state.json.gz and one
+      # YYYY-MM-DD.jsonl.gz per UTC day), never in site/. The step reads the release's asset list first: an asset
+      # that is listed but cannot be downloaded stops the step, so a failed download never starts the ledger over
+      # or overwrites a day's earlier lines. A failure here never fails the build; that build is just not logged.
+      - name: Suite ledger (kept as release assets, not published)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { echo "::warning::suite ledger: $1; this build is not logged"; exit 0; }
+          DAY=$(python tools/ledger.py --day site/data/today.geojson) || skip "the snapshot has no day"
+          mkdir -p out/ledger
+          FIRST=""
+          if gh release view ledger >/dev/null 2>&1; then
+            ASSETS=$(gh release view ledger --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+            if echo "$ASSETS" | grep -qx "state.json.gz"; then
+              gh release download ledger --dir out/ledger --pattern state.json.gz --clobber || skip "the last state could not be downloaded"
+            else
+              FIRST="--first"
+            fi
+            if echo "$ASSETS" | grep -qx "$DAY.jsonl.gz"; then
+              gh release download ledger --dir out/ledger --pattern "$DAY.jsonl.gz" --clobber || skip "today's lines could not be downloaded"
+            fi
+          else
+            gh release create ledger --title "COP suite ledger" \
+              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Not published." \
+              || skip "the release could not be created"
+            FIRST="--first"
+          fi
+          python tools/ledger.py --snapshot site/data/today.geojson --assets out/ledger $FIRST || skip "the tool failed"
+          gh release upload ledger out/ledger/state.json.gz $(ls "out/ledger/$DAY.jsonl.gz" 2>/dev/null) --clobber \
+            || echo "::warning::suite ledger: upload failed; the next build logs these changes again from the last state"
       # Outage triage reads the snapshot just built and writes site/data/triage.json for the page and the MCP server.
       # Base rates come from the archived days: this month's and last month's release copies, downloaded to their own
       # folder (out/archive is what the step above uploads from), plus today's. A failure here never fails the build:

@@ -281,3 +281,19 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 ## Not in v0
 Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is
 wired into the card for when judgments appear), the 14-day timeline (daily snapshots are archived for it).
+
+## The suite ledger (built 14 Nov 2026 on Tom's "History log in kit"; not yet on `main` when written)
+
+- `tools/ledger.py` keeps every item the picture has carried: at each build it compares the snapshot with the last
+  state and writes one line per item that is new, changed (tier or response stage) or ended, with the full item. The
+  format and rules are the doctrine kit's history log (`tic-history/1`, kit 0.5.0, `doctrine/kit/docs/history-log.md`),
+  the same one Elements keeps and every program is meant to adopt.
+- A lane is a program. A program counts as read when its state in the snapshot is fresh or late; a stale or failed
+  program ends nothing. COP's own marks (`cop_pick`, `cop_strength`, `cop_stale`) are no change.
+- Files are assets of the release `ledger`: `state.json.gz` and one `YYYY-MM-DD.jsonl.gz` per UTC day. **Not
+  published**: the ledger holds every layer side by side, so the tool refuses `site/`, `functions/` and `mcp/`.
+  Anything drawn from it for the page or the MCP server is a join and goes through `tools/gate.py`.
+- Without the last state every item would be logged as new again, so the tool stops unless `--first` is passed, and
+  the build step skips (with a warning) when a listed asset cannot be downloaded.
+- `python tools/ledger.py --replay out/archive --assets out/ledger-replay` rebuilds a ledger from the archived daily
+  snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (16).
