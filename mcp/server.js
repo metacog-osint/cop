@@ -80,11 +80,11 @@ const ForecastInput = z.object({
 
 const EventsInput = z.object({
   days: z.number().int().min(1).max(366).optional().describe("How many days ahead to look, default 30."),
-  origin: z.enum(["verdict", "cordon"]).optional().describe("Only events found by this program."),
+  origin: z.enum(T.EVENT_ORIGINS).optional().describe("Only events found by this program."),
 });
 
-// data: { index(), programs(), picks(), triage(), verdict(), shard(n) }, each a promise of the parsed file (see
-// data.js; triage() resolves to null when the file is absent).
+// data: { index(), programs(), picks(), triage(), verdict(), events(), shard(n) }, each a promise of the parsed file
+// (see data.js; triage() and events() resolve to null when the file is absent).
 export function buildServer(data, clock = Date.now) {
   const server = new McpServer(
     { name: "cop", title: "COP, The Intelligence Company", version: VERSION, websiteUrl: SITE },
@@ -181,9 +181,9 @@ export function buildServer(data, clock = Date.now) {
     "upcoming_events",
     "Upcoming events",
     "Dated, resolvable events in the next days (data releases, rule dates, bulletin expiries, travel advisory " +
-      "changes), with the forecasts that name them.",
+      "changes, scheduled orbital launches), with the forecasts that name them.",
     EventsInput,
-    async (a, now) => T.upcomingEvents(await data.verdict(), a, now),
+    async (a, now) => T.upcomingEvents(await data.verdict().catch(() => null), await data.events(), a, now),
   );
   return server;
 }

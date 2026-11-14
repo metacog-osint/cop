@@ -9,6 +9,7 @@ snapshot.py, writes small files the server reads instead:
     programs.json   every program in the suite registry (live and planned), with COP's health for each live one
     verdict.json    Verdict's forecasts, scores and event calendar; a part that fails to fetch keeps its last
                     published copy, marked stale
+    events.json     dated events from the programs' own feeds, beside Verdict's calendar: Orbit's scheduled launches
 
     python tools/agent_index.py                                   # after snapshot.py; fetches Verdict
     python tools/agent_index.py --verdict tests/fixtures/verdict  # read Verdict's files from a folder (tests)
@@ -21,6 +22,7 @@ own sources[].licence.
 import argparse
 import importlib.util
 import json
+import re
 import sys
 import time
 import urllib.request
@@ -225,6 +227,89 @@ def build_verdict(docs, reports, previous, now):
     return out
 
 
+# --- events.json: the programs' own dated events, for upcoming_events beside Verdict's calendar ---------------------
+# Orbit's scheduled launches carry their time only in the title and summary ("..., 2026-11-14 17:32 UTC", "status Go
+# for Launch; NET precision Minute"); the feed contract has no field for an event's time (checked 14 Nov 2026). An
+# item's own `event` object, in Verdict's calendar shape, wins over the text if Orbit ever publishes one.
+EVENT_PREFIXES = ("orbit:upcoming:",)
+WHEN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}) UTC")
+NET_PRECISION = re.compile(r"NET precision ([^;]+?)\)(?:\s|$|[.,;])")
+LAUNCH_STATUS = re.compile(r"\(status ([^;()]+);")
+TIMED = {"Second", "Minute", "Hour"}  # Launch Library 2 precisions where the time of day means something
+DATED = ("Day", "Morning", "Afternoon", "Night")  # the day is known, the time is not
+LAUNCH_NOTE = ("A scheduled time is the provider's or press's, as Launch Library 2 lists it, not Orbit's, and often "
+               "moves.")
+
+
+def orbit_event(p):
+    """(event, None) for one Orbit scheduled launch, in Verdict's calendar shape plus the launch fields; or
+    (None, reason) when its date cannot be read or is coarser than a day (a week, a month: a placeholder date)."""
+    text = f"{p.get('title') or ''}\n{p.get('summary') or ''}"
+    own = p.get("event") if isinstance(p.get("event"), dict) else {}
+    m = WHEN.search(p.get("title") or "") or WHEN.search(p.get("summary") or "")
+    pm = NET_PRECISION.search(text)
+    precision = pm.group(1).strip() if pm else None
+    sm = LAUNCH_STATUS.search(text)
+    if own.get("date"):
+        date, at = own["date"], own.get("at")
+    elif not m:
+        return None, "no time in the title or summary"
+    elif precision in TIMED:
+        date, at = m.group(1), f"{m.group(1)}T{m.group(2)}:{m.group(3)}:00Z"
+    elif precision is None or precision.startswith(DATED):
+        date, at = m.group(1), None
+    else:
+        return None, f"NET precision {precision}"
+    srcs = p.get("sources") or []
+    return {
+        "id": p.get("id"),
+        "title": p.get("title"),
+        "date": date,
+        "at": at,
+        "kind": own.get("kind") or "launch",
+        "verified": False,  # Launch Library 2 aggregates providers' and press reports
+        "occurred": False,
+        "origin": "orbit",
+        "ref": None,
+        "forecast_ids": [],
+        "note": LAUNCH_NOTE,
+        "net_precision": precision,
+        "launch_status": sm.group(1).strip() if sm else None,
+        "data_as_of": p.get("data_as_of"),
+        "stale": bool(p.get("cop_stale")),
+        "countries": p.get("countries") or [],
+        "link": p.get("link") or (p.get("visual") or {}).get("url"),
+        "source_url": srcs[0].get("url") if srcs else None,
+    }, None
+
+
+def build_events(today, now):
+    """events.json from COP's merged snapshot. `skipped` counts items left out and why, so a change in Orbit's
+    wording shows up as a number rather than as silence."""
+    events, skipped = [], {}
+    for f in today.get("features") or []:
+        p = f.get("properties") or {}
+        if not str(p.get("id") or "").startswith(EVENT_PREFIXES):
+            continue
+        ev, why = orbit_event(p)
+        if ev:
+            events.append(ev)
+        else:
+            skipped[why] = skipped.get(why, 0) + 1
+    events.sort(key=lambda e: (e["date"], e["at"] or "", e["id"] or ""))
+    cp = (today.get("cop_programs") or {}).get("orbit")
+    return {
+        "contract": CONTRACT,
+        "generated_at": snap.iso(now),
+        "bus_generated_at": today.get("generated_at"),
+        "bus_url": BUS_URL,
+        "programs": {"orbit": {k: cp.get(k) for k in ("name", "state", "data_as_of", "attribution", "licence")}}
+        if cp else {},
+        "skipped": skipped,
+        "events": events,
+    }
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data", default=str(ROOT / "site" / "data"), help="where snapshot.py wrote today.geojson")
@@ -256,6 +341,8 @@ def main(argv=None):
     snap.write_json(out / "programs.json", build_programs(registry, health, today, now))
     verdict = build_verdict(docs, reports, previous, now)
     snap.write_json(out / "verdict.json", verdict)
+    events = build_events(today, now)
+    snap.write_json(out / "events.json", events)
 
     size = (out / "index.json").stat().st_size
     # The free plan allows 10 ms of CPU per request. Measured 6 Nov 2026: a 278 KB index cost 2.1 ms on a cold
@@ -264,7 +351,9 @@ def main(argv=None):
         print(f"::warning::agent index.json is {size // 1024} KB, over {INDEX_WARN_BYTES // 1024} KB; "
               "the MCP server's cold requests are nearing half the free plan's 10 ms CPU limit")
     print(f"agent index: {len(index['rows'])} items, {size // 1024} KB, {SHARDS} shards; "
-          f"verdict: {', '.join(p + ('' if verdict[p] and not verdict[p].get('stale') else ' (stale)' if verdict[p] else ' (missing)') for p in VERDICT_FILES)}")
+          f"verdict: {', '.join(p + ('' if verdict[p] and not verdict[p].get('stale') else ' (stale)' if verdict[p] else ' (missing)') for p in VERDICT_FILES)}; "
+          f"program events: {len(events['events'])}"
+          + (f", skipped {events['skipped']}" if events["skipped"] else ""))
     return 0
 
 

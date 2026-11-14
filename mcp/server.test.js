@@ -86,6 +86,8 @@ test("every tool answers through the client", async () => {
 
   const events = body(await c.callTool({ name: "upcoming_events", arguments: { days: 60 } }));
   assert.ok(events.count > 0);
+  const launches = body(await c.callTool({ name: "upcoming_events", arguments: { origin: "orbit" } }));
+  assert.ok(launches.count > 0 && launches.events.every((e) => e.origin === "orbit"));
   await c.close();
 });
 

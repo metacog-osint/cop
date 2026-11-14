@@ -336,23 +336,62 @@ export function forecastRecord(verdict, now) {
 
 const DAY = 24 * HOUR;
 
-export function upcomingEvents(verdict, args, now) {
-  const part = verdictPart(verdict, "calendar");
+export const EVENT_ORIGINS = ["verdict", "cordon", "orbit"];
+const PROGRAM_ORIGINS = new Set(["orbit"]); // from COP's events.json; the rest come from Verdict's calendar
+
+// programEvents: agent/events.json (Orbit's scheduled launches), or null when the build did not write it.
+export function upcomingEvents(verdict, programEvents, args, now) {
   const days = Math.min(Math.max(1, (args && args.days) ?? 30), 366);
   const origin = args && args.origin;
+  const wantVerdict = !origin || !PROGRAM_ORIGINS.has(origin);
+  const wantPrograms = !origin || PROGRAM_ORIGINS.has(origin);
+  const calendar = verdict && verdict.calendar;
+  if (wantVerdict && !calendar && !(wantPrograms && programEvents)) {
+    throw new ToolError("Verdict's calendar could not be fetched for this snapshot and no earlier copy exists.");
+  }
+  if (wantPrograms && !programEvents && !wantVerdict) {
+    throw new ToolError("COP's program events (events.json) were not built for this snapshot.");
+  }
   const from = new Date(now).toISOString().slice(0, 10);
   const to = new Date(now + days * DAY).toISOString().slice(0, 10);
-  const events = (part.data.events || []).filter(
-    (e) => e.date && e.date >= from && e.date <= to && (!origin || e.origin === origin),
+  const inWindow = (e) => e.date && e.date >= from && e.date <= to && (!origin || e.origin === origin);
+  const nowIso = new Date(now).toISOString();
+  const fromVerdict = wantVerdict && calendar ? (calendar.data.events || []).filter(inWindow) : [];
+  // A launch whose stated time has passed has gone or slipped; Orbit's next run says which.
+  const fromPrograms =
+    wantPrograms && programEvents ? (programEvents.events || []).filter((e) => inWindow(e) && !(e.at && e.at < nowIso)) : [];
+  const events = [...fromVerdict, ...fromPrograms].sort(
+    (a, b) => a.date.localeCompare(b.date) || (a.at || "").localeCompare(b.at || "") || a.id.localeCompare(b.id),
   );
+  const orbit = programEvents && programEvents.programs && programEvents.programs.orbit;
+  const missing = [];
+  if (wantVerdict && !calendar) missing.push("verdict calendar");
+  if (wantPrograms && !programEvents) missing.push("program events");
+  const attribution = [];
+  if (wantVerdict && calendar) attribution.push(verdict.attribution);
+  if (fromPrograms.length && orbit && orbit.attribution) attribution.push(orbit.attribution);
+  if (!attribution.length) attribution.push(COP_CREDIT);
   return {
-    ...verdictEnvelope(verdict, "calendar", now),
+    ...(calendar
+      ? verdictEnvelope(verdict, "calendar", now)
+      : { as_of: programEvents.bus_generated_at, age_hours: ageHours(programEvents.bus_generated_at, now),
+          stale: false, source: programEvents.bus_url }),
+    ...(programEvents
+      ? { orbit: orbit
+          ? { as_of: orbit.data_as_of ?? null, age_hours: ageHours(orbit.data_as_of, now), state: orbit.state ?? null }
+          : null }
+      : {}),
+    ...(missing.length ? { missing } : {}),
     window: { from, to },
     note:
       "Dated, resolvable events worth forecasting. verified false means the date comes from secondary reporting. " +
-      "origin cordon marks events Cordon found (bulletin expiries, travel advisory changes).",
+      "origin cordon marks events Cordon found (bulletin expiries, travel advisory changes). origin orbit marks " +
+      "scheduled orbital launches from Orbit's feed: the time is the provider's or press's as Launch Library 2 lists " +
+      "it, often moves, and is given to the precision it states (net_precision; at is null when only the day is " +
+      "known); launch_status is Launch Library 2's (Go for Launch, To Be Confirmed, To Be Determined). A launch whose time has passed is left out. Use " +
+      "get_item with an orbit event's id for its sources.",
     count: events.length,
     events,
-    attribution: [verdict.attribution],
+    attribution,
   };
 }

@@ -153,7 +153,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   not used) "unknown". **On the gate's open list** (`tools/gate.py`; Tom, 13 Nov 2026, after it was first held
   because its launches include national-security payloads at named sites and times, all publicly announced).
   No join reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
-  scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours.
+  scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours, and from 14 Nov
+  the "YYYY-MM-DD HH:MM UTC" times in titles and summaries too, so scheduled launches sit after the fixture's time.
+  Its scheduled launches also reach the MCP tool `upcoming_events` (14 Nov 2026; see the MCP server section).
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
@@ -190,8 +192,14 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - **Data:** `tools/agent_index.py` runs after `snapshot.py` and writes `site/data/agent/`: `index.json` (one columnar
   row per bus item: id, program, kind, tier, title, times, countries, a point and box, link, US-person label, stale,
   shard), `items/00–31.json` (full items by id), `programs.json` (the whole suite registry, planned programs too,
-  with COP's health) and `verdict.json` (Verdict's `forecasts.json`, `scores.json` and calendar; a part that fails
-  keeps the last published copy, marked stale). Why the slices: the free plan allows 10 ms of CPU per request and
+  with COP's health), `verdict.json` (Verdict's `forecasts.json`, `scores.json` and calendar; a part that fails
+  keeps the last published copy, marked stale) and `events.json` (14 Nov 2026: the programs' own dated events beside
+  Verdict's calendar, so far Orbit's scheduled launches). The feed contract has no field for an event's time, so
+  `build_events` reads it from the title ("..., 2026-11-14 17:32 UTC") and Launch Library 2's NET precision from the
+  summary: Second, Minute or Hour keep the time (`at`); Day, Morning, Afternoon or Night keep the date only; anything
+  coarser (Week, Month, a quarter) is left out, because its date is a placeholder, and counted under `skipped` with
+  every unreadable item, so a change in Orbit's wording shows as a number. An item's own `event` object (Verdict's
+  calendar shape) wins over the text. Every launch is `verified: false` (an aggregator's date). Why the slices: the free plan allows 10 ms of CPU per request and
   parsing the 1.5 MB bus takes about that. Measured 6 Nov on the real bus (956 items, 278 KB index): a cold request
   costs about 2.1 ms (parse 1.5, two searches 0.6). The build annotates a warning past 600 KB (`INDEX_WARN_BYTES`).
   `config/sources.json` (`commercial_ok`) is never read; licences reach agents per item from `sources[].licence`.
@@ -206,7 +214,10 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   text, since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full
   item with sources), `top_picks`, `outage_triage` (reads `data/triage.json` directly; a missing file is a tool
   error that says triage was not built, not that there are no outages), `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
-  `upcoming_events`. Every result carries `as_of`, `age_hours`, stale flags and the attribution lines to credit.
+  `upcoming_events` (Verdict's calendar plus Orbit's scheduled launches, `origin` "orbit"; a launch whose stated
+  time has passed is left out; either half answers without the other and lists the absent one under `missing`;
+  Orbit's attribution only when a launch is returned). Every result carries `as_of`, `age_hours`, stale flags and
+  the attribution lines to credit.
   The server's instructions tell agents to cite ids and publishers, never call a measurement a warning, quote ICD 203
   terms as given and check freshness.
 - **Limits:** Pages Functions share the free 100,000 requests a day with Workers. The project is "fail open", so past
