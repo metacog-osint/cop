@@ -35,6 +35,13 @@ class Layers(unittest.TestCase):
             self.assertEqual(cls, "held", (program, kind))
             self.assertIn("military context", why)
 
+    def test_cordon_travel_advice_and_health_notices_are_open_and_faa_kinds_are_not(self):
+        # Tom, 14 Nov 2026: UK FCDO, Canada and CDC notices are of the same nature as State's.
+        for kind in ("fcdo", "canada", "cdc"):
+            self.assertEqual(gate.layer_class("cordon", kind)[0], "open", kind)
+        for kind in ("tfr", "faa"):
+            self.assertEqual(gate.layer_class("cordon", kind)[0], "held", kind)
+
     def test_a_layer_or_kind_nobody_reviewed_is_held(self):
         self.assertEqual(gate.layer_class("newprogram", "thing")[0], "held")
         self.assertEqual(gate.layer_class("cordon", "newkind")[0], "held")
