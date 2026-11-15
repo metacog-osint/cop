@@ -107,6 +107,34 @@ class Build(unittest.TestCase):
         nf = [p for p in picks["picks"] if p["program"] == "noisefloor"]
         self.assertTrue(nf and "% of aircraft with degraded GPS" in nf[0]["reason"], nf)
 
+    def test_headwind_items_from_a_source_it_did_not_read_go_grey(self):
+        hw = json.loads((FIX / "headwind.geojson").read_text(encoding="utf-8"))
+        lanes = sorted({f["properties"]["sources"][0]["id"] for f in hw["features"]})
+        self.assertIn("ecb-eurofxref", lanes)
+        at = "2026-10-31T20:00:00Z"
+
+        def mutate(f):
+            f["headwind"]["health"] = {k: {"state": "fresh", "last_ok": at, "checked_at": at} for k in lanes}
+            f["headwind"]["health"]["ecb-eurofxref"] = {"state": "failing", "last_ok": "2026-10-30T20:00:00Z",
+                                                        "checked_at": at, "detail": "29 currencies"}
+            for x in f["headwind"]["features"]:       # make one ECB item an anomaly with a place: never a pick now
+                if x["properties"]["sources"][0]["id"] == "ecb-eurofxref" and x.get("geometry"):
+                    x["properties"].update({"tier": "anomaly", "baseline_ref": "rolling", "measures": {"z": 9.0}})
+                    break
+        today, picks, health, _ = build(mutate=mutate)
+        mine = [f["properties"] for f in today["features"] if f["properties"]["cop_program"] == "headwind"]
+        ecb = [p for p in mine if p["sources"][0]["id"] == "ecb-eurofxref"]
+        self.assertTrue(ecb and all(p["cop_stale"] and p["cop_source_stale"] for p in ecb))
+        self.assertTrue(all(not p["cop_stale"] and "cop_source_stale" not in p for p in mine if p not in ecb))
+        self.assertNotIn("headwind", {p["program"] for p in picks["picks"]})
+        h = health_of(health, "headwind")
+        self.assertEqual(h["state"], "fresh")                  # the feed itself is current
+        self.assertEqual(h["sources"], {"total": len(lanes), "not_read": [
+            {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies"}]})
+        self.assertEqual(today["cop_programs"]["headwind"]["sources"]["total"], len(lanes))
+        # Another program with a health block but without source_health keeps its items as they were.
+        self.assertNotIn("sources", health_of(health, "cordon"))
+
     def test_dead_feed_keeps_last_good_copy_and_goes_grey(self):
         prev, _, _, _ = build()
         today, picks, health, _ = build(dead=("noisefloor",), previous=prev)

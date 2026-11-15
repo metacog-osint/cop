@@ -72,7 +72,7 @@
     },
     {
       "id": "headwind", "ended": "https://headwind.theintelligence.company/data/ended.geojson",
-      "preset": "economy",
+      "preset": "economy", "source_health": true,
       "freshness": "feed",
       "mark": "halos", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
       "routine_label": "reading for every series",
