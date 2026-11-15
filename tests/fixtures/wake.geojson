@@ -1,0 +1,2744 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "wake",
+ "generated_at": "2026-10-31T20:29:19Z",
+ "licence": "IMF PortWatch data: IMF terms of use, reuse with attribution. Wake code MIT.",
+ "attribution": "Wake, The Intelligence Company. Source: IMF PortWatch (portwatch.imf.org). Wake computes 7-day means and their baselines from PortWatch's daily counts; the IMF does not endorse this analysis.",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "health": {
+  "imf-portwatch": {
+   "state": "fresh",
+   "last_ok": "2026-10-31T20:29:19Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:29:19Z",
+   "data_as_of": "2026-11-08",
+   "detail": "read 0 rows (0 new) in 1 page(s); newest day 2026-11-08"
+  }
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     43.3495,
+     12.7886
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:bab-el-mandeb-strait:2026-11-08",
+    "program": "wake",
+    "title": "Bab el-Mandeb Strait: 26.3 transits a day in the week to 8 Nov 2026, 26% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 26.3 vessels a day crossing the Bab el-Mandeb Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 6.9, container ships 5.6, dry bulk 8.9). Against the 90 days before: median 27.14 a day, -3%, z -0.4. Against the same weeks a year earlier: median 35.43 a day, -26%, outside that window's 5th-95th percentile range (28.83 to 40.09). Tankers: 6.9 a day against a median of 12.14 in the same weeks a year earlier (-43%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "YE",
+     "DJ",
+     "ER"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 26.29,
+     "n_tanker_7d": 6.86,
+     "n_container_7d": 5.57,
+     "n_dry_bulk_7d": 8.86,
+     "capacity_7d_dwt": 914208,
+     "change_90d_pct": -3.2,
+     "z_90d": -0.4,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 27.14,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -25.8,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 35.43,
+     "baseline_year_ago_p05": 28.83,
+     "baseline_year_ago_p95": 40.09,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 12.14,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#bab-el-mandeb-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     29.0915,
+     41.1693
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:bosporus-strait:2026-11-08",
+    "program": "wake",
+    "title": "Bosporus Strait: 45.4 transits a day in the week to 8 Nov 2026, 54% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 45.4 vessels a day crossing the Bosporus Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 12.7, container ships 4.0, dry bulk 7.9). Against the 90 days before: median 53.43 a day, -15%, z -1.2. Against the same weeks a year earlier: median 98.29 a day, -54%, outside that window's 5th-95th percentile range (87.91 to 103.86). Tankers: 12.7 a day against a median of 24.43 in the same weeks a year earlier (-48%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "TR"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 45.43,
+     "n_tanker_7d": 12.71,
+     "n_container_7d": 4.0,
+     "n_dry_bulk_7d": 7.86,
+     "capacity_7d_dwt": 551392,
+     "change_90d_pct": -15.0,
+     "z_90d": -1.22,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 53.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -53.8,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 98.29,
+     "baseline_year_ago_p05": 87.91,
+     "baseline_year_ago_p95": 103.86,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 24.43,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#bosporus-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     36.5439,
+     45.2668
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:kerch-strait:2026-11-08",
+    "program": "wake",
+    "title": "Kerch Strait: 0.0 transits a day in the week to 8 Nov 2026, 100% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 0.0 vessels a day crossing the Kerch Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 0.0, container ships 0.0, dry bulk 0.0). Against the 90 days before: median 0.14 a day, -100%, z -0.7 (under 5 a day, too thin to flag). Against the same weeks a year earlier: median 19.71 a day, -100%, outside that window's 5th-95th percentile range (6.89 to 25.03). Tankers: 0.0 a day against a median of 4.86 in the same weeks a year earlier (-100%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "RU",
+     "UA"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 0.0,
+     "n_tanker_7d": 0.0,
+     "n_container_7d": 0.0,
+     "n_dry_bulk_7d": 0.0,
+     "capacity_7d_dwt": 0,
+     "change_90d_pct": -100.0,
+     "z_90d": -0.67,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 0.14,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -100.0,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 19.71,
+     "baseline_year_ago_p05": 6.89,
+     "baseline_year_ago_p95": 25.03,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 4.86,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#kerch-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     121.3523,
+     20.4889
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:luzon-strait:2026-11-08",
+    "program": "wake",
+    "title": "Luzon Strait: 96.7 transits a day in the week to 8 Nov 2026, 44% above the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 96.7 vessels a day crossing the Luzon Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 34.0, container ships 10.1, dry bulk 43.0). Against the 90 days before: median 93 a day, +4%, z +0.3. Against the same weeks a year earlier: median 67 a day, +44%, outside that window's 5th-95th percentile range (37.54 to 92.26). Tankers: 34.0 a day against a median of 21.43 in the same weeks a year earlier (+59%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "PH",
+     "TW"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 96.71,
+     "n_tanker_7d": 34.0,
+     "n_container_7d": 10.14,
+     "n_dry_bulk_7d": 43.0,
+     "capacity_7d_dwt": 6050738,
+     "change_90d_pct": 4.0,
+     "z_90d": 0.31,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 93.0,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 44.3,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 67.0,
+     "baseline_year_ago_p05": 37.54,
+     "baseline_year_ago_p95": 92.26,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 21.43,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#luzon-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     120.4034,
+     12.4683
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:mindoro-strait:2026-11-08",
+    "program": "wake",
+    "title": "Mindoro Strait: 52.7 transits a day in the week to 8 Nov 2026, 66% above the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 52.7 vessels a day crossing the Mindoro Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 4.7, container ships 1.7, dry bulk 41.6). Against the 90 days before: median 52.43 a day, +0%, z +0.1. Against the same weeks a year earlier: median 31.86 a day, +66%, outside that window's 5th-95th percentile range (22.77 to 38.8). Tankers: 4.7 a day against a median of 2.71 in the same weeks a year earlier (+74%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "PH"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 52.71,
+     "n_tanker_7d": 4.71,
+     "n_container_7d": 1.71,
+     "n_dry_bulk_7d": 41.57,
+     "capacity_7d_dwt": 3062690,
+     "change_90d_pct": 0.5,
+     "z_90d": 0.08,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 52.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 65.5,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 31.86,
+     "baseline_year_ago_p05": 22.77,
+     "baseline_year_ago_p95": 38.8,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 2.71,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#mindoro-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     125.091,
+     -8.3985
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:ombai-strait:2026-11-08",
+    "program": "wake",
+    "title": "Ombai Strait: 7.7 transits a day in the week to 8 Nov 2026, 29% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 7.7 vessels a day crossing the Ombai Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 2.7, container ships 1.0, dry bulk 2.7). Against the 90 days before: median 9.43 a day, -18%, z -1.2. Against the same weeks a year earlier: median 10.86 a day, -29%, outside that window's 5th-95th percentile range (8.2 to 13.29). Tankers: 2.7 a day against a median of 3.43 in the same weeks a year earlier (-21%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ID",
+     "TL"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 7.71,
+     "n_tanker_7d": 2.71,
+     "n_container_7d": 1.0,
+     "n_dry_bulk_7d": 2.71,
+     "capacity_7d_dwt": 470143,
+     "change_90d_pct": -18.2,
+     "z_90d": -1.16,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 9.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -28.9,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 10.86,
+     "baseline_year_ago_p05": 8.2,
+     "baseline_year_ago_p95": 13.29,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 3.43,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#ombai-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     56.8598,
+     26.2969
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:strait-of-hormuz:2026-11-08",
+    "program": "wake",
+    "title": "Strait of Hormuz: 3.9 transits a day in the week to 8 Nov 2026, 95% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 3.9 vessels a day crossing the Strait of Hormuz from 2 Nov 2026 to 8 Nov 2026 (tankers 1.0, container ships 0.3, dry bulk 1.6). Against the 90 days before: median 4 a day, -4%, z -0.2 (under 5 a day, too thin to flag). Against the same weeks a year earlier: median 73.14 a day, -95%, outside that window's 5th-95th percentile range (48.57 to 105.66). Tankers: 1.0 a day against a median of 40.14 in the same weeks a year earlier (-98%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "IR",
+     "OM"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 3.86,
+     "n_tanker_7d": 1.0,
+     "n_container_7d": 0.29,
+     "n_dry_bulk_7d": 1.57,
+     "capacity_7d_dwt": 62321,
+     "change_90d_pct": -3.6,
+     "z_90d": -0.17,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 4.0,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -94.7,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 73.14,
+     "baseline_year_ago_p05": 48.57,
+     "baseline_year_ago_p95": 105.66,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 40.14,
+     "tripped": [
+      "year_ago"
+     ]
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#strait-of-hormuz"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     117.1146,
+     7.4136
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:balabac-strait:2026-11-08",
+    "program": "wake",
+    "title": "Balabac Strait: 9.1 transits a day in the week to 8 Nov 2026, -15% on the last 90 days, +0% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 9.1 vessels a day crossing the Balabac Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 2.7, container ships 0.9, dry bulk 4.6). Against the 90 days before: median 10.71 a day, -15%, z -0.9. Against the same weeks a year earlier: median 9.14 a day, +0%, inside that window's 5th-95th percentile range (5.14 to 10.86). Tankers: 2.7 a day against a median of 2.71 in the same weeks a year earlier (+0%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "PH",
+     "MY"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 9.14,
+     "n_tanker_7d": 2.71,
+     "n_container_7d": 0.86,
+     "n_dry_bulk_7d": 4.57,
+     "capacity_7d_dwt": 273594,
+     "change_90d_pct": -14.7,
+     "z_90d": -0.93,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 10.71,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 0.0,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 9.14,
+     "baseline_year_ago_p05": 5.14,
+     "baseline_year_ago_p95": 10.86,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 2.71,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#balabac-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -165.5498,
+     65.9665
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:bering-strait:2026-11-08",
+    "program": "wake",
+    "title": "Bering Strait: 1.0 transits a day in the week to 8 Nov 2026, -72% on the last 90 days, -30% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 1.0 vessels a day crossing the Bering Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 0.7, container ships 0.0, dry bulk 0.0). Against the 90 days before: median 3.57 a day, -72%, z -2.4 (under 5 a day, too thin to flag). Against the same weeks a year earlier: median 1.43 a day, -30%, inside that window's 5th-95th percentile range (0.14 to 3.8) (under 5 a day, too thin to flag). Tankers: 0.7 a day against a median of 0.71 in the same weeks a year earlier (+0%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "US",
+     "RU"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 1.0,
+     "n_tanker_7d": 0.71,
+     "n_container_7d": 0.0,
+     "n_dry_bulk_7d": 0.0,
+     "capacity_7d_dwt": 6168,
+     "change_90d_pct": -72.0,
+     "z_90d": -2.43,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 3.57,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -30.0,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 1.43,
+     "baseline_year_ago_p05": 0.14,
+     "baseline_year_ago_p95": 3.8,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 0.71,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#bering-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     120.9,
+     38.373
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:bohai-strait:2026-11-08",
+    "program": "wake",
+    "title": "Bohai Strait: 156.6 transits a day in the week to 8 Nov 2026, +1% on the last 90 days, -10% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 156.6 vessels a day crossing the Bohai Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 30.3, container ships 18.6, dry bulk 87.0). Against the 90 days before: median 154.43 a day, +1%, z +0.2. Against the same weeks a year earlier: median 173.29 a day, -10%, inside that window's 5th-95th percentile range (140.83 to 189.6). Tankers: 30.3 a day against a median of 36.29 in the same weeks a year earlier (-17%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "CN"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 156.57,
+     "n_tanker_7d": 30.29,
+     "n_container_7d": 18.57,
+     "n_dry_bulk_7d": 87.0,
+     "capacity_7d_dwt": 5778826,
+     "change_90d_pct": 1.4,
+     "z_90d": 0.19,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 154.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -9.6,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 173.29,
+     "baseline_year_ago_p05": 140.83,
+     "baseline_year_ago_p95": 189.6,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 36.29,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#bohai-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     20.8827,
+     -34.9273
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:cape-of-good-hope:2026-11-08",
+    "program": "wake",
+    "title": "Cape of Good Hope: 77.9 transits a day in the week to 8 Nov 2026, -12% on the last 90 days, -12% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 77.9 vessels a day crossing the Cape of Good Hope from 2 Nov 2026 to 8 Nov 2026 (tankers 15.9, container ships 12.7, dry bulk 42.6). Against the 90 days before: median 88.14 a day, -12%, z -1.6. Against the same weeks a year earlier: median 89 a day, -12%, outside that window's 5th-95th percentile range (79.94 to 100.8). Tankers: 15.9 a day against a median of 17.43 in the same weeks a year earlier (-9%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ZA"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 77.86,
+     "n_tanker_7d": 15.86,
+     "n_container_7d": 12.71,
+     "n_dry_bulk_7d": 42.57,
+     "capacity_7d_dwt": 4717500,
+     "change_90d_pct": -11.7,
+     "z_90d": -1.63,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 88.14,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -12.5,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 89.0,
+     "baseline_year_ago_p05": 79.94,
+     "baseline_year_ago_p95": 100.8,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 17.43,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#cape-of-good-hope"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     1.5058,
+     51.0302
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:dover-strait:2026-11-08",
+    "program": "wake",
+    "title": "Dover Strait: 177.3 transits a day in the week to 8 Nov 2026, +9% on the last 90 days, +1% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 177.3 vessels a day crossing the Dover Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 54.9, container ships 38.9, dry bulk 27.4). Against the 90 days before: median 162 a day, +9%, z +1.3. Against the same weeks a year earlier: median 175.14 a day, +1%, inside that window's 5th-95th percentile range (158.69 to 191.57). Tankers: 54.9 a day against a median of 61.29 in the same weeks a year earlier (-10%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "GB",
+     "FR"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 177.29,
+     "n_tanker_7d": 54.86,
+     "n_container_7d": 38.86,
+     "n_dry_bulk_7d": 27.43,
+     "capacity_7d_dwt": 3794525,
+     "change_90d_pct": 9.4,
+     "z_90d": 1.32,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 162.0,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 1.2,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 175.14,
+     "baseline_year_ago_p05": 158.69,
+     "baseline_year_ago_p95": 191.57,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 61.29,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#dover-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5.7549,
+     35.9423
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:gibraltar-strait:2026-11-08",
+    "program": "wake",
+    "title": "Gibraltar Strait: 136.0 transits a day in the week to 8 Nov 2026, +5% on the last 90 days, +0% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 136.0 vessels a day crossing the Gibraltar Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 42.3, container ships 32.7, dry bulk 31.3). Against the 90 days before: median 129.71 a day, +5%, z +0.7. Against the same weeks a year earlier: median 135.86 a day, +0%, inside that window's 5th-95th percentile range (128.74 to 142.77). Tankers: 42.3 a day against a median of 47 in the same weeks a year earlier (-10%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ES",
+     "MA",
+     "GB"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 136.0,
+     "n_tanker_7d": 42.29,
+     "n_container_7d": 32.71,
+     "n_dry_bulk_7d": 31.29,
+     "capacity_7d_dwt": 3821893,
+     "change_90d_pct": 4.8,
+     "z_90d": 0.68,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 129.71,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 0.1,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 135.86,
+     "baseline_year_ago_p05": 128.74,
+     "baseline_year_ago_p95": 142.77,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 47.0,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#gibraltar-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     129.2092,
+     34.1308
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:korea-strait:2026-11-08",
+    "program": "wake",
+    "title": "Korea Strait: 198.3 transits a day in the week to 8 Nov 2026, -7% on the last 90 days, -6% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 198.3 vessels a day crossing the Korea Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 54.1, container ships 48.1, dry bulk 36.6). Against the 90 days before: median 212.57 a day, -7%, z -0.9. Against the same weeks a year earlier: median 211.14 a day, -6%, inside that window's 5th-95th percentile range (196.91 to 226.43). Tankers: 54.1 a day against a median of 56.86 in the same weeks a year earlier (-5%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "KR",
+     "JP"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 198.29,
+     "n_tanker_7d": 54.14,
+     "n_container_7d": 48.14,
+     "n_dry_bulk_7d": 36.57,
+     "capacity_7d_dwt": 2600290,
+     "change_90d_pct": -6.7,
+     "z_90d": -0.94,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 212.57,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -6.1,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 211.14,
+     "baseline_year_ago_p05": 196.91,
+     "baseline_year_ago_p95": 226.43,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 56.86,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#korea-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     115.8014,
+     -8.4191
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:lombok-strait:2026-11-08",
+    "program": "wake",
+    "title": "Lombok Strait: 40.9 transits a day in the week to 8 Nov 2026, +12% on the last 90 days, +12% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 40.9 vessels a day crossing the Lombok Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 8.0, container ships 0.6, dry bulk 29.4). Against the 90 days before: median 36.43 a day, +12%, z +1.7. Against the same weeks a year earlier: median 36.57 a day, +12%, outside that window's 5th-95th percentile range (33.71 to 38.71). Tankers: 8.0 a day against a median of 7.86 in the same weeks a year earlier (+2%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ID"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 40.86,
+     "n_tanker_7d": 8.0,
+     "n_container_7d": 0.57,
+     "n_dry_bulk_7d": 29.43,
+     "capacity_7d_dwt": 3540817,
+     "change_90d_pct": 12.2,
+     "z_90d": 1.7,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 36.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 11.7,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 36.57,
+     "baseline_year_ago_p05": 33.71,
+     "baseline_year_ago_p95": 38.71,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 7.86,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#lombok-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -69.5948,
+     -52.6403
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:magellan-strait:2026-11-08",
+    "program": "wake",
+    "title": "Magellan Strait: 3.6 transits a day in the week to 8 Nov 2026, -34% on the last 90 days, +0% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 3.6 vessels a day crossing the Magellan Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 1.0, container ships 0.4, dry bulk 1.7). Against the 90 days before: median 5.43 a day, -34%, z -1.5. Against the same weeks a year earlier: median 3.57 a day, +0%, inside that window's 5th-95th percentile range (2.49 to 4.57) (under 5 a day, too thin to flag). Tankers: 1.0 a day against a median of 1 in the same weeks a year earlier (+0%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "CL"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 3.57,
+     "n_tanker_7d": 1.0,
+     "n_container_7d": 0.43,
+     "n_dry_bulk_7d": 1.71,
+     "capacity_7d_dwt": 92442,
+     "change_90d_pct": -34.2,
+     "z_90d": -1.46,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 5.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 0.0,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 3.57,
+     "baseline_year_ago_p05": 2.49,
+     "baseline_year_ago_p95": 4.57,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 1.0,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#magellan-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     119.2571,
+     0.3523
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:makassar-strait:2026-11-08",
+    "program": "wake",
+    "title": "Makassar Strait: 55.4 transits a day in the week to 8 Nov 2026, +3% on the last 90 days, +18% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 55.4 vessels a day crossing the Makassar Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 6.7, container ships 2.3, dry bulk 42.7). Against the 90 days before: median 53.71 a day, +3%, z +0.5. Against the same weeks a year earlier: median 47 a day, +18%, outside that window's 5th-95th percentile range (31.69 to 51.66). Tankers: 6.7 a day against a median of 5 in the same weeks a year earlier (+34%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ID"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 55.43,
+     "n_tanker_7d": 6.71,
+     "n_container_7d": 2.29,
+     "n_dry_bulk_7d": 42.71,
+     "capacity_7d_dwt": 3346349,
+     "change_90d_pct": 3.2,
+     "z_90d": 0.45,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 53.71,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 17.9,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 47.0,
+     "baseline_year_ago_p05": 31.69,
+     "baseline_year_ago_p95": 51.66,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 5.0,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#makassar-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     102.6651,
+     1.517
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:malacca-strait:2026-11-08",
+    "program": "wake",
+    "title": "Malacca Strait: 235.9 transits a day in the week to 8 Nov 2026, +8% on the last 90 days, -2% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 235.9 vessels a day crossing the Malacca Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 83.6, container ships 62.3, dry bulk 61.7). Against the 90 days before: median 218.71 a day, +8%, z +1.1. Against the same weeks a year earlier: median 240.43 a day, -2%, inside that window's 5th-95th percentile range (226.77 to 247.97). Tankers: 83.6 a day against a median of 83.86 in the same weeks a year earlier (-0%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "MY",
+     "ID",
+     "SG"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 235.86,
+     "n_tanker_7d": 83.57,
+     "n_container_7d": 62.29,
+     "n_dry_bulk_7d": 61.71,
+     "capacity_7d_dwt": 8446707,
+     "change_90d_pct": 7.8,
+     "z_90d": 1.1,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 218.71,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -1.9,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 240.43,
+     "baseline_year_ago_p05": 226.77,
+     "baseline_year_ago_p95": 247.97,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 83.86,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#malacca-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -67.7114,
+     18.4487
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:mona-passage:2026-11-08",
+    "program": "wake",
+    "title": "Mona Passage: 9.6 transits a day in the week to 8 Nov 2026, -19% on the last 90 days, -16% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 9.6 vessels a day crossing the Mona Passage from 2 Nov 2026 to 8 Nov 2026 (tankers 2.7, container ships 2.7, dry bulk 2.1). Against the 90 days before: median 11.86 a day, -19%, z -2.7. Against the same weeks a year earlier: median 11.43 a day, -16%, outside that window's 5th-95th percentile range (10.11 to 16.09). Tankers: 2.7 a day against a median of 2.86 in the same weeks a year earlier (-5%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "DO",
+     "PR"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 9.57,
+     "n_tanker_7d": 2.71,
+     "n_container_7d": 2.71,
+     "n_dry_bulk_7d": 2.14,
+     "capacity_7d_dwt": 257738,
+     "change_90d_pct": -19.3,
+     "z_90d": -2.7,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 11.86,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -16.3,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 11.43,
+     "baseline_year_ago_p05": 10.11,
+     "baseline_year_ago_p95": 16.09,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 2.86,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#mona-passage"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.8508,
+     55.5078
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:oresund-strait:2026-11-08",
+    "program": "wake",
+    "title": "Oresund Strait: 43.7 transits a day in the week to 8 Nov 2026, +9% on the last 90 days, -9% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 43.7 vessels a day crossing the Oresund Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 10.1, container ships 5.1, dry bulk 5.1). Against the 90 days before: median 40 a day, +9%, z +1.3. Against the same weeks a year earlier: median 47.86 a day, -9%, inside that window's 5th-95th percentile range (40.69 to 50.03). Tankers: 10.1 a day against a median of 11.57 in the same weeks a year earlier (-12%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "DK",
+     "SE"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 43.71,
+     "n_tanker_7d": 10.14,
+     "n_container_7d": 5.14,
+     "n_dry_bulk_7d": 5.14,
+     "capacity_7d_dwt": 87142,
+     "change_90d_pct": 9.3,
+     "z_90d": 1.3,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 40.0,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -8.7,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 47.86,
+     "baseline_year_ago_p05": 40.69,
+     "baseline_year_ago_p95": 50.03,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 11.57,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#oresund-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -79.7672,
+     9.1205
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:panama-canal:2026-11-08",
+    "program": "wake",
+    "title": "Panama Canal: 27.3 transits a day in the week to 8 Nov 2026, -4% on the last 90 days, -15% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 27.3 vessels a day crossing the Panama Canal from 2 Nov 2026 to 8 Nov 2026 (tankers 12.1, container ships 8.1, dry bulk 3.1). Against the 90 days before: median 28.43 a day, -4%, z -0.6. Against the same weeks a year earlier: median 32 a day, -15%, outside that window's 5th-95th percentile range (29.97 to 34.09). Tankers: 12.1 a day against a median of 13.29 in the same weeks a year earlier (-9%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "PA"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 27.29,
+     "n_tanker_7d": 12.14,
+     "n_container_7d": 8.14,
+     "n_dry_bulk_7d": 3.14,
+     "capacity_7d_dwt": 822250,
+     "change_90d_pct": -4.0,
+     "z_90d": -0.56,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 28.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -14.7,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 32.0,
+     "baseline_year_ago_p05": 29.97,
+     "baseline_year_ago_p95": 34.09,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 13.29,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#panama-canal"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     32.4369,
+     30.5933
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:suez-canal:2026-11-08",
+    "program": "wake",
+    "title": "Suez Canal: 44.4 transits a day in the week to 8 Nov 2026, +7% on the last 90 days, +7% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 44.4 vessels a day crossing the Suez Canal from 2 Nov 2026 to 8 Nov 2026 (tankers 15.4, container ships 14.9, dry bulk 10.0). Against the 90 days before: median 41.57 a day, +7%, z +1.0. Against the same weeks a year earlier: median 41.57 a day, +7%, inside that window's 5th-95th percentile range (39 to 44.94). Tankers: 15.4 a day against a median of 15.43 in the same weeks a year earlier (+0%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "EG"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 44.43,
+     "n_tanker_7d": 15.43,
+     "n_container_7d": 14.86,
+     "n_dry_bulk_7d": 10.0,
+     "capacity_7d_dwt": 1993257,
+     "change_90d_pct": 6.9,
+     "z_90d": 0.96,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 41.57,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 6.9,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 41.57,
+     "baseline_year_ago_p05": 39.0,
+     "baseline_year_ago_p95": 44.94,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 15.43,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#suez-canal"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     105.7752,
+     -5.9668
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:sunda-strait:2026-11-08",
+    "program": "wake",
+    "title": "Sunda Strait: 33.9 transits a day in the week to 8 Nov 2026, +4% on the last 90 days, +4% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 33.9 vessels a day crossing the Sunda Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 14.4, container ships 3.9, dry bulk 10.3). Against the 90 days before: median 32.57 a day, +4%, z +0.6. Against the same weeks a year earlier: median 32.71 a day, +4%, inside that window's 5th-95th percentile range (27.29 to 36.97). Tankers: 14.4 a day against a median of 12.29 in the same weeks a year earlier (+17%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "ID"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 33.86,
+     "n_tanker_7d": 14.43,
+     "n_container_7d": 3.86,
+     "n_dry_bulk_7d": 10.29,
+     "capacity_7d_dwt": 1344015,
+     "change_90d_pct": 3.9,
+     "z_90d": 0.55,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 32.57,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 3.5,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 32.71,
+     "baseline_year_ago_p05": 27.29,
+     "baseline_year_ago_p95": 36.97,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 12.29,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#sunda-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     119.8314,
+     24.7235
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:taiwan-strait:2026-11-08",
+    "program": "wake",
+    "title": "Taiwan Strait: 229.9 transits a day in the week to 8 Nov 2026, -1% on the last 90 days, +3% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 229.9 vessels a day crossing the Taiwan Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 45.9, container ships 88.6, dry bulk 65.0). Against the 90 days before: median 231.43 a day, -1%, z -0.1. Against the same weeks a year earlier: median 223.86 a day, +3%, inside that window's 5th-95th percentile range (157.2 to 246.66). Tankers: 45.9 a day against a median of 48.71 in the same weeks a year earlier (-6%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "TW",
+     "CN"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 229.86,
+     "n_tanker_7d": 45.86,
+     "n_container_7d": 88.57,
+     "n_dry_bulk_7d": 65.0,
+     "capacity_7d_dwt": 5592712,
+     "change_90d_pct": -0.7,
+     "z_90d": -0.1,
+     "flag_rate_90d": 0.011,
+     "baseline_90d_median": 231.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 2.7,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 223.86,
+     "baseline_year_ago_p05": 157.2,
+     "baseline_year_ago_p95": 246.66,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 48.71,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#taiwan-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     142.2475,
+     -9.8625
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:torres-strait:2026-11-08",
+    "program": "wake",
+    "title": "Torres Strait: 8.0 transits a day in the week to 8 Nov 2026, -2% on the last 90 days, -18% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 8.0 vessels a day crossing the Torres Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 1.4, container ships 1.3, dry bulk 4.4). Against the 90 days before: median 8.14 a day, -2%, z -0.2. Against the same weeks a year earlier: median 9.71 a day, -18%, outside that window's 5th-95th percentile range (8.2 to 10.8). Tankers: 1.4 a day against a median of 2.14 in the same weeks a year earlier (-33%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "AU",
+     "PG"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 8.0,
+     "n_tanker_7d": 1.43,
+     "n_container_7d": 1.29,
+     "n_dry_bulk_7d": 4.43,
+     "capacity_7d_dwt": 176765,
+     "change_90d_pct": -1.8,
+     "z_90d": -0.17,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 8.14,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -17.6,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 9.71,
+     "baseline_year_ago_p05": 8.2,
+     "baseline_year_ago_p95": 10.8,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 2.14,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#torres-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     140.3533,
+     41.328
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:tsugaru-strait:2026-11-08",
+    "program": "wake",
+    "title": "Tsugaru Strait: 37.1 transits a day in the week to 8 Nov 2026, -28% on the last 90 days, -9% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 37.1 vessels a day crossing the Tsugaru Strait from 2 Nov 2026 to 8 Nov 2026 (tankers 13.1, container ships 5.1, dry bulk 12.1). Against the 90 days before: median 51.43 a day, -28%, z -2.3. Against the same weeks a year earlier: median 40.86 a day, -9%, inside that window's 5th-95th percentile range (33.83 to 53.74). Tankers: 13.1 a day against a median of 12.14 in the same weeks a year earlier (+8%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "JP"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 37.14,
+     "n_tanker_7d": 13.14,
+     "n_container_7d": 5.14,
+     "n_dry_bulk_7d": 12.14,
+     "capacity_7d_dwt": 740458,
+     "change_90d_pct": -27.8,
+     "z_90d": -2.33,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 51.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -9.1,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 40.86,
+     "baseline_year_ago_p05": 33.83,
+     "baseline_year_ago_p95": 53.74,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 12.14,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#tsugaru-strait"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -73.6975,
+     19.9862
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:windward-passage:2026-11-08",
+    "program": "wake",
+    "title": "Windward Passage: 14.4 transits a day in the week to 8 Nov 2026, -6% on the last 90 days, -6% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 14.4 vessels a day crossing the Windward Passage from 2 Nov 2026 to 8 Nov 2026 (tankers 1.3, container ships 7.7, dry bulk 1.0). Against the 90 days before: median 15.43 a day, -6%, z -0.8. Against the same weeks a year earlier: median 15.43 a day, -6%, inside that window's 5th-95th percentile range (8.91 to 17.03). Tankers: 1.3 a day against a median of 1.43 in the same weeks a year earlier (-10%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "CU",
+     "HT"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 14.43,
+     "n_tanker_7d": 1.29,
+     "n_container_7d": 7.71,
+     "n_dry_bulk_7d": 1.0,
+     "capacity_7d_dwt": 266368,
+     "change_90d_pct": -6.5,
+     "z_90d": -0.79,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 15.43,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -6.5,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 15.43,
+     "baseline_year_ago_p05": 8.91,
+     "baseline_year_ago_p95": 17.03,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 1.43,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#windward-passage"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -85.6473,
+     21.8153
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:chokepoint:yucatan-channel:2026-11-08",
+    "program": "wake",
+    "title": "Yucatan Channel: 51.0 transits a day in the week to 8 Nov 2026, -2% on the last 90 days, +4% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 51.0 vessels a day crossing the Yucatan Channel from 2 Nov 2026 to 8 Nov 2026 (tankers 27.7, container ships 10.0, dry bulk 7.0). Against the 90 days before: median 51.86 a day, -2%, z -0.2. Against the same weeks a year earlier: median 49.29 a day, +4%, inside that window's 5th-95th percentile range (37.17 to 52.66). Tankers: 27.7 a day against a median of 26.43 in the same weeks a year earlier (+5%). Counts are of AIS-visible transits; a ship crossing with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-25T05:40:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-04T05:40:59Z",
+    "countries": [
+     "MX",
+     "CU"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-1",
+     "WK-EEI-1"
+    ],
+    "method_version": "wake-2.0",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.0"
+    },
+    "measures": {
+     "n_total_7d": 51.0,
+     "n_tanker_7d": 27.71,
+     "n_container_7d": 10.0,
+     "n_dry_bulk_7d": 7.0,
+     "capacity_7d_dwt": 1208980,
+     "change_90d_pct": -1.7,
+     "z_90d": -0.23,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 51.86,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 3.5,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 49.29,
+     "baseline_year_ago_p05": 37.17,
+     "baseline_year_ago_p95": 52.66,
+     "baseline_year_ago_n": 89,
+     "tanker_year_ago_median": 26.43,
+     "tripped": []
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#yucatan-channel"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily Chokepoints Data: vessels crossing each chokepoint, by type",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  }
+ ]
+}
