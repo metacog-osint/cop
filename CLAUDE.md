@@ -341,6 +341,10 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   calendar shape) wins over the text. Every launch is `verified: false` (an aggregator's date). Why the slices: the free plan allows 10 ms of CPU per request and
   parsing the 1.5 MB bus takes about that. Measured 6 Nov on the real bus (956 items, 278 KB index): a cold request
   costs about 2.1 ms (parse 1.5, two searches 0.6). The build annotates a warning past 600 KB (`INDEX_WARN_BYTES`).
+  Since 15 Nov the six repeated-label columns (`CODED`: program, kind, tier, status_class, us_person_data, stale) are
+  stored as numbers into the index's `codes` lists; `mcp/tools.js` compares numbers and decodes only the rows it
+  returns, so tool output is unchanged (checked on the live bus: 8 searches and all 2,123 rows identical). That took
+  the live index from 632 KB to 536 KB. Timing on this laptop showed no difference beyond noise; the gain is size.
   `config/sources.json` (`commercial_ok`) is never read; licences reach agents per item from `sources[].licence`.
 - **Code:** `functions/mcp.js` (the only route that runs code; static files stay free and unlimited) calls
   `mcp/server.js` (official MCP TypeScript SDK v2, `@modelcontextprotocol/server` `createMcpHandler`: serves protocol
@@ -525,5 +529,7 @@ for a Blackout hijack opens Kilauea, with the hijack under "Also at this spot").
 Still open, for Tom: the same last_seen fault may exist one level down, for a program that keeps a failed source's
 last items in its feed while its health block marks that source unread (the handover says Headwind and Orbit keep
 them; not checked in their code), which needs a rule about source lanes. Blackout's items expire 12 hours after its
-run but the program reads stale only at 48 hours (a fix in Blackout, not COP). The agent `index.json` is over the
-600 KB warning line (601 KB at 15:13 UTC 15 Nov, 608 KB at 15:44).
+run but the program reads stale only at 48 hours (a fix in Blackout, not COP). The agent `index.json` passed the
+600 KB warning line (601 KB at 15:13 UTC 15 Nov, 632 KB by 19:40 UTC); coding its repeated labels (15 Nov, above) brings
+it to 536 KB, about 260 bytes a row, so it passes 600 KB again near 2,370 items (2,123 on 15 Nov). The next lever is
+Cordon's routine notices, 45% of the index.

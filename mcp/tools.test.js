@@ -22,6 +22,22 @@ test("rows come out as objects with every column", () => {
   assert.equal(T.rowsOf(index), rows, "converted once per index document");
 });
 
+test("coded columns come out as words, and an index without codes searches the same", () => {
+  assert.ok(index.codes && Array.isArray(index.codes.tier), "the built index codes its labels");
+  const i = index.fields.indexOf("tier");
+  assert.ok(index.rows.every((r) => Number.isInteger(r[i])));
+  assert.ok(rows.every((r) => ["warning", "anomaly", "routine"].includes(r.tier)));
+  assert.ok(rows.every((r) => typeof r.stale === "boolean"));
+  const plain = { ...index, codes: undefined, rows: rows.map((o) => index.fields.map((k) => o[k])) };
+  for (const args of [{ limit: 50 }, { program: ["cordon"], limit: 50 }, { tier: "anomaly" }, { kind: "observation", limit: 20 }]) {
+    assert.deepEqual(T.searchItems(plain, args, NOW), T.searchItems(index, args, NOW), JSON.stringify(args));
+  }
+  const picked = rows.find((r) => r.tier === "anomaly") || rows[0];
+  assert.deepEqual(T.findRow(index, picked.id), picked);
+  assert.equal(T.searchItems(index, { kind: "no-such-kind" }, NOW).matched, 0);
+  assert.equal(T.searchItems(index, { tier: "no-such-tier" }, NOW).matched, 0);
+});
+
 test("distance: to a point, to a box, and zero inside a box", () => {
   const pt = { point: [0, 0], bbox: null };
   assert.ok(Math.abs(T.distanceKm(pt, 0, 1) - 111.2) < 0.5);

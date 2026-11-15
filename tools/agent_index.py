@@ -96,6 +96,11 @@ def place(geometry):
 FIELDS = ("id", "program", "kind", "tier", "status_class", "title", "data_as_of", "published_at", "valid_until",
           "countries", "point", "bbox", "link", "us_person_data", "stale", "shard")
 
+# Columns with a handful of repeated values, stored in each row as a number into the index's `codes` list for that
+# column (15 Nov 2026, when the index passed 600 KB): about 90 KB less, and the server decodes only the rows it
+# returns. Tool output is unchanged.
+CODED = ("program", "kind", "tier", "status_class", "us_person_data", "stale")
+
 
 def row(feature, shard):
     p = feature.get("properties") or {}
@@ -124,7 +129,8 @@ def row(feature, shard):
 
 def build_index(today, now):
     """(index document, list of shard documents) from COP's merged snapshot. The index is columnar (`fields` names
-    the columns of each row in `rows`), which keeps it about a third smaller than one object per item."""
+    the columns of each row in `rows`), which keeps it about a third smaller than one object per item. A CODED
+    column holds a number into `codes[column]`, the column's values in the order first seen."""
     feats = [f for f in today.get("features") or [] if (f.get("properties") or {}).get("id")]
     shards = [{"contract": CONTRACT, "shard": i, "items": {}} for i in range(SHARDS)]
     rows = []
@@ -144,9 +150,31 @@ def build_index(today, now):
         "shards": SHARDS,
         "programs": programs,
         "fields": list(FIELDS),
-        "rows": [[r[k] for k in FIELDS] for r in rows],
+        "codes": {},
+        "rows": [],
     }
+    lookup = {k: {} for k in CODED}
+    for r in rows:
+        out = []
+        for k in FIELDS:
+            v = r[k]
+            if k in lookup:
+                key = json.dumps(v)  # keeps True, 1 and "1" apart
+                if key not in lookup[k]:
+                    lookup[k][key] = len(lookup[k])
+                    index["codes"].setdefault(k, []).append(v)
+                v = lookup[k][key]
+            out.append(v)
+        index["rows"].append(out)
+    for k in CODED:
+        index["codes"].setdefault(k, [])
     return index, shards
+
+
+def decoded(index):
+    """The index's rows as objects with every value spelled out (tests and other readers)."""
+    codes = index.get("codes") or {}
+    return [{k: (codes[k][v] if k in codes else v) for k, v in zip(index["fields"], r)} for r in index["rows"]]
 
 
 def build_programs(registry, health, today, now):
@@ -366,7 +394,8 @@ def main(argv=None):
 
     size = (out / "index.json").stat().st_size
     # The free plan allows 10 ms of CPU per request. Measured 6 Nov 2026: a 278 KB index cost 2.1 ms on a cold
-    # request (parse plus two searches), so 600 KB is about 5 ms, half the limit. Past that, slim the rows.
+    # request (parse plus two searches), so 600 KB is about 5 ms, half the limit. Past that, slim the rows. The CODED
+    # columns (15 Nov 2026) took the live index from 632 KB to 536 KB.
     if size > INDEX_WARN_BYTES:  # an annotation on the Actions run, never a failure
         print(f"::warning::agent index.json is {size // 1024} KB, over {INDEX_WARN_BYTES // 1024} KB; "
               "the MCP server's cold requests are nearing half the free plan's 10 ms CPU limit")

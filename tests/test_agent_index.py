@@ -63,6 +63,19 @@ class AgentIndex(unittest.TestCase):
         self.assertEqual(self.index["shards"], ai.SHARDS)
         self.assertEqual(len(self.shards), ai.SHARDS)
 
+    def test_coded_columns_decode_to_the_items_own_values(self):
+        codes = self.index["codes"]
+        self.assertEqual(sorted(codes), sorted(ai.CODED))
+        col = self.index["fields"].index
+        for k in ai.CODED:
+            self.assertEqual(len({json.dumps(v) for v in codes[k]}), len(codes[k]), k)  # each value once
+            for r in self.index["rows"]:
+                self.assertIsInstance(r[col(k)], int, k)
+        feats = [f for f in self.today["features"] if f["properties"].get("id")]
+        self.assertEqual(ai.decoded(self.index), [ai.row(f, n % ai.SHARDS) for n, f in enumerate(feats)])
+        self.assertIn(False, codes["stale"])  # a boolean stays a boolean, not 0
+        self.assertIn("anomaly", codes["tier"])
+
     def test_rows_stay_small(self):
         # The real 6 Nov bus made 278-290 KB for 956-996 items, about 300 bytes a row. A row that grows much past
         # that eats into the MCP server's CPU budget (see INDEX_WARN_BYTES in tools/agent_index.py).
