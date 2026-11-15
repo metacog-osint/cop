@@ -29,6 +29,11 @@ class Layers(unittest.TestCase):
         self.assertEqual(gate.layer_of("UT-EEAS-e7ebbf0d02"), ("undertow", "eeas"))
         self.assertEqual(gate.layer_of("XX-GOOGLE-fe9985db2a"), ("", ""))
 
+    def test_wake_is_open(self):
+        # Tom, 15 Nov 2026: IMF statistics on commercial shipping at strait level, not military context.
+        self.assertEqual(gate.layer_of("wake:chokepoint:strait-of-hormuz:2026-11-08"), ("wake", "chokepoint"))
+        self.assertEqual(gate.layer_class("wake", "chokepoint")[0], "open")
+
     def test_undertow_is_open_by_its_own_ids(self):
         # Tom, 14 Nov 2026: platforms' public disclosures of influence operations, not military context.
         for item_id in ("UT-META-f6a52f7deb", "UT-GOOGLE-fe9985db2a", "UT-OPENAI-1a2b3c", "UT-TIKTOK-1a2b3c",
