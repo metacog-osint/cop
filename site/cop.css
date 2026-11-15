@@ -180,8 +180,8 @@ button.tri-item { cursor: pointer; }
 }
 @media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
 
-/* House bar (shared/tic-nav.js, from the hub): pinned above COP's fixed header, and the header and map move down
-   by its 34px. Only when the bar is there, so the page is unchanged if the script fails. */
-body:has(> .tic-house) > .tic-house { position: fixed; top: 0; left: 0; right: 0; }
-body:has(> .tic-house) .bar { top: 34px; }
-body:has(> .tic-house) .app { top: 90px; }
+/* House bar (shared/tic-nav.js, from the hub): fixed at the top of the window since v1.12. COP's fixed header and
+   map move down by its height, --tic-house-h (34px, or 0px when the visitor minimizes it). Only when the bar is
+   there, so the page is unchanged if the script fails. */
+body:has(> .tic-house) .bar { top: var(--tic-house-h, 34px); }
+body:has(> .tic-house) .app { top: calc(var(--tic-house-h, 34px) + 56px); }
