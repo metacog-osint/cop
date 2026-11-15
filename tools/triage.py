@@ -9,7 +9,11 @@ US state power outages (Blackout's BO-IND-14: a state where ODIN's reporting uti
 out) are read against Elements for that state, not the whole country (rules approved by Tom, 13 Nov 2026): NWS
 alerts by their own county codes, point hazards within STATE_NEAR_KM of the state, and warnings for hazards that
 take power lines down counted at Elements' Severe level. Cordon and Watchfloor carry nothing at US-state level, so
-they answer "Not covered" and such an outage reads natural, open or incomplete, never deliberate. Its drafted
+they answer "Not covered" and such an outage reads natural, open or incomplete, never deliberate. Where Blackout's
+item lists the counties with meters out (us_counties, Blackout 2ea3a4d; Tom, 14 Nov 2026, "build the county-level
+match"), Elements is read for those counties instead of the whole state: NWS alerts by shared county codes, point
+hazards within STATE_NEAR_KM of an outage county's internal point, areas over one; a hazard elsewhere in the state
+is listed and not counted. An item without the list keeps the state rule. Its drafted
 question asks whether the state is still over the line 24 hours later, in the exact form Verdict settles from
 EAGLE-I.
 
@@ -56,7 +60,7 @@ UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
 # convergence branch; it reaches the site only when Tom merges that branch to main.
-JOIN = {"id": "outage-triage", "version": "0.7", "published": True,
+JOIN = {"id": "outage-triage", "version": "0.8", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture",
                    "cordon:fcdo", "cordon:canada", "cordon:safetravel"]}
 # The Cordon kinds triage reads, all on the gate's open list. CDC (kind cdc) is open there too but not read here.
@@ -449,6 +453,58 @@ def _in_polygon(lon, lat, geometry):
     return False
 
 
+def outage_counties(p, st):
+    """The FIPS codes of the counties with meters out that Blackout lists on a BO-IND-14 item (us_counties, from
+    Blackout 2ea3a4d, 14 Nov 2026), kept only where COP's county table puts them in the item's state; None when the
+    item has no usable list, so the state rule applies."""
+    table = county_table()
+    rows = p.get("us_counties") if isinstance(p.get("us_counties"), list) else []
+    codes = sorted({r.get("fips") for r in rows if isinstance(r, dict) and r.get("fips") in table
+                    and table[r["fips"]][0] == st})
+    return codes or None
+
+
+def km_to_counties(geometry, codes):
+    """Distance in km from a Point, or the nearest point of a MultiPoint, to the nearest internal point of the given
+    counties, or None."""
+    t = geometry.get("type") if isinstance(geometry, dict) else None
+    pts = [geometry["coordinates"]] if t == "Point" else geometry["coordinates"] if t == "MultiPoint" else []
+    table = county_table()
+    best = None
+    for x, y in (pt[:2] for pt in pts):
+        for c in codes:
+            d = _km(y, x, table[c][2], table[c][3])
+            if best is None or d < best:
+                best = d
+    return best
+
+
+def _at_outage(f, place, codes):
+    """Narrow a state placement to the outage's own counties: the place when the hazard is in or near them, else
+    {"placed": "elsewhere", "in_state": <how it sits in the state>}. Background kinds keep their own test (over the
+    outage's point) and a whole-US item stays "country"."""
+    if place["placed"] in ("country", "over_outage"):
+        return place
+    p, g = f["properties"], f.get("geometry")
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    want = set(codes)
+    if place["placed"] == "county":
+        hit = sorted(want & set(m.get("counties") or []))
+        return {"placed": "county", "outage_counties": hit} if hit else {"placed": "elsewhere", "in_state": "county"}
+    if place["placed"] in ("near", "in"):
+        km = km_to_counties(g, codes)
+        if km is not None and km <= STATE_NEAR_KM:
+            near = [c for c in codes if (km_to_counties(g, [c]) or STATE_NEAR_KM + 1) <= STATE_NEAR_KM]
+            return {"placed": "near_outage", "km_from_outage": round(km), "outage_counties": near}
+        return {"placed": "elsewhere", "in_state": place["placed"],
+                "km_from_outage": None if km is None else round(km)}
+    if place["placed"] == "area":
+        table = county_table()
+        inside = [c for c in codes if _in_polygon(table[c][3], table[c][2], g)]
+        return {"placed": "area", "outage_counties": inside} if inside else {"placed": "elsewhere", "in_state": "area"}
+    return place
+
+
 def _place(f, st, point):
     """Where an Elements item sits for a US state, as a dict for its row, or None when it is not in or near it.
     NWS alerts by their own county codes. A point Elements places in the US (or the territory) is in the state whose
@@ -481,12 +537,16 @@ def _place(f, st, point):
     return None
 
 
-def state_hazards(features, st, at, point=None, volcano_levels=None):
+def state_hazards(features, st, at, point=None, volcano_levels=None, counties=None):
     """Elements items under a US state power outage: in or near the state, overlapping the hazard window. point:
     the outage's own [lon, lat] (Blackout weights it by meters out), or None. unplaced: significant hazards for the
-    whole US that name no county or point, listed and never counted (minor ones are left out)."""
+    whole US that name no county or point, listed and never counted (minor ones are left out). counties: the outage's
+    own county FIPS codes (outage_counties), or None for the state rule; with them a hazard must be in or near those
+    counties, and a significant or standing one elsewhere in the state goes to "elsewhere", listed, never counted."""
     lo, hi = at - timedelta(hours=HAZARD_BEFORE_H), at + timedelta(hours=HAZARD_AFTER_H)
     out = {"significant": [], "standing": [], "minor": [], "background": [], "unplaced": []}
+    if counties:
+        out["elsewhere"] = []
     for f in features:
         if f["properties"].get("cop_program") != "elements":
             continue
@@ -496,7 +556,13 @@ def state_hazards(features, st, at, point=None, volcano_levels=None):
         place = _place(f, st, point)
         if not place:
             continue
+        if counties:
+            place = _at_outage(f, place, counties)
         row.update(place)
+        if place["placed"] == "elsewhere":
+            if bucket in ("significant", "standing"):
+                out["elsewhere"].append({**row, "bucket": bucket})
+            continue
         if place["placed"] == "country":
             if bucket in ("significant", "standing"):
                 out["unplaced"].append(row)
@@ -695,6 +761,19 @@ def power_question(st, name, at, br):
     }
 
 
+def meters_under(p, rows):
+    """{"meters", "of", "share", "largest"}: how many of the outage's meters out sit in counties a counted hazard
+    covers (rows' outage_counties), and the largest county with none. A reading turns natural on any one hazard, so
+    this says how much of the outage the hazards explain."""
+    out = [r for r in (p.get("us_counties") or []) if isinstance(r, dict) and isinstance(r.get("meters"), int)]
+    covered = {c for r in rows for c in (r.get("outage_counties") or [])}
+    total = sum(r["meters"] for r in out)
+    under = sum(r["meters"] for r in out if r.get("fips") in covered)
+    bare = max((r for r in out if r.get("fips") not in covered), key=lambda r: r["meters"], default=None)
+    return {"meters": under, "of": total, "share": round(under / total, 3) if total else None,
+            "largest_without": {k: bare[k] for k in ("fips", "name", "meters")} if bare else None}
+
+
 def power_record(f, features, states, history=None, ended_info=None):
     """One record for a Blackout BO-IND-14 item: a US state over the line, read against Elements for that state."""
     p = f["properties"]
@@ -703,7 +782,8 @@ def power_record(f, features, states, history=None, ended_info=None):
         return None
     g = f.get("geometry") if isinstance(f.get("geometry"), dict) else {}
     point = g["coordinates"][:2] if g.get("type") == "Point" else None
-    haz = state_hazards(features, st, at, point, (history or {}).get("volcano_levels"))
+    counties = outage_counties(p, st)
+    haz = state_hazards(features, st, at, point, (history or {}).get("volcano_levels"), counties)
     dead = ["elements"] if states["elements"] in ("stale", "missing") else []
     reading = "incomplete" if dead else "natural" if haz["significant"] else "open"
     name = _state_name(p, st)
@@ -726,11 +806,36 @@ def power_record(f, features, states, history=None, ended_info=None):
     if haz["unplaced"]:
         caveats.append(f"{_n(len(haz['unplaced']), 'significant hazard')} in the US name no county or usable point, "
                        "so they cannot be placed in this state and are not counted.")
+    if counties:
+        caveats.append(f"Hazards are matched to the {_n(len(counties), 'county')} where ODIN's utilities showed "
+                       f"meters out: NWS alerts by shared county codes, points within {STATE_NEAR_KM} km of one of "
+                       "those counties' internal points, areas over one. A county is matched whole, so a hazard in "
+                       "one corner of a large western county counts for an outage in another.")
+        under = meters_under(p, haz["significant"])
+        if haz["significant"] and under["share"] is not None and under["share"] < 0.5:
+            b = under["largest_without"]
+            caveats.append(f"The hazards that make this reading natural cover counties holding {under['share']:.0%} "
+                           f"of the meters out ({under['meters']:,} of {under['of']:,}); "
+                           + (f"{b['name']}, with {b['meters']:,}, has none." if b else ""))
+        if haz["elsewhere"]:
+            k = len(haz["elsewhere"])
+            new = sum(1 for h in haz["elsewhere"] if h["bucket"] == "significant")
+            caveats.append(f"{_n(k, 'hazard')} that {'takes' if k == 1 else 'take'} power lines down "
+                           f"{'is' if k == 1 else 'are'} elsewhere in {name}, away from the outage's counties "
+                           f"({new} began in the window): listed, not counted.")
+        caveats.append("The base rate below is measured at state level (any hazard in or near the state), so for a "
+                       "reading matched to the outage's counties it overstates how often an outage would read natural.")
+    else:
+        caveats.append("This item lists no counties (Blackout before 14 Nov 2026), so hazards are matched to the "
+                       "whole state.")
     return {
         "join": JOIN["id"], "country": "US", "outage_kind": "power", "us_state": st, "us_state_name": name,
         "outage": _row(p, confirmed=None, indicator_id=p.get("indicator_id"), summary=p.get("summary")),
         "layers": {
-            "elements": {"state": states["elements"], "scope": "state", **haz,
+            "elements": {"state": states["elements"], "scope": "counties" if counties else "state",
+                         **({"outage_counties": counties,
+                             "meters_under_hazards": meters_under(p, haz["significant"])} if counties else {}),
+                         **haz,
                          "found": bool(haz["significant"] or haz["minor"])},
             "cordon": not_covered("cordon", features, states["cordon"]),
             "watchfloor": not_covered("watchfloor", features, states["watchfloor"]),
@@ -935,17 +1040,23 @@ def showed(name, layer):
         return text
     if layer["state"] in ("stale", "missing"):
         return "No current data."
-    if name == "elements" and layer.get("scope") == "state":
+    if name == "elements" and layer.get("scope") in ("state", "counties"):
         sig, minor, standing = layer["significant"], layer["minor"], layer["standing"]
+        where = "in or near the outage's counties" if layer["scope"] == "counties" else "in or near this state"
         if sig:
             parts = [f"{_n(len(sig), 'hazard')} that {'takes' if len(sig) == 1 else 'take'} power lines down began "
-                     f"in or near this state in the {HAZARD_BEFORE_H} hours before the reading."]
+                     f"{where} in the {HAZARD_BEFORE_H} hours before the reading."]
         else:
-            parts = [f"Nothing found: no hazard that takes power lines down began in or near this state in the "
+            parts = [f"Nothing found: no hazard that takes power lines down began {where} in the "
                      f"{HAZARD_BEFORE_H} hours before the reading."]
         parts += _ended_note(sig)
+        mu = layer.get("meters_under_hazards") or {}
+        if sig and mu.get("share") is not None:
+            parts.append(f"They cover counties holding {mu['share']:.0%} of the meters out.")
         if minor:
-            parts.append(f"{_n(len(minor), 'minor hazard')} in or near the state in the window (not counted).")
+            parts.append(f"{_n(len(minor), 'minor hazard')} {where} in the window (not counted).")
+        if layer.get("elsewhere"):
+            parts.append(f"{_n(len(layer['elsewhere']), 'hazard')} elsewhere in the state (not counted).")
         if standing:
             parts.append(f"{_n(len(standing), 'hazard')} already running before that (standing, not counted).")
         if layer.get("unplaced"):

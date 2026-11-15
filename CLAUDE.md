@@ -108,6 +108,22 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   Limits: the archive is one snapshot a day, so hour-long warnings are missed in the rate; Elements carries active
   alerts only, so "open" can mean the storm has passed. Follow-ups outside COP: Elements keeping expired NWS warnings
   24 hours, and Blackout putting the outage counties' FIPS codes in the item for a county-level match.
+  **Both settled or built (checked 14 Nov 2026):** Elements' 7-day `ended.geojson` (read by `triage.py --ended`)
+  held 403 expired NWS warnings at 22:36 UTC, which covers the first. Blackout branch `power/county-fips` adds
+  `us_counties` (`{fips, name, meters}`) to each BO-IND-14 item (on Blackout `main` as `2ea3a4d`, 14 Nov 2026).
+  **(8) County-level match (join 0.8; Tom, 14 Nov 2026, "build the county-level match"):** when the item lists its
+  counties (`outage_counties`, only FIPS the county table puts in that state), Elements is read for those counties:
+  NWS alerts by shared county codes, point hazards within `STATE_NEAR_KM` (100 km) of an outage county's internal
+  point, areas over one county's internal point; SPC background and whole-US items keep their own tests. A
+  significant or standing hazard elsewhere in the state goes to `elsewhere` (listed, never counted). The layer's
+  `scope` is "counties" (else "state", with a caveat that the item lists none), and `meters_under_hazards` gives the
+  share of meters out in counties a counted hazard covers, with the largest county that has none; below half, a
+  caveat says so, because one hazard still makes the reading natural. The state-day base rate is still state-level,
+  so a caveat says it overstates natural for a county reading. Recorded check (13 Nov ODIN, line lowered to 10,000):
+  California stays natural on Medford's High Wind Warning over Siskiyou and Hanford's Winter Storm Warning over
+  Fresno, Sacramento's and Reno's warnings move to `elsewhere`, and the hazards cover under half the meters out
+  (Los Angeles County, 11,231 of 13,723, has none). Fixture `blackout-us-power-counties.json` (Blackout 2ea3a4d).
+  Not committed when written.
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
@@ -300,7 +316,7 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   both base maps, registered sources, vendored kit copy, no CDN scripts or inline styles).
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
-  tests/test_triage.py` (42), `test_triage_us_power.py` (24), `test_triage_ended.py` (9), `test_rebuild_ended.py`
+  tests/test_triage.py` (42), `test_triage_us_power.py` (30), `test_triage_ended.py` (9), `test_rebuild_ended.py`
   (8), `test_gate.py` (22), `test_three_signal.py` (20).
 - **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
   with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
