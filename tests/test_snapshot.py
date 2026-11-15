@@ -440,6 +440,17 @@ class Card(unittest.TestCase):
         self.assertEqual(js.count('"Measured, not a warning"'), 1)
         self.assertIn('p.status_class === "assessed" ? "Measured, not a warning" : "Measured or reported, not a judgment"', js)
 
+    def test_date_only_items_show_their_date(self):
+        """data_as_of_precision (kit 0.5.6): a date-only or month-only time is shown as written, never moved into the
+        viewer's zone (Undertow's '2025-06' read 'May 31, 7:00 PM CDT' before)."""
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn('import { judgmentChips, asOfDateLabel } from "./vendor/tic-doctrine.js";', js)
+        self.assertIn('fact("Data as of", asOfEl(p));', js)
+        self.assertIn('asOfEl(p, "date")', js)
+        self.assertEqual(js.count("timeEl(p.data_as_of"), 1, "only asOfEl's own fallback for an exact time")
+        kit = (ROOT / "site" / "vendor" / "tic-doctrine.js").read_text(encoding="utf-8")
+        self.assertIn("export function asOfDateLabel(item, locale)", kit)
+
     def test_view_keeps_every_pick_inside_the_map(self):
         today, picks, health, _ = build()
         by_id = {f["properties"]["id"]: f for f in today["features"]}
