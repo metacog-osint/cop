@@ -379,7 +379,8 @@ function renderCard(f) {
   if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
   if (p.cop_expired) badges.append(h("span", { class: "badge stale", text: "Expired: past its valid-until time" }));
   if (p.status_class) badges.append(h("span", { class: "badge", text: STATUS[p.status_class] || p.status_class }));
-  if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: `No current data from ${prog.name}` }));
+  if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: p.cop_source_stale
+    ? `No current data from this ${prog.name} source: its last run could not read it well` : `No current data from ${prog.name}` }));
   for (const c of judgmentChips(p)) badges.append(h("span", { class: "badge", text: c.text }));
   card.append(badges);
   const facts = h("dl", { class: "facts" });
@@ -620,6 +621,11 @@ function renderHealth() {
     if (hp.fetch.ok) bits.push(` · fetched in ${hp.fetch.seconds} s`);
     else bits.push(` · fetch failed${hp.from_previous ? ": showing the last good copy" : ""}`);
     if (lint) bits.push(lint.errors ? ` · ${lint.errors} contract problems` : " · passes the contract checks");
+    // A program that reports each source's health (config "source_health"): the sources its last run did not read well.
+    const src = hp.sources;
+    if (src && src.total) bits.push(src.not_read.length
+      ? ` · ${src.not_read.length} of ${src.total} sources not current: ${src.not_read.map((s) => `${s.id} (${s.state || "not read"})`).join(", ")}`
+      : ` · all ${src.total} sources current`);
     const bad = hp.dropped ? hp.dropped.count : 0;  // items the build could not read, left out of the picture
     if (bad) bits.push(` · ${count(bad, "malformed item")} left out`);
     return h("div", { class: "hrow" },

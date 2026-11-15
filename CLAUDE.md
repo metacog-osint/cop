@@ -35,6 +35,11 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   item ids are read through `ID_PREFIXES` (see Undertow below).
   Wake went on the open list on 15 Nov 2026 (Tom's "Open": IMF statistics on commercial shipping at strait level,
   not military context).
+  Cordon's `faaprn` kind (the FAA's Prohibitions, Restrictions and Notices for foreign airspace: SFARs and KICZ
+  NOTAMs, Cordon `f801cbb`) went on the open list on 15 Nov 2026 (Tom's "Open, as I said", asked after being told
+  that EASA's `czib` bulletins, its European twin, are on the MILITARY list and stay there). The map showed its 20
+  items before the change (the gate governs joins, not the snapshot); no join reads it yet, so the change published
+  nothing new (local live build 15 Nov ~16:10 UTC: 20 faaprn items, triage cites none, `gate.py --check` OK).
   Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `D:\Projects\CLAUDE_HANDOVER.md` saying what was released and to whom. Claude never copies a
@@ -193,6 +198,17 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
   On the gate's open list (`tools/gate.py`; confirmed by Tom, 14 Nov 2026); no join reads it yet.
   `tests/fixtures/headwind.geojson`: its live feed of 16:28 UTC 13 Nov, every timestamp moved back 12 days 21 hours.
+  **`ended` (15 Nov 2026, Headwind plan step 14):** `https://headwind.theintelligence.company/data/ended.geojson`, Headwind's
+  history log (`tic-history/1`, committed by its workflow to `history/` in its repo). Until Headwind's `headwind-1.6` batch is
+  deployed the address answers 404, and `snapshot.py` logs "headwind ended items: fetch failed": deploy Headwind first.
+  **`source_health` (15 Nov 2026, Headwind plan step 15):** an opt-in program flag. `snapshot.py`'s `unread_sources()` reads
+  the feed's own `health` block with the kit's `lanes_ok`; an item whose lane (first source id, through `lane_map`) the
+  block marks not read well gets `cop_stale` and `cop_source_stale`, is drawn grey, is never picked, and its card says
+  "No current data from this Headwind source". `health.json` (and `cop_programs`) carry `sources` (`total`,
+  `not_read` with each id, state and detail), and the Sources board names them. Only Headwind sets it; Cordon and
+  Blackout keep their behaviour. Dry run on Headwind's live feed, 15 Nov: 13 sources, none unread. The suite ledger
+  is unchanged: it still counts a source-stale item as seen while its program was read (the open last_seen
+  question below).
 - **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
   the launch site (GCAT site coordinates, precision `approximate`), scheduled launches at the pad (Launch Library
   2), one reentry summary and catalog-change items (new entries, owner changes), the last two with `geometry:

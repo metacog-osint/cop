@@ -272,6 +272,29 @@ def source_lanes(feed) -> dict | None:
     return {"lanes": sorted(h), "lanes_read": sorted(history.lanes_ok(h))}
 
 
+def unread_sources(feed, prog) -> dict:
+    """{lane: health entry} for the sources a feed's own health block says were not read well on its last run, for a
+    program whose config sets "source_health" (Headwind, 15 Nov 2026). Such a program keeps a failed source's last
+    good items in its feed; COP draws those items grey and never picks them, as it does a dead feed's copies. Read is
+    the kit's lanes_ok (last success is the last check, and the state, if any, is fresh, late or up)."""
+    h = feed.get("health") if isinstance(feed, dict) else None
+    if not prog.get("source_health") or not isinstance(h, dict) or not h:
+        return {}
+    ok = history.lanes_ok(h)
+    return {k: v for k, v in h.items() if k not in ok}
+
+
+def source_summary(feed, prog) -> dict | None:
+    """health.json's `sources` for a source_health program: how many sources its feed names, and those not read."""
+    h = feed.get("health") if isinstance(feed, dict) else None
+    if not prog.get("source_health") or not isinstance(h, dict) or not h:
+        return None
+    off = unread_sources(feed, prog)
+    return {"total": len(h), "not_read": [{"id": k, "state": (v or {}).get("state") if isinstance(v, dict) else None,
+                                           "detail": (v or {}).get("detail") if isinstance(v, dict) else None}
+                                          for k, v in sorted(off.items())]}
+
+
 def build(feeds, reports, previous, now):
     """feeds: {program id: feed or None}. Returns (today, picks, health, countries)."""
     features, health, attributions = [], [], []
@@ -289,7 +312,10 @@ def build(feeds, reports, previous, now):
             lint = lint_feed(feed, problems)
             attribution, licence = header_text(feed.get("attribution")), header_text(feed.get("licence"))
             lanes_by_program[pid] = source_lanes(feed)
+            off, sources = unread_sources(feed, prog), source_summary(feed, prog)
         else:
+            off = {}
+            sources = ((previous.get("cop_programs") or {}).get(pid) or {}).get("sources") if prog.get("source_health") else None
             items = [f for f in previous_items if f["properties"].get("cop_program") == pid]
             dropped = [d for d in previous_dropped if d["program"] == pid]
             from_previous = bool(items)
@@ -308,12 +334,17 @@ def build(feeds, reports, previous, now):
                 if isinstance(s.get("id") or s.get("publisher"), str)}
         unregistered = sorted(keys - set(SOURCES))
         ranked = []
+        lane_of = history.mapped_lane(prog.get("lane_map") or {})
         for order, item in enumerate(items):
             p = dict(item.get("properties") or {})
             for k in DROP:
                 p.pop(k, None)
+            p.pop("cop_source_stale", None)
+            src_off = bool(off) and lane_of(item) in off
+            if src_off:
+                p["cop_source_stale"] = True     # its own source was not read on the program's last run
             value, label, rule, rank = strength(p, prog["strength"])
-            p.update({"cop_program": pid, "cop_stale": state == "stale", "cop_strength": value,
+            p.update({"cop_program": pid, "cop_stale": state == "stale" or src_off, "cop_strength": value,
                       "cop_strength_text": label.replace("{v}", f"{value:g}") if value is not None else None})
             p.pop("cop_also", None)
             also = also_in(p, prog)
@@ -321,7 +352,7 @@ def build(feeds, reports, previous, now):
                 p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
-            if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale":
+            if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off:
                 ranked.append((99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:3])]
         if attribution:
@@ -334,6 +365,7 @@ def build(feeds, reports, previous, now):
             "fresh_hours": prog["fresh_hours"], "stale_hours": prog["stale_hours"],
             "lint": lint, "unregistered_sources": unregistered, "attribution": attribution, "licence": licence,
             "site": prog["site"], "feed": prog["feed"],
+            **({"sources": sources} if sources is not None else {}),
             # Malformed items left out of the picture (sift): how many, and up to three with the reason.
             "dropped": {"count": len(dropped), "examples": [
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
@@ -366,6 +398,7 @@ def build(feeds, reports, previous, now):
     programs_block = {h["id"]: {"name": h["name"], "state": h["state"], "data_as_of": h["data_as_of"],
                                 "attribution": h["attribution"], "licence": h["licence"], "site": h["site"]}
                       | (lanes_by_program.get(h["id"]) or {})
+                      | ({"sources": h["sources"]} if h.get("sources") is not None else {})
                       for h in health}
     today = {
         "type": "FeatureCollection", "contract": "tic-feed/2", "program": "cop", "generated_at": iso(now),
