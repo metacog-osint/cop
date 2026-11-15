@@ -61,6 +61,17 @@ class Layers(unittest.TestCase):
         for kind in ("tfr", "faa"):
             self.assertEqual(gate.layer_class("cordon", kind)[0], "held", kind)
 
+    def test_cordon_faa_prohibitions_are_open_and_easa_bulletins_stay_held(self):
+        # Tom, 15 Nov 2026: the FAA's SFARs and KICZ NOTAMs for foreign airspace go on the open list; czib stays held.
+        self.assertEqual(gate.layer_of("cordon:faaprn:afghanistan"), ("cordon", "faaprn"))
+        self.assertEqual(gate.layer_class("cordon", "faaprn")[0], "open")
+        self.assertEqual(gate.layer_class("cordon", "czib")[0], "held")
+        join = {"id": "t-faaprn", "published": True, "inputs": ["blackout", "cordon:faaprn"]}
+        v = gate.review(join, doc("blackout:outage:af:x", "cordon:faaprn:afghanistan", join=join))
+        self.assertEqual(v["review_class"], "open", v["reasons"])
+        held = {"id": "t-czib", "published": True, "inputs": ["blackout", "cordon:faaprn", "cordon:czib"]}
+        self.assertEqual(gate.review(held)["review_class"], "held")
+
     def test_orbit_changes_are_military_context_and_the_rest_of_orbit_is_open(self):
         # Tom, 14 Nov 2026: Orbit's manoeuvre items go into COP's feed, held from joins by the gate.
         for kind in ("launch", "upcoming", "reentries", "late-object", "owner-change"):
