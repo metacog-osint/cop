@@ -123,7 +123,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   California stays natural on Medford's High Wind Warning over Siskiyou and Hanford's Winter Storm Warning over
   Fresno, Sacramento's and Reno's warnings move to `elsewhere`, and the hazards cover under half the meters out
   (Los Angeles County, 11,231 of 13,723, has none). Fixture `blackout-us-power-counties.json` (Blackout 2ea3a4d).
-  Not committed when written.
+  Live on `main` as `d1e91eb` (build 43663941459, 15 Nov 2026).
 - Open to search engines since 31 Oct 2026 (no noindex; canonical `https://cop.theintelligence.company/`).
 
 ## How it works
