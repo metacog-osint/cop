@@ -42,6 +42,18 @@ class Layers(unittest.TestCase):
         for kind in ("tfr", "faa"):
             self.assertEqual(gate.layer_class("cordon", kind)[0], "held", kind)
 
+    def test_orbit_changes_are_military_context_and_the_rest_of_orbit_is_open(self):
+        # Tom, 14 Nov 2026: Orbit's manoeuvre items go into COP's feed, held from joins by the gate.
+        for kind in ("launch", "upcoming", "reentries", "late-object", "owner-change"):
+            self.assertEqual(gate.layer_class("orbit", kind)[0], "open", kind)
+        cls, why = gate.layer_class("orbit", "maneuver")
+        self.assertEqual(cls, "held")
+        self.assertIn("military context", why)
+        self.assertEqual(gate.layer_of("orbit:maneuver:41744:2026-10-12"), ("orbit", "maneuver"))
+        self.assertIn("name the kinds", gate.layer_class("orbit")[1])
+        v = gate.review(OPEN_JOIN | {"published": True}, doc("blackout:outage:tn:x", "orbit:maneuver:41744:2026-10-12"))
+        self.assertEqual(v["review_class"], "held")
+
     def test_a_layer_or_kind_nobody_reviewed_is_held(self):
         self.assertEqual(gate.layer_class("newprogram", "thing")[0], "held")
         self.assertEqual(gate.layer_class("cordon", "newkind")[0], "held")

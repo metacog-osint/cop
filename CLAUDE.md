@@ -192,7 +192,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
   the launch site (GCAT site coordinates, precision `approximate`), scheduled launches at the pad (Launch Library
   2), one reentry summary and catalog-change items (new entries, owner changes), the last two with `geometry:
-  null`, listed under Off the map. Describe it from what is live: no manoeuvres or counterspace events yet.
+  null`, listed under Off the map. **From 15 Nov 2026 also orbit changes in watched satellites** (Space-Track element
+  sets, Orbit `orbit-2.4`; kind `maneuver`, `geometry` null, Off the map; Tom's "Yes, add them"), each carrying
+  Orbit's approved Space-Track citation in its source licence and summary. No counterspace events.
   Every item is kind `observation`, tier `routine`, `us_person_data: organizations`, so it has no `strength` rules
   and makes no picks; `routine_in_preset` shows its items under "Spectrum and space", the preset it shares with
   Noisefloor (its registry family), and `routine_label` names them. `freshness` "feed": a launch item keeps the
@@ -202,8 +204,11 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   Okabe-Ito hues already in use. Two sources in `config/sources.json`, licences as Orbit's
   `doctrine/sources.json` records them: GCAT (CC BY 4.0, cited as "Data from GCAT (J. McDowell,
   planet4589.org/space/gcat)") `commercial_ok` true; Launch Library 2 (no data licence stated; credited, images
-  not used) "unknown". **On the gate's open list** (`tools/gate.py`; Tom, 13 Nov 2026, after it was first held
-  because its launches include national-security payloads at named sites and times, all publicly announced).
+  not used) "unknown"; Space-Track (`space-track`, 15 Nov 2026) `commercial_ok` false. **On the gate's open list by
+  kind** (`tools/gate.py`; Tom, 13 Nov 2026, after it was first held because its launches include national-security
+  payloads at named sites and times, all publicly announced): `launch`, `upcoming`, `reentries`, `late-object`,
+  `owner-change`. **`orbit:maneuver` is on the MILITARY list** (15 Nov 2026, with Tom's yes to manoeuvres in COP's
+  feed): most watched satellites are military or intelligence satellites, so no join may cite them.
   No join reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
   scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours, and from 14 Nov
   the "YYYY-MM-DD HH:MM UTC" times in titles and summaries too, so scheduled launches sit after the fixture's time.

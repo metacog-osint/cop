@@ -37,7 +37,8 @@ OPEN = {
     "context": None,                               # press framing
     "vigil": None,                                 # ransomware claims, exploited vulnerabilities
     "headwind": None,                              # prices against their own range, sanctions-list and rule changes (Tom, 14 Nov 2026)
-    "orbit": None,                                 # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026)
+    # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026); its "maneuver" kind is held below
+    "orbit": {"launch", "upcoming", "reentries", "late-object", "owner-change"},
     # travel advisories, embassy alerts, embassy operating status; UK FCDO, Global Affairs Canada and New Zealand
     # MFAT SafeTravel travel advice and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as
     # State's, not military context)
@@ -51,6 +52,9 @@ MILITARY = {
     # Launch (14 Nov 2026; held, confirmed by Tom the same day): no join reads it yet.
     "launch": (None, "launch and reentry closure areas and the scheduled launches they coincide with, including "
                      "national-security launches and missile firings"),
+    # Orbit's orbit changes in watched satellites (Tom, 14 Nov 2026: in COP's feed, held from joins): most of the
+    # watch list is military and intelligence satellites.
+    "orbit": ({"maneuver"}, "orbit changes in watched satellites, most of them military or intelligence satellites"),
 }
 
 _ITEM_ID = re.compile(r"^([a-z]+)(?:[:\-]([^:]*))?")
