@@ -6,7 +6,7 @@
 // its own valid_until no longer stands out; one click handler opens the top mark under the cursor and lists the
 // rest; and the sentences that count or describe findings are written from the snapshot, not fixed in the page.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
-import { judgmentChips } from "./vendor/tic-doctrine.js";
+import { judgmentChips, asOfDateLabel } from "./vendor/tic-doctrine.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -39,6 +39,12 @@ function h(tag, attrs = {}, ...kids) {
   return e;
 }
 const timeEl = (iso, kind = "datetime") => (iso ? h("time", { datetime: iso, "data-tic": kind }, iso) : h("span", { text: "unknown" }));
+// An item's data time. A source that gives no time (data_as_of_precision "day" or "month", kit 0.5.6) is shown as
+// its date or month, read in UTC and without data-tic, so the viewer's zone never moves it to the evening before.
+const asOfEl = (p, kind = "datetime") => {
+  const label = asOfDateLabel(p);
+  return label ? h("time", { datetime: p.data_as_of, title: "The source gives no time of day" }, label) : timeEl(p.data_as_of, kind);
+};
 const renderTimes = (root) => { if (T) T.renderAll(root || document); };
 
 // ---------------------------------------------------------------- data
@@ -387,7 +393,7 @@ function renderCard(f) {
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
-  fact("Data as of", timeEl(p.data_as_of));
+  fact("Data as of", asOfEl(p));
   if (p.published_at) fact("Published", timeEl(p.published_at));
   if (typeof p.valid_until === "string") fact(p.cop_expired ? "Expired" : "Valid until", timeEl(p.valid_until));
   fact("Place", PRECISION[p.precision_class] || "Not stated");
@@ -418,7 +424,7 @@ function rowFor(f, cls = "row", fly = true) {
     h("span", {},
       h("span", { class: cls === "pick" ? "pick-title" : "row-title", text: p.title }),
       h("span", { class: cls === "pick" ? "pick-meta" : "row-meta" },
-        cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", timeEl(p.data_as_of, "date"),
+        cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", asOfEl(p, "date"),
         p.status_class === "claimed" ? " · claimed" : null, p.cop_expired ? " · expired" : null,
         p.cop_stale ? " · no current data" : null))));
 }
