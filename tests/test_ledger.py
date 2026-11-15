@@ -126,6 +126,36 @@ class Step(unittest.TestCase):
         _, later = ledger.step(s2, snap(C, states={"vigil": "late", "elements": "fresh"}))
         self.assertEqual([(x["change"], x["id"]) for x in later], [("ended", "vigil:kev:1")])
 
+    def test_the_last_good_copies_of_a_program_that_was_not_read_are_not_sightings(self):
+        # What the snapshot really does when a feed fails: it keeps the program's last good items, marked cop_stale.
+        s1, _ = ledger.step({}, snap(A, item("vigil", "vigil:kev:1"), item("elements", "elements:usgs:1")))
+        stale_copy = item("vigil", "vigil:kev:1", cop_stale=True)
+        s2, lines = ledger.step(s1, snap(B, stale_copy, item("elements", "elements:usgs:1"), states={"vigil": "stale"}))
+        self.assertEqual(lines, [])
+        self.assertEqual(s2["open"]["vigil:kev:1"]["last_seen"], A, "a stale copy is not a sighting")
+        self.assertFalse(s2["open"]["vigil:kev:1"]["item"]["properties"]["cop_stale"], "the item as last read is kept")
+        self.assertEqual(s2["open"]["elements:usgs:1"]["last_seen"], B, "a program that was read is seen as before")
+        # Read again without the item: the end is bracketed by the last real read, not by the last stale copy.
+        _, later = ledger.step(s2, snap(C, item("elements", "elements:usgs:1"), states={"vigil": "late"}))
+        self.assertEqual([(x["change"], x["id"], x["last_seen"], x["ended_at"]) for x in later],
+                         [("ended", "vigil:kev:1", A, C)])
+
+    def test_an_end_keeps_the_items_own_valid_until_across_a_failed_feed(self):
+        # The kit dates an end by the item's own valid_until when that falls after its last sighting. A stale copy that
+        # moved last_seen past valid_until lost that: the end was dated by the build that noticed it instead.
+        until = "2026-11-14T01:00:00Z"                                     # between A and B
+        s1, _ = ledger.step({}, snap(A, item("elements", "elements:nws:1", valid_until=until)))
+        s2, _ = ledger.step(s1, snap(B, item("elements", "elements:nws:1", valid_until=until, cop_stale=True),
+                                     states={"elements": "stale"}))
+        _, later = ledger.step(s2, snap(C, states={"elements": "fresh"}))
+        self.assertEqual([(x["change"], x["last_seen"], x["ended_at"]) for x in later], [("ended", A, until)])
+
+    def test_a_stale_copy_is_not_logged_as_new(self):
+        s1, lines = ledger.step({}, snap(A, item("vigil", "vigil:kev:1", cop_stale=True), states={"vigil": "stale"}))
+        self.assertEqual((lines, s1["open"]), ([], {}), "nothing was read, so nothing is logged")
+        _, lines = ledger.step(s1, snap(B, item("vigil", "vigil:kev:1")))
+        self.assertEqual([(x["change"], x["first_seen"]) for x in lines], [("new", B)])
+
     def test_a_program_missing_from_the_snapshot_ends_nothing(self):
         s1, _ = ledger.step({}, snap(A, item("orbit", "orbit:launch:1")))
         s2, lines = ledger.step(s1, snap(B, item("elements", "elements:usgs:1")))
@@ -145,6 +175,36 @@ class Step(unittest.TestCase):
         _, lines = ledger.step(s1, snap(B, item("blackout", "blackout:outage:tn:x", tier="warning")))
         self.assertEqual([(x["change"], x["was"]["tier"], x["peak_tier"]) for x in lines],
                          [("changed", "routine", "warning")])
+
+
+class Dropped(unittest.TestCase):
+    """An item the snapshot left out as malformed (its `dropped` list) has not left its program's feed."""
+
+    def dropped(self, s, *rows):
+        s["dropped"] = [{"id": iid, "program": program, "index": 0, "reason": "test"} for program, iid in rows]
+        return s
+
+    def test_an_item_dropped_as_malformed_stays_open(self):
+        s1, _ = ledger.step({}, snap(A, item("elements", "elements:usgs:1"), item("elements", "elements:usgs:2")))
+        s2, lines = ledger.step(s1, self.dropped(snap(B, states={"elements": "fresh"}), ("elements", "elements:usgs:1")))
+        self.assertEqual([(x["change"], x["id"]) for x in lines], [("ended", "elements:usgs:2")])
+        self.assertEqual(s2["open"]["elements:usgs:1"]["last_seen"], A)
+        _, later = ledger.step(s2, snap(C, states={"elements": "fresh"}))       # gone from the feed for real
+        self.assertEqual([(x["change"], x["id"]) for x in later], [("ended", "elements:usgs:1")])
+
+    def test_a_malformed_item_with_no_id_ends_nothing_of_its_program(self):
+        lanes = {"ooni-api"}
+        s1, _ = ledger.step({}, with_lanes(snap(A, sourced("blackout", "blackout:ooni:ir", "ooni-api"),
+                                                item("blackout", "blackout:outage:ly"), item("elements", "elements:usgs:1")),
+                                           "blackout", lanes, lanes))
+        s = with_lanes(snap(B, item("blackout", "blackout:outage:tn"), states={"elements": "fresh"}), "blackout", lanes, lanes)
+        s2, lines = ledger.step(s1, self.dropped(s, ("blackout", None)))
+        # Blackout's missing items may be the one that could not be read, on its program lane or a source lane.
+        self.assertEqual(sorted((x["change"], x["id"]) for x in lines),
+                         [("ended", "elements:usgs:1"), ("new", "blackout:outage:tn")])
+        self.assertTrue({"blackout:ooni:ir", "blackout:outage:ly"} <= set(s2["open"]))
+        self.assertEqual(s2["programs_read"], ["blackout", "elements"])
+        self.assertEqual(s2["lanes_read"], ["elements"])
 
 
 class Files(unittest.TestCase):

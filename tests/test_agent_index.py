@@ -2,10 +2,12 @@
 python tests/test_agent_index.py"""
 
 import importlib.util
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -136,6 +138,23 @@ class Verdict(unittest.TestCase):
         self.assertIsNone(v["scores"])
         self.assertEqual(v["missing"], ["scores"])
 
+    def test_a_file_of_the_wrong_shape_counts_as_a_failed_read(self):
+        # One malformed Verdict file used to raise here and stop the build (15 Nov 2026).
+        good = ai.build_verdict(verdict_docs(), {}, None, NOW)
+        docs, reports = verdict_docs(), {}
+        docs["forecasts"] = ["not", "an", "object"]
+        docs["calendar"] = {"features": ["oops"]}
+        self.assertEqual(ai.unreadable_parts(docs, reports), ["forecasts", "calendar"])
+        self.assertEqual((docs["forecasts"], docs["calendar"]), (None, None))
+        self.assertFalse(reports["calendar"]["ok"])
+        v = ai.build_verdict(docs, reports, good, NOW)
+        self.assertTrue(v["forecasts"]["stale"] and v["calendar"]["stale"])
+        self.assertIn("could not be read", v["calendar"]["error"])
+        self.assertEqual(v["calendar"]["data"], good["calendar"]["data"])
+        self.assertFalse(v["scores"]["stale"])
+        clean, none = verdict_docs(), {}
+        self.assertEqual((ai.unreadable_parts(clean, none), none), ([], {}), "sound files are left alone")
+
 
 class ProgramEvents(unittest.TestCase):
     @classmethod
@@ -185,6 +204,19 @@ class ProgramEvents(unittest.TestCase):
         e, _ = ai.orbit_event(self.launch(event={"date": "2026-11-15", "at": "2026-11-15T01:00:00Z"}))
         self.assertEqual((e["date"], e["at"]), ("2026-11-15", "2026-11-15T01:00:00Z"))
 
+    def test_an_odd_launch_item_is_skipped_or_read_never_fatal(self):
+        # A title, summary, event or visual of the wrong type used to raise here and stop the build (15 Nov 2026).
+        self.assertEqual(ai.orbit_event(self.launch() | {"title": 5, "summary": ["x"]}),
+                         (None, "no time in the title or summary"))
+        e, _ = ai.orbit_event(self.launch(event={"date": 20261115, "at": 5}, visual="x", link=None))
+        self.assertEqual((e["date"], e["at"], e["link"]), ("2026-11-14", "2026-11-14T17:32:00Z", None))
+        odd = [{"properties": self.launch() | {"id": "orbit:upcoming:a", "event": {"date": 5}}},
+               {"properties": self.launch() | {"id": "orbit:upcoming:b", "title": None}},
+               {"properties": self.launch() | {"id": "orbit:upcoming:c", "title": {"a": 1}, "summary": 7}}]
+        doc = ai.build_events({"features": odd, "generated_at": "2026-11-06T14:00:00Z"}, NOW)
+        self.assertEqual([e["id"] for e in doc["events"]], ["orbit:upcoming:a", "orbit:upcoming:b"])
+        self.assertEqual(doc["skipped"], {"no time in the title or summary": 1})
+
 
 class EndToEnd(unittest.TestCase):
     def test_main_writes_every_file_and_nothing_private(self):
@@ -198,6 +230,33 @@ class EndToEnd(unittest.TestCase):
             self.assertEqual(len(list((agent / "items").glob("*.json"))), ai.SHARDS)
             for p in agent.rglob("*.json"):
                 self.assertNotIn("commercial_ok", p.read_text(encoding="utf-8"), p.name)
+
+    def test_main_runs_on_a_feed_with_malformed_items(self):
+        # Every shape in test_snapshot.BAD in Blackout's feed, and an Orbit launch whose title is not text: both
+        # commands finish, the bad items are left out, and every file is JSON a browser will read.
+        sys.path.insert(0, str(ROOT / "tests"))
+        import test_snapshot
+        with tempfile.TemporaryDirectory() as tmp:
+            fixtures, out = Path(tmp) / "fixtures", Path(tmp) / "out"
+            fixtures.mkdir()
+            added = test_snapshot.spoiled_fixtures(fixtures)
+            orbit = json.loads((fixtures / "orbit.geojson").read_text(encoding="utf-8"))
+            launch = next(f for f in orbit["features"] if f["properties"]["id"].startswith("orbit:upcoming:"))
+            launch["properties"].update({"title": 5, "summary": None})
+            (fixtures / "orbit.geojson").write_text(json.dumps(orbit), encoding="utf-8")
+            now = "2026-11-06T15:00:00Z"
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(snap.main(["--fixtures", str(fixtures), "--out", str(out), "--now", now,
+                                            "--ended-out", str(Path(tmp) / "ended")]), 0)
+                self.assertEqual(ai.main(["--data", str(out), "--verdict", str(FIX / "verdict"), "--now", now]), 0)
+            today = json.loads((out / "today.geojson").read_text(encoding="utf-8"))
+            self.assertEqual(len(today["dropped"]), added)
+            index = json.loads((out / "agent" / "index.json").read_text(encoding="utf-8"), parse_constant=self.fail)
+            self.assertEqual(len(index["rows"]), len(today["features"]))
+            events = json.loads((out / "agent" / "events.json").read_text(encoding="utf-8"))
+            self.assertEqual(events["skipped"], {"no time in the title or summary": 1})
+            for p in (out / "agent" / "items").glob("*.json"):
+                json.loads(p.read_text(encoding="utf-8"), parse_constant=self.fail)
 
 
 if __name__ == "__main__":

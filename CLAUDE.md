@@ -420,4 +420,69 @@ wired into the card for when judgments appear), the 14-day timeline (daily snaps
 - Without the last state every item would be logged as new again, so the tool stops unless `--first` is passed, and
   the build step skips (with a warning) when a listed asset cannot be downloaded.
 - `python tools/ledger.py --replay out/archive --assets out/ledger-replay` rebuilds a ledger from the archived daily
-  snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (22).
+  snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (27).
+
+## Review fixes of 15 Nov 2026 (not committed when written)
+
+Six faults from the suite review of 15 Nov 2026 (`findings.md`, units `cop-pipeline` and `cop-frontend`), each
+confirmed by its second reviewer. Built in worktree `[local path]`, branch
+`fix/review-2026-11-15`, cut from `main` at `a790f20`. Tom's recorded decisions are untouched: the gate's lists, one
+pick per program in config order, the triage rules and wording, and that Vis's forecasts are never picks.
+
+1. **One malformed item no longer stops the build.** `snapshot.sift()` reads every feature before anything uses it
+   (the feeds, the last good copy and Elements' ended list). It leaves out a wrong *shape*: a feature or its
+   `properties` that is not an object, an `id` that is not text, a `geometry` that is not GeoJSON with numeric
+   positions, `countries` or `sources` that are not lists of strings or objects, any NaN or Infinity (Python reads and
+   writes them, a browser refuses the whole file), and anything the kit's contract check itself cannot read. A wrong
+   or missing *value* is still a lint error and the item stays. Each one left out is counted in `health.json`
+   (`dropped: {count, examples}` per program), listed in `today.geojson` under `dropped` (`{id, program, index,
+   reason}`; the kit's own name for items held back, which the ledger reads), named in an Actions warning and shown on
+   the Sources board. The same fault had two more doors, now shut: `card.py` (a pick whose title or time it could not
+   print; a failed card page now falls back to the generic card) and `agent_index.py` (an Orbit launch whose title was
+   not text; a Verdict file of the wrong shape now counts as a failed read and keeps the last copy). Measured with
+   `out/review-case/fuzz.py`: 113 malformed shapes in each of six programs' fixtures, 678 builds. On `a790f20`, 273
+   raised in a step that fails the build (the kit's contract check 149, `snapshot.py` 70, `card.py` 48,
+   `agent_index.py` 6) and 30 wrote NaN or Infinity into the snapshot; here none does either. The 12 live feeds of
+   14:30 UTC 15 Nov (2,029 items) lose nothing.
+2. **Warnings are listed first**, under "Today" and above the picks, placed or not, each row saying whose judgment it
+   is and until when it stands. They are still never picks. (Their marks keep the routine size; not asked, not
+   changed.)
+3. **`valid_until` is read.** The page works out `cop_expired` once, as it loads. An expired item no longer stands
+   out: no mark in the default view, no row, no pin; it shows where routine items show, drawn as one, and its card
+   says "Expired" with the time. A pick that has expired is named in one line under the picks ("Pick 5 has passed its
+   valid-until time...") and the lists say how many items in the view have expired. Every card with a `valid_until`
+   shows it. **Consequence to know:** Blackout sets `valid_until` to its run time plus 12 hours on every item, and
+   Launch and Headwind do the same with about 48 hours, so if one of them misses its runs for longer than that, its
+   marks leave the default view before the program reads stale (Blackout: stale at 48 h). The Sources board and the
+   expired count still say so.
+4. **One click handler** (`HIT_LAYERS`, `idsAt`): the top mark under the cursor opens, and its card lists whatever
+   else is drawn at that spot ("Also at this spot"), each one press away. Checked in a browser: Kilauea's dot inside
+   the US shaded for a Blackout route hijack opens Kilauea, with the hijack listed.
+5. **Three sentences now come from the snapshot.** "How COP reads" counts findings by kind (`renderHow`). The line
+   under "Today" when a view has no pick says what the view holds (placed findings under Also watching, unplaced
+   under Off the map, warnings above). The anomaly badge is "Measured, not a warning" only when the item's
+   `status_class` is `assessed`; otherwise "Measured or reported, not a judgment", the contract's own words for an
+   observation. The feeds carry no field that says "official notice", so the page cannot say more than that, and
+   Watchfloor's and Context's own measurements now read "Measured or reported" too, because their feeds mark them
+   `reported`.
+6. **The ledger counts a sighting only on a read.** `ledger.step()` hands the kit only the items of programs read on
+   that build, so a failed feed's last good copies (`cop_stale`) no longer move `last_seen` or log anything, and an
+   end is bracketed by the last real read. An item named in the snapshot's `dropped` list stays open, and a program
+   with a malformed item that had no readable id ends nothing on that build (`unnamed_drops`). Reproduced with the
+   real tools on the saved live feeds, Watchfloor's fetch failed for three builds: `last_seen` moved to 20:30 on
+   `a790f20` and stays at 14:30 here.
+
+Tests: `test_snapshot.py` 36 (was 25), `test_ledger.py` 27 (22), `test_agent_index.py` 19 (16). Of the 19 new
+ones, 18 fail on `a790f20`; the other records that the kit already honours `dropped`. The page has no browser test, so its four new tests check that `cop.js` still reads what it must; the
+page itself was checked by hand in the browser pane (desktop and phone width, light and dark) on a picture built from
+the live feeds plus crafted items (`out/review-case/mkcase.py`: an expired Amber, two Blackout judgments, two
+malformed items, an expired pick). `npm test`: 26 pass, and the CPU timing check fails on this laptop with or
+without these changes (5 to 14 ms against its 5 ms line, measured on an untouched copy of `a790f20` too).
+
+Left for Tom, not changed: the lede under "Today" and the share card still call every pick a measurement
+("Measurements, not warnings"), and the page's og:description says "each a measurement"; the Sources board still
+counts only anomalies as "outside their usual range" (warnings not counted, and the phrase is loose for notices);
+warnings draw at routine size; the same last_seen fault may exist one level down, for a program that keeps a failed
+source's last items in its feed while its health block marks that source unread (the handover says Headwind and
+Orbit keep them; not checked in their code), which needs a rule about source lanes; `suite_watch.py` does not read
+`health.json`, so nothing alerts on a dropped item.

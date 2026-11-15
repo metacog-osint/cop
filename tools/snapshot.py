@@ -4,7 +4,9 @@ Fetches every program's contract-v2 feed (the kit's suite registry; drawing rule
 with the vendored doctrine kit, merges the
 items into one contract-v2 FeatureCollection, picks at most five anomalies for the Today view, and reports each
 feed's health. A feed that fails never fails the build: its last good items (from the previously published
-snapshot) are kept, marked stale, and drawn grey. Silence is never shown as quiet.
+snapshot) are kept, marked stale, and drawn grey. Silence is never shown as quiet. Nor does one malformed item: every
+feature is checked as it comes in (sift), and one COP cannot carry is left out, counted in health.json and listed
+under `dropped` in the snapshot, while the rest of its program's feed goes through.
 
     python tools/snapshot.py                                  # fetch live, write site/data/
     python tools/snapshot.py --fixtures tests/fixtures        # build from saved feeds (tests, offline)
@@ -16,6 +18,7 @@ Standard-library Python only.
 import argparse
 import gzip
 import json
+import math
 import re
 import sys
 import time
@@ -82,6 +85,14 @@ def strength(props, rules):
     return None, None, None, None
 
 
+def parse_feed(body):
+    """The body as a FeatureCollection, or ValueError. Its features are checked one by one later, by sift()."""
+    data = json.loads(body)
+    if not isinstance(data, dict) or not isinstance(data.get("features"), list):
+        raise ValueError("not a FeatureCollection")
+    return data
+
+
 def fetch(url, timeout=45):
     """(feed dict or None, fetch report)."""
     t0 = time.time()
@@ -90,9 +101,7 @@ def fetch(url, timeout=45):
         with urllib.request.urlopen(req, timeout=timeout) as r:
             body = r.read()
             status = r.status
-        data = json.loads(body)
-        if not isinstance(data, dict) or not isinstance(data.get("features"), list):
-            raise ValueError("not a FeatureCollection")
+        data = parse_feed(body)
         return data, {"ok": True, "status": status, "seconds": round(time.time() - t0, 2), "bytes": len(body)}
     except Exception as e:  # noqa: BLE001 - any failure is a failed fetch, reported, never fatal
         return None, {"ok": False, "status": getattr(e, "code", None), "seconds": round(time.time() - t0, 2),
@@ -104,7 +113,107 @@ def read_local(path):
     if not p.exists():
         return None, {"ok": False, "status": None, "seconds": 0, "error": f"missing {p.name}"}
     body = p.read_bytes()
-    return json.loads(body), {"ok": True, "status": 200, "seconds": 0, "bytes": len(body)}
+    try:
+        return parse_feed(body), {"ok": True, "status": 200, "seconds": 0, "bytes": len(body)}
+    except ValueError as e:  # a saved feed that is not one reads as a failed fetch, as a live one does
+        return None, {"ok": False, "status": 200, "seconds": 0, "error": f"{type(e).__name__}: {e}"[:200]}
+
+
+# --- one malformed item never stops the build -------------------------------------------------------------------
+# Review of 15 Nov 2026: an item with no id, with properties null, or a feature that was a string raised in build()
+# or in the kit's contract check, the build failed, nothing deployed and the whole picture froze. sift() now reads
+# every feature first. What it refuses is a wrong *shape*, the kind that raises here, in tools/agent_index.py or
+# in the page (site/cop.js reads id, geometry and countries of every item before it draws anything). A wrong or
+# missing *value* (an unknown tier, no sources, a date that is not UTC) is the linter's business: it is counted as
+# a lint error and the item stays, as before.
+GEOMETRY_DEPTH = {"Point": 0, "MultiPoint": 1, "LineString": 1, "MultiLineString": 2, "Polygon": 2, "MultiPolygon": 3}
+
+
+def _number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _coordinates(c, depth):
+    if depth == 0:
+        return isinstance(c, list) and len(c) >= 2 and all(_number(v) for v in c)
+    return isinstance(c, list) and all(_coordinates(x, depth - 1) for x in c)
+
+
+def _geometry(g):
+    """A GeoJSON geometry the map can draw: a known type whose positions are numbers, or a collection of such."""
+    if not isinstance(g, dict) or not isinstance(g.get("type"), str):
+        return False
+    if g["type"] == "GeometryCollection":
+        return isinstance(g.get("geometries"), list) and all(_geometry(x) for x in g["geometries"])
+    return g["type"] in GEOMETRY_DEPTH and _coordinates(g.get("coordinates"), GEOMETRY_DEPTH[g["type"]])
+
+
+def _finite(v):
+    """No NaN or Infinity anywhere inside. Python reads them from a feed and writes them back, but they are not JSON:
+    a browser refuses the whole file, so one such number would blank the page and the MCP server."""
+    if isinstance(v, float):
+        return math.isfinite(v)
+    if isinstance(v, dict):
+        return all(_finite(x) for x in v.values())
+    if isinstance(v, list):
+        return all(_finite(x) for x in v)
+    return True
+
+
+def unsound(feature):
+    """Why COP cannot carry this feature, or None when it can."""
+    if not isinstance(feature, dict):
+        return "the feature is not an object"
+    props = feature.get("properties")
+    if not isinstance(props, dict):
+        return "properties is not an object"
+    if not isinstance(props.get("id"), str) or not props["id"].strip():
+        return "id is not a string"
+    if feature.get("geometry") is not None and not _geometry(feature["geometry"]):
+        return "geometry is not a GeoJSON geometry with numeric positions"
+    for key, kind, word in (("countries", str, "strings"), ("sources", dict, "objects")):  # the lists COP walks
+        v = props.get(key)
+        if v is not None and not (isinstance(v, list) and all(isinstance(x, kind) for x in v)):
+            return f"{key} is not a list of {word}"
+    if not _finite(feature):
+        return "it holds a number that is not finite (NaN or Infinity)"
+    return None
+
+
+def sift(features, pid=None):
+    """(the features COP can carry, their lint problems, one row for each it left out).
+
+    A feature goes through when unsound() finds nothing and the kit's contract check can read it; the check's
+    findings come back as (item id, problem) pairs for lint_feed. A row is {"id", "program", "index", "reason"}:
+    the id when it could be read (else None), and the feature's place in its feed, counted from 0."""
+    kept, problems, dropped = [], [], []
+    for n, f in enumerate(features):
+        why, found = unsound(f), []
+        if why is None:
+            try:
+                found = contract.check(f)
+            except Exception as e:  # noqa: BLE001 - a shape the kit's check cannot read must not stop the build
+                why = f"the contract check could not read it ({type(e).__name__})"
+        if why is None:
+            kept.append(f)
+            problems += [(f["properties"]["id"], p) for p in found]
+            continue
+        props = f.get("properties") if isinstance(f, dict) else None
+        props = props if isinstance(props, dict) else {}
+        iid, owner = props.get("id"), pid or props.get("cop_program")
+        dropped.append({"id": iid if isinstance(iid, str) and iid.strip() else None,
+                        "program": owner if isinstance(owner, str) else None, "index": n, "reason": why})
+    return kept, problems, dropped
+
+
+def features_of(doc):
+    """A document's features, or none when it is not a FeatureCollection (a previous snapshot read from a file)."""
+    return doc["features"] if isinstance(doc, dict) and isinstance(doc.get("features"), list) else []
+
+
+def header_text(v):
+    """A feed's header line (attribution, licence) when it is text, else None: it is joined into COP's own."""
+    return v if isinstance(v, str) else None
 
 
 def load_previous(where):
@@ -120,13 +229,12 @@ def load_previous(where):
         return None
 
 
-def lint_feed(feed):
+def lint_feed(feed, item_problems):
+    """Lint counts for health.json: the kit's header check, plus what its contract check found in each item that
+    sift() let through (item_problems)."""
     errors, warnings, examples = 0, 0, []
     problems = [("feed", p) for p in kitlint.check_header({k: v for k, v in feed.items() if k != "features"})]
-    for item in feed["features"]:
-        props, _ = contract.split(item)
-        problems += [(props.get("id", "?"), p) for p in contract.check(item)]
-    for item_id, (std, sev, msg) in problems:
+    for item_id, (std, sev, msg) in problems + item_problems:
         if sev == "error":
             errors += 1
             if len(examples) < 3:
@@ -169,30 +277,36 @@ def build(feeds, reports, previous, now):
     features, health, attributions = [], [], []
     candidates = {}
     lanes_by_program = {}
+    all_dropped = []
+    previous = previous if isinstance(previous, dict) else {}
+    previous_items, _, previous_dropped = sift(features_of(previous))
     for prog in CONFIG["programs"]:
         pid = prog["id"]
         feed, rep = feeds.get(pid), reports[pid]
         from_previous = False
         if feed is not None:
-            items = feed["features"]
-            lint = lint_feed(feed)
-            attribution, licence = feed.get("attribution"), feed.get("licence")
+            items, problems, dropped = sift(features_of(feed), pid)
+            lint = lint_feed(feed, problems)
+            attribution, licence = header_text(feed.get("attribution")), header_text(feed.get("licence"))
             lanes_by_program[pid] = source_lanes(feed)
         else:
-            items = [f for f in (previous or {}).get("features", []) if f.get("properties", {}).get("cop_program") == pid]
+            items = [f for f in previous_items if f["properties"].get("cop_program") == pid]
+            dropped = [d for d in previous_dropped if d["program"] == pid]
             from_previous = bool(items)
             lint = None
-            prev_prog = ((previous or {}).get("cop_programs") or {}).get(pid, {})
-            attribution, licence = prev_prog.get("attribution"), prev_prog.get("licence")
+            prev_prog = (previous.get("cop_programs") or {}).get(pid) or {}
+            attribution, licence = header_text(prev_prog.get("attribution")), header_text(prev_prog.get("licence"))
+        all_dropped += dropped
         newest = max((utc(i.get("properties", {}).get("data_as_of")) for i in items
                       if utc(i.get("properties", {}).get("data_as_of"))), default=None)
         if feed is not None and prog.get("freshness") == "feed" and utc(feed.get("generated_at")):
             newest = utc(feed.get("generated_at"))  # notice programs: items carry issue dates, the feed is current
         age = round((now - newest).total_seconds() / 3600, 1) if newest else None
         state = state_for(age, prog, feed is not None)
-        unregistered = sorted({s.get("id") or s.get("publisher") for i in items
-                               for s in (i.get("properties", {}).get("sources") or [])
-                               if (s.get("id") or s.get("publisher")) not in SOURCES})
+        # A source's register key is its id, else its publisher; one that gives neither as text is the linter's.
+        keys = {s.get("id") or s.get("publisher") for i in items for s in (i["properties"].get("sources") or [])
+                if isinstance(s.get("id") or s.get("publisher"), str)}
+        unregistered = sorted(keys - set(SOURCES))
         ranked = []
         for order, item in enumerate(items):
             p = dict(item.get("properties") or {})
@@ -220,6 +334,9 @@ def build(feeds, reports, previous, now):
             "fresh_hours": prog["fresh_hours"], "stale_hours": prog["stale_hours"],
             "lint": lint, "unregistered_sources": unregistered, "attribution": attribution, "licence": licence,
             "site": prog["site"], "feed": prog["feed"],
+            # Malformed items left out of the picture (sift): how many, and up to three with the reason.
+            "dropped": {"count": len(dropped), "examples": [
+                f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
         })
 
     # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks.
@@ -254,7 +371,10 @@ def build(feeds, reports, previous, now):
         "type": "FeatureCollection", "contract": "tic-feed/2", "program": "cop", "generated_at": iso(now),
         "licence": "Each item keeps its program's licence (cop_programs below).",
         "attribution": "COP, The Intelligence Company. " + " ".join(attributions),
-        "language_key": LANGUAGE_KEY, "cop_programs": programs_block, "features": features,
+        "language_key": LANGUAGE_KEY, "cop_programs": programs_block,
+        # Items left out as malformed, by the kit's own name for items held back: the suite ledger does not end an
+        # item listed here (history.update reads `dropped`), since it left the picture, not its program's feed.
+        "dropped": all_dropped, "features": features,
     }
     public = [{k: p[k] for k in ("id", "name", "family", "preset", "site", "mark", "color")} |
               {"country_mark": p.get("country_mark", "fill"), "area_style": p.get("area_style", "solid"),
@@ -335,13 +455,15 @@ def fetch_ended(now, out, fixtures=None, archive=None):
             dest.unlink(missing_ok=True)
             lines.append(f"{pid} ended items: fetch failed ({rep.get('error')}); readers will say it is missing")
             continue
+        data["features"], _, left_out = sift(data["features"], pid)  # the joins that read this list need sound items too
         data["cop_fetched_at"] = iso(now)
         write_json(dest, data)
         if archive:
             archive.mkdir(parents=True, exist_ok=True)
             with gzip.open(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", "wt", encoding="utf-8") as fh:
                 json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
-        lines.append(f"{pid} ended items: {len(data['features'])}, generated {data.get('generated_at')}")
+        lines.append(f"{pid} ended items: {len(data['features'])}, generated {data.get('generated_at')}"
+                     + (f"; {len(left_out)} malformed left out" if left_out else ""))
     return lines
 
 
@@ -389,6 +511,9 @@ def main(argv=None):
         print(f"{h['name']:<11} {h['state']:<6} items={h['items']:<4} anomalies={h['anomalies']:<3} "
               f"age={h['age_hours']}h lint_errors={lint.get('errors', '-')} "
               f"{'(last good copy)' if h['from_previous'] else ''}{' fetch failed: ' + h['fetch'].get('error', '') if not h['fetch']['ok'] else ''}")
+        if h["dropped"]["count"]:  # an annotation on the Actions run, never a failure
+            print(f"::warning::{h['name']}: {h['dropped']['count']} malformed item(s) left out of the picture: "
+                  + "; ".join(h["dropped"]["examples"]))
     print(f"picks: {', '.join(p['program'] + ':' + p['id'][:40] for p in picks['picks'])}")
     return 0
 

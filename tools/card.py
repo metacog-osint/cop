@@ -50,7 +50,12 @@ def when(s):
 
 
 def day(s):
-    dt = datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+    """'2026-10-31T22:08:05Z' -> '31 Oct', or None when a pick's own time cannot be read (the card then leaves it
+    out; one odd item must not stop the build)."""
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except (AttributeError, TypeError, ValueError):
+        return None
     return f"{dt.day} {dt:%b}"
 
 
@@ -203,13 +208,15 @@ def build_html(picks_doc, today, health, world, generic=False):
     for p, f, at in rows:
         pr, prog = f["properties"], progs[p["program"]]
         col = prog["color"]
-        meta = f'{html.escape(prog["name"])} · data {day(pr["data_as_of"])}' if pr.get("data_as_of") else html.escape(prog["name"])
+        data_day = day(pr.get("data_as_of"))
+        meta = f'{html.escape(prog["name"])} · data {data_day}' if data_day else html.escape(prog["name"])
         if pr.get("status_class") == "claimed":
             meta += " · claimed"
         if pr.get("cop_stale"):
             meta += " · no current data"
+        title = pr.get("title")
         items.append(
-            f'<li><span class="num">{p["n"]}</span><span class="txt"><span class="t">{html.escape(pr.get("title", ""))}</span>'
+            f'<li><span class="num">{p["n"]}</span><span class="txt"><span class="t">{html.escape("" if title is None else str(title))}</span>'
             f'<span class="m"><i class="dot" style="background:{col["fill"]};border-color:{col["outline_light"]}"></i>{meta}</span></span></li>')
 
     if generic:
@@ -332,19 +339,26 @@ def main(argv=None):
     OUT.mkdir(exist_ok=True)
     page = OUT / ("card-generic.html" if args.generic else "card.html")
     world = load("world.geojson")
+    target = FALLBACK if args.generic else DATA / "card.png"
     if args.generic:
         health = load("health.json")
         page.write_text(build_html({}, {"features": []}, health, world, generic=True), encoding="utf-8")
+        problem = None
     else:
-        page.write_text(build_html(load("picks.json"), load("today.geojson"), load("health.json"), world),
-                        encoding="utf-8")
+        # The card is a nicety: a pick it cannot draw costs today's card, never the build (15 Nov 2026).
+        try:
+            page.write_text(build_html(load("picks.json"), load("today.geojson"), load("health.json"), world),
+                            encoding="utf-8")
+            problem = None
+        except Exception as e:  # noqa: BLE001
+            problem = f"the card page could not be built ({type(e).__name__}: {e})"
     if args.html_only:
-        print(f"wrote {page}")
-        return 0
-    target = FALLBACK if args.generic else DATA / "card.png"
+        print(f"wrote {page}" if problem is None else f"card: {problem}")
+        return 0 if problem is None else 1
     tmp = OUT / (target.stem + ".tmp.png")
     tmp.unlink(missing_ok=True)
-    problem = screenshot(page, tmp)
+    if problem is None:
+        problem = screenshot(page, tmp)
     if problem is None:
         shutil.move(str(tmp), target)
         print(f"wrote {target.relative_to(ROOT)} ({target.stat().st_size // 1024} KB)")
