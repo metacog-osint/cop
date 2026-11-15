@@ -276,6 +276,13 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows
   106 KB), past `INDEX_WARN_BYTES`, which annotates and does not fail. That build (evening of 14 Nov CST) read all
   twelve feeds fresh, Undertow 425 items, no lint errors; under Information its rings drew and its card opened.
+  **Date-only items (15 Nov 2026, kit 0.5.6, Tom's "One kit release"):** an item whose source gives no time carries
+  `data_as_of_precision` ("day": midnight UTC on that date; "month": midnight UTC on the 1st). The card's "Data as
+  of" and the list rows show it through `asOfEl` (the kit's `asOfDateLabel`): "June 2026" or "Oct 30, 2026", read in
+  UTC, with no `data-tic`, so TicTime never moves it into the viewer's zone. Before, Undertow's "2025-06" read
+  "May 31, 7:00 PM CDT". Undertow sets it on 384 of 425 items (23 month, 361 day; Undertow `d2d0b8f`); any program
+  may. Checked in the browser pane on a local build with Undertow's new feed: the "Data Center Bandwagon" card reads
+  "Data as of June 2026". The agent index does not carry the field; `get_item` returns it with the full item.
 - **Wake** (15 Nov 2026, kit 0.5.5, which sets its registry entry live): IMF PortWatch's daily counts of
   AIS-visible vessel transits through 28 maritime chokepoints, as 7-day means that Wake computes and compares with
   the 90 days before and the same weeks a year earlier (Wake `wake-2.0`). One Point per chokepoint, precision
@@ -336,7 +343,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   headless Chrome (Edge locally) into `site/data/card.png`, the page's og:image. `--stamp-page` (build only) adds
   `?v=<assessment time>` to the image address, since social sites cache previews by address. If no browser runs or
   the size is wrong, it copies `site/card-fallback.png` (regenerate with `--generic`); it never fails the build.
-- **Kit:** vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
+- **Kit:** (0.5.6 since 15 Nov 2026) vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
 ## MCP server (`/mcp`, built 6 Nov 2026)
