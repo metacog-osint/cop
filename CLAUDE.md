@@ -418,7 +418,11 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   `gh workflow run watch.yml --repo metacog-osint/cop -f test_failure=true`. `--test-failure` adds one problem that
   says it is a test, so the run fails, GitHub mails the owner and Healthchecks.io gets `/fail`. The next normal run
   turns the check green again.
-- Tests: `python tests/test_suite_watch.py` (10).
+- **Malformed items** (15 Nov 2026, Tom's "complete items 1-5"): it also reads `health.json` beside the snapshot
+  (`--health` to point elsewhere) and exits 1 when a program has malformed items left out of the picture, naming
+  the program, the count and up to three reasons. A `health.json` it cannot read is a problem too, never a quiet
+  pass.
+- Tests: `python tests/test_suite_watch.py` (17).
 
 ## Not in v0
 Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is
@@ -510,10 +514,16 @@ the live feeds plus crafted items (`out/review-case/mkcase.py`: an expired Amber
 malformed items, an expired pick). `npm test`: 26 pass, and the CPU timing check fails on this laptop with or
 without these changes (5 to 14 ms against its 5 ms line, measured on an untouched copy of `a790f20` too).
 
-Left for Tom, not changed: the lede under "Today" and the share card still call every pick a measurement
-("Measurements, not warnings"), and the page's og:description says "each a measurement"; the Sources board still
-counts only anomalies as "outside their usual range" (warnings not counted, and the phrase is loose for notices);
-warnings draw at routine size; the same last_seen fault may exist one level down, for a program that keeps a failed
-source's last items in its feed while its health block marks that source unread (the handover says Headwind and
-Orbit keep them; not checked in their code), which needs a rule about source lanes; `suite_watch.py` does not read
-`health.json`, so nothing alerts on a dropped item.
+**Follow-ups done the same day** (`8a80996`, Tom's "complete items 1-5"): the watchdog reads `health.json` and
+alerts on a dropped item (see the watchdog section); the lede, og:description, image alt and share-card footer say
+"measurement or a report" / "Measured or reported, not warnings", since picks include notices; the Sources board
+counts items "unusual against its own baseline" and warnings, from the picture as the page reads it (expired items
+not counted); warnings draw at the standing-out size, as anomalies do, until they expire, and keep their shaded
+country ahead of a routine item. The click inside a shaded country was checked live (Kilauea inside the US shaded
+for a Blackout hijack opens Kilauea, with the hijack under "Also at this spot").
+
+Still open, for Tom: the same last_seen fault may exist one level down, for a program that keeps a failed source's
+last items in its feed while its health block marks that source unread (the handover says Headwind and Orbit keep
+them; not checked in their code), which needs a rule about source lanes. Blackout's items expire 12 hours after its
+run but the program reads stale only at 48 hours (a fix in Blackout, not COP). The agent `index.json` is over the
+600 KB warning line (601 KB at 15:13 UTC 15 Nov, 608 KB at 15:44).
