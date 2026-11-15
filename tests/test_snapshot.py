@@ -350,7 +350,7 @@ class Card(unittest.TestCase):
         self.assertEqual(page.count("<li>"), len(picks["picks"]))
         self.assertNotIn("<script>x", page)
         self.assertIn("Assessed 31 Oct 2026, 20:30 UTC", page)
-        self.assertIn("Measurements, not warnings", page)
+        self.assertIn("Measured or reported, not warnings", page)
 
     def test_place_of_lines_and_collections(self):
         # Same rule as cop.js placeOf: the middle of the box around a line's positions, a collection's first part.

@@ -261,7 +261,7 @@ li{{display:flex;gap:12px;align-items:flex-start}}
 """
     mark = ('<svg width="30" height="30" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10.5" fill="none" '
             'stroke="#E3A83B" stroke-width="3"/><circle cx="16" cy="16" r="3.5" fill="#E3A83B"/></svg>')
-    foot = ('<span>Measurements, not warnings</span>' if not generic else '<span>Free to read</span>')
+    foot = ('<span>Measured or reported, not warnings</span>' if not generic else '<span>Free to read</span>')
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>COP card</title><style>{css}</style>'
             f'</head><body><div class="card">{"".join(svg)}<div class="side">'
             f'<div class="brand">{mark}<b>COP</b><span>The Intelligence Company</span></div>{body}'

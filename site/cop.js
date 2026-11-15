@@ -139,7 +139,7 @@ function countryFills() {
     for (const cc of p.countries || []) {
       const key = `${cc}|${p.cop_program}`;
       const prev = out.get(key);
-      if (!shapes.has(cc) || (prev && prev.properties.tier === "anomaly" && !prev.properties.cop_expired)) continue;
+      if (!shapes.has(cc) || (prev && standsOut(prev.properties))) continue;  // a standing-out item keeps the country
       out.set(key, { type: "Feature", geometry: shapes.get(cc), properties: {
         id: p.id, cop_program: p.cop_program, cop_stale: p.cop_stale, tier: p.tier, status_class: p.status_class,
         cop_expired: p.cop_expired, cc } });
@@ -214,13 +214,15 @@ function addLayers() {
   map.addSource("items", { type: "geojson", data: MAP_ITEMS, maxzoom: 10 });
   map.addSource("countryfills", { type: "geojson", data: countryFills(), maxzoom: 6 });
   const claimed = ["==", ["get", "status_class"], "claimed"];
-  const anomaly = ["all", ["==", ["get", "tier"], "anomaly"], NOT_EXPIRED];  // an expired anomaly draws as routine
+  // Every item that stands out (an anomaly or a warning, until it expires) draws at the larger size; warnings drew at
+  // routine size until 15 Nov 2026. An expired one draws as routine.
+  const strong = OUT;
   map.addLayer({ id: "cf-fill", type: "fill", source: "countryfills",
-    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", anomaly, 0.2, 0.09] } });
+    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", strong, 0.2, 0.09] } });
   map.addLayer({ id: "cf-line", type: "line", source: "countryfills",
     paint: { "line-color": colourExpr("line"), "line-width": 1.3, "line-dasharray": [3, 2] } });
   map.addLayer({ id: "cells-fill", type: "fill", source: "items", filter: ["all", baseFilter(), POLY],
-    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", claimed, 0.08, IS_DASHED, 0.12, anomaly, 0.55, 0.22] } });
+    paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", claimed, 0.08, IS_DASHED, 0.12, strong, 0.55, 0.22] } });
   map.addLayer({ id: "cells-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY, ["!", IS_DASHED]],
     paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", claimed, 2, 1.3] } });
   map.addLayer({ id: "areas-line", type: "line", source: "items", filter: ["all", baseFilter(), POLY, IS_DASHED],
@@ -229,17 +231,17 @@ function addLayers() {
   // keeps only the fill colour, as cells-line does. lines-hit is invisible and wide, so a thin line is easy to click.
   map.addLayer({ id: "lines-casing", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", anomaly, 5, 3.6] } });
+    paint: { "line-color": ["case", claimed, colourExpr("fill"), colourExpr("line")], "line-width": ["case", strong, 5, 3.6] } });
   map.addLayer({ id: "lines", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": colourExpr("fill"), "line-width": ["case", anomaly, 2.8, 1.8] } });
+    paint: { "line-color": colourExpr("fill"), "line-width": ["case", strong, 2.8, 1.8] } });
   map.addLayer({ id: "lines-hit", type: "line", source: "items", filter: ["all", baseFilter(), LINE],
     paint: { "line-color": "#000000", "line-opacity": 0, "line-width": 14 } });
   map.addLayer({ id: "halos", type: "circle", source: "items", filter: ["all", baseFilter(), POINT, IS_HALO],
-    paint: { "circle-radius": ["case", anomaly, 12, 9], "circle-opacity": 0, "circle-stroke-color": colourExpr("fill"),
-      "circle-stroke-width": ["case", anomaly, 3, 2], "circle-stroke-opacity": 0.95 } });
+    paint: { "circle-radius": ["case", strong, 12, 9], "circle-opacity": 0, "circle-stroke-color": colourExpr("fill"),
+      "circle-stroke-width": ["case", strong, 3, 2], "circle-stroke-opacity": 0.95 } });
   map.addLayer({ id: "points", type: "circle", source: "items", filter: ["all", baseFilter(), POINT, ["!", IS_HALO]],
-    paint: { "circle-radius": ["case", anomaly, 6.5, 4.5], "circle-color": colourExpr("fill"),
+    paint: { "circle-radius": ["case", strong, 6.5, 4.5], "circle-color": colourExpr("fill"),
       "circle-opacity": ["case", claimed, 0, 1], "circle-stroke-color": ["case", claimed, colourExpr("fill"), colourExpr("line")],
       "circle-stroke-width": ["case", claimed, 2.2, 1.4] } });
   drawPins();
@@ -488,7 +490,7 @@ function renderPanel() {
 
   const alsoShown = state.showAllAlso ? placed : placed.slice(0, 10);
   const expired = inView.filter((f) => STANDS_OUT.includes(f.properties.tier) && f.properties.cop_expired).length;
-  $("also").replaceChildren(...(placed.length ? alsoShown.map((f) => rowFor(f)) : [h("li", { class: "empty", text: "Nothing else outside its usual range." })]),
+  $("also").replaceChildren(...(placed.length ? alsoShown.map((f) => rowFor(f)) : [h("li", { class: "empty", text: "Nothing else stands out in this view." })]),
     ...(placed.length > alsoShown.length ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllAlso = true; renderPanel(); } },
       `Show ${placed.length - alsoShown.length} more`))] : []),
     ...(expired ? [h("li", { class: "more" }, `${count(expired, "finding")} in this view ${expired === 1 ? "has" : "have"} passed `
@@ -608,7 +610,13 @@ function renderHealth() {
     const lint = hp.lint;
     const bits = [];
     bits.push(hp.data_as_of ? ["Data through ", timeEl(hp.data_as_of)] : ["No data"]);
-    bits.push(` · ${hp.items} findings, ${hp.anomalies} outside their usual range`);
+    // Counted from the picture as the page reads it (15 Nov 2026): an anomaly is unusual against its program's own
+    // baseline, a warning is a program's own judgment, and an item past its valid-until time no longer stands out.
+    const live = today.features.filter((f) => f.properties.cop_program === hp.id && !f.properties.cop_expired);
+    const unusual = live.filter((f) => f.properties.tier === "anomaly").length;
+    const warned = live.filter((f) => f.properties.tier === "warning").length;
+    bits.push(` · ${count(hp.items, "finding")}, ${unusual} unusual against its own baseline`
+      + (warned ? `, ${count(warned, "warning")}` : ""));
     if (hp.fetch.ok) bits.push(` · fetched in ${hp.fetch.seconds} s`);
     else bits.push(` · fetch failed${hp.from_previous ? ": showing the last good copy" : ""}`);
     if (lint) bits.push(lint.errors ? ` · ${lint.errors} contract problems` : " · passes the contract checks");
