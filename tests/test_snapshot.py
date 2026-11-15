@@ -2,10 +2,12 @@
 
 import copy
 import importlib.util
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -182,8 +184,163 @@ class Build(unittest.TestCase):
             self.assertEqual(h["unregistered_sources"], [], h["id"])
 
 
+def spoil(pid, change, index=0):
+    """A feeds mutator: one item of a program's feed becomes change(item)."""
+    def mutate(f):
+        f[pid]["features"][index] = change(f[pid]["features"][index])
+    return mutate
+
+
+def props(**kv):
+    def change(x):
+        x["properties"].update(kv)
+        return x
+    return change
+
+
+def geometry(g):
+    return lambda x: {**x, "geometry": g}
+
+
+def no_id(x):
+    del x["properties"]["id"]
+    return x
+
+
+# Shapes a program could publish by mistake, with the reason health.json gives. Before 15 Nov 2026 each one stopped
+# the build (in snapshot.py, the kit's contract check, agent_index.py or card.py), or, for NaN, wrote a snapshot no
+# browser can read. The last one stands for any shape the kit's check itself cannot read.
+BAD = [
+    ("no id", no_id, "id is not a string"),
+    ("properties null", lambda x: {**x, "properties": None}, "properties is not an object"),
+    ("properties a list", lambda x: {**x, "properties": []}, "properties is not an object"),
+    ("a string for a feature", lambda x: "oops", "the feature is not an object"),
+    ("null for a feature", lambda x: None, "the feature is not an object"),
+    ("id a number", props(id=5), "id is not a string"),
+    ("sources a string", props(sources="x"), "sources is not a list of objects"),
+    ("a source that is a string", props(sources=["x"]), "sources is not a list of objects"),
+    ("countries a number", props(countries=5), "countries is not a list of strings"),
+    ("geometry a string", geometry("x"), "geometry is not a GeoJSON geometry"),
+    ("a polygon with no rings", geometry({"type": "Polygon", "coordinates": None}), "geometry is not a GeoJSON geometry"),
+    ("a collection of a string", geometry({"type": "GeometryCollection", "geometries": ["x"]}),
+     "geometry is not a GeoJSON geometry"),
+    ("a measure that is NaN", props(measures={"z": float("nan")}), "not finite"),
+    ("a tier the kit cannot read", props(tier=["anomaly"]), "the contract check could not read it"),
+]
+NAMED = {"sources a string", "a source that is a string", "countries a number", "geometry a string",
+         "a polygon with no rings", "a collection of a string", "a measure that is NaN", "a tier the kit cannot read"}
+
+
+def spoiled_fixtures(folder, pid="blackout"):
+    """A copy of the fixtures in `folder` where `pid`'s feed also carries one item of every BAD shape. Returns the
+    number added. Written as a program would write it: Python's json puts NaN in the file as it stands."""
+    for p in FIX.glob("*.geojson"):
+        (folder / p.name).write_bytes(p.read_bytes())
+    feed = json.loads((FIX / f"{pid}.geojson").read_text(encoding="utf-8"))
+    first = feed["features"][0]
+    for n, (_label, change, _why) in enumerate(BAD):
+        item = copy.deepcopy(first)
+        item["properties"]["id"] = f"{pid}:spoiled:{n}"
+        feed["features"].append(change(item))
+    (folder / f"{pid}.geojson").write_text(json.dumps(feed), encoding="utf-8")
+    return len(BAD)
+
+
+class Malformed(unittest.TestCase):
+    """One malformed item is left out and counted. It never stops the build, and its program stays in the picture."""
+
+    def test_each_malformed_shape_is_left_out_and_counted(self):
+        _, _, clean, _ = build()
+        first = feeds()[0]["blackout"]["features"][0]["properties"]["id"]
+        for label, change, why in BAD:
+            with self.subTest(label):
+                today, picks, health, _ = build(mutate=spoil("blackout", change))
+                h = health_of(health, "blackout")
+                self.assertEqual((h["state"], h["items"], h["dropped"]["count"]),
+                                 ("fresh", health_of(clean, "blackout")["items"] - 1, 1))
+                self.assertIn(why, h["dropped"]["examples"][0])
+                self.assertNotIn(first, [f["properties"]["id"] for f in today["features"]])
+                row, = today["dropped"]
+                self.assertEqual((row["id"], row["program"], row["index"]),
+                                 (first if label in NAMED else None, "blackout", 0))
+                self.assertIn(why, row["reason"])
+                for pid in IDS:                                      # every other program is untouched
+                    if pid != "blackout":
+                        self.assertEqual((health_of(health, pid)["items"], health_of(health, pid)["dropped"]["count"]),
+                                         (health_of(clean, pid)["items"], 0), pid)
+                self.assertTrue(picks["picks"])
+                json.dumps(today, allow_nan=False)                   # NaN is not JSON: a browser refuses the file
+
+    def test_a_clean_build_drops_nothing(self):
+        today, _, health, _ = build()
+        self.assertEqual(today["dropped"], [])
+        self.assertEqual([h["dropped"] for h in health["programs"]], [{"count": 0, "examples": []}] * len(IDS))
+
+    def test_a_wrong_value_is_a_lint_error_and_the_item_stays(self):
+        for change in (props(tier="red"), props(title=None), props(sources=[]), props(data_as_of="soon")):
+            _, _, clean, _ = build()
+            today, _, health, _ = build(mutate=spoil("blackout", change))
+            h = health_of(health, "blackout")
+            self.assertEqual((h["items"], h["dropped"]["count"]), (health_of(clean, "blackout")["items"], 0))
+            self.assertGreater(h["lint"]["errors"], 0)
+
+    def test_a_last_good_copy_with_a_malformed_item_still_stands_in_for_a_dead_feed(self):
+        prev, _, _, _ = build()
+        prev["features"] += ["oops", {"type": "Feature", "geometry": None, "properties": None}]
+        today, _, health, _ = build(dead=("noisefloor",), previous=prev)
+        h = health_of(health, "noisefloor")
+        self.assertEqual((h["state"], h["from_previous"]), ("stale", True))
+        self.assertGreater(h["items"], 0)
+        _, _, health, _ = build(dead=("vigil",), previous="not a snapshot")
+        self.assertEqual((health_of(health, "vigil")["state"], health_of(health, "vigil")["items"]), ("stale", 0))
+
+    def test_the_build_command_runs_and_reports_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fixtures, out = Path(tmp) / "fixtures", Path(tmp) / "out"
+            fixtures.mkdir()
+            added = spoiled_fixtures(fixtures)
+            log = io.StringIO()
+            with redirect_stdout(log):
+                code = snap.main(["--fixtures", str(fixtures), "--out", str(out), "--ended-out", str(Path(tmp) / "ended"),
+                                  "--now", "2026-10-31T20:30:00Z"])
+            self.assertEqual(code, 0)
+            # parse_constant is called for NaN and Infinity, which Python reads and a browser refuses
+            today = json.loads((out / "today.geojson").read_text(encoding="utf-8"), parse_constant=self.fail)
+            health = json.loads((out / "health.json").read_text(encoding="utf-8"), parse_constant=self.fail)
+            h = health_of(health, "blackout")
+            self.assertEqual((h["state"], h["dropped"]["count"], len(h["dropped"]["examples"])), ("fresh", added, 3))
+            self.assertEqual(len(today["dropped"]), added)
+            self.assertIn(f"::warning::Blackout: {added} malformed item(s) left out of the picture", log.getvalue())
+            # the share card's page still builds from that snapshot
+            picks = json.loads((out / "picks.json").read_text(encoding="utf-8"))
+            self.assertIn("Today’s picks", card.build_html(picks, today, health, Card.WORLD))
+
+    def test_a_saved_feed_that_is_not_a_feed_reads_as_a_failed_fetch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "x.geojson"
+            for body in ('["not", "a", "feed"]', '{"features": "none"}', "not json"):
+                p.write_text(body, encoding="utf-8")
+                feed, rep = snap.read_local(p)
+                self.assertEqual((feed, rep["ok"]), (None, False), body)
+
+
 class Card(unittest.TestCase):
     WORLD = {"features": [{"geometry": {"type": "Polygon", "coordinates": [[[0, 0], [40, 0], [40, 30], [0, 30], [0, 0]]]}}]}
+
+    def test_a_pick_whose_title_or_time_cannot_be_read_still_makes_a_card(self):
+        _, picks, _, _ = build()
+        pick = next(p["id"] for p in picks["picks"] if p["program"] == "noisefloor")
+
+        def odd(f):
+            for x in f["noisefloor"]["features"]:
+                if x["properties"]["id"] == pick:
+                    x["properties"].update({"title": 5, "data_as_of": "soon"})
+        today, picks, health, _ = build(mutate=odd)
+        self.assertIn(pick, [p["id"] for p in picks["picks"]], "a lint error drops nothing, so it is still a pick")
+        page = card.build_html(picks, today, health, self.WORLD)
+        self.assertEqual(page.count("<li>"), len(picks["picks"]))
+        self.assertIsNone(card.day("soon"))
+        self.assertIsNone(card.day(5))
 
     def test_card_lists_every_placed_pick_and_escapes_titles(self):
         def poison(f):
@@ -213,6 +370,47 @@ class Card(unittest.TestCase):
             self.assertIn(f'id: "{layer}"', js)
         self.assertIn('"lines-hit", "halos", "points"', js, "clicks on a line open its card")
         self.assertIn('g.type === "GeometryCollection"', js)
+
+    # The page has no browser test (the review of 15 Nov 2026 says so), so these keep the fixes of that date from being
+    # undone by a later edit: they check that the page still reads what it must, not how it looks. Each was checked in
+    # a browser when written, on a picture built from the live feeds.
+    def test_page_opens_the_top_mark_with_one_click_handler(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn('const HIT_LAYERS = ["cf-fill", "cells-fill", "lines-hit", "halos", "points"]', js)
+        self.assertIn("map.queryRenderedFeatures(point, { layers: HIT_LAYERS })", js)
+        self.assertEqual(js.count('map.on("click"'), 1, "one handler: a handler per layer let the country fill's run last")
+        self.assertIn("here: ids", js, "the card lists what else is under the click")
+
+    def test_page_reads_valid_until(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn("Date.parse(f.properties.valid_until)", js)
+        self.assertRegex(js, r'const MAP_KEYS = \[[^\]]*"cop_expired"', "the map's copy of each item knows it expired")
+        self.assertIn("const standsOut = (p) => STANDS_OUT.includes(p.tier) && !p.cop_expired;", js)
+        self.assertIn('["in", ["get", "tier"], ["literal", STANDS_OUT]], NOT_EXPIRED]', js)
+        self.assertIn('fact(p.cop_expired ? "Expired" : "Valid until", timeEl(p.valid_until))', js)
+
+    def test_page_lists_warnings_first_and_never_as_picks(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+        self.assertLess(page.index('id="warnings"'), page.index('id="picks"'), "warnings come before the picks")
+        self.assertIn('out.filter((f) => f.properties.tier === "warning")', js)
+        self.assertIn("'s own judgment: ", js)
+        _, picks, _, _ = build()
+        today, _, _, _ = build()
+        tiers = {f["properties"]["id"]: f["properties"]["tier"] for f in today["features"]}
+        self.assertEqual({tiers[p["id"]] for p in picks["picks"]}, {"anomaly"}, "a warning is never a pick")
+
+    def test_page_writes_its_sentences_from_the_snapshot(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        page = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("Every finding today is a measurement", page)
+        self.assertIn('id="how-counts"', page)
+        self.assertIn('$("how-counts").textContent = text;', js)
+        self.assertNotIn("No findings with a place for this view today. See Off the map below.", js)
+        self.assertIn("listed under Also watching.", js)
+        # "Measured" only where the item's own status_class says its program measured it
+        self.assertEqual(js.count('"Measured, not a warning"'), 1)
+        self.assertIn('p.status_class === "assessed" ? "Measured, not a warning" : "Measured or reported, not a judgment"', js)
 
     def test_view_keeps_every_pick_inside_the_map(self):
         today, picks, health, _ = build()

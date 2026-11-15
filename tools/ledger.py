@@ -23,6 +23,13 @@ the program's own feed stopped carrying the item while its source was read, seen
 (Elements keeps one, the others as they adopt the kit's history) is finer and is the record of that program; the
 ledger is the one place with all of them, from the day it starts.
 
+A sighting needs a read too (15 Nov 2026). When a program's feed fails, the snapshot still carries its last good copies
+(cop_stale), drawn grey. They are not sightings: step() leaves the items of a program that was not read out of what it
+hands the kit, so their last_seen stays at the last build that really read them and nothing of theirs is logged. Before
+this, a dead feed's copies pushed last_seen forward every two hours, and an end, when it came, was bracketed too
+tightly. And an item the snapshot left out as malformed (its `dropped` list) has not left its program's feed: one named
+there by id stays open, and a program with a malformed item that had no readable id ends nothing on that build.
+
 Files, in --assets (the build keeps them as release assets, not in the repository and not on the site):
     state.json.gz           the items open after the last build
     YYYY-MM-DD.jsonl.gz     that UTC day's lines; today's file is rewritten by each build of the day
@@ -86,9 +93,16 @@ def lane_namer(snapshot: dict, lane_maps: dict | None = None):
     return lane_of
 
 
+def unnamed_drops(snapshot: dict) -> set:
+    """Programs with an item the snapshot left out as malformed and could not name (no readable id). Which open item
+    that was cannot be known, so nothing of such a program ends on this build."""
+    return {x.get("program") for x in snapshot.get("dropped") or [] if isinstance(x, dict) and not x.get("id")}
+
+
 def lanes_read(snapshot: dict) -> set:
-    """Every lane read on this build: each program read, and each of its sources its own feed says was read."""
-    ok = set(programs_read(snapshot))
+    """Every lane whose missing items may end on this build: each program read, and each of its sources its own feed
+    says was read, except a program with a malformed item the snapshot could not name."""
+    ok = programs_read(snapshot) - unnamed_drops(snapshot)
     for pid, v in (snapshot.get("cop_programs") or {}).items():
         if pid in ok and isinstance(v, dict):
             ok |= {f"{pid}/{s}" for s in v.get("lanes_read") or []}
@@ -111,7 +125,12 @@ def step(state: dict, snapshot: dict, **extra) -> tuple[dict, list]:
         state["open"] = {iid: dict(e, lane=lane_of(e["item"])) if e.get("item") else e
                          for iid, e in state["open"].items()}
     ok = lanes_read(snapshot)
-    new_state, lines = history.update(state, snapshot, None, when(snapshot), ok=ok,
+    # Only what was read on this build counts as seen. A program that was not read shows its last good copies
+    # (cop_stale): left out here, they neither move last_seen nor log anything, and since their lanes are not in
+    # `ok`, they stay open.
+    read = programs_read(snapshot)
+    seen = dict(snapshot, features=[f for f in snapshot.get("features") or [] if program_of(f) in read])
+    new_state, lines = history.update(state, seen, None, when(snapshot), ok=ok,
                                       lane_of=lane_of, volatile=VOLATILE)
     for x in lines:
         # the snapshot's own `program` member is the item's too; the lane may name a source after the program

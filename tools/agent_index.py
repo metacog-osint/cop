@@ -227,6 +227,23 @@ def build_verdict(docs, reports, previous, now):
     return out
 
 
+def unreadable_parts(docs, reports):
+    """A Verdict file that came but cannot be read (the wrong shape) counts as a failed fetch: its part becomes None
+    here, so build_verdict keeps the last published copy, marked stale, as it does for a fetch that failed. Without
+    this one malformed Verdict file stopped this step, and with it the build (15 Nov 2026). Returns the parts."""
+    bad = []
+    for part, shaper in SHAPERS.items():
+        if docs.get(part) is None:
+            continue
+        try:
+            shaper(docs[part])
+        except Exception as e:  # noqa: BLE001
+            docs[part] = None
+            reports[part] = {"ok": False, "seconds": 0, "error": f"could not be read ({type(e).__name__}: {e})"[:200]}
+            bad.append(part)
+    return bad
+
+
 # --- events.json: the programs' own dated events, for upcoming_events beside Verdict's calendar ---------------------
 # Orbit's scheduled launches carry their time only in the title and summary ("..., 2026-11-14 17:32 UTC", "status Go
 # for Launch; NET precision Minute"); the feed contract has no field for an event's time (checked 14 Nov 2026). An
@@ -244,14 +261,16 @@ LAUNCH_NOTE = ("A scheduled time is the provider's or press's, as Launch Library
 def orbit_event(p):
     """(event, None) for one Orbit scheduled launch, in Verdict's calendar shape plus the launch fields; or
     (None, reason) when its date cannot be read or is coarser than a day (a week, a month: a placeholder date)."""
-    text = f"{p.get('title') or ''}\n{p.get('summary') or ''}"
+    # Text that is not text reads as empty, so one odd item is skipped and counted, never a failed build (15 Nov 2026).
+    title, summary = (v if isinstance(v, str) else "" for v in (p.get("title"), p.get("summary")))
+    text = f"{title}\n{summary}"
     own = p.get("event") if isinstance(p.get("event"), dict) else {}
-    m = WHEN.search(p.get("title") or "") or WHEN.search(p.get("summary") or "")
+    m = WHEN.search(title) or WHEN.search(summary)
     pm = NET_PRECISION.search(text)
     precision = pm.group(1).strip() if pm else None
     sm = LAUNCH_STATUS.search(text)
-    if own.get("date"):
-        date, at = own["date"], own.get("at")
+    if isinstance(own.get("date"), str) and own["date"]:
+        date, at = own["date"], own.get("at") if isinstance(own.get("at"), str) else None
     elif not m:
         return None, "no time in the title or summary"
     elif precision in TIMED:
@@ -278,7 +297,7 @@ def orbit_event(p):
         "data_as_of": p.get("data_as_of"),
         "stale": bool(p.get("cop_stale")),
         "countries": p.get("countries") or [],
-        "link": p.get("link") or (p.get("visual") or {}).get("url"),
+        "link": p.get("link") or (p["visual"].get("url") if isinstance(p.get("visual"), dict) else None),
         "source_url": srcs[0].get("url") if srcs else None,
     }, None
 
@@ -327,6 +346,7 @@ def main(argv=None):
     docs, reports = {}, {}
     for part, name in VERDICT_FILES.items():
         docs[part], reports[part] = read_json(Path(a.verdict) / name) if a.verdict else fetch_json(VERDICT + name)
+    unreadable_parts(docs, reports)
     previous = None
     if any(d is None for d in docs.values()):
         where = a.previous if a.previous is not None else (None if a.verdict else PREVIOUS)

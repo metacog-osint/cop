@@ -2,6 +2,9 @@
 // program's findings on a muted base map, lists today's picks and shows every feed's health.
 // Rules kept here: measurements are never called warnings, and forecasts are always labelled forecasts; claims draw hollow; grey means no current data; feed text
 // is always inserted as text; no inline styles (CSP), colours come from config through MapLibre paint or the CSSOM.
+// Since 15 Nov 2026: warnings are listed first, as their program's own judgment, and are never picks; an item past
+// its own valid_until no longer stands out; one click handler opens the top mark under the cursor and lists the
+// rest; and the sentences that count or describe findings are written from the snapshot, not fixed in the page.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { judgmentChips } from "./vendor/tic-doctrine.js";
 
@@ -62,8 +65,16 @@ for (const hp of health.programs) Object.assign(PROGS[hp.id], { state: hp.state,
 const BY_ID = new Map(today.features.map((f) => [f.properties.id, f]));
 const PICKS = picksDoc.picks;
 const PICK_OF = new Map(PICKS.map((p) => [p.id, p]));
+// An item past its own valid_until has expired. Read once, as the page loads: the snapshot is up to two hours old by
+// then, and an item can run out between builds (a forecast for a day that has ended, a warning that was cancelled).
+const LOADED = Date.now();
+for (const f of today.features) {
+  const until = typeof f.properties.valid_until === "string" ? Date.parse(f.properties.valid_until) : NaN;
+  f.properties.cop_expired = until < LOADED;  // no valid_until, or one that cannot be read, is not expired
+}
 
-const state = { preset: "all", routine: false, selected: null, showAllAlso: false, showAllOff: false };
+const state = { preset: "all", routine: false, selected: null, showAllAlso: false, showAllOff: false, showAllWarn: false,
+  here: null, hereAll: false };
 readHash();
 
 // ---------------------------------------------------------------- colours
@@ -90,18 +101,21 @@ const visibleProgram = (pid) => state.preset === "all" || PROGS[pid].preset === 
 // Standing notices are routine by nature: show them whenever their own preset is chosen.
 const routineShown = (pid) => state.routine || (state.preset !== "all" && PROGS[pid].routine_in_preset && visibleProgram(pid));
 // Shown in every view: measured anomalies, and warnings (Vis's Amber or Red forecasts, Blackout's judged shutdowns
-// and cable-corridor outages).
+// and cable-corridor outages), until they expire. An expired item shows only where routine items show, drawn as one.
 const STANDS_OUT = ["anomaly", "warning"];
+const standsOut = (p) => STANDS_OUT.includes(p.tier) && !p.cop_expired;
+const NOT_EXPIRED = ["!=", ["get", "cop_expired"], true];  // the same test for the map, which filters its own copy
+const OUT = ["all", ["in", ["get", "tier"], ["literal", STANDS_OUT]], NOT_EXPIRED];
 // A program's items tagged for another preset (config also_in, cop_also ",spectrum,") show there too, routine or not.
 const alsoHere = (p) => state.preset !== "all" && typeof p.cop_also === "string" && p.cop_also.includes(`,${state.preset},`);
-const visibleItem = (p) => (visibleProgram(p.cop_program) && (STANDS_OUT.includes(p.tier) || routineShown(p.cop_program)))
+const visibleItem = (p) => (visibleProgram(p.cop_program) && (standsOut(p) || routineShown(p.cop_program)))
   || alsoHere(p);
 function baseFilter() {
   const ids = CFG.programs.filter((p) => visibleProgram(p.id)).map((p) => p.id);
   const f = ["all", ["in", ["get", "cop_program"], ["literal", ids]]];
   if (!state.routine) {
     const keep = CFG.programs.filter((p) => routineShown(p.id)).map((p) => p.id);
-    f.push(["any", ["in", ["get", "tier"], ["literal", STANDS_OUT]], ["in", ["get", "cop_program"], ["literal", keep]]]);
+    f.push(["any", OUT, ["in", ["get", "cop_program"], ["literal", keep]]]);
   }
   if (state.preset === "all") return f;
   return ["any", f, ["in", `,${state.preset},`, ["coalesce", ["get", "cop_also"], ""]]];
@@ -125,9 +139,10 @@ function countryFills() {
     for (const cc of p.countries || []) {
       const key = `${cc}|${p.cop_program}`;
       const prev = out.get(key);
-      if (!shapes.has(cc) || (prev && prev.properties.tier === "anomaly")) continue;
+      if (!shapes.has(cc) || (prev && prev.properties.tier === "anomaly" && !prev.properties.cop_expired)) continue;
       out.set(key, { type: "Feature", geometry: shapes.get(cc), properties: {
-        id: p.id, cop_program: p.cop_program, cop_stale: p.cop_stale, tier: p.tier, status_class: p.status_class, cc } });
+        id: p.id, cop_program: p.cop_program, cop_stale: p.cop_stale, tier: p.tier, status_class: p.status_class,
+        cop_expired: p.cop_expired, cc } });
     }
   }
   return { type: "FeatureCollection", features: [...out.values()] };
@@ -191,7 +206,7 @@ dark.addEventListener("change", () => { applyStyle(map); renderLegend(); renderP
 // The map gets only what it draws from; cards read the full item from BY_ID. Keeps the worker's work small.
 // A GeometryCollection (an NGA warning with both an area and a trackline) becomes one feature per part, each with
 // the item's id, so every part is filtered, drawn and clicked as its own geometry type.
-const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class", "cop_also"];
+const MAP_KEYS = ["id", "cop_program", "cop_stale", "tier", "status_class", "precision_class", "cop_also", "cop_expired"];
 const parts = (g) => (g && g.type === "GeometryCollection" ? (g.geometries || []).flatMap(parts) : g ? [g] : []);
 const MAP_ITEMS = { type: "FeatureCollection", features: today.features.flatMap((f) => parts(f.geometry).map((g) => ({
   type: "Feature", geometry: g, properties: Object.fromEntries(MAP_KEYS.map((k) => [k, f.properties[k]])) }))) };
@@ -199,7 +214,7 @@ function addLayers() {
   map.addSource("items", { type: "geojson", data: MAP_ITEMS, maxzoom: 10 });
   map.addSource("countryfills", { type: "geojson", data: countryFills(), maxzoom: 6 });
   const claimed = ["==", ["get", "status_class"], "claimed"];
-  const anomaly = ["==", ["get", "tier"], "anomaly"];
+  const anomaly = ["all", ["==", ["get", "tier"], "anomaly"], NOT_EXPIRED];  // an expired anomaly draws as routine
   map.addLayer({ id: "cf-fill", type: "fill", source: "countryfills",
     paint: { "fill-color": colourExpr("fill"), "fill-opacity": ["case", anomaly, 0.2, 0.09] } });
   map.addLayer({ id: "cf-line", type: "line", source: "countryfills",
@@ -227,17 +242,23 @@ function addLayers() {
     paint: { "circle-radius": ["case", anomaly, 6.5, 4.5], "circle-color": colourExpr("fill"),
       "circle-opacity": ["case", claimed, 0, 1], "circle-stroke-color": ["case", claimed, colourExpr("fill"), colourExpr("line")],
       "circle-stroke-width": ["case", claimed, 2.2, 1.4] } });
-  if (!handlersBound) {  // layer handlers survive a style change, so bind them once
-    handlersBound = true;
-    for (const id of ["cells-fill", "lines-hit", "halos", "points", "cf-fill"]) {
-      map.on("click", id, (e) => { if (e.features[0]) select(e.features[0].properties.id, { fly: false }); });
-      map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
-    }
-  }
   drawPins();
 }
-let handlersBound = false;
+// One click handler for every layer that carries items (15 Nov 2026). Each layer used to have its own, every one of
+// them fired on a click, and the country fill's ran last: a click on a mark inside a shaded country opened the
+// country's card. Now the top mark under the cursor opens, and its card lists whatever else is drawn at that spot.
+const HIT_LAYERS = ["cf-fill", "cells-fill", "lines-hit", "halos", "points"];  // as drawn, bottom first
+function idsAt(point) {
+  if (!HIT_LAYERS.every((id) => map.getLayer(id))) return [];  // between two styles, on a theme change
+  const ids = [];
+  for (const f of map.queryRenderedFeatures(point, { layers: HIT_LAYERS })) {  // MapLibre returns the top mark first
+    const id = f.properties.id;
+    if (BY_ID.has(id) && !ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
+map.on("click", (e) => { const ids = idsAt(e.point); if (ids.length) select(ids[0], { fly: false, here: ids }); });
+map.on("mousemove", (e) => { map.getCanvas().style.cursor = idsAt(e.point).length ? "pointer" : ""; });
 function refreshLayers() {
   if (!map.getSource("items")) return;
   map.getSource("countryfills").setData(countryFills());
@@ -283,7 +304,7 @@ function drawPins() {
   for (const p of PICKS) {
     const f = BY_ID.get(p.id);
     const at = placeOf(f);
-    if (!at || !visibleProgram(p.program)) continue;
+    if (!at || !visibleProgram(p.program) || !standsOut(f.properties)) continue;  // a pick that has expired loses its pin
     const el = h("button", { type: "button", class: "pin", "data-id": p.id, "aria-label": `Pick ${p.n}: ${f.properties.title}`,
       onclick: (e) => { e.stopPropagation(); select(p.id); } }, String(p.n));
     if (state.selected === p.id) el.setAttribute("aria-current", "true");
@@ -295,7 +316,8 @@ function padding() {
     : { top: 40, right: 40, bottom: 40, left: PANEL_W + 24 };
 }
 function fitPicks() {
-  const pts = PICKS.filter((p) => visibleProgram(p.program)).map((p) => placeOf(BY_ID.get(p.id))).filter(Boolean);
+  const pts = PICKS.filter((p) => visibleProgram(p.program) && BY_ID.has(p.id) && standsOut(BY_ID.get(p.id).properties))
+    .map((p) => placeOf(BY_ID.get(p.id))).filter(Boolean);
   if (!pts.length) return;
   const b = new ml.LngLatBounds(pts[0], pts[0]);
   pts.forEach((pt) => b.extend(pt));
@@ -303,10 +325,14 @@ function fitPicks() {
 }
 
 // ---------------------------------------------------------------- selection and the detail card
-function select(id, { fly = true } = {}) {
+// `here`: every item under a map click, top first. The card lists the others, and keeps the list while the reader
+// steps through them; a selection made anywhere else (a row, a pin, a link) drops it.
+function select(id, { fly = true, here = null } = {}) {
   const f = BY_ID.get(id);
   if (!f) return;
   state.selected = id;
+  if (here) { state.here = here.length > 1 ? here : null; state.hereAll = false; }
+  else if (!(state.here || []).includes(id)) state.here = null;
   renderCard(f);
   document.querySelectorAll("[data-id]").forEach((e) => e.toggleAttribute("aria-current", e.getAttribute("data-id") === id));
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.setAttribute("aria-current", "true"));
@@ -318,6 +344,7 @@ function select(id, { fly = true } = {}) {
 }
 function closeCard() {
   state.selected = null;
+  state.here = null;
   $("card").hidden = true;
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.removeAttribute("aria-current"));
   writeHash();
@@ -338,9 +365,17 @@ function renderCard(f) {
     badges.append(h("span", { class: "badge measure", text: "Forecast: a probability, not a measurement" }));
   } else if (p.kind === "assessment") {
     badges.append(h("span", { class: "badge measure", text: "Judgment: a probability, not a measurement" }));
-  } else if (p.tier === "anomaly") badges.append(h("span", { class: "badge measure", text: "Measured, not a warning" }));
-  else if (p.tier === "routine") badges.append(h("span", { class: "badge", text: "Routine: inside its usual range" }));
+  } else if (p.tier === "anomaly") {
+    // The badge follows the item's own status_class (15 Nov 2026). Only an item its program reached by its own method
+    // (assessed) is called measured. That badge used to sit on every anomaly, official warnings and notices included
+    // (an NGA navigational warning, an FAA restriction, a travel advisory), which are neither measured nor "not a
+    // warning". The feeds carry no field that says "official notice", so the wording for the rest is the contract's
+    // own for an observation: measured or reported, with no judgment about what it means.
+    badges.append(h("span", { class: "badge measure",
+      text: p.status_class === "assessed" ? "Measured, not a warning" : "Measured or reported, not a judgment" }));
+  } else if (p.tier === "routine") badges.append(h("span", { class: "badge", text: "Routine: inside its usual range" }));
   if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
+  if (p.cop_expired) badges.append(h("span", { class: "badge stale", text: "Expired: past its valid-until time" }));
   if (p.status_class) badges.append(h("span", { class: "badge", text: STATUS[p.status_class] || p.status_class }));
   if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: `No current data from ${prog.name}` }));
   for (const c of judgmentChips(p)) badges.append(h("span", { class: "badge", text: c.text }));
@@ -351,68 +386,129 @@ function renderCard(f) {
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   fact("Data as of", timeEl(p.data_as_of));
   if (p.published_at) fact("Published", timeEl(p.published_at));
+  if (typeof p.valid_until === "string") fact(p.cop_expired ? "Expired" : "Valid until", timeEl(p.valid_until));
   fact("Place", PRECISION[p.precision_class] || "Not stated");
   const pubs = [...new Set((p.sources || []).map((s) => s.publisher).filter(Boolean))];
   if (pubs.length) fact("Sources", pubs.slice(0, 3).join("; ") + (pubs.length > 3 ? ` and ${pubs.length - 3} more` : ""));
   card.append(facts);
+  // What else is drawn under the click that opened this card, top first: the card of each is one press away.
+  const here = (state.here || []).filter((id) => id !== p.id && BY_ID.has(id));
+  if (here.length) {
+    const shown = state.hereAll ? here : here.slice(0, 6);
+    card.append(h("div", { class: "here" },
+      h("p", { class: "here-h", text: `Also at this spot: ${here.length} more finding${here.length === 1 ? "" : "s"}` }),
+      h("ul", { class: "list" }, ...shown.map((id) => rowFor(BY_ID.get(id), "row", false)),
+        ...(here.length > shown.length ? [h("li", {}, h("button", { type: "button", class: "chip",
+          onclick: () => { state.hereAll = true; renderCard(f); } }, `Show ${here.length - shown.length} more`))] : []))));
+  }
   const href = p.link || (p.visual && p.visual.url) || prog.site;
   card.append(h("a", { class: "card-open", href, rel: "noopener" }, `Open in ${prog.name} →`));
   renderTimes(card);
 }
 
 // ---------------------------------------------------------------- panel
-function rowFor(f, cls = "row") {
+function rowFor(f, cls = "row", fly = true) {
   const p = f.properties, prog = PROGS[p.cop_program];
   const pick = PICK_OF.get(p.id);
-  return h("li", {}, h("button", { type: "button", class: cls, "data-id": p.id, onclick: () => select(p.id) },
+  return h("li", {}, h("button", { type: "button", class: cls, "data-id": p.id, onclick: () => select(p.id, { fly }) },
     pick && cls === "pick" ? h("span", { class: "num", "aria-hidden": "true" }, String(pick.n)) : dotFor(p.cop_program, p),
     h("span", {},
       h("span", { class: cls === "pick" ? "pick-title" : "row-title", text: p.title }),
       h("span", { class: cls === "pick" ? "pick-meta" : "row-meta" },
         cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", timeEl(p.data_as_of, "date"),
-        p.status_class === "claimed" ? " · claimed" : null, p.cop_stale ? " · no current data" : null))));
+        p.status_class === "claimed" ? " · claimed" : null, p.cop_expired ? " · expired" : null,
+        p.cop_stale ? " · no current data" : null))));
 }
+// A warning's row says whose judgment it is and how long it stands. Warnings are tier "warning": a forecast or an
+// assessment by contract (the kit's linter refuses an observation at that tier), never a measurement, never a pick.
+function warningRow(f) {
+  const p = f.properties, prog = PROGS[p.cop_program];
+  const what = p.kind === "forecast" ? "a forecast" : p.kind === "assessment" ? "an assessment" : "a judgment";
+  return h("li", {}, h("button", { type: "button", class: "row", "data-id": p.id, onclick: () => select(p.id) },
+    dotFor(p.cop_program, p),
+    h("span", {},
+      h("span", { class: "row-title", text: p.title }),
+      h("span", { class: "row-meta" }, `${prog.name}'s own judgment: ${what}`,
+        typeof p.valid_until === "string" ? h("span", {}, "· valid until ", timeEl(p.valid_until)) : null,
+        p.cop_stale ? "· no current data" : null))));
+}
+const count = (n, one, many = `${one}s`) => `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
+const programOrder = (a, b) => CFG.programs.findIndex((x) => x.id === a.properties.cop_program)
+  - CFG.programs.findIndex((x) => x.id === b.properties.cop_program);
 function renderPanel() {
   const presets = $("presets");
   presets.replaceChildren(...Object.entries(CFG.presets).map(([k, label]) =>
     h("button", { type: "button", class: "chip", "aria-pressed": String(state.preset === k),
-      onclick: () => { state.preset = k; state.showAllAlso = state.showAllOff = false; refreshLayers(); renderPanel(); writeHash(); } }, label)));
+      onclick: () => { state.preset = k; state.showAllAlso = state.showAllOff = state.showAllWarn = false; refreshLayers(); renderPanel(); writeHash(); } }, label)));
   $("show-routine").checked = state.routine;
 
-  const picks = PICKS.filter((p) => visibleProgram(p.program)).map((p) => BY_ID.get(p.id)).filter(Boolean);
+  const inView = today.features.filter((f) => visibleProgram(f.properties.cop_program));
+  const out = inView.filter((f) => standsOut(f.properties));
+
+  // Warnings first, with or without a place: the only judgments in the picture. They used to be marks with no row.
+  const warnings = out.filter((f) => f.properties.tier === "warning").sort(programOrder);
+  const warnShown = state.showAllWarn ? warnings : warnings.slice(0, 10);
+  $("warnings-sec").hidden = !warnings.length;
+  $("warnings").replaceChildren(...warnShown.map(warningRow),
+    ...(warnings.length > warnShown.length ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllWarn = true; renderPanel(); } },
+      `Show ${warnings.length - warnShown.length} more`))] : []));
+
+  const placed = out.filter((f) => f.geometry && f.properties.tier === "anomaly" && !PICK_OF.has(f.properties.id));
+  placed.sort((a, b) => programOrder(a, b) || (b.properties.cop_strength ?? -1e9) - (a.properties.cop_strength ?? -1e9));
+  const off = inView.filter((f) => !f.geometry);
+  const offAnom = off.filter((f) => f.properties.tier === "anomaly" && standsOut(f.properties));
+
+  // Picks are chosen when the picture is built; one that has since passed its valid-until time is named, not listed.
+  const picksInView = PICKS.filter((p) => visibleProgram(p.program) && BY_ID.has(p.id));
+  const picks = picksInView.filter((p) => standsOut(BY_ID.get(p.id).properties)).map((p) => BY_ID.get(p.id));
+  const lapsed = picksInView.filter((p) => !standsOut(BY_ID.get(p.id).properties)).map((p) => p.n);
   const standing = CFG.programs.filter((p) => routineShown(p.id) && p.routine_in_preset)
     .map((p) => `${p.name}'s ${p.routine_label || "standing notices"}`)
     .concat(CFG.programs.flatMap((p) => (p.also_in || []).filter((r) => r.preset === state.preset)
       .map((r) => `${p.name}'s ${r.label}`)));
-  const none = standing.length
-    ? `Nothing outside its usual range in this view today. The map shows ${standing.join(" and ")}.`
-    : "No findings with a place for this view today. See Off the map below.";
-  $("picks").replaceChildren(...(picks.length ? picks.map((f) => rowFor(f, "pick")) : [h("li", { class: "empty", text: none })]));
+  // The line under "Today" when this view has no pick, written from what the view holds (15 Nov 2026). It used to
+  // say there were no findings with a place while the map drew them, and that nothing stood out beside a warning.
+  let none;
+  if (placed.length) {
+    none = `No pick in this view today. ${count(placed.length, "finding")} with a place ${placed.length === 1 ? "stands" : "stand"} out here, `
+      + "listed under Also watching.";
+  } else if (offAnom.length) {
+    none = `No finding with a place stands out in this view today. ${count(offAnom.length, "finding")} without a place `
+      + `${offAnom.length === 1 ? "does" : "do"}, listed under Off the map.`;
+  } else {
+    none = "Nothing measured or reported stands out in this view today."
+      + (warnings.length ? ` ${count(warnings.length, "warning")} ${warnings.length === 1 ? "is" : "are"} listed above.` : "");
+  }
+  if (standing.length) none += ` The map shows ${standing.join(" and ")}.`;
+  $("picks").replaceChildren(...picks.map((f) => rowFor(f, "pick")),
+    ...(lapsed.length ? [h("li", { class: "empty", text: `Pick${lapsed.length === 1 ? "" : "s"} ${lapsed.join(" and ")} `
+      + `${lapsed.length === 1 ? "has" : "have"} passed ${lapsed.length === 1 ? "its" : "their"} valid-until time since this picture was built and `
+      + `${lapsed.length === 1 ? "is" : "are"} no longer listed.` })] : []),
+    ...(picks.length ? [] : [h("li", { class: "empty", text: none })]));
 
-  const placed = today.features.filter((f) => f.geometry && f.properties.tier === "anomaly" && !PICK_OF.has(f.properties.id)
-    && visibleProgram(f.properties.cop_program));
-  placed.sort((a, b) => CFG.programs.findIndex((x) => x.id === a.properties.cop_program) - CFG.programs.findIndex((x) => x.id === b.properties.cop_program)
-    || (b.properties.cop_strength ?? -1e9) - (a.properties.cop_strength ?? -1e9));
   const alsoShown = state.showAllAlso ? placed : placed.slice(0, 10);
+  const expired = inView.filter((f) => STANDS_OUT.includes(f.properties.tier) && f.properties.cop_expired).length;
   $("also").replaceChildren(...(placed.length ? alsoShown.map((f) => rowFor(f)) : [h("li", { class: "empty", text: "Nothing else outside its usual range." })]),
     ...(placed.length > alsoShown.length ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllAlso = true; renderPanel(); } },
-      `Show ${placed.length - alsoShown.length} more`))] : []));
+      `Show ${placed.length - alsoShown.length} more`))] : []),
+    ...(expired ? [h("li", { class: "more" }, `${count(expired, "finding")} in this view ${expired === 1 ? "has" : "have"} passed `
+      + `${expired === 1 ? "its" : "their"} valid-until time and no longer ${expired === 1 ? "stands" : "stand"} out. `
+      + `${expired === 1 ? "It shows" : "They show"} with routine findings.`)] : []));
 
-  const off = today.features.filter((f) => !f.geometry && visibleProgram(f.properties.cop_program));
-  const offAnom = off.filter((f) => f.properties.tier === "anomaly");
   const offShown = state.showAllOff ? offAnom : offAnom.slice(0, 8);
-  const routineCounts = CFG.programs.map((p) => [p, off.filter((f) => f.properties.cop_program === p.id && f.properties.tier !== "anomaly").length]).filter(([, n]) => n);
+  const routineCounts = CFG.programs.map((p) => [p, off.filter((f) => f.properties.cop_program === p.id && !standsOut(f.properties)).length]).filter(([, n]) => n);
   $("offmap").replaceChildren(...offShown.map((f) => rowFor(f)),
     ...(offAnom.length > offShown.length ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllOff = true; renderPanel(); } },
       `Show ${offAnom.length - offShown.length} more`))] : []),
     ...routineCounts.map(([p, n]) => h("li", { class: "more" }, `${p.name}: ${n} routine finding${n === 1 ? "" : "s"} with no place. `,
       h("a", { href: p.site, rel: "noopener" }, `Open ${p.name}`))),
-    ...(!off.length ? [h("li", { class: "empty", text: "None for this view." })] : []));
+    ...(!offAnom.length && !routineCounts.length ? [h("li", { class: "empty", text: "None for this view." })] : []));
 
   renderTriage();
   renderHealth();
   renderBar();
   renderCredits();
+  renderHow();
   if (state.selected && BY_ID.has(state.selected)) {
     document.querySelectorAll("[data-id]").forEach((e) => e.toggleAttribute("aria-current", e.getAttribute("data-id") === state.selected));
     document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.setAttribute("aria-current", "true"));
@@ -516,6 +612,8 @@ function renderHealth() {
     if (hp.fetch.ok) bits.push(` · fetched in ${hp.fetch.seconds} s`);
     else bits.push(` · fetch failed${hp.from_previous ? ": showing the last good copy" : ""}`);
     if (lint) bits.push(lint.errors ? ` · ${lint.errors} contract problems` : " · passes the contract checks");
+    const bad = hp.dropped ? hp.dropped.count : 0;  // items the build could not read, left out of the picture
+    if (bad) bits.push(` · ${count(bad, "malformed item")} left out`);
     return h("div", { class: "hrow" },
       h("span", { class: "hname" }, dotFor(hp.id, { cop_stale: hp.state === "stale" }), prog.name),
       h("span", { class: `pill ${hp.state}`, text: STATE_WORD[hp.state] || hp.state }),
@@ -536,6 +634,30 @@ function renderCredits() {
   for (const hp of health.programs) if (hp.attribution) box.append(h("p", { class: "prog-credit", text: hp.attribution }));
   box.querySelectorAll(".updated").forEach((e) => e.remove());
   box.append(h("p", { class: "updated" }, "Updated ", timeEl(health.generated_at), ". Not for navigation or safety decisions."));
+}
+// "How COP reads", first line: what today's picture holds, counted from the snapshot (15 Nov 2026). The page used to
+// say every finding was a measurement outside its usual range, while it carried forecasts and mostly routine items.
+function renderHow() {
+  const all = today.features.map((f) => f.properties);
+  const forecasts = all.filter((p) => p.kind === "forecast").length;
+  const judgments = all.filter((p) => p.kind === "assessment").length;
+  const observed = all.length - forecasts - judgments;
+  const anomalies = all.filter((p) => p.tier === "anomaly" && !p.cop_expired).length;
+  const warnings = all.filter((p) => p.tier === "warning" && !p.cop_expired).length;
+  let text = `Today's picture holds ${count(all.length, "finding")}. ${observed.toLocaleString("en-US")} `
+    + `${observed === 1 ? "is a measurement or a report" : "are measurements or reports"}, each from one program, and `
+    + `${anomalies ? anomalies.toLocaleString("en-US") : "none"} of them ${anomalies === 1 ? "stands" : "stand"} out against `
+    + `${anomalies === 1 ? "its" : "their"} program's own baseline. `;
+  if (forecasts + judgments) {
+    const judged = [forecasts ? count(forecasts, "forecast") : null, judgments ? count(judgments, "assessment") : null].filter(Boolean);
+    text += `${judged.join(" and ")} ${forecasts + judgments === 1 ? "is a judgment" : "are judgments"}, not `
+      + `${forecasts + judgments === 1 ? "a measurement" : "measurements"}: each carries a likelihood and a separate confidence, and is `
+      + `labelled as its program's own. ${warnings ? count(warnings, "is a warning", "are warnings") : "None is a warning"} today.`;
+  } else {
+    text += "No program has published a forecast or an assessment today. When one does, it shows here as that program's "
+      + "own judgment, with a likelihood and a separate confidence.";
+  }
+  $("how-counts").textContent = text;
 }
 function renderLegend() {
   const lg = $("legend");
