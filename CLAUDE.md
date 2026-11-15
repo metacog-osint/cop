@@ -422,7 +422,12 @@ wired into the card for when judgments appear), the 14-day timeline (daily snaps
 - `python tools/ledger.py --replay out/archive --assets out/ledger-replay` rebuilds a ledger from the archived daily
   snapshots, one step a day, every line marked `backfill`. Tests: `python tests/test_ledger.py` (27).
 
-## Review fixes of 15 Nov 2026 (not committed when written)
+## Review fixes of 15 Nov 2026 (live on `main` at `6b18dd4` since 15:14 UTC 15 Nov; build 43728656941)
+
+Tom accepted the three open calls as built (15 Nov): expired items stop standing out even while their program is not
+yet stale, the "Measured or reported, not a judgment" badge on Watchfloor's and Context's own measurements, and the
+new page elements (Warnings block, "Today's picks" heading, the two "How COP reads" bullets, "Also at this spot", the
+malformed and expired counts).
 
 Six faults from the suite review of 15 Nov 2026 (`findings.md`, units `cop-pipeline` and `cop-frontend`), each
 confirmed by its second reviewer. Built in worktree `D:\Projects\_worktrees\cop-review-fixes`, branch
