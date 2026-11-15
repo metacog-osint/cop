@@ -82,7 +82,7 @@
       "id": "orbit", "preset": "spectrum",
       "freshness": "feed",
       "mark": "markers", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
-      "routine_label": "launches, scheduled launches, reentries and catalog changes",
+      "routine_label": "launches, scheduled launches, reentries, catalog changes and orbit changes in watched satellites",
       "strength": [],
       "color": { "fill": "#999933", "outline_light": "#4D4D19", "outline_dark": "#E6E6B3" }
     },
