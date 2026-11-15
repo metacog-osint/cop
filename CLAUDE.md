@@ -35,6 +35,11 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   item ids are read through `ID_PREFIXES` (see Undertow below).
   Wake went on the open list on 15 Nov 2026 (Tom's "Open": IMF statistics on commercial shipping at strait level,
   not military context).
+  Cordon's `faaprn` kind (the FAA's Prohibitions, Restrictions and Notices for foreign airspace: SFARs and KICZ
+  NOTAMs, Cordon `f801cbb`) went on the open list on 15 Nov 2026 (Tom's "Open, as I said", asked after being told
+  that EASA's `czib` bulletins, its European twin, are on the MILITARY list and stay there). The map showed its 20
+  items before the change (the gate governs joins, not the snapshot); no join reads it yet, so the change published
+  nothing new (local live build 15 Nov ~16:10 UTC: 20 faaprn items, triage cites none, `gate.py --check` OK).
   Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `[local path]` saying what was released and to whom. Claude never copies a

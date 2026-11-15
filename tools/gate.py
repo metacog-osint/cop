@@ -47,8 +47,9 @@ OPEN = {
     "wake": None,
     # travel advisories, embassy alerts, embassy operating status; UK FCDO, Global Affairs Canada and New Zealand
     # MFAT SafeTravel travel advice and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as
-    # State's, not military context)
-    "cordon": {"advisory", "alert", "posture", "fcdo", "canada", "cdc", "safetravel"},
+    # State's, not military context); the FAA's prohibitions, restrictions and notices for foreign airspace (SFARs
+    # and KICZ NOTAMs; Tom, 15 Nov 2026, "Open, as I said", knowing EASA's czib bulletins stay held below)
+    "cordon": {"advisory", "alert", "posture", "fcdo", "canada", "cdc", "safetravel", "faaprn"},
 }
 MILITARY = {
     "noisefloor": (None, "GPS interference: most of it comes from military jamming and spoofing"),
