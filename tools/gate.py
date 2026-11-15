@@ -42,6 +42,9 @@ OPEN = {
     # platforms' and the EEAS's public disclosures of influence operations, at operation level (Tom, 14 Nov 2026:
     # public platform disclosures, not military context)
     "undertow": None,
+    # IMF PortWatch statistics on commercial shipping through 28 maritime chokepoints, weekly (Tom, 15 Nov 2026:
+    # open, not military context)
+    "wake": None,
     # travel advisories, embassy alerts, embassy operating status; UK FCDO, Global Affairs Canada and New Zealand
     # MFAT SafeTravel travel advice and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as
     # State's, not military context)

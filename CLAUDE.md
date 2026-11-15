@@ -33,6 +33,8 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   safetravel", relayed by the session that asked for this change).
   Undertow went on the open list on 14 Nov 2026 (Tom: public platform disclosures, not military context); its
   item ids are read through `ID_PREFIXES` (see Undertow below).
+  Wake went on the open list on 15 Nov 2026 (Tom's "Open": IMF statistics on commercial shipping at strait level,
+  not military context).
   Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `[local path]` saying what was released and to whom. Claude never copies a
@@ -130,7 +132,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit, from 14 Nov 2026 Launch and Undertow; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit, from 14 Nov 2026 Launch and Undertow, from 15 Nov 2026 Wake; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -258,6 +260,30 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows
   106 KB), past `INDEX_WARN_BYTES`, which annotates and does not fail. That build (evening of 14 Nov CST) read all
   twelve feeds fresh, Undertow 425 items, no lint errors; under Information its rings drew and its card opened.
+- **Wake** (15 Nov 2026, kit 0.5.5, which sets its registry entry live): IMF PortWatch's daily counts of
+  AIS-visible vessel transits through 28 maritime chokepoints, as 7-day means that Wake computes and compares with
+  the 90 days before and the same weeks a year earlier (Wake `wake-2.0`). One Point per chokepoint, precision
+  `point`, kind `observation`; tier `anomaly` when either comparison trips, else `routine`. Ids are
+  `wake:chokepoint:<id>:<newest day>`, so the gate reads them as program `wake`, kind `chokepoint`. Its own preset
+  **"Maritime"** (new), `mark` "markers", `country_mark` "halo" (its `countries` are Wake's littoral states, and the
+  point already says where), `routine_in_preset` with `routine_label` "transit readings at every chokepoint this
+  week". One `strength` rule: `measures.change_year_ago_pct` with `abs` (a 95% fall at Hormuz outranks a 44% rise at
+  Luzon; the label keeps the sign). `freshness` "data": `data_as_of` is PortWatch's newest day, and the registry's
+  240 h fresh and 408 h stale windows allow its weekly publication and 2-9 day lag. `ended`:
+  `https://wake.theintelligence.company/data/ended.geojson` (Wake's history log, `tic-history/1`). **Wake is read and
+  deployed by hand once a week** until the IMF permits automated pulls, so a week without a by-hand run turns it
+  late, then stale. Colour: deep teal `#006D77` (outlines `#00363B`, `#A6E3E9`), the candidate farthest from every
+  fill in use (CIE76 34.7, nearest Vigil). Source `imf-portwatch` in `config/sources.json`, `commercial_ok`
+  "unknown" (the IMF's terms allow reuse with attribution and name no non-commercial limit, but automated bulk
+  pulls need its written permission, not yet asked). The MCP instructions name it, and rule 9 says what its counts
+  are, that an anomaly is not a warning, to give the week an item covers, and that dark transits are not counted.
+  **Known limit:** `three_signal.py` joins within 48 hours, and PortWatch lags 7-16 days, so a Wake reading can only
+  sit beside a signal as a condition (as Vis does), never be one. In the Maritime view, Wake's anomalies list under
+  "Also watching" when the five picks are taken by other programs, while "Today" still says nothing is outside its
+  usual range in this view (COP's general pick logic, unchanged here). `tests/fixtures/wake.geojson`: its live feed
+  of 14:48 UTC 15 Nov (28 items, 7 anomalies), every timestamp moved back 14 days 18 h 19 min. The MCP tests used
+  "wake" as their unknown program; they use "tempo" now. Checked offline 15 Nov in the browser pane: the Maritime
+  chip draws 28 teal points, a card opens with "Measured, not a warning" and the signed size line.
 - **Items shown in a second preset (`also_in`, 14 Nov 2026, Tom's "Yes, add the filter"):** Cordon's NGA
   warnings that name rocket launching, space debris, a space vehicle or spacecraft, or reentry (kind `navwarn`,
   title or summary, Orbit's `navwarn` pattern) also show under "Spectrum and space", in Cordon's blue dashed style,

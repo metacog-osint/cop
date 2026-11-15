@@ -96,7 +96,7 @@ test("a miss or a bad filter comes back as a tool error, not a crash", async () 
   const miss = await c.callTool({ name: "get_item", arguments: { id: "nope:1" } });
   assert.equal(miss.isError, true);
   assert.match(miss.content[0].text, /No item "nope:1"/);
-  const unknown = await c.callTool({ name: "search_items", arguments: { program: ["wake"] } });
+  const unknown = await c.callTool({ name: "search_items", arguments: { program: ["tempo"] } });
   assert.equal(unknown.isError, true);
   assert.match(unknown.content[0].text, /Unknown program/);
   const tooMany = await c.callTool({ name: "search_items", arguments: { limit: 500 } }).catch((e) => ({ thrown: e }));
