@@ -198,6 +198,9 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   list `commercial_ok` false; FAO, WFP, OFAC and trade.gov "unknown"; ECB, EIA and the Federal Register true.
   On the gate's open list (`tools/gate.py`; confirmed by Tom, 14 Nov 2026); no join reads it yet.
   `tests/fixtures/headwind.geojson`: its live feed of 16:28 UTC 13 Nov, every timestamp moved back 12 days 21 hours.
+  **`ended` (15 Nov 2026, Headwind plan step 14):** `https://headwind.theintelligence.company/data/ended.geojson`, Headwind's
+  history log (`tic-history/1`, committed by its workflow to `history/` in its repo). Until Headwind's `headwind-1.6` batch is
+  deployed the address answers 404, and `snapshot.py` logs "headwind ended items: fetch failed": deploy Headwind first.
 - **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
   the launch site (GCAT site coordinates, precision `approximate`), scheduled launches at the pad (Launch Library
   2), one reentry summary and catalog-change items (new entries, owner changes), the last two with `geometry:
