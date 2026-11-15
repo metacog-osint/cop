@@ -140,6 +140,28 @@ class Step(unittest.TestCase):
         self.assertEqual([(x["change"], x["id"], x["last_seen"], x["ended_at"]) for x in later],
                          [("ended", "vigil:kev:1", A, C)])
 
+    def test_a_kept_copy_from_a_source_that_was_not_read_is_not_a_sighting(self):
+        # One level down (15 Nov 2026): the program was read, but one source failed and the program kept that
+        # source's last good items in its feed (Orbit, Elements, Headwind). Those copies are not sightings.
+        lanes = {"gcat-mcdowell", "ll2-thespacedevs"}
+        s1, _ = ledger.step({}, with_lanes(snap(A, sourced("orbit", "orbit:launch:1", "gcat-mcdowell"),
+                                                sourced("orbit", "orbit:upcoming:1", "ll2-thespacedevs")),
+                                           "orbit", lanes, lanes))
+        kept = sourced("orbit", "orbit:launch:1", "gcat-mcdowell")
+        s2, lines = ledger.step(s1, with_lanes(snap(B, kept, sourced("orbit", "orbit:upcoming:1", "ll2-thespacedevs"),
+                                                    sourced("orbit", "orbit:upcoming:2", "ll2-thespacedevs")),
+                                               "orbit", lanes, {"ll2-thespacedevs"}))
+        self.assertEqual(s2["open"]["orbit:launch:1"]["last_seen"], A, "a kept copy does not move last_seen")
+        self.assertEqual(s2["open"]["orbit:upcoming:1"]["last_seen"], B, "a source that was read is seen as before")
+        self.assertEqual([(x["change"], x["id"]) for x in lines], [("new", "orbit:upcoming:2")])
+        # A new item from the unread source waits for a read; one from a source the block does not name is seen.
+        s3, lines = ledger.step(s2, with_lanes(snap(C, kept, sourced("orbit", "orbit:launch:2", "gcat-mcdowell"),
+                                                    sourced("orbit", "orbit:other:1", "unnamed-src")),
+                                               "orbit", lanes, {"ll2-thespacedevs"}))
+        self.assertEqual([(x["change"], x["id"]) for x in lines if x["change"] == "new"], [("new", "orbit:other:1")])
+        self.assertNotIn("orbit:launch:2", s3["open"])
+        self.assertEqual(s3["open"]["orbit:launch:1"]["last_seen"], A)
+
     def test_an_end_keeps_the_items_own_valid_until_across_a_failed_feed(self):
         # The kit dates an end by the item's own valid_until when that falls after its last sighting. A stale copy that
         # moved last_seen past valid_until lost that: the end was dated by the build that noticed it instead.

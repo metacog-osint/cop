@@ -28,7 +28,9 @@ A sighting needs a read too (15 Nov 2026). When a program's feed fails, the snap
 hands the kit, so their last_seen stays at the last build that really read them and nothing of theirs is logged. Before
 this, a dead feed's copies pushed last_seen forward every two hours, and an end, when it came, was bracketed too
 tightly. And an item the snapshot left out as malformed (its `dropped` list) has not left its program's feed: one named
-there by id stays open, and a program with a malformed item that had no readable id ends nothing on that build.
+there by id stays open, and a program with a malformed item that had no readable id ends nothing on that build. The
+same holds one level down: a program read on this build may still keep one failed source's last good items, and an
+item whose own source lane its health block names as not read is left out the same way (Orbit, Elements, Headwind).
 
 Files, in --assets (the build keeps them as release assets, not in the repository and not on the site):
     state.json.gz           the items open after the last build
@@ -127,9 +129,14 @@ def step(state: dict, snapshot: dict, **extra) -> tuple[dict, list]:
     ok = lanes_read(snapshot)
     # Only what was read on this build counts as seen. A program that was not read shows its last good copies
     # (cop_stale): left out here, they neither move last_seen nor log anything, and since their lanes are not in
-    # `ok`, they stay open.
+    # `ok`, they stay open. The same one level down (15 Nov 2026): an item whose own source lane the program's health
+    # block says was not read is that source's last good copy, so it is left out too and stays open.
     read = programs_read(snapshot)
-    seen = dict(snapshot, features=[f for f in snapshot.get("features") or [] if program_of(f) in read])
+
+    def sighted(f):
+        pid, lane = program_of(f), lane_of(f)
+        return pid in read and (lane == pid or lane in ok)
+    seen = dict(snapshot, features=[f for f in snapshot.get("features") or [] if sighted(f)])
     new_state, lines = history.update(state, seen, None, when(snapshot), ok=ok,
                                       lane_of=lane_of, volatile=VOLATILE)
     for x in lines:

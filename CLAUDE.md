@@ -542,10 +542,19 @@ not counted); warnings draw at the standing-out size, as anomalies do, until the
 country ahead of a routine item. The click inside a shaded country was checked live (Kilauea inside the US shaded
 for a Blackout hijack opens Kilauea, with the hijack under "Also at this spot").
 
-Still open, for Tom: the same last_seen fault may exist one level down, for a program that keeps a failed source's
-last items in its feed while its health block marks that source unread (the handover says Headwind and Orbit keep
-them; not checked in their code), which needs a rule about source lanes. Blackout's items expire 12 hours after its
-run but the program reads stale only at 48 hours (a fix in Blackout, not COP). The agent `index.json` passed the
+Sightings at source level (item 7, built 15 Nov 2026 on Tom's "complete the other open items"): the rule is that a
+program which keeps a failed source's last good items in its feed publishes the kit's per-source `health` block,
+keyed by the source id its items carry, and marks a kept copy not read. COP's ledger (`step`, `sighted`) now leaves
+out an item whose own source lane is named and not read, as it already did for a whole program not read, so a kept
+copy neither ends nor moves last_seen; an item whose source the block does not name falls back to its program.
+Orbit (branch `feed/source-health`: `orbit/feed.py` `source_health`, from the snapshot's lane records) and Elements
+(branch `feed/source-health`: `read_this_run` in `tools/elements.py`, where a kept copy used to count as read, plus
+the block in the feed) are the first two after Headwind, Cordon and Blackout. Not done: greying their kept items
+(`source_health` in config/programs.json, as Headwind has), and a partial read (one FIRMS satellite, some MeteoAlarm
+countries) still counts as read for the whole source. Item 8 closed with no change (Tom, 15 Nov 2026):
+Blackout's items expire 12 hours after its run, which is also when the registry calls it late (fresh_hours 12, stale
+48), so its items stop standing out exactly when its Sources pill turns Late, still show with the routine ones and are
+counted; Headwind and Launch keep the same order (late 24 h, expired 48 h, stale 72 h). The agent `index.json` passed the
 600 KB warning line (601 KB at 15:13 UTC 15 Nov, 632 KB by 19:40 UTC); coding its repeated labels (15 Nov, above) brings
 it to 536 KB, about 260 bytes a row, so it passes 600 KB again near 2,370 items (2,123 on 15 Nov). The next lever is
 Cordon's routine notices, 45% of the index.
