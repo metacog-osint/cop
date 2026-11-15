@@ -324,5 +324,84 @@ class RatesAndPublic(unittest.TestCase):
         self.assertTrue("python tests/test_triage_us_power.py" in build, "build.yml must run this file")
 
 
+def county_items():
+    """The same two items made by Blackout's code at 2ea3a4d, which lists the counties with meters out."""
+    items = fixture("blackout-us-power-counties.json")["features"]
+    for f in items:
+        f["properties"].update({"cop_program": "blackout", "cop_stale": False})
+    return items
+
+
+def county_snapshot(states=None):
+    snap = day_snapshot(states)
+    snap["features"] = [f for f in snap["features"] if f["properties"].get("cop_program") != "blackout"] + county_items()
+    return snap
+
+
+class CountyMatch(unittest.TestCase):
+    """Tom, 14 Nov 2026: "build the county-level match". Real items: Blackout's own code on ODIN's recorded
+    responses lists 10 California counties (Los Angeles 11,231 of 13,723 meters) and 32 in New York."""
+
+    def setUp(self):
+        self.rec = by_state(tri.triage(county_snapshot()))
+        self.ca = self.rec["CA"]["layers"]["elements"]
+
+    def test_the_items_list_their_counties(self):
+        ca, ny = (f["properties"] for f in county_items())
+        self.assertEqual((len(ca["us_counties"]), len(ny["us_counties"])), (10, 32))
+        self.assertEqual(ca["us_counties"][0], {"fips": "06037", "name": "Los Angeles County", "meters": 11231})
+        codes = tri.outage_counties(ca, "CA")
+        self.assertEqual(codes, sorted(r["fips"] for r in ca["us_counties"]))
+        self.assertIn("06037", codes)
+        self.assertIsNone(tri.outage_counties(ca, "NY"))      # a county outside the item's state never counts
+        self.assertIsNone(tri.outage_counties({"us_counties": []}, "CA"))
+
+    def test_only_warnings_over_the_outage_counties_count(self):
+        self.assertEqual(self.ca["scope"], "counties")
+        sig = {h["id"]: h for h in self.ca["significant"]}
+        # Medford's High Wind Warning names Siskiyou (06093), Hanford's Winter Storm Warning names Fresno (06019):
+        # both counties have meters out. Sacramento's and Reno's warnings name no outage county.
+        self.assertEqual(set(sig), {"elements:nws:KMFR.HW.W.0005.2026", "elements:nws:KHNX.WS.W.0006.2026"})
+        self.assertEqual(sig["elements:nws:KMFR.HW.W.0005.2026"]["outage_counties"], ["06093"])
+        self.assertEqual({h["id"] for h in self.ca["elsewhere"]},
+                         {"elements:nws:KSTO.WS.W.0005.2026", "elements:nws:KREV.WS.W.0004.2026"})
+        self.assertTrue(all(h["bucket"] == "significant" for h in self.ca["elsewhere"]))
+        self.assertEqual(CA_WARNINGS, set(sig) | {h["id"] for h in self.ca["elsewhere"]})
+        self.assertEqual((self.rec["CA"]["reading"], self.rec["NY"]["reading"]), ("natural", "open"))
+
+    def test_the_reading_says_how_much_of_the_outage_the_hazards_cover(self):
+        mu = self.ca["meters_under_hazards"]
+        self.assertEqual(mu["of"], 13723)
+        self.assertLess(mu["share"], 0.5)
+        self.assertEqual(mu["largest_without"]["name"], "Los Angeles County")
+        caveats = " ".join(self.rec["CA"]["caveats"])
+        self.assertIn("Los Angeles County, with 11,231, has none.", caveats)
+        self.assertIn("elsewhere in California", caveats)
+        self.assertIn("overstates how often an outage would read natural", caveats)
+        self.assertIn("in or near the outage's counties", tri.showed("elements", self.ca))
+
+    def test_an_item_without_counties_keeps_the_state_rule(self):
+        ca = by_state(tri.triage(day_snapshot()))["CA"]
+        self.assertEqual(ca["layers"]["elements"]["scope"], "state")
+        self.assertNotIn("elsewhere", ca["layers"]["elements"])
+        self.assertEqual(ids(ca["layers"]["elements"]["significant"]), CA_WARNINGS)
+        self.assertIn("lists no counties", " ".join(ca["caveats"]))
+
+    def test_elements_dark_is_still_incomplete(self):
+        rec = by_state(tri.triage(county_snapshot({"elements": "stale"})))
+        self.assertEqual(rec["CA"]["reading"], "incomplete")
+
+    def test_the_public_record_carries_the_match_and_passes_the_gate(self):
+        snap = county_snapshot()
+        r = rates.rates([snap])
+        pub = tri.public(tri.attach_rates(tri.triage(snap, r["history"]), r))
+        rec = [r for r in pub["records"] if r.get("us_state") == "CA"][0]
+        self.assertEqual(rec["layers"]["elements"]["scope"], "counties")
+        self.assertEqual(len(rec["layers"]["elements"]["outage_counties"]), 10)
+        verdict = gate.review(tri.JOIN, pub)
+        self.assertEqual(verdict["review_class"], "open", verdict)
+        self.assertEqual(tri.JOIN["version"], "0.8")
+
+
 if __name__ == "__main__":
     unittest.main()
