@@ -25,6 +25,20 @@ class Layers(unittest.TestCase):
         self.assertEqual(gate.layer_of("blackout:outage:tn:2026-11-12T00"), ("blackout", "outage"))
         self.assertEqual(gate.layer_of("cordon:navwarn:iv-500-2024"), ("cordon", "navwarn"))
         self.assertEqual(gate.layer_of("noisefloor-event-2026-11-11-1"), ("noisefloor", ""))
+        self.assertEqual(gate.layer_of("UT-GOOGLE-fe9985db2a"), ("undertow", "google"))
+        self.assertEqual(gate.layer_of("UT-EEAS-e7ebbf0d02"), ("undertow", "eeas"))
+        self.assertEqual(gate.layer_of("XX-GOOGLE-fe9985db2a"), ("", ""))
+
+    def test_undertow_is_open_by_its_own_ids(self):
+        # Tom, 14 Nov 2026: platforms' public disclosures of influence operations, not military context.
+        for item_id in ("UT-META-f6a52f7deb", "UT-GOOGLE-fe9985db2a", "UT-OPENAI-1a2b3c", "UT-TIKTOK-1a2b3c",
+                        "UT-EEAS-e7ebbf0d02"):
+            self.assertEqual(gate.layer_class(*gate.layer_of(item_id))[0], "open", item_id)
+        join = {"id": "t-undertow", "published": False, "inputs": ["blackout", "undertow"]}
+        self.assertEqual(gate.review(join, doc("blackout:outage:ir:2026-11-12T00", "UT-META-f6a52f7deb",
+                                                join=join))["review_class"], "open")
+        self.assertEqual(gate.review(OPEN_JOIN, doc("blackout:outage:ir:2026-11-12T00", "UT-META-f6a52f7deb"))
+                         ["review_class"], "held")      # cited but never declared
 
     def test_open_and_military_layers(self):
         for program, kind in (("elements", "usgs"), ("blackout", "ooni"), ("watchfloor", "2026-11-11"),
