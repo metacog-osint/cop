@@ -39,6 +39,9 @@ OPEN = {
     "headwind": None,                              # prices against their own range, sanctions-list and rule changes (Tom, 14 Nov 2026)
     # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026); its "maneuver" kind is held below
     "orbit": {"launch", "upcoming", "reentries", "late-object", "owner-change"},
+    # platforms' and the EEAS's public disclosures of influence operations, at operation level (Tom, 14 Nov 2026:
+    # public platform disclosures, not military context)
+    "undertow": None,
     # travel advisories, embassy alerts, embassy operating status; UK FCDO, Global Affairs Canada and New Zealand
     # MFAT SafeTravel travel advice and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as
     # State's, not military context)
@@ -58,10 +61,18 @@ MILITARY = {
 }
 
 _ITEM_ID = re.compile(r"^([a-z]+)(?:[:\-]([^:]*))?")
+# Programs whose item ids start with an upper-case prefix instead of the program's name. Undertow's are
+# "UT-<LANE>-<key>" ("UT-GOOGLE-fe9985db2a"); the lane is read as the kind, in lower case. An upper-case prefix not
+# listed here names no program, so a join citing it is held.
+ID_PREFIXES = {"UT": "undertow"}
+_PREFIXED_ID = re.compile(r"^([A-Z]+)-([A-Z0-9]+)-")
 
 
 def layer_of(item_id):
-    """(program, kind) of a COP item id. Noisefloor's ids use hyphens and have no kind."""
+    """(program, kind) of a COP item id. Noisefloor's ids use hyphens and have no kind; Undertow's use its prefix."""
+    p = _PREFIXED_ID.match(str(item_id))
+    if p and p.group(1) in ID_PREFIXES:
+        return ID_PREFIXES[p.group(1)], p.group(2).lower()
     m = _ITEM_ID.match(str(item_id))
     if not m:
         return "", ""

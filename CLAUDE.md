@@ -31,6 +31,8 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   kinds went on the open list on 14 Nov 2026 (Tom's "Yes, as proposed": notices of the same nature as State's), and
   `safetravel` (New Zealand MFAT SafeTravel travel advice, Cordon `50800c8`) later the same day (Tom's "Yes, add
   safetravel", relayed by the session that asked for this change).
+  Undertow went on the open list on 14 Nov 2026 (Tom: public platform disclosures, not military context); its
+  item ids are read through `ID_PREFIXES` (see Undertow below).
   Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
   **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
   gets a dated line in `[local path]` saying what was released and to whom. Claude never copies a
@@ -128,7 +130,7 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit, from 14 Nov 2026 Launch and Undertow; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -230,6 +232,32 @@ Roadmap step 2 (`[local path]`); built 31 Oct 2026 from the plan at
   Orbit was held first and later opened): closure areas and the launches they match include national-security launches and missile
   firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every
   timestamp moved back 13 days 18 h 9 min. A local live build 14 Nov read it fresh, 3 items, no lint errors.
+- **Undertow** (14 Nov 2026, kit 0.5.3, which adds its registry entry live): covert influence operations that Meta,
+  Google, OpenAI (its RSS feed only), TikTok (through the EU Code of Conduct Transparency Centre) and the EEAS have
+  publicly disrupted or named, at operation level, with DISARM v1.6.1 technique tags. Every item is kind
+  `observation`, tier `routine`, `reported`; no `strength` rules and no picks (it has no baseline of disclosures).
+  An item whose publisher names targets is a Point (one target) or MultiPoint at the target countries' label points,
+  precision `country`; 121 of 425 on 14 Nov name no target and list under Off the map. **An item's `countries` holds
+  the origin beside the targets**, so `country_mark` is "halo" (rings at the geometry, which is targets only): "fill"
+  would shade origin countries through `countries`, and Context already fills under the same preset. `mark`
+  "halos", preset "Information" beside Context (its registry family), `routine_in_preset`, `freshness` "feed" (items
+  carry disclosure dates, some months old). Its ids are `UT-<LANE>-<key>`, not `undertow:<kind>:...`, so the gate
+  reads them through `ID_PREFIXES` in `tools/gate.py` (the lane is the kind; an unlisted upper-case prefix is held).
+  **On the gate's open list** (Tom, 14 Nov 2026). No join reads it yet. Colour: magenta `#CD00A0` (outlines
+  `#670050`, `#F3BFE7`). A search over sRGB on a 5-step grid found 107 colours that pass the dataviz validator
+  against all eleven others, every one a magenta or a dark brown; `#CD00A0`'s worst pairs are Vigil, colour-blind
+  ΔE 9.0 (target 8), and Context, normal 16.9 (floor 15), with contrast 4.59 on the light land and 3.82 on the dark
+  (the best brown reaches only 3.03 on the dark land). Rings against Context's filled markers carry identity too.
+  Six sources in `config/sources.json`, as Undertow's `doctrine/sources.json` records them: Meta (MIT), the EEAS
+  (reuse with acknowledgement) and DISARM (CC BY-SA 4.0) `commercial_ok` true; Google, OpenAI's RSS and TikTok's
+  Code reports "unknown". The MCP instructions name it, and rule 8 says that `countries` lists the origin beside the
+  targets, that an origin is never a finding of who directed an operation, that its confidence is about origin
+  only, and to call DISARM techniques provisional while `disarm_rules_status` reads "proposed".
+  `tests/fixtures/undertow.geojson`: 22 items of its live feed of 01:24 UTC 15 Nov (every lane, every geometry kind
+  and confidence state), every timestamp moved back 14 days 5 h 18 min. **Size:** with all 425 items a local live
+  build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows
+  106 KB), past `INDEX_WARN_BYTES`, which annotates and does not fail. That build (evening of 14 Nov CST) read all
+  twelve feeds fresh, Undertow 425 items, no lint errors; under Information its rings drew and its card opened.
 - **Items shown in a second preset (`also_in`, 14 Nov 2026, Tom's "Yes, add the filter"):** Cordon's NGA
   warnings that name rocket launching, space debris, a space vehicle or spacecraft, or reentry (kind `navwarn`,
   title or summary, Orbit's `navwarn` pattern) also show under "Spectrum and space", in Cordon's blue dashed style,
@@ -322,7 +350,7 @@ Plan: `[local path]`; the reason for building it is gap 1 of
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
   tests/test_triage.py` (42), `test_triage_us_power.py` (30), `test_triage_ended.py` (9), `test_rebuild_ended.py`
-  (8), `test_gate.py` (22), `test_three_signal.py` (20).
+  (8), `test_gate.py` (24), `test_three_signal.py` (20).
 - **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
   with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
   `tic-history/1`) and serves the items that ended in the last 7 days at `data/ended.geojson`. `snapshot.py` fetches

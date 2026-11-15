@@ -101,6 +101,21 @@
         "outline_light": "#4A1A80",
         "outline_dark": "#D9BFFF"
       }
+    },
+    {
+      "id": "undertow",
+      "preset": "information",
+      "freshness": "feed",
+      "mark": "halos",
+      "country_mark": "halo",
+      "routine_in_preset": true,
+      "routine_label": "influence operations that platforms and the EEAS disclosed, ringed on their target countries",
+      "strength": [],
+      "color": {
+        "fill": "#CD00A0",
+        "outline_light": "#670050",
+        "outline_dark": "#F3BFE7"
+      }
     }
   ],
   "presets": {
