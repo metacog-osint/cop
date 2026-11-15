@@ -20,6 +20,8 @@ export class ToolError extends Error {}
 
 // Index rows are columnar ({fields, rows}). The hot path filters the raw arrays by column number and builds objects
 // only for the rows it returns: turning all ~1,000 rows into objects first cost more CPU than the search itself.
+// Columns listed in `codes` (program, kind, tier, status_class, us_person_data, stale; 15 Nov 2026) hold a number into
+// codes[column], so filters compare numbers and only returned rows are decoded. An index without `codes` reads as is.
 const columnsCache = new WeakMap();
 function cols(index) {
   let c = columnsCache.get(index);
@@ -30,10 +32,28 @@ function cols(index) {
   return c;
 }
 
+const decodersCache = new WeakMap();
+function decoders(index) {
+  let d = decodersCache.get(index);
+  if (!d) {
+    const codes = index.codes || {};
+    d = index.fields.map((k) => codes[k] || null);
+    decodersCache.set(index, d);
+  }
+  return d;
+}
+
+// The stored form of a value in a column: its code, or -1 when no row has it (so nothing matches).
+function stored(index, field, value) {
+  const list = (index.codes || {})[field];
+  return list ? list.indexOf(value) : value;
+}
+
 export function toObject(index, r) {
   const f = index.fields;
+  const d = decoders(index);
   const o = {};
-  for (let i = 0; i < f.length; i++) o[f[i]] = r[i];
+  for (let i = 0; i < f.length; i++) o[f[i]] = d[i] ? d[i][r[i]] : r[i];
   return o;
 }
 
@@ -141,11 +161,16 @@ export function searchItems(index, args, now) {
   const limit = Math.min(Math.max(1, a.limit ?? LIMIT_DEFAULT), LIMIT_MAX);
 
   const C = cols(index);
+  const wantPrograms = programs && programs.map((p) => stored(index, "program", p));
+  const wantKind = a.kind ? stored(index, "kind", a.kind) : null;
+  const wantTier = a.tier ? stored(index, "tier", a.tier) : null;
+  const tiers = decoders(index)[C.tier];
+  const rank = (t) => TIER_RANK[tiers ? tiers[t] : t] ?? 9;
   const hits = []; // [rank, distance or 0, data_as_of, id, raw row]
   for (const r of index.rows) {
-    if (programs && !programs.includes(r[C.program])) continue;
-    if (a.kind && r[C.kind] !== a.kind) continue;
-    if (a.tier && r[C.tier] !== a.tier) continue;
+    if (wantPrograms && !wantPrograms.includes(r[C.program])) continue;
+    if (wantKind !== null && r[C.kind] !== wantKind) continue;
+    if (wantTier !== null && r[C.tier] !== wantTier) continue;
     if (country && !(r[C.countries] || []).includes(country)) continue;
     if (text && !((r[C.title] || "").toLowerCase().includes(text) || (r[C.id] || "").toLowerCase().includes(text))) {
       continue;
@@ -159,7 +184,7 @@ export function searchItems(index, args, now) {
       km = distanceKm({ point: r[C.point], bbox: r[C.bbox] }, near.lat, near.lon);
       if (km === null || km > near.km) continue;
     }
-    hits.push([TIER_RANK[r[C.tier]] ?? 9, km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
+    hits.push([rank(r[C.tier]), km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
   }
   hits.sort((x, y) => x[0] - y[0] || x[1] - y[1] || (y[2] < x[2] ? -1 : y[2] > x[2] ? 1 : 0) || (x[3] < y[3] ? -1 : 1));
   const page = hits.slice(0, limit).map((h) => {
