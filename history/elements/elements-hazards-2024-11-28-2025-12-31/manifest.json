@@ -25,7 +25,7 @@
  "derived_from": [],
  "method": {
   "code": "tools/history_elements.py",
-  "commit": "uncommitted sha256:e182d597ebf56122",
+  "commit": "f83188f",
   "params": {
    "gdacs_types": [
     "EQ",

@@ -17,7 +17,7 @@
  "derived_from": [],
  "method": {
   "code": "more-context/scripts/backfill_events.py (Watchfloor), then tools/history_watchfloor.py",
-  "commit": "uncommitted sha256:bc4f907c86d01098",
+  "commit": "f83188f",
   "params": {
    "root": "gdelt-events (local backfill folder)",
    "rising_z": 2.5,
@@ -33,7 +33,8 @@
    "Country items only. Watchfloor's zone items (attention on press named for a zone, from GDELT's GKG) are not rebuilt; triage also counts those.",
    "Built from GDELT's files as they stand now; the live cycle read them within minutes.",
    "FIPS codes sharing one ISO code (West Bank and Gaza: PS) are merged; the live feed keeps them apart."
-  ]
+  ],
+  "commit_note": "Built by this file before one edit that changed only method.params.root to the backfill folder's name, which this manifest already carries; rows are unchanged."
  },
  "coverage": {
   "start": "2024-12-01",
