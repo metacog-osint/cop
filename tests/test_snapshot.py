@@ -484,7 +484,8 @@ class Card(unittest.TestCase):
         rule = next(line for line in server.splitlines() if line.startswith("8. Undertow"))
         for k in ("reported-activity item", "activity block", "DFRLab", "CheckFirst", "CORRECTIV",
                   "quiet never means the operation ended", "not that it found the operation running",
-                  "they are not an origin"):
+                  "They are not an origin", "only stated targets are marked on the map",
+                  "records as targets are marked on the map"):
             self.assertIn(k, server if k in ("DFRLab", "CheckFirst", "CORRECTIV") else rule)
 
     def test_view_keeps_every_pick_inside_the_map(self):
