@@ -28,6 +28,17 @@ def outage(cc="TN", indicator="BO-IND-1", at=AT):
     return item("blackout", f"blackout:outage:{cc.lower()}:{at[:13]}", [cc], "anomaly", at, indicator_id=indicator)
 
 
+def alert(cc, suffix, when, subject="Security Alert: U.S. Embassy (November 11, 2026)"):
+    """An embassy alert as Cordon titles it."""
+    return item("cordon", f"cordon:alert:{cc}:{suffix}", [cc], "routine", when, title=f"US embassy ({cc}): {subject}")
+
+
+def attention_item(cc, day="2026-11-11", baseline="wf-28d", z=3.1, kind="attention"):
+    """A Watchfloor country item raised on its 28-day z-score (wf-28d) or its 90-day median (wf-90d-median)."""
+    return item("watchfloor", f"watchfloor:{day}:country:{cc}:{kind}", [cc], "anomaly", f"{day}T23:59:59Z",
+                baseline_ref={"id": baseline}, measures={"score": {"z": z}})
+
+
 def snapshot(*features, states=None):
     states = {"elements": "fresh", "cordon": "fresh", "watchfloor": "fresh", "blackout": "fresh"} | (states or {})
     return {"generated_at": "2026-11-13T00:21:12Z", "features": list(features),
@@ -78,15 +89,19 @@ class Triage(unittest.TestCase):
         self.assertEqual(r["reading"], "open")
         self.assertEqual(len(r["layers"]["elements"]["background"]), 1)
 
-    def test_recent_notice_or_raised_attention_without_a_hazard_reads_deliberate(self):
-        alert = item("cordon", "cordon:alert:TN:abc", ["TN"], "routine", "2026-11-11T00:00:00Z")
-        r = one(tri.triage(snapshot(outage(), alert)))
-        self.assertEqual(r["reading"], "deliberate")
-        wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
-                  "2026-11-11T23:59:59Z")
-        r = one(tri.triage(snapshot(outage(), wf)))
-        self.assertEqual(r["reading"], "deliberate")
+    def test_recent_notice_or_unusual_attention_without_a_hazard_reads_tension_context(self):
+        r = one(tri.triage(snapshot(outage(), alert("TN", "abc", "2026-11-11T00:00:00Z"))))
+        self.assertEqual(r["reading"], tri.TENSION)
+        r = one(tri.triage(snapshot(outage(), attention_item("TN"))))
+        self.assertEqual(r["reading"], tri.TENSION)
         self.assertFalse(r["layers"]["watchfloor"]["data_reaches_outage"], "Watchfloor's day ended before the outage")
+
+    def test_the_reading_names_what_was_seen_and_never_a_cause(self):
+        self.assertEqual(tri.TENSION, "tension context")
+        self.assertNotIn("deliberate", tri.READINGS)
+        for text in list(tri.READINGS.values()) + list(tri.POWER_READINGS.values()) + list(tri.POWER_CAVEATS):
+            self.assertNotIn("deliberate", text.lower())
+            self.assertNotIn("has support", text)
 
     def test_a_standing_advisory_is_listed_but_is_not_a_signal(self):
         adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z", measures={"level": 2})
@@ -96,8 +111,8 @@ class Triage(unittest.TestCase):
 
     def test_a_hazard_outranks_notices(self):
         haz = item("elements", "elements:gdacs:FL-1", ["TN"], "anomaly", "2026-11-11T06:00:00Z")
-        alert = item("cordon", "cordon:alert:TN:abc", ["TN"], "routine", "2026-11-09T00:00:00Z")
-        self.assertEqual(one(tri.triage(snapshot(outage(), haz, alert)))["reading"], "natural")
+        notice = alert("TN", "abc", "2026-11-11T09:00:00Z")
+        self.assertEqual(one(tri.triage(snapshot(outage(), haz, notice)))["reading"], "natural")
 
     def test_a_layer_without_current_data_is_incomplete_never_quiet(self):
         for state in ("stale", "missing"):
@@ -106,10 +121,10 @@ class Triage(unittest.TestCase):
             self.assertEqual(r["no_current_data"], ["elements"])
 
     def test_a_single_source_dip_gets_context_but_no_reading(self):
-        alert = item("cordon", "cordon:alert:SC:abc", ["SC"], "routine", "2026-11-11T00:00:00Z")
-        r = one(tri.triage(snapshot(outage("SC", "BO-IND-4"), alert)))
+        r = one(tri.triage(snapshot(outage("SC", "BO-IND-4"), alert("SC", "abc", "2026-11-11T00:00:00Z"))))
         self.assertEqual(r["reading"], "unconfirmed")
         self.assertEqual(len(r["layers"]["cordon"]["recent"]), 1)
+        self.assertFalse(r["registerable"], "a single-source dip is not a confirmed outage: no question to register")
 
     def test_no_probability_and_nothing_registered(self):
         r = one(tri.triage(snapshot(outage())))
@@ -119,7 +134,10 @@ class Triage(unittest.TestCase):
         self.assertFalse(v["registered"])
         self.assertEqual(v["window_ends"], "2026-11-15T00:25:00Z")
         self.assertIsNone(v["caution"])
-        self.assertNotIn("probability", json.dumps({k: x for k, x in r.items() if k != "verdict_draft"}))
+        c = r["cause_draft"]
+        self.assertEqual((c["probability"], c["approved_by"], c["registered"]), (None, None, False))
+        self.assertNotIn("probability", json.dumps({k: x for k, x in r.items()
+                                                    if k not in ("verdict_draft", "cause_draft")}))
 
     def test_ooni_already_over_the_threshold_is_called_out(self):
         ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3")
@@ -144,26 +162,26 @@ class Triage(unittest.TestCase):
     def test_background_counts_each_signal_once_per_country_day(self):
         day1 = snapshot(
             item("elements", "elements:gdacs:TC-1", ["TN"], "anomaly", "2026-11-12T20:00:00Z"),
-            item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-12T00:00:00Z"),   # hazard wins in TN
-            item("cordon", "cordon:alert:DZ:a", ["DZ"], "routine", "2026-11-12T00:00:00Z"),
+            alert("TN", "a", "2026-11-12T00:00:00Z"),   # hazard wins in TN
+            alert("DZ", "a", "2026-11-12T00:00:00Z"),
             item("cordon", "cordon:advisory:FR", ["FR"], "routine", "2026-01-01T00:00:00Z"),  # standing: no signal
-            item("watchfloor", "watchfloor:2026-11-12:country:AG:attention", ["DZ"], "anomaly",
-                 "2026-11-12T23:59:59Z"),
-            item("watchfloor", "watchfloor:2026-11-12:zone:x", ["LY", "EG"], "anomaly", "2026-11-12T23:59:59Z"))
+            attention_item("DZ", "2026-11-12"),
+            item("watchfloor", "watchfloor:2026-11-12:zone:x", ["LY", "EG"], "anomaly", "2026-11-12T23:59:59Z",
+                 baseline_ref={"id": "wf-90d-median"}))
         doc = rates.rates([day1])
         n = len(rates.all_countries())
         d = doc["background"]["days"][0]
         self.assertEqual((d["hazard"], d["recent_notice"], d["raised_attention"]), (1, 2, 3))
-        self.assertEqual(d["unusual_attention"], 0, "raised on the only archived day is this country's normal")
-        self.assertEqual(d["would_read"], {"natural": 1, "deliberate": 1, "open": n - 2})
+        self.assertEqual(d["unusual_attention"], 1, "only Watchfloor's own 28-day z-score makes attention unusual")
+        self.assertEqual(d["would_read"], {"natural": 1, tri.TENSION: 1, "open": n - 2})
         self.assertEqual(doc["background"]["country_days"], n)
         self.assertEqual(doc["background"]["would_read_country_days"], n)
         self.assertEqual(d["recent_notice_kinds"], {"alert": 2})
         self.assertEqual(len(doc["cautions"]), 3, "one day, no outages, no ended list: three cautions")
         self.assertTrue(any("no list of Elements' ended hazards" in c for c in doc["cautions"]))
         by = doc["background"]["by_country"]
-        self.assertEqual(by["TN"], {"deliberate": 0.0, "natural": 1.0, "open": 0.0})
-        self.assertEqual(by["DZ"]["deliberate"], 1.0)
+        self.assertEqual(by["TN"], {tri.TENSION: 0.0, "natural": 1.0, "open": 0.0})
+        self.assertEqual(by["DZ"][tri.TENSION], 1.0)
         self.assertNotIn("FR", by, "a country that only ever read open is not listed")
         self.assertNotIn("_natural", d)
 
@@ -177,11 +195,12 @@ class Triage(unittest.TestCase):
 
     def test_replay_counts_an_outage_once_with_its_newest_reading(self):
         first = snapshot(outage())
-        second = snapshot(outage(), item("cordon", "cordon:alert:TN:a", ["TN"], "routine", "2026-11-11T00:00:00Z"))
+        second = snapshot(outage(), alert("TN", "a", "2026-11-11T00:00:00Z"))
         second["generated_at"] = "2026-11-14T00:21:12Z"
         doc = rates.rates([second, first])
         self.assertEqual(doc["replay"]["outages"], 1)
-        self.assertEqual(doc["replay"]["by_reading"], {"deliberate": 1})
+        self.assertEqual(doc["replay"]["by_reading"], {tri.TENSION: 1})
+        self.assertEqual(doc["replay"]["rows"][0]["source"], "IODA")
 
     def test_every_reading_with_a_rate_carries_it_and_its_cautions(self):
         base = rates.rates([snapshot()])
@@ -213,7 +232,7 @@ class Triage(unittest.TestCase):
 
     def test_an_advisory_counts_when_raised_and_not_when_lowered_or_reissued(self):
         adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-11T00:00:00Z", measures={"level": 3})
-        for before, direction, reading, bucket in ((2, "raised", "deliberate", "recent"),
+        for before, direction, reading, bucket in ((2, "raised", tri.TENSION, "recent"),
                                                    (4, "lowered", "open", "recent_not_raised"),
                                                    (3, "unchanged", "open", "recent_not_raised")):
             hist = {"advisory_levels": {"cordon:advisory:TN": [["2026-05-01T00:00:00Z", before],
@@ -227,21 +246,26 @@ class Triage(unittest.TestCase):
         adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-11T00:00:00Z", measures={"level": 3})
         hist = {"advisory_levels": {"cordon:advisory:TN": [["2026-11-11T00:00:00Z", 3]]}, "attention_share": {}}
         r = one(tri.triage(snapshot(outage(), adv), hist))
-        self.assertEqual(r["reading"], "deliberate")
+        self.assertEqual(r["reading"], tri.TENSION)
         self.assertEqual(r["layers"]["cordon"]["recent"][0]["direction"], "unknown")
         self.assertTrue(any("no earlier level" in c for c in r["caveats"]))
 
-    def test_raised_attention_counts_only_where_it_is_unusual_for_the_country(self):
-        wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
-                  "2026-11-11T23:59:59Z")
-        usual = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.9}}))
-        self.assertEqual(usual["reading"], "open")
-        self.assertEqual((len(usual["layers"]["watchfloor"]["raised"]), usual["layers"]["watchfloor"]["unusual"]),
+    def test_unusual_attention_is_watchfloors_own_28_day_z_score(self):
+        # D8 (cop-joins.md M3): Iran was raised on 5 of 16 archived days around the Qeshm strikes, and COP's own
+        # "under 25% of archived days" share switched its signal off. Watchfloor's z-score is against the 28 days
+        # before the day it measures, so a run of raised days does not switch itself off here.
+        z28 = one(tri.triage(snapshot(outage(), attention_item("TN")), {"advisory_levels": {}}))
+        self.assertEqual(z28["reading"], tri.TENSION)
+        self.assertEqual(z28["layers"]["watchfloor"]["unusual_items"][0]["z"], 3.1)
+        ninety = one(tri.triage(snapshot(outage(), attention_item("TN", baseline="wf-90d-median")), {}))
+        self.assertEqual(ninety["reading"], "open", "high against the 90-day median is standing attention")
+        self.assertEqual((len(ninety["layers"]["watchfloor"]["elevated"]), ninety["layers"]["watchfloor"]["unusual"]),
                          (1, False))
-        rare = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.1}}))
-        self.assertEqual(rare["reading"], "deliberate")
-        never = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {}}))
-        self.assertEqual(never["reading"], "deliberate", "a country never raised in the archive: raised is unusual")
+        later = one(tri.triage(snapshot(outage(), attention_item("TN", day="2026-11-13")), {}))
+        self.assertEqual(later["reading"], "open", "a Watchfloor day that begins after the outage is not counted")
+        self.assertEqual(len(later["layers"]["watchfloor"]["after"]), 1)
+        same_day = one(tri.triage(snapshot(outage(), attention_item("TN", day="2026-11-12")), {}))
+        self.assertEqual(same_day["reading"], tri.TENSION, "the day the outage falls in is around its hour")
 
     def test_without_an_archive_baseline_the_record_says_so(self):
         r = one(tri.triage(snapshot(outage())))
@@ -258,18 +282,21 @@ class Triage(unittest.TestCase):
         self.assertIsNone(v["probability"])
         self.assertIsNone(one(tri.triage(snapshot(outage())))["verdict_draft"]["rise_form"])
 
-    def test_history_keeps_each_advisory_level_and_each_countrys_attention_share(self):
+    def test_history_keeps_each_advisory_level_and_each_alerts_dates(self):
         a = snapshot(item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z",
                           measures={"level": 2}),
-                     item("watchfloor", "watchfloor:2026-11-12:zone:x", ["LY"], "anomaly", "2026-11-12T23:59:59Z"))
+                     alert("CO", "x", "2026-11-06T21:52:18Z"))
         b = snapshot(item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-11-13T00:00:00Z",
                           measures={"level": 3}),
-                     item("watchfloor", "watchfloor:2026-11-13:summary", [], "routine", "2026-11-13T23:59:59Z"))
+                     alert("CO", "x", "2026-11-12T22:33:00Z"))
         b["generated_at"] = "2026-11-14T00:21:12Z"
         h = rates.history([a, b])
         self.assertEqual(h["advisory_levels"]["cordon:advisory:TN"],
                          [["2026-05-01T00:00:00Z", 2], ["2026-11-13T00:00:00Z", 3]])
-        self.assertEqual((h["attention_days"], h["attention_share"]), (2, {"LY": 0.5}))
+        self.assertEqual(h["alert_dates"]["cordon:alert:CO:x"],
+                         [["2026-11-13T00:21:12Z", "2026-11-06T21:52:18Z"],
+                          ["2026-11-14T00:21:12Z", "2026-11-12T22:33:00Z"]])
+        self.assertNotIn("attention_share", h, "unusual attention is Watchfloor's own z-score, not an archive share")
 
     def test_days_before_cordons_notices_changed_do_not_count_toward_readings(self):
         early = snapshot()
@@ -307,8 +334,15 @@ class Triage(unittest.TestCase):
             q = r["question_draft"]
             self.assertEqual(q["status"], "draft, not registered")
             self.assertIn("not a registered Verdict forecast", q["note"])
-            self.assertEqual(set(q), {"status", "note", "question", "window_ends", "rule_draft", "caution",
+            self.assertEqual(set(q), {"status", "note", "verdict_id", "question", "window_ends", "rule_draft", "caution", "resolution",
                                       "rise_form"})
+            c = r["cause_question_draft"]
+            self.assertEqual(c["status"], "draft, not registered")
+            self.assertIn("government order", c["question"])
+        by_cc = {r["country"]: r for r in pub["records"]}
+        self.assertEqual((by_cc["TN"]["registerable"], by_cc["SC"]["registerable"]), (True, False))
+        self.assertEqual(by_cc["TN"]["cause_question_draft"]["verdict_id"],
+                         "verdict:2026-11-19:cop-tn-outage-20261112t0025-cause")
         self.assertIn("not a warning, not a forecast and not a finding of cause", pub["not_a_warning"])
         self.assertEqual(pub["readings"], tri.READINGS)
         for r in pub["records"]:
@@ -341,19 +375,19 @@ class Triage(unittest.TestCase):
                          "incomplete")
 
     def test_what_a_layer_showed_says_what_was_counted_and_what_was_not(self):
-        wf = item("watchfloor", "watchfloor:2026-11-11:country:TS:attention", ["TN"], "anomaly",
-                  "2026-11-11T23:59:59Z")
         adv = item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z", measures={"level": 2})
-        usual = one(tri.triage(snapshot(outage(), wf, adv), {"advisory_levels": {}, "attention_share": {"TN": 0.9}}))
+        holiday = alert("TN", "h", "2026-11-11T09:00:00Z", "Security Alert: Holiday Travel, November 13, 2026")
+        usual = one(tri.triage(snapshot(outage(), attention_item("TN", baseline="wf-90d-median"), adv, holiday), {}))
         text = tri.showed("watchfloor", usual["layers"]["watchfloor"])
-        self.assertIn("90% of archived days", text)
+        self.assertIn("90-day median", text)
         self.assertIn("not counted", text)
         self.assertIn("ends before the outage", text)
-        self.assertIn("1 older notice standing (not counted)", tri.showed("cordon", usual["layers"]["cordon"]))
-        rare = one(tri.triage(snapshot(outage(), wf), {"advisory_levels": {}, "attention_share": {"TN": 0.1}}))
+        cordon = tri.showed("cordon", usual["layers"]["cordon"])
+        self.assertIn("1 older notice standing (not counted)", cordon)
+        self.assertIn("1 embassy alert of a type not counted (event)", cordon)
+        rare = one(tri.triage(snapshot(outage(), attention_item("TN")), {}))
         self.assertIn("unusual here", tri.showed("watchfloor", rare["layers"]["watchfloor"]))
-        blind = one(tri.triage(snapshot(outage(), wf)))
-        self.assertIn("no archive baseline", tri.showed("watchfloor", blind["layers"]["watchfloor"]))
+        self.assertIn("z 3.1", tri.showed("watchfloor", rare["layers"]["watchfloor"]))
 
     def test_it_publishes_only_to_site_data_and_only_the_public_document(self):
         for folder in (ROOT / "site", ROOT / "site" / "data" / "joins", ROOT / "site" / "vendor"):
@@ -424,7 +458,7 @@ class NewNoticeKinds(unittest.TestCase):
     def test_a_change_with_no_earlier_level_counts_and_says_so(self):
         for f in (self.fcdo("anomaly"), self.canada("anomaly")):
             r = one(tri.triage(snapshot(outage(), f), {"advisory_levels": {}, "attention_share": {}}))
-            self.assertEqual(r["reading"], "deliberate", f["properties"]["id"])
+            self.assertEqual(r["reading"], tri.TENSION, f["properties"]["id"])
             self.assertEqual(r["layers"]["cordon"]["recent"][0]["direction"], "unknown")
             self.assertTrue(any("no earlier level" in c for c in r["caveats"]))
             self.assertEqual(gate.review(tri.JOIN, {"records": [r]})["review_class"], "open")
@@ -437,7 +471,7 @@ class NewNoticeKinds(unittest.TestCase):
         self.assertEqual((r["reading"], r["layers"]["cordon"]["recent_not_raised"][0]["direction"]), ("open", "lowered"))
         raised = one(tri.triage(snapshot(outage(), self.canada("anomaly", level=2)), hist))
         self.assertEqual((raised["reading"], raised["layers"]["cordon"]["recent"][0]["direction"]),
-                         ("deliberate", "raised"))
+                         (tri.TENSION, "raised"))
         # FCDO: adding a statement raises it; removing one lowers it.
         before = tri.notice_level(self.fcdo("routine", ("avoid_all_travel_to_parts",))["properties"])
         hist = {"advisory_levels": {"cordon:fcdo:tunisia": [["2026-11-01T00:00:00Z", before]]}, "attention_share": {}}
@@ -458,12 +492,12 @@ class NewNoticeKinds(unittest.TestCase):
                          ("open", "unchanged"))
         changed = one(tri.triage(snapshot(outage(), self.safetravel("anomaly")), none))
         self.assertEqual((changed["reading"], changed["layers"]["cordon"]["recent"][0]["direction"]),
-                         ("deliberate", "unknown"))
+                         (tri.TENSION, "unknown"))
         hist = {"advisory_levels": {"cordon:safetravel:TN": [["2026-10-01T00:00:00Z", [2, 1]]]}, "attention_share": {}}
         dropped_note = one(tri.triage(snapshot(outage(), self.safetravel("anomaly", "medium", None)), hist))
         self.assertEqual(dropped_note["layers"]["cordon"]["recent_not_raised"][0]["direction"], "lowered")
         up = one(tri.triage(snapshot(outage(), self.safetravel("anomaly", "high", None)), hist))
-        self.assertEqual((up["reading"], up["layers"]["cordon"]["recent"][0]["direction"]), ("deliberate", "raised"))
+        self.assertEqual((up["reading"], up["layers"]["cordon"]["recent"][0]["direction"]), (tri.TENSION, "raised"))
         self.assertEqual(tri.notice_level(self.safetravel("routine", "avoid", "some areas")["properties"]), [4, 1])
         self.assertIsNone(tri.notice_level(self.safetravel("routine", "unheard-of")["properties"]))
         self.assertEqual(gate.review(tri.JOIN, {"records": [up]})["review_class"], "open")
@@ -492,6 +526,135 @@ class NewNoticeKinds(unittest.TestCase):
         doc = rates.rates(snaps)
         self.assertTrue(any("canada from 2026-11-14" in c for c in doc["cautions"]), doc["cautions"])
         self.assertEqual(doc["background"]["notice_kinds_in_archive_from"], {"canada": "2026-11-14"})
+
+
+class TriageFixes(unittest.TestCase):
+    """D8 and M5 (Tom, 15 Nov 2026; cop-joins.md M1, M2, M3, M5): the three rules and the wider input."""
+
+    def test_a_cyclone_at_landfall_counts_while_it_is_active(self):
+        # MURASU-26 (GDACS red, India): formed 1 Nov 00:00, last advisory 3 Nov 06:00. An outage on the evening of
+        # 4 Nov, about 41 hours after the last advisory, read "standing" under the old rule.
+        murasu = item("elements", "elements:gdacs:TC-1001346", ["IN"], "anomaly", "2026-11-03T06:00:00Z",
+                      measures={"hazard_code": "TC", "from": "2026-11-01T00:00:00Z", "to": "2026-11-03T06:00:00Z"})
+        r = one(tri.triage(snapshot(outage("IN", at="2026-11-04T23:00:00Z"), murasu)))
+        self.assertEqual(r["reading"], "natural")
+        h = r["layers"]["elements"]["significant"][0]
+        self.assertEqual((h["episodic"], h["active_until"]), ("tropical cyclone", "2026-11-03T06:00:00Z"))
+        late = one(tri.triage(snapshot(outage("IN", at="2026-11-05T23:00:00Z"), murasu)))
+        self.assertEqual(late["reading"], "open", "more than 48 hours after its last advisory: standing")
+        self.assertEqual(late["layers"]["elements"]["standing"][0]["id"], "elements:gdacs:TC-1001346")
+
+    def test_a_standing_kind_keeps_the_began_in_the_window_rule(self):
+        drought = item("elements", "elements:gdacs:DR-1", ["IN"], "anomaly", "2026-11-04T00:00:00Z",
+                       measures={"hazard_code": "DR", "from": "2026-06-01T00:00:00Z", "to": "2026-11-04T00:00:00Z"})
+        r = one(tri.triage(snapshot(outage("IN", at="2026-11-04T23:00:00Z"), drought)))
+        self.assertEqual(r["reading"], "open")
+        self.assertEqual(r["layers"]["elements"]["standing"][0]["id"], "elements:gdacs:DR-1")
+
+    def test_embassy_alerts_are_sorted_by_their_type(self):
+        cases = {
+            "Security Alert: U.S. Mission Saudi Arabia \u2013 November 7, 2026": "security",
+            "Demonstration Alert: Protest in Mexico City, November 15, 2026": "demonstration",
+            "Weather Alert: El Ni\u00f1o and the Potential for Heavy Rainfall this Winter": "weather",
+            "Natural Disaster Alert: Mayon Volcano Alert Level Raised to 3": "natural disaster",
+            "Health Alert: U.S. Embassy Abuja, Nigeria (October 20, 2026)": "health",
+            "Security Alert: Holiday Travel, November 13, 2026": "event",
+            "Security Alert: Cartagena Independence Day (November 11\u201316, 2026)": "event",
+            "Security Alert: ASEAN Summit \u2013 Traffic, Security, and Flight Disruptions": "event",
+            "Message for U.S. Citizens:": "routine",
+            "Routine Message: Remote Services in Angeles - September 9-10, 2026": "routine",
+            "ALERT \u2013 MESSAGE FOR U.S. CITIZENS: CONSULAR OFFICERS TO OFFER SERVICES": "routine",
+        }
+        for subject, kind in cases.items():
+            self.assertEqual(tri.alert_type(f"US embassy (XX): {subject}"), kind, subject)
+        for subject, kind in cases.items():
+            r = one(tri.triage(snapshot(outage(), alert("TN", "a", "2026-11-11T09:00:00Z", subject))))
+            self.assertEqual(r["reading"], tri.TENSION if kind in tri.ALERT_COUNTED else "open", subject)
+
+    def test_a_weather_alert_is_listed_with_a_pointer_to_elements(self):
+        r = one(tri.triage(snapshot(outage(), alert("TN", "w", "2026-11-11T09:00:00Z",
+                                                    "Weather Alert: Hurricane approaching"))))
+        self.assertEqual(r["reading"], "open")
+        self.assertEqual(r["layers"]["cordon"]["recent_not_counted"][0]["alert_type"], "weather")
+        self.assertTrue(any("Elements is the layer for" in c for c in r["caveats"]))
+
+    def test_a_re_dated_alert_counts_once_from_when_it_was_first_seen(self):
+        # cordon:alert:CO:937adfcbfd2a: dated 6 Nov 21:52, then 12 Nov 22:33, then 13 Nov 10:03.
+        edited = alert("TN", "x", "2026-11-11T09:00:00Z")
+        hist = {"advisory_levels": {}, "alert_dates": {"cordon:alert:TN:x": [
+            ["2026-11-07T00:00:00Z", "2026-11-06T21:52:18Z"], ["2026-11-11T22:00:00Z", "2026-11-11T09:00:00Z"]]}}
+        r = one(tri.triage(snapshot(outage(), edited), hist))
+        self.assertEqual(r["reading"], "open")
+        row = r["layers"]["cordon"]["recent_not_raised"][0]
+        self.assertEqual((row["direction"], row["first_dated"]), ("re-dated", "2026-11-06T21:52:18Z"))
+        self.assertIn("re-dated from an earlier date", tri.showed("cordon", r["layers"]["cordon"]))
+        # Causal: a snapshot taken after the outage cannot make an alert older than it was at the outage.
+        later = {"advisory_levels": {}, "alert_dates": {"cordon:alert:TN:x": [
+            ["2026-11-14T00:00:00Z", "2026-11-06T21:52:18Z"]]}}
+        self.assertEqual(one(tri.triage(snapshot(outage(), edited), later))["reading"], tri.TENSION)
+
+    def test_the_notice_window_is_48_hours_not_floored_to_midnight(self):
+        at = "2026-11-12T20:00:00Z"
+        inside = alert("TN", "in", "2026-11-10T21:00:00Z")
+        outside = alert("TN", "out", "2026-11-10T03:00:00Z")      # 65 hours before: the old floor counted it
+        r = one(tri.triage(snapshot(outage(at=at), inside, outside)))
+        c = r["layers"]["cordon"]
+        self.assertEqual(([x["id"] for x in c["recent"]], [x["id"] for x in c["standing"]]),
+                         (["cordon:alert:TN:in"], ["cordon:alert:TN:out"]))
+        day = item("cordon", "cordon:safetravel:TN", ["TN"], "anomaly", "2026-11-10T00:00:00Z",
+                   measures={"level": "high"})
+        r = one(tri.triage(snapshot(outage(at=at), day), {"advisory_levels": {}}))
+        self.assertEqual(r["reading"], tri.TENSION, "a date with no time counts from the start of the day")
+
+    def radar_anomaly(self, cc="IQ", start="2026-11-09T04:45:00Z", end=None, asn=48492):
+        span = f"from {start} to {end}" if end else f"since {start}, ongoing"
+        return item("blackout", "blackout:radar-anomaly:8ddd8f4a", [cc], "anomaly", end or "2026-11-12T01:45:32Z",
+                    indicator_id="BO-IND-10",
+                    title=f"Iraq, AS{asn} (IQ-Online): traffic anomaly verified by Cloudflare Radar",
+                    summary=f"Cloudflare Radar's anomaly detection flagged this traffic {span}, seen in Radar's "
+                            "HTTP data; Cloudflare marked it verified (TP). Radar gives no cause.")
+
+    def test_a_verified_radar_anomaly_is_triaged_from_when_it_began(self):
+        r = one(tri.triage(snapshot(self.radar_anomaly())))
+        o = r["outage"]
+        self.assertEqual((o["source"], o["started_at"], o["confirmed"], o["network"]),
+                         ("Cloudflare Radar (verified anomaly)", "2026-11-09T04:45:00Z", True,
+                          {"asn": 48492, "name": "IQ-Online"}))
+        self.assertEqual(r["reading"], "open")
+        self.assertTrue(r["registerable"])
+        self.assertTrue(any("one network (AS48492)" in c for c in r["caveats"]))
+        self.assertIn("-as48492-", r["cause_draft"]["id_slug"])
+        ended = one(tri.triage(snapshot(self.radar_anomaly(end="2026-11-10T02:00:00Z"))))
+        self.assertEqual((ended["outage"]["started_at"], ended["outage"]["ended_at"]),
+                         ("2026-11-09T04:45:00Z", "2026-11-10T02:00:00Z"))
+
+    def test_a_radar_outage_quotes_cloudflares_cause_and_a_platform_one_is_listed_not_read(self):
+        cause = item("blackout", "blackout:radar-outage:1800", ["SY"], "anomaly", "2026-11-12T01:45:32Z",
+                     indicator_id="BO-IND-9", title="Syria: government directed (Cloudflare Radar)",
+                     summary="Cloudflare Radar's Outage Center lists an outage since 2026-11-11T22:00:00Z, ongoing: "
+                             "\"Exams.\" Cause as Cloudflare states it: government directed. Reported by Cloudflare.")
+        platform = item("blackout", "blackout:radar-outage:1749", [], "anomaly", "2026-11-12T01:45:32Z",
+                        indicator_id="BO-IND-9", title="Platform outage, no place named: technical problem",
+                        summary="Cloudflare Radar's Outage Center lists an outage since 2026-11-12T16:17:00Z, ongoing: "
+                                "\"M365.\" Cause as Cloudflare states it: technical problem.")
+        doc = tri.triage(snapshot(cause, platform))
+        r = one(doc)
+        self.assertEqual((r["country"], r["outage"]["stated_cause"]), ("SY", "government directed"))
+        self.assertIn("settled before it is asked", r["cause_draft"]["caution"])
+        self.assertTrue(any("COP quotes it and does not assess it" in c for c in r["caveats"]))
+        self.assertEqual([u["id"] for u in doc["unplaced"]], ["blackout:radar-outage:1749"])
+        self.assertIn("Cloudflare Radar", tri.public(tri.attach_rates(doc, None))["what"])
+
+    def test_the_cause_question_is_written_the_way_verdict_reads_it(self):
+        c = one(tri.triage(snapshot(outage())))["cause_draft"]
+        self.assertIn("check after 00:25 UTC on 19 Nov 2026", c["rule_draft"])
+        self.assertEqual(c["resolution"]["known_at"], "2026-11-19T00:25:00Z")
+        self.assertEqual(c["resolution"]["resolve_by"], "2026-11-26T00:25:00Z")
+        for who in ("Cloudflare Radar", "Access Now", "Reuters"):
+            self.assertIn(who, c["rule_draft"])
+        v = one(tri.triage(snapshot(outage())))["verdict_draft"]
+        self.assertIn("check after 00:25 UTC on 16 Nov 2026", v["rule_draft"])
+        self.assertEqual(v["resolution"]["known_at"], "2026-11-16T00:25:00Z")
 
 
 if __name__ == "__main__":
