@@ -407,8 +407,11 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   are marked, an origin is never a finding of who directed an operation, confidence is about origin only.
   Reported activity (an `activity` block): give the reporter, grade, first and last report and state; "quiet"
   never means ended; a name match says the reporter wrote about the operation, not that it found it running; its
-  `countries` are the countries named in the reports (they can include the operators' country, and all are marked
-  on the map), not an origin, and it adds no origin or confidence. Both: call DISARM techniques provisional while
+  `countries` are the countries named in the reports (they can include the operators' country), not an origin, and
+  it adds no origin or confidence. **Only stated targets are marked** (Undertow, Tom's call of 16 Nov 2026): a
+  reporter's item at countries its reports name that a disclosure of the operation records as targets, and Google's
+  and OpenAI's items, which name no target, not at all (all 369 list under Off the map; before, 264 were drawn on
+  the countries their description names). On 16 Nov, 47 of Undertow's 434 items carry a place. Both: call DISARM techniques provisional while
   `disarm_rules_status` reads "proposed". The card shows a "Reported activity" badge and Reported by, First report,
   Last report, Reports and State facts (`renderCard`, `p.activity`); `get_item` returns the whole block (the shards
   keep every field); `search_items` rows do not carry it, but the title ends "(active)" or "(quiet)".
