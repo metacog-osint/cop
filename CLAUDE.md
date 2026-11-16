@@ -205,8 +205,8 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   the feed's own `health` block with the kit's `lanes_ok`; an item whose lane (first source id, through `lane_map`) the
   block marks not read well gets `cop_stale` and `cop_source_stale`, is drawn grey, is never picked, and its card says
   "No current data from this Headwind source". `health.json` (and `cop_programs`) carry `sources` (`total`,
-  `not_read` with each id, state and detail), and the Sources board names them. Only Headwind sets it; Cordon and
-  Blackout keep their behaviour. Dry run on Headwind's live feed, 15 Nov: 13 sources, none unread. The suite ledger
+  `not_read` with each id, state and detail), and the Sources board names them. Headwind and, from 16 Nov 2026, Undertow set
+  it; Cordon and Blackout keep their behaviour. Dry run on Headwind's live feed, 15 Nov: 13 sources, none unread. The suite ledger
   is unchanged: it still counts a source-stale item as seen while its program was read (the open last_seen
   question below).
 - **Orbit** (13 Nov 2026, kit 0.4.8, which sets its registry entry live): orbital launches of the last 7 days at
@@ -282,7 +282,17 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   UTC, with no `data-tic`, so TicTime never moves it into the viewer's zone. Before, Undertow's "2025-06" read
   "May 31, 7:00 PM CDT". Undertow sets it on 384 of 425 items (23 month, 361 day; Undertow `d2d0b8f`); any program
   may. Checked in the browser pane on a local build with Undertow's new feed: the "Data Center Bandwagon" card reads
-  "Data as of June 2026". The agent index does not carry the field; `get_item` returns it with the full item.
+  "Data as of June 2026". **In the agent index since 16 Nov 2026** (branch `undertow/precision-ended`): a
+  coded column `data_as_of_precision` (about 2 bytes a row, some 4 KB on the live bus of 2,146 rows, 555 KB on
+  15 Nov); `search_items` rows name it only when it is set, and MCP rule 4 says to give a date-only item's date or
+  month, never a time, and never to move it into another zone.
+  **`ended` and `source_health` (16 Nov 2026, same branch):** Undertow keeps the kit's history log (`tic-history/1`,
+  Undertow `393758e`) and serves `https://undertow.theintelligence.company/data/ended.geojson`; its feed's `health`
+  block is keyed by the source id its items carry (`meta-threat-research`, `google-iob`, `openai-news-rss`,
+  `disinfocode-tiktok`, `eeas-fimi-4`; state `up` or `failing`), so no `lane_map` is needed. A failed Undertow lane
+  keeps its last good copy, which COP now draws grey and the ledger does not count as seen. Until Undertow's
+  commit is deployed the address answers 404 and `snapshot.py` logs "undertow ended items: fetch failed": deploy
+  Undertow first. No join reads Undertow's ended list yet.
 - **Wake** (15 Nov 2026, kit 0.5.5, which sets its registry entry live): IMF PortWatch's daily counts of
   AIS-visible vessel transits through 28 maritime chokepoints, as 7-day means that Wake computes and compares with
   the 90 days before and the same weeks a year earlier (Wake `wake-2.0`). One Point per chokepoint, precision

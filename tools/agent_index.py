@@ -93,13 +93,14 @@ def place(geometry):
     return point, bbox
 
 
-FIELDS = ("id", "program", "kind", "tier", "status_class", "title", "data_as_of", "published_at", "valid_until",
-          "countries", "point", "bbox", "link", "us_person_data", "stale", "shard")
+FIELDS = ("id", "program", "kind", "tier", "status_class", "title", "data_as_of", "data_as_of_precision",
+          "published_at", "valid_until", "countries", "point", "bbox", "link", "us_person_data", "stale", "shard")
 
 # Columns with a handful of repeated values, stored in each row as a number into the index's `codes` list for that
 # column (15 Nov 2026, when the index passed 600 KB): about 90 KB less, and the server decodes only the rows it
-# returns. Tool output is unchanged.
-CODED = ("program", "kind", "tier", "status_class", "us_person_data", "stale")
+# returns. Tool output is unchanged. data_as_of_precision ("day", "month" or null; kit 0.5.6) was added coded on
+# 16 Nov 2026: about 4 KB, one small number a row.
+CODED = ("program", "kind", "tier", "status_class", "data_as_of_precision", "us_person_data", "stale")
 
 
 def row(feature, shard):
@@ -115,6 +116,7 @@ def row(feature, shard):
         "status_class": p.get("status_class"),
         "title": p.get("title"),
         "data_as_of": p.get("data_as_of"),
+        "data_as_of_precision": p.get("data_as_of_precision"),
         "published_at": p.get("published_at"),
         "valid_until": p.get("valid_until"),
         "countries": p.get("countries") or [],

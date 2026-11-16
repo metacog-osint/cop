@@ -76,6 +76,20 @@ class AgentIndex(unittest.TestCase):
         self.assertIn(False, codes["stale"])  # a boolean stays a boolean, not 0
         self.assertIn("anomaly", codes["tier"])
 
+    def test_date_precision_is_a_coded_column(self):
+        # kit 0.5.6: a date-only item says so; the index carries it so search_items can (16 Nov 2026)
+        def item(i, prec):
+            p = {"id": i, "cop_program": "undertow", "kind": "observation", "tier": "routine",
+                 "data_as_of": "2026-06-01T00:00:00Z"}
+            if prec:
+                p["data_as_of_precision"] = prec
+            return {"type": "Feature", "geometry": None, "properties": p}
+        today = {"generated_at": "2026-11-16T00:00:00Z", "features": [item("a", "month"), item("b", None),
+                                                                        item("c", "day"), item("d", "month")]}
+        index, _ = ai.build_index(today, NOW)
+        self.assertEqual(index["codes"]["data_as_of_precision"], ["month", None, "day"])
+        self.assertEqual([r["data_as_of_precision"] for r in ai.decoded(index)], ["month", None, "day", "month"])
+
     def test_rows_stay_small(self):
         # The real 6 Nov bus made 278-290 KB for 956-996 items, about 300 bytes a row. A row that grows much past
         # that eats into the MCP server's CPU budget (see INDEX_WARN_BYTES in tools/agent_index.py).
