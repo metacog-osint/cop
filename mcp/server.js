@@ -160,7 +160,8 @@ export function buildServer(data, clock = Date.now) {
     "top_picks",
     "Today's picks",
     "COP's picks for today: each program's strongest measured anomaly that has a place, at most five, with the " +
-      "reason each was picked.",
+      "reason each was picked. Watchfloor and Context both read GDELT and count as one voice: one pick per zone, " +
+      "carrying both programs' readings.",
     NoInput,
     async (_a, now) => T.topPicks(await data.index(), await data.picks(), now),
   );

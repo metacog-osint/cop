@@ -74,6 +74,14 @@ for (const hp of health.programs) Object.assign(PROGS[hp.id], { state: hp.state,
 const BY_ID = new Map(today.features.map((f) => [f.properties.id, f]));
 const PICKS = picksDoc.picks;
 const PICK_OF = new Map(PICKS.map((p) => [p.id, p]));
+// Watchfloor and Context both read GDELT, so COP counts them as one voice per zone (15 Nov 2026): a pick of that voice
+// carries every reading of it in `readings` (its own first), each still its own program's item. READING_OF maps the
+// other readings to their pick, so the panel lists them on the pick's row, not again under Also watching.
+const READING_OF = new Map(PICKS.flatMap((p) => (p.readings || []).filter((r) => r.id !== p.id).map((r) => [r.id, p])));
+const TIER_WORD = { anomaly: "unusual", routine: "routine", warning: "warning" };
+const otherReadings = (pick) => (pick && pick.readings ? pick.readings.filter((r) => r.id !== pick.id && BY_ID.has(r.id)) : []);
+const readingText = (r) => `${PROGS[r.program] ? PROGS[r.program].name : r.program}, ${TIER_WORD[r.tier] || r.tier}`
+  + (r.stale ? ", no current data" : "");
 // An item past its own valid_until has expired. Read once, as the page loads: the snapshot is up to two hours old by
 // then, and an item can run out between builds (a forecast for a day that has ended, a warning that was cancelled).
 const LOADED = Date.now();
@@ -396,6 +404,17 @@ function renderCard(f) {
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
+  const voicePick = pick || READING_OF.get(p.id);
+  const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
+  if (sameVoice.length) {
+    const progs = new Set([p.cop_program, ...sameVoice.map((id) => BY_ID.get(id).properties.cop_program)]);
+    fact("Same GDELT coverage", h("span", {}, ...sameVoice.map((id) => {
+      const r = id === voicePick.id ? { id, program: voicePick.program, tier: BY_ID.get(id).properties.tier }
+        : voicePick.readings.find((x) => x.id === id);
+      return h("button", { type: "button", class: "chip", "data-id": id, onclick: () => select(id) },
+        `${readingText(r)}${id === voicePick.id ? ` (pick ${voicePick.n})` : ""}`);
+    }), progs.size > 1 ? " Both programs read GDELT: one voice, not two independent sources." : null));
+  }
   fact("Data as of", asOfEl(p));
   if (p.published_at) fact("Published", timeEl(p.published_at));
   if (typeof p.valid_until === "string") fact(p.cop_expired ? "Expired" : "Valid until", timeEl(p.valid_until));
@@ -429,7 +448,10 @@ function rowFor(f, cls = "row", fly = true) {
       h("span", { class: cls === "pick" ? "pick-meta" : "row-meta" },
         cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", asOfEl(p, "date"),
         p.status_class === "claimed" ? " · claimed" : null, p.cop_expired ? " · expired" : null,
-        p.cop_stale ? " · no current data" : null))));
+        p.cop_stale ? " · no current data" : null),
+      pick && cls === "pick" && otherReadings(pick).length
+        ? h("span", { class: "pick-meta", text: `Same GDELT coverage: ${otherReadings(pick).map(readingText).join("; ")}` })
+        : null)));
 }
 // A warning's row says whose judgment it is and how long it stands. Warnings are tier "warning": a forecast or an
 // assessment by contract (the kit's linter refuses an observation at that tier), never a measurement, never a pick.
@@ -465,7 +487,9 @@ function renderPanel() {
     ...(warnings.length > warnShown.length ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllWarn = true; renderPanel(); } },
       `Show ${warnings.length - warnShown.length} more`))] : []));
 
-  const placed = out.filter((f) => f.geometry && f.properties.tier === "anomaly" && !PICK_OF.has(f.properties.id));
+  const pickShown = (pk) => pk && visibleProgram(pk.program) && BY_ID.has(pk.id) && standsOut(BY_ID.get(pk.id).properties);
+  const placed = out.filter((f) => f.geometry && f.properties.tier === "anomaly" && !PICK_OF.has(f.properties.id)
+    && !pickShown(READING_OF.get(f.properties.id)));
   placed.sort((a, b) => programOrder(a, b) || (b.properties.cop_strength ?? -1e9) - (a.properties.cop_strength ?? -1e9));
   const off = inView.filter((f) => !f.geometry);
   const offAnom = off.filter((f) => f.properties.tier === "anomaly" && standsOut(f.properties));

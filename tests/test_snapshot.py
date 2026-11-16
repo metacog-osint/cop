@@ -513,5 +513,124 @@ class Design(unittest.TestCase):
         self.assertNotIn("style=\"", html)
 
 
+def gdelt_only():
+    """Every program dead but Watchfloor and Context, so all five picks come from the GDELT voice."""
+    return tuple(pid for pid in IDS if pid not in ("watchfloor", "context"))
+
+
+def raise_items(f, changes):
+    """changes: {item id: measures}; makes each item an anomaly with those measures (the program's strength path)."""
+    for pid in ("watchfloor", "context"):
+        for x in f[pid]["features"]:
+            m = changes.get(x["properties"]["id"])
+            if m is not None:
+                x["properties"].update({"tier": "anomaly", "baseline_ref": "rolling", "measures": m})
+
+
+WF, CX = "watchfloor:2026-10-30:", "context:2026-10-31_1200Z:"
+
+
+class GdeltVoice(unittest.TestCase):
+    """Watchfloor and Context both read GDELT (independence_group "gdelt") and number their zones alike (WF-WP-Z07 is
+    CX-WP-Z07; Context's Z17, Horn of Africa, is Watchfloor's Z18 plus Z19). Suite review of 15 Nov 2026: COP's picks
+    took one per program, so GDELT held two of five slots; they are one voice, joined on zone, never two layers."""
+
+    def test_voice_keys_join_on_zone_number(self):
+        gd = [{"id": "gdelt-gkg", "independence_group": "gdelt"}]
+        cx = gd + [{"id": "vertex-gemini", "independence_group": "context-ai"}]
+        vk = snap.voice_keys
+        self.assertEqual(vk({"warning_problem_id": "WF-WP-Z07", "sources": gd}), ["gdelt:Z07"])
+        self.assertEqual(vk({"warning_problem_id": "CX-WP-Z07", "sources": cx}), ["gdelt:Z07"])
+        self.assertEqual(vk({"warning_problem_id": "CX-WP-Z17", "sources": cx}), ["gdelt:Z18", "gdelt:Z19"])
+        self.assertEqual(vk({"warning_problem_id": "WF-WP-Z18", "sources": gd}), ["gdelt:Z18"])
+        self.assertEqual(vk({"warning_problem_id": "WF-WP-T3", "sources": gd}), vk({"warning_problem_id": "CX-WP-T3",
+                                                                                     "sources": cx}))
+        # A Watchfloor country item outside every zone is its own country's voice.
+        self.assertEqual(vk({"countries": ["GN"], "sources": gd}), ["gdelt:GN"])
+        # Not GDELT: no shared voice, whatever its problem id says.
+        self.assertEqual(vk({"warning_problem_id": "WF-WP-Z07", "sources": [{"id": "x", "independence_group": "nws"}]}),
+                         [])
+        self.assertEqual(vk({"countries": ["US"], "sources": []}), [])
+
+    def test_gdelt_takes_one_slot_a_round_not_one_per_program(self):
+        # The fixtures reproduce the review's case: a Watchfloor anomaly and a Context anomaly each took a slot.
+        _, picks, _, _ = build()
+        gd = [p for p in picks["picks"] if p["program"] in ("watchfloor", "context")]
+        self.assertEqual(len(picks["picks"]), snap.CONFIG["max_picks"])
+        self.assertEqual(len(gd), 1, [p["id"] for p in picks["picks"]])
+        self.assertEqual(gd[0]["voice"], ["gdelt:QA"])
+
+    def test_one_pick_per_zone_voice_carrying_both_readings(self):
+        def mutate(f):
+            raise_items(f, {WF + "zone:07_Russia_NATO": {"score": {"z": 9.0}},
+                            CX + "07_Russia_NATO": {"volume_12h": 900}})
+        today, picks, _, _ = build(dead=gdelt_only(), mutate=mutate)
+        ps = picks["picks"]
+        self.assertTrue(ps)
+        voices = [k for p in ps for k in p["voice"]]
+        self.assertEqual(len(voices), len(set(voices)), "two picks share a GDELT voice: " + str(voices))
+        z07 = [p for p in ps if "gdelt:Z07" in p["voice"]]
+        self.assertEqual(len(z07), 1, ps)
+        pick = z07[0]
+        self.assertEqual(pick["id"], WF + "zone:07_Russia_NATO", "Watchfloor's own strongest is picked")
+        ids = [r["id"] for r in pick["readings"]]
+        self.assertEqual(ids[0], pick["id"], "the pick's own reading comes first")
+        self.assertIn(CX + "07_Russia_NATO", ids, "Context's reading of the same zone rides on the pick")
+        self.assertEqual({r["program"] for r in pick["readings"]}, {"watchfloor", "context"})
+        by_id = {f["properties"]["id"]: f["properties"] for f in today["features"]}
+        self.assertIsNone(by_id[CX + "07_Russia_NATO"]["cop_pick"], "joined, not a second pick")
+        # Joined, never merged: both items stay in the picture with their own program, sources and licence line.
+        self.assertEqual(by_id[CX + "07_Russia_NATO"]["cop_program"], "context")
+        self.assertTrue(by_id[CX + "07_Russia_NATO"]["sources"])
+        self.assertTrue(today["cop_programs"]["context"]["attribution"])
+        self.assertEqual(sum(1 for f in today["features"] if f["properties"]["cop_program"] == "context"), 21)
+        cx = next(r for r in pick["readings"] if r["program"] == "context")
+        self.assertEqual((cx["tier"], cx["warning_problem_id"]), ("anomaly", "CX-WP-Z07"))
+        self.assertEqual(cx["strength"], "900 articles in the last 12 hours")
+
+    def test_horn_of_africa_joins_two_watchfloor_zones(self):
+        def mutate(f):
+            raise_items(f, {CX + "17_Horn_of_Africa": {"volume_12h": 900},
+                            WF + "zone:19_Somalia": {"score": {"z": 1.0}}})
+        _, picks, _, _ = build(dead=gdelt_only(), mutate=mutate)
+        by_id = {p["id"]: p for p in picks["picks"]}
+        self.assertIn(CX + "17_Horn_of_Africa", by_id, "Context's strongest is picked")
+        horn = by_id[CX + "17_Horn_of_Africa"]
+        self.assertEqual(horn["voice"], ["gdelt:Z18", "gdelt:Z19"])
+        self.assertNotIn(WF + "country:ET:violence", by_id, "Watchfloor's Ethiopia (Z18) is the same voice")
+        self.assertNotIn(WF + "zone:19_Somalia", by_id, "Watchfloor's Somalia (Z19) is the same voice")
+        ids = [r["id"] for r in horn["readings"]]
+        for wf in ("country:ET:violence", "zone:18_Ethiopia_Eritrea", "zone:19_Somalia"):
+            self.assertIn(WF + wf, ids)
+        # Readings list anomalies before routine items, each program's own strongest first.
+        tiers = [r["tier"] for r in horn["readings"]]
+        self.assertEqual(tiers, sorted(tiers, key=lambda t: t != "anomaly"))
+
+    def test_same_zone_items_of_one_program_make_one_pick(self):
+        # Watchfloor's Korea violence and attention items are both WF-WP-Z03: one voice, one pick.
+        def mutate(f):
+            raise_items(f, {WF + "country:KN:violence": {"score": {"z": 8.0}},
+                            WF + "country:KN:attention": {"score": {"z": 7.0}}})
+        _, picks, _, _ = build(dead=gdelt_only(), mutate=mutate)
+        kn = [p for p in picks["picks"] if p["id"].startswith(WF + "country:KN:")]
+        self.assertEqual([p["id"] for p in kn], [WF + "country:KN:violence"], picks["picks"])
+        self.assertEqual(kn[0]["voice"], ["gdelt:Z03"])
+        self.assertIn(WF + "country:KN:attention", [r["id"] for r in kn[0]["readings"]])
+        self.assertIn(CX + "03_Korea_Peninsula", [r["id"] for r in kn[0]["readings"]], "Context's routine reading too")
+
+    def test_picks_never_count_gdelt_agreement_as_two(self):
+        # Whatever the round, the GDELT seat gives one pick per round, as one program would.
+        _, picks, _, _ = build()
+        programs = [p["program"] for p in picks["picks"]]
+        seats = ["gdelt" if p in ("watchfloor", "context") else p for p in programs]
+        first = seats[:len(set(seats))]
+        self.assertEqual(len(first), len(set(first)))
+
+    def test_page_shows_the_other_reading_on_the_pick_row(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn("pick.readings", js, "the pick row and card list the other program's reading")
+        self.assertIn("READING_OF", js, "a reading on a shown pick is not listed again under Also watching")
+
+
 if __name__ == "__main__":
     unittest.main()

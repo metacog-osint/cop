@@ -85,6 +85,94 @@ def strength(props, rules):
     return None, None, None, None
 
 
+# --- Shared voices (15 Nov 2026, suite review: "COP should treat independence_group gdelt as one voice") ------------
+# Watchfloor and Context both read GDELT and stamp independence_group "gdelt" on their sources, and they number their
+# zones and Watch Topics alike: Context's CX-WP-Z07 is Watchfloor's WF-WP-Z07, CX-WP-T3 is WF-WP-T3, and a Watchfloor
+# country item inside a zone carries that zone's WF-WP-Zxx. Their agreement is one upstream read twice, never two
+# layers, so COP gives them one seat in the picks and joins their readings of one zone on one pick. Each item keeps
+# its own id, sources, licence and attribution: joined, never merged.
+SHARED_GROUPS = ("gdelt",)
+# Context's Z17 (Horn of Africa: DJ, ER, ET, SO) is Watchfloor's Z18 (Ethiopia and Eritrea) plus Z19 (Somalia).
+ZONE_ALIASES = {"CX-WP-Z17": ("Z18", "Z19")}
+_WP = re.compile(r"^([A-Z]+-WP-)([ZT])(\d+)$")
+
+
+def shared_group(props):
+    """The shared independence group an item's sources name ("gdelt"), or None."""
+    groups = {s.get("independence_group") for s in (props.get("sources") or []) if isinstance(s, dict)}
+    return next((g for g in SHARED_GROUPS if g in groups), None)
+
+
+def voice_keys(props):
+    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone (Context's Z17 gives ["gdelt:Z18",
+    "gdelt:Z19"]), ["gdelt:T3"] for a Watch Topic, ["gdelt:<country>"] for a GDELT item outside every zone, [] for an
+    item of no shared group. Two items are one voice when their keys meet."""
+    group = shared_group(props)
+    if not group:
+        return []
+    wp = props.get("warning_problem_id")
+    m = _WP.match(wp) if isinstance(wp, str) else None
+    if m:
+        if wp in ZONE_ALIASES:
+            return [f"{group}:{z}" for z in ZONE_ALIASES[wp]]
+        letter, n = m.group(2), int(m.group(3))
+        return [f"{group}:{letter}{n:02d}" if letter == "Z" else f"{group}:{letter}{n}"]
+    return sorted({f"{group}:{c}" for c in (props.get("countries") or []) if isinstance(c, str)})
+
+
+def seat_of(props):
+    """Who an item speaks for in the picks: its shared group, else its own program."""
+    return shared_group(props) or props.get("cop_program")
+
+
+def reading(props):
+    """One program's reading of a shared voice, as a pick carries it: its own id, program, tier and size."""
+    return {"id": props["id"], "program": props.get("cop_program"), "tier": props.get("tier"),
+            "warning_problem_id": props.get("warning_problem_id"), "strength": props.get("cop_strength_text"),
+            "stale": bool(props.get("cop_stale"))}
+
+
+def pick(candidates, max_picks, programs):
+    """Picks from {program id: its placed anomalies, strongest first}. One seat at a time, in config order, each seat
+    giving its next candidate per round. A seat is a program, except that the programs of a shared group (GDELT:
+    Watchfloor and Context) share one seat, alternating their own queues, since strength is never compared across
+    programs. A candidate whose voice an earlier pick already speaks for is never a second pick. Returns a list of
+    (feature, program, rank within its program's queue)."""
+    seats, order = {}, []
+    for prog in programs:
+        for i, f in enumerate(candidates.get(prog["id"]) or []):
+            seat = seat_of(f["properties"])
+            if seat not in seats:
+                seats[seat] = {}
+                order.append(seat)
+            seats[seat].setdefault(prog["id"], []).append((i, f))
+    queues = {}
+    for seat in order:      # alternate the programs within a seat: first of each, then second of each, ...
+        lanes = list(seats[seat].values())
+        queues[seat] = [lane[k] + (pid,) for k in range(max(map(len, lanes)))
+                        for pid, lane in seats[seat].items() if k < len(lane)]
+    taken, out, at = set(), [], {s: 0 for s in order}
+    while len(out) < max_picks:
+        added = False
+        for seat in order:
+            q = queues[seat]
+            while at[seat] < len(q):
+                i, f, pid = q[at[seat]]
+                at[seat] += 1
+                keys = set(voice_keys(f["properties"]))
+                if keys & taken:
+                    continue        # the same voice is already a pick: it rides on that pick as a reading
+                taken |= keys
+                out.append((f, pid, i))
+                added = True
+                break
+            if len(out) >= max_picks:
+                break
+        if not added:
+            break
+    return out
+
+
 def parse_feed(body):
     """The body as a FeatureCollection, or ValueError. Its features are checked one by one later, by sift()."""
     data = json.loads(body)
@@ -371,25 +459,30 @@ def build(feeds, reports, previous, now):
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
         })
 
-    # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks.
-    picks, round_ = [], 0
-    while len(picks) < CONFIG["max_picks"]:
-        added = False
-        for prog in CONFIG["programs"]:
-            queue = candidates[prog["id"]]
-            if round_ < len(queue) and len(picks) < CONFIG["max_picks"]:
-                f = queue[round_]
-                p = f["properties"]
-                rank = "strongest" if round_ == 0 else "next strongest"
-                owner = prog["name"] + ("'" if prog["name"].endswith("s") else "'s")
-                reason = f"{owner} {rank} anomaly with a place"
-                if p.get("cop_strength") is not None:
-                    reason += f": {p['cop_strength_text']}"
-                picks.append({"n": len(picks) + 1, "id": p["id"], "program": prog["id"], "reason": reason})
-                added = True
-        if not added:
-            break
-        round_ += 1
+    # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks. Watchfloor and
+    # Context (GDELT) are one seat and one voice per zone (pick() above); a pick of a shared voice lists every
+    # reading of that voice, its own first, then anomalies before routine items, in config order.
+    names = {p["id"]: p["name"] for p in CONFIG["programs"]}
+    place = {p["id"]: i for i, p in enumerate(CONFIG["programs"])}
+    voiced = [(i, f, set(voice_keys(f["properties"]))) for i, f in enumerate(features)]
+    voiced = [v for v in voiced if v[2]]
+    picks = []
+    for f, pid, i in pick(candidates, CONFIG["max_picks"], CONFIG["programs"]):
+        p = f["properties"]
+        rank = "strongest" if i == 0 else "next strongest"
+        owner = names[pid] + ("'" if names[pid].endswith("s") else "'s")
+        reason = f"{owner} {rank} anomaly with a place"
+        if p.get("cop_strength") is not None:
+            reason += f": {p['cop_strength_text']}"
+        entry = {"n": len(picks) + 1, "id": p["id"], "program": pid, "reason": reason}
+        keys = voice_keys(p)
+        if keys:
+            others = sorted((v for v in voiced if v[1] is not f and v[2] & set(keys)),
+                            key=lambda v: (v[1]["properties"].get("tier") != "anomaly",
+                                           place.get(v[1]["properties"].get("cop_program"), 99),
+                                           -(v[1]["properties"].get("cop_strength") or 0), v[0]))
+            entry |= {"voice": keys, "readings": [reading(p)] + [reading(v[1]["properties"]) for v in others]}
+        picks.append(entry)
     picked = {p["id"]: p["n"] for p in picks}
     for f in features:
         f["properties"]["cop_pick"] = picked.get(f["properties"]["id"])
