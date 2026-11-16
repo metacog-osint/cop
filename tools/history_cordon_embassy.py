@@ -259,7 +259,13 @@ def main(argv=None):
         iso = "IL" if cc == "PS" else cc
         if cc == "PS" and any(r["place"] == "PS" for r in rows):
             continue
-        caps, failed = collect_host(client, host, start, end)
+        try:
+            caps, failed = collect_host(client, host, start, end)
+        except RuntimeError as e:      # the Archive's index failed after every retry: record it, go on
+            no_host[iso] = f"{host}: the Internet Archive's index did not answer ({e})"
+            per[iso] = {"host": host, "captures": 0, "unreadable": 0, "gaps": []}
+            print(iso, "INDEX FAILED", e, file=sys.stderr)
+            continue
         if not any(c[1] for c in caps):
             no_host[iso if cc != "PS" else "PS"] = (
                 f"{host}: no readable capture of the alert feed in the Archive "
