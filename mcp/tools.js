@@ -20,7 +20,8 @@ export class ToolError extends Error {}
 
 // Index rows are columnar ({fields, rows}). The hot path filters the raw arrays by column number and builds objects
 // only for the rows it returns: turning all ~1,000 rows into objects first cost more CPU than the search itself.
-// Columns listed in `codes` (program, kind, tier, status_class, us_person_data, stale; 15 Nov 2026) hold a number into
+// Columns listed in `codes` (program, kind, tier, status_class, us_person_data, stale; 15 Nov 2026; and
+// data_as_of_precision, 16 Nov 2026) hold a number into
 // codes[column], so filters compare numbers and only returned rows are decoded. An index without `codes` reads as is.
 const columnsCache = new WeakMap();
 function cols(index) {
@@ -82,6 +83,7 @@ function attributionFor(index, programIds) {
 
 function publicRow(r) {
   const { shard, ...rest } = r; // shard is the server's business
+  if (rest.data_as_of_precision == null) delete rest.data_as_of_precision; // said only for a date-only item
   return rest;
 }
 
