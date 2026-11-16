@@ -73,6 +73,19 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   assert.ok(byText.items.every((r) => !("shard" in r)), "shard numbers stay internal");
 });
 
+test("search by state matches only items placed in that state", () => {
+  // kit 0.5.7 subdivisions (Tom, 15 Nov 2026): a hazard in Hawaii is not one for the whole US.
+  const fields = index.fields;
+  const mk = (id, countries, subs) => fields.map((k) => ({ id, program: "elements", kind: "observation",
+    tier: "routine", title: id, countries, subdivisions: subs, point: null, bbox: null, shard: 0 })[k] ?? null);
+  const small = { ...index, rows: [mk("elements:a", ["US"], ["US-HI"]), mk("elements:b", ["US"], ["US-ND", "US-MN"]),
+    mk("elements:c", ["US"], [])] };
+  assert.deepEqual(T.searchItems(small, { state: "us-hi" }, NOW).items.map((r) => r.id), ["elements:a"]);
+  assert.deepEqual(T.searchItems(small, { state: "US-MN" }, NOW).items.map((r) => r.id), ["elements:b"]);
+  assert.equal(T.searchItems(small, { country: "US" }, NOW).matched, 3);
+  assert.ok(fields.includes("subdivisions"));
+});
+
 test("search near a point returns only items within range, nearest first", () => {
   const placed = rows.find((r) => r.point);
   const [lon, lat] = placed.point;
