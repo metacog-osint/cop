@@ -152,6 +152,44 @@ test("top picks keep COP's order and reasons", () => {
   assert.match(res.note, /not warnings/);
 });
 
+// Watchfloor and Context both read GDELT: one voice, joined on zone number (suite review, 15 Nov 2026).
+test("top picks give GDELT one slot a round and never two picks for one zone", () => {
+  const res = T.topPicks(index, picks, NOW);
+  const gdelt = res.picks.filter((p) => p.program === "watchfloor" || p.program === "context");
+  assert.equal(gdelt.length, 1, "the fixtures had a Watchfloor and a Context pick: one voice, one slot");
+  const voices = res.picks.flatMap((p) => p.voice || []);
+  assert.equal(voices.length, new Set(voices).size);
+  assert.match(res.note, /one voice/);
+});
+
+test("a GDELT pick carries both programs' readings, each with its own id, program and licence", () => {
+  const ctx = rows.find((r) => r.id === "context:2026-10-31_1200Z:14_DRC_Rwanda");
+  const wf = rows.find((r) => r.id === "watchfloor:2026-10-30:zone:14_DRC_Rwanda");
+  assert.ok(ctx && wf, "fixture rows");
+  const doc = {
+    picks: [{
+      n: 1, id: ctx.id, program: "context", reason: "Context's strongest anomaly with a place", voice: ["gdelt:Z14"],
+      readings: [
+        { id: ctx.id, program: "context", tier: "anomaly", warning_problem_id: "CX-WP-Z14", strength: "237 articles" },
+        { id: wf.id, program: "watchfloor", tier: "routine", warning_problem_id: "WF-WP-Z14", strength: null },
+      ],
+    }],
+  };
+  const res = T.topPicks(index, doc, NOW);
+  assert.equal(res.picks.length, 1, "one press row, not two picks");
+  const [p] = res.picks;
+  assert.deepEqual(p.voice, ["gdelt:Z14"]);
+  assert.deepEqual(p.readings.map((r) => [r.id, r.program]), [[ctx.id, "context"], [wf.id, "watchfloor"]]);
+  for (const r of p.readings) {
+    assert.ok(r.title && r.link, "each reading keeps its own title and link");
+    assert.equal(r.licence, index.programs[r.program].licence);
+    assert.ok(!("shard" in r));
+  }
+  assert.equal(p.readings[1].tier, "routine");
+  const credits = res.attribution.join("\n");
+  for (const prog of ["context", "watchfloor"]) assert.ok(credits.includes(index.programs[prog].attribution), prog);
+});
+
 test("suite status lists planned programs with no COP entry", () => {
   const res = T.suiteStatus(programs, NOW);
   const planned = res.programs.filter((p) => p.status === "planned");

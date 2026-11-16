@@ -239,19 +239,37 @@ export function getItem(index, shardDoc, id, now) {
 
 // --- top_picks ------------------------------------------------------------------------------------------------------
 
+// Watchfloor and Context both read GDELT (15 Nov 2026): COP counts them as one voice per zone, so a pick of that voice
+// carries each program's reading of the zone under `readings`, each its own item with its own id, link and licence.
+function readingOf(index, r) {
+  const row = findRow(index, r.id);
+  const prog = index.programs[r.program] || {};
+  return {
+    ...(row ? publicRow(row) : { id: r.id, program: r.program, missing: true }),
+    warning_problem_id: r.warning_problem_id ?? null,
+    strength: r.strength ?? null,
+    licence: prog.licence ?? null,
+  };
+}
+
 export function topPicks(index, picks, now) {
   const items = [];
   for (const p of picks.picks || []) {
     const r = findRow(index, p.id);
-    items.push({ rank: p.n, reason: p.reason, ...(r ? publicRow(r) : { id: p.id, program: p.program, missing: true }) });
+    const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r) : { id: p.id, program: p.program, missing: true }) };
+    if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x)) });
+    items.push(item);
   }
   return {
     ...busEnvelope(index, now),
     note:
       "Each pick is one program's strongest measured anomaly that has a place, one program at a time. Picks are " +
-      "measurements, not warnings, and strength is never compared across programs.",
+      "measurements, not warnings, and strength is never compared across programs. Watchfloor and Context both " +
+      "read GDELT, so they count as one voice: they share one place in each round, a zone gives at most one pick, " +
+      "and that pick lists both programs' readings of the zone under readings (its own first). Their agreement is " +
+      "one source read twice, never two independent confirmations; cite each reading by its own id.",
     picks: items,
-    attribution: attributionFor(index, items.map((i) => i.program)),
+    attribution: attributionFor(index, items.flatMap((i) => [i.program, ...(i.readings || []).map((x) => x.program)])),
   };
 }
 
