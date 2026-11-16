@@ -155,6 +155,29 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   Nov): counted days 9 -> 8, country-days 2,151 -> 1,912, natural 0.74% -> 0.78%, tension context 5.25% -> 5.39%,
   open 94.0% -> 93.8%; on the 61 countries' days: natural 3.1%, tension context 21.1%, open 75.8%; state-days 884
   -> 832, natural 14.7% -> 14.8%, 30 of 52 with a signal. Readings unchanged: the 7 replayed outages keep theirs.
+  **STOP replay (cop-purpose sequence step 4, first half; Tom's choice of 15 Nov 2026, "start with the two layers",
+  then Cordon; on `main` as `9fc5d16`, 16 Nov 2026).** `tools/stop_replay.py` reads each shutdown Access Now's
+  #KeepItOn STOP sheet dates to 2025 (255 shutdown-country rows; the sheet is Blackout's fixture
+  `blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv`, no data licence, so counts and rates only) at 12:00 UTC on
+  its first day: natural if `tri.hazards` finds a significant hazard; else tension context if `tri.notices` counts a
+  Cordon notice (with `--cordon`) or the country was on Watchfloor's Rising list the day before; else open;
+  incomplete when that Watchfloor day is missing, partial or unscored. Control days: every 2025 day in the same country
+  with no shutdown within 7 days (open-ended ones taken as 30), compared country by country; Myanmar has none, so its
+  83 shutdowns are left out of the matched comparison. A same-day attention variant is labelled sensitivity.
+  Datasets under `history/` follow `history/CONTRACT.md` (`cop-layer-history/1`; manifests hash their rows byte for
+  byte, so `.gitattributes` keeps them from line-ending conversion): `history/elements/` (`tools/history_elements.py`),
+  `history/watchfloor/` (`tools/history_watchfloor.py`, from Watchfloor's own GDELT backfill kept on C:,
+  `[local path]`; 19 partial days in June 2025 and 28 unscored days, 1-14 Dec 2024
+  and 2-15 Jul 2025, when under 14 complete days sat in the 28-day baseline), `history/cordon/`
+  (`tools/history_cordon_*.py`: FCDO advice and US embassy alerts dense, State's levels weak; no Canada, NZ or
+  departure postures). Runs: `history/replays/stop-2025-two-layer-2026-11-16` and `...-three-layer-...`; each run
+  takes about 8 minutes. Results (matched shutdowns against their control days), two layers, 172: natural 15.1% vs
+  5.8%, tension context 8.1% vs 5.6%, open 62.2% vs 83.5%, incomplete 14.5% vs 5.1%; nationwide shutdowns tension
+  context 13% vs 5%; 16 of India's protest shutdowns read natural on a GDACS flood active elsewhere in India (triage
+  reads countries); exam shutdowns fall in GDELT's June gap (45% incomplete). Three layers, Cordon's 25 countries,
+  157 matched: tension context 7.0% -> 13.4% on shutdowns, 5.8% -> 8.8% on control days. Tests:
+  `test_stop_replay.py` (17), `test_history_cordon.py` (29), both in the build. Not built: printing the hit rate
+  beside the false-alarm rate on the page; option C (forward labels).
   **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
   and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
   change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;
