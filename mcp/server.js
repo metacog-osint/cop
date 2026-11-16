@@ -52,6 +52,12 @@ const SearchInput = z.object({
     .regex(/^[A-Za-z]{2}$/)
     .optional()
     .describe("ISO 3166-1 alpha-2 country code, e.g. \"SD\" for Sudan."),
+  state: z
+    .string()
+    .regex(/^[A-Za-z]{2}-[A-Za-z0-9]{1,3}$/)
+    .optional()
+    .describe("ISO 3166-2 state code, e.g. \"US-ND\" for North Dakota. Matches items their program placed in that " +
+      "state (so far Cordon's FAA items and Elements' US hazards); an item for the whole country does not match."),
   kind: z.enum(T.KINDS).optional().describe("observation, assessment or forecast."),
   tier: z.enum(T.TIERS).optional().describe("routine or anomaly (measured), warning (judged)."),
   text: z.string().min(2).max(100).optional().describe("Words to find in the item's title or id (case-insensitive)."),

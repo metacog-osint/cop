@@ -386,7 +386,7 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   headless Chrome (Edge locally) into `site/data/card.png`, the page's og:image. `--stamp-page` (build only) adds
   `?v=<assessment time>` to the image address, since social sites cache previews by address. If no browser runs or
   the size is wrong, it copies `site/card-fallback.png` (regenerate with `--generic`); it never fails the build.
-- **Kit:** (0.5.6 since 15 Nov 2026) vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
+- **Kit:** (0.5.8 since 16 Nov 2026) vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
 ## MCP server (`/mcp`, built 6 Nov 2026; nine tools since 15 Nov 2026)
@@ -419,6 +419,9 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   exactly in `package-lock.json`, each at least two weeks old when chosen: `@modelcontextprotocol/server` 2.3.1,
   `zod` 4.6.7; dev only `@modelcontextprotocol/client` 2.3.1. `wrangler.toml` only names the output folder and keeps
   the compatibility date the project already had (2026-10-31; no bindings or env vars, checked through the API).
+- **States (15 Nov 2026, kit 0.5.7; pushed 16 Nov with kit 0.5.8):** index rows carry `subdivisions` (ISO 3166-2, from
+  Cordon's FAA items and Elements' US hazards) and `search_items` takes `state` ("US-ND"); an item for the whole
+  country does not match a state. Triage is unchanged (its state matching keeps its own approved rules).
 - **Tools** (nine, fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier,
   text, since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full
   item with sources), `top_picks`, `outage_triage` (reads `data/triage.json` directly; a missing file is a tool

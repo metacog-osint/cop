@@ -156,6 +156,7 @@ export function searchItems(index, args, now) {
     if (!known.includes(p)) throw new ToolError(`Unknown program "${p}". Programs in the snapshot: ${known.join(", ")}.`);
   }
   const country = a.country ? String(a.country).toUpperCase() : null;
+  const state = a.state ? String(a.state).toUpperCase() : null;
   const text = a.text ? String(a.text).toLowerCase() : null;
   const since = a.since ? Date.parse(a.since) : null;
   if (a.since && !Number.isFinite(since)) throw new ToolError(`since must be an ISO 8601 time, got "${a.since}".`);
@@ -174,6 +175,7 @@ export function searchItems(index, args, now) {
     if (wantKind !== null && r[C.kind] !== wantKind) continue;
     if (wantTier !== null && r[C.tier] !== wantTier) continue;
     if (country && !(r[C.countries] || []).includes(country)) continue;
+    if (state && !(C.subdivisions === undefined ? [] : r[C.subdivisions] || []).includes(state)) continue;
     if (text && !((r[C.title] || "").toLowerCase().includes(text) || (r[C.id] || "").toLowerCase().includes(text))) {
       continue;
     }
