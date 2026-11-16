@@ -25,14 +25,14 @@ WAYBACK = "https://web.archive.org"
 
 # Access Now's 2025 STOP countries, in the order Tom asked for: (ISO alpha-2, name, FCDO slug, embassy host or None).
 # Palestine is State's "Israel, the West Bank and Gaza" (State's page and the embassy at jr.usembassy.gov), FCDO's
-# "the occupied palestinian territories" and Canada's "West Bank and Gaza".
+# "palestine" (renamed from "the-occupied-palestinian-territories" in 2025-26) and Canada's "West Bank and Gaza".
 COUNTRIES = [
     ("MM", "Myanmar", "myanmar", "mm.usembassy.gov"),
     ("IN", "India", "india", "in.usembassy.gov"),
     ("PK", "Pakistan", "pakistan", "pk.usembassy.gov"),
     ("RU", "Russia", "russia", "ru.usembassy.gov"),
     ("IQ", "Iraq", "iraq", "iq.usembassy.gov"),
-    ("PS", "Palestine (West Bank and Gaza)", "the-occupied-palestinian-territories", "il.usembassy.gov"),
+    ("PS", "Palestine (West Bank and Gaza)", "palestine", "il.usembassy.gov"),
     ("IR", "Iran", "iran", None),
     ("TZ", "Tanzania", "tanzania", "tz.usembassy.gov"),
     ("AF", "Afghanistan", "afghanistan", "af.usembassy.gov"),

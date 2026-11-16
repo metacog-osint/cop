@@ -26,6 +26,8 @@ import history_cordon_common as hc  # noqa: E402
 
 API = "https://www.gov.uk/api/content/foreign-travel-advice/{slug}"
 PAGE = "https://www.gov.uk/foreign-travel-advice/{slug}"
+# GOV.UK renamed the occupied Palestinian territories' page to "palestine"; the earlier captures sit under the old slug.
+PAGE_ALIASES = {"palestine": ["the-occupied-palestinian-territories"]}
 GAP_DAYS = 7
 LEAD_IN_DAYS = 31          # rows from this long before the start are kept, for "standing" and direction lookups
 FCDO_ORDER = ["avoid_all_travel_to_whole_country", "avoid_all_but_essential_travel_to_whole_country",
@@ -259,14 +261,17 @@ def fetch_captures(client, slug, names, start, end, max_caps=90):
     """[(stamp, statuses|None, flags)] for the page, from one capture before the start through the end plus a margin."""
     lo = (start - timedelta(days=120)).strftime("%Y%m%d")
     hi = (end + timedelta(days=30)).strftime("%Y%m%d")
-    rows = hc.cdx(client, PAGE.format(slug=slug)[8:], **{"from": lo, "to": hi}, filter="statuscode:200",
-                  collapse="timestamp:8")
+    rows = []
+    for sl in [slug] + PAGE_ALIASES.get(slug, []):
+        rows += [{**r, "slug": sl} for r in hc.cdx(client, PAGE.format(slug=sl)[8:], **{"from": lo, "to": hi},
+                                                   filter="statuscode:200", collapse="timestamp:8")]
+    rows.sort(key=lambda r: r["timestamp"])
     if len(rows) > max_caps:      # thin to every Nth day, keeping the first and last
         step = len(rows) / max_caps
         rows = [rows[int(i * step)] for i in range(max_caps)] + [rows[-1]]
     out, failed = [], []
     for r in rows:
-        body, st = hc.wayback_raw(client, r["timestamp"], PAGE.format(slug=slug))
+        body, st = hc.wayback_raw(client, r["timestamp"], PAGE.format(slug=r["slug"]))
         try:
             if body is None or st != 200:
                 raise ValueError(st)
