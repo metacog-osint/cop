@@ -1,4 +1,4 @@
-"""The review gate: python tests/test_gate.py"""
+"""The write path for joins (the mosaic gate's lists retired 15 Nov 2026): python tests/test_gate.py"""
 
 import json
 import sys
@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import gate  # noqa: E402
+import three_signal as ts  # noqa: E402
 import triage as tri  # noqa: E402
 
 OPEN_JOIN = {"id": "t-open", "published": False, "inputs": ["blackout", "elements", "cordon:alert"]}
@@ -28,82 +29,32 @@ class Layers(unittest.TestCase):
         self.assertEqual(gate.layer_of("UT-GOOGLE-fe9985db2a"), ("undertow", "google"))
         self.assertEqual(gate.layer_of("UT-EEAS-e7ebbf0d02"), ("undertow", "eeas"))
         self.assertEqual(gate.layer_of("XX-GOOGLE-fe9985db2a"), ("", ""))
-
-    def test_wake_is_open(self):
-        # Tom, 15 Nov 2026: IMF statistics on commercial shipping at strait level, not military context.
         self.assertEqual(gate.layer_of("wake:chokepoint:strait-of-hormuz:2026-11-08"), ("wake", "chokepoint"))
-        self.assertEqual(gate.layer_class("wake", "chokepoint")[0], "open")
 
-    def test_undertow_is_open_by_its_own_ids(self):
-        # Tom, 14 Nov 2026: platforms' public disclosures of influence operations, not military context.
-        for item_id in ("UT-META-f6a52f7deb", "UT-GOOGLE-fe9985db2a", "UT-OPENAI-1a2b3c", "UT-TIKTOK-1a2b3c",
-                        "UT-EEAS-e7ebbf0d02"):
-            self.assertEqual(gate.layer_class(*gate.layer_of(item_id))[0], "open", item_id)
-        join = {"id": "t-undertow", "published": False, "inputs": ["blackout", "undertow"]}
-        self.assertEqual(gate.review(join, doc("blackout:outage:ir:2026-11-12T00", "UT-META-f6a52f7deb",
-                                                join=join))["review_class"], "open")
-        self.assertEqual(gate.review(OPEN_JOIN, doc("blackout:outage:ir:2026-11-12T00", "UT-META-f6a52f7deb"))
-                         ["review_class"], "held")      # cited but never declared
+    def test_the_military_lists_are_gone(self):
+        # Tom, 15 Nov 2026: no held classes. Nothing in the module may hold a layer back again.
+        for name in ("OPEN", "MILITARY", "HELD_DIR", "layer_class"):
+            self.assertFalse(hasattr(gate, name), name)
 
-    def test_open_and_military_layers(self):
-        for program, kind in (("elements", "usgs"), ("blackout", "ooni"), ("watchfloor", "2026-11-11"),
-                              ("cordon", "advisory"), ("cordon", "alert"), ("cordon", "posture"), ("vigil", "kev")):
-            self.assertEqual(gate.layer_class(program, kind)[0], "open", (program, kind))
-        for program, kind in (("noisefloor", ""), ("vis", "2026-11-13"), ("cordon", "navwarn"), ("cordon", "czib")):
-            cls, why = gate.layer_class(program, kind)
-            self.assertEqual(cls, "held", (program, kind))
-            self.assertIn("military context", why)
+    def test_every_program_cop_draws_is_usable_in_a_join(self):
+        cfg = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
+        ids = [p["id"] for p in cfg["programs"]]
+        self.assertEqual(gate.programs(), set(ids))
+        join = {"id": "t-all", "published": True, "inputs": ids}
+        self.assertEqual(gate.review(join)["review_class"], "open")
 
-    def test_cordon_travel_advice_and_health_notices_are_open_and_faa_kinds_are_not(self):
-        # Tom, 14 Nov 2026: UK FCDO, Canada and CDC notices are of the same nature as State's.
-        for kind in ("fcdo", "canada", "cdc", "safetravel"):
-            self.assertEqual(gate.layer_class("cordon", kind)[0], "open", kind)
-        for kind in ("tfr", "faa"):
-            self.assertEqual(gate.layer_class("cordon", kind)[0], "held", kind)
-
-    def test_cordon_faa_prohibitions_are_open_and_easa_bulletins_stay_held(self):
-        # Tom, 15 Nov 2026: the FAA's SFARs and KICZ NOTAMs for foreign airspace go on the open list; czib stays held.
-        self.assertEqual(gate.layer_of("cordon:faaprn:afghanistan"), ("cordon", "faaprn"))
-        self.assertEqual(gate.layer_class("cordon", "faaprn")[0], "open")
-        self.assertEqual(gate.layer_class("cordon", "czib")[0], "held")
-        join = {"id": "t-faaprn", "published": True, "inputs": ["blackout", "cordon:faaprn"]}
-        v = gate.review(join, doc("blackout:outage:af:x", "cordon:faaprn:afghanistan", join=join))
-        self.assertEqual(v["review_class"], "open", v["reasons"])
-        held = {"id": "t-czib", "published": True, "inputs": ["blackout", "cordon:faaprn", "cordon:czib"]}
-        self.assertEqual(gate.review(held)["review_class"], "held")
-
-    def test_orbit_changes_are_military_context_and_the_rest_of_orbit_is_open(self):
-        # Tom, 14 Nov 2026: Orbit's manoeuvre items go into COP's feed, held from joins by the gate.
-        for kind in ("launch", "upcoming", "reentries", "late-object", "owner-change"):
-            self.assertEqual(gate.layer_class("orbit", kind)[0], "open", kind)
-        cls, why = gate.layer_class("orbit", "maneuver")
-        self.assertEqual(cls, "held")
-        self.assertIn("military context", why)
-        self.assertEqual(gate.layer_of("orbit:maneuver:41744:2026-10-12"), ("orbit", "maneuver"))
-        self.assertIn("name the kinds", gate.layer_class("orbit")[1])
-        v = gate.review(OPEN_JOIN | {"published": True}, doc("blackout:outage:tn:x", "orbit:maneuver:41744:2026-10-12"))
-        self.assertEqual(v["review_class"], "held")
-
-    def test_a_layer_or_kind_nobody_reviewed_is_held(self):
-        self.assertEqual(gate.layer_class("newprogram", "thing")[0], "held")
-        self.assertEqual(gate.layer_class("cordon", "newkind")[0], "held")
-        self.assertEqual(gate.layer_class("", "")[0], "held")
-
-    def test_cordon_as_a_whole_is_held_until_its_kinds_are_named(self):
-        cls, why = gate.layer_class("cordon")
-        self.assertEqual(cls, "held")
-        self.assertIn("name the kinds", why)
-
-    def test_every_program_in_the_kit_is_on_one_list(self):
-        programs = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
-        names = programs if isinstance(programs, list) else programs.get("programs", programs)
-        ids = [p["id"] if isinstance(p, dict) else p for p in names]
-        for pid in ids:
-            self.assertTrue(pid in gate.OPEN or pid in gate.MILITARY, f"{pid} is on neither list in tools/gate.py")
+    def test_layers_that_used_to_be_held_are_open(self):
+        for item_id, inp in (("noisefloor-event-2026-11-11-1", "noisefloor"), ("vis:2026-11-13:hormuz", "vis"),
+                             ("cordon:navwarn:4-1096-2026", "cordon:navwarn"), ("cordon:czib:2026-09-r1", "cordon"),
+                             ("cordon:tfr:6-1234", "cordon:tfr"), ("cordon:faa:dxb", "cordon"),
+                             ("launch:tfr:1-2345", "launch"), ("orbit:maneuver:41744:2026-10-12", "orbit:maneuver")):
+            join = {"id": "t", "published": True, "inputs": ["blackout", inp]}
+            v = gate.review(join, doc("blackout:outage:ir:x", item_id, join=join))
+            self.assertEqual((v["review_class"], v["may_publish"]), ("open", True), (item_id, v["reasons"]))
 
 
 class Review(unittest.TestCase):
-    def test_open_inputs_and_open_items_make_an_open_join(self):
+    def test_declared_inputs_and_matching_citations_make_an_open_join(self):
         v = gate.review(OPEN_JOIN, doc("blackout:outage:tn:x", "elements:usgs:1", "cordon:alert:tn:1"))
         self.assertEqual((v["review_class"], v["reasons"]), ("open", []))
         self.assertFalse(v["may_publish"])     # open, but not switched on
@@ -112,52 +63,42 @@ class Review(unittest.TestCase):
         v = gate.review(OPEN_JOIN | {"published": True}, doc("blackout:outage:tn:x"))
         self.assertTrue(v["may_publish"])
 
-    def test_the_three_signal_join_is_held_whatever_its_switch_says(self):
+    def test_the_iran_case_publishes_when_switched_on(self):
         v = gate.review(IRAN_JOIN, doc("blackout:ooni:ir:2026-11-12", "noisefloor-event-2026-11-11-1",
                                        "vis:2026-11-13:hormuz", join=IRAN_JOIN))
-        self.assertEqual(v["review_class"], "held")
-        self.assertFalse(v["may_publish"])
-        self.assertTrue(any("noisefloor" in r for r in v["reasons"]))
-        self.assertTrue(any("vis" in r for r in v["reasons"]))
+        self.assertEqual((v["review_class"], v["may_publish"]), ("open", True))
 
-    def test_a_join_that_declares_open_but_cites_a_military_item_is_held(self):
-        v = gate.review(OPEN_JOIN | {"published": True},
-                        doc("blackout:outage:ae:x", "noisefloor-event-2026-11-11-1"))
-        self.assertEqual(v["review_class"], "held")
-        self.assertFalse(v["may_publish"])
-
-    def test_citing_a_layer_the_join_never_declared_is_held(self):
+    def test_citing_a_layer_the_join_never_declared_is_refused(self):
         v = gate.review(OPEN_JOIN, doc("blackout:outage:tn:x", "vigil:kev:cve-1"))
-        self.assertEqual(v["review_class"], "held")
+        self.assertEqual(v["review_class"], "refused")
         self.assertIn("declared inputs", v["reasons"][0])
+        v = gate.review(OPEN_JOIN, doc("blackout:outage:tn:x", "cordon:navwarn:1"))   # cordon:alert only
+        self.assertEqual(v["review_class"], "refused")
 
-    def test_a_join_with_no_inputs_is_held(self):
-        self.assertEqual(gate.review({"id": "x", "published": True})["review_class"], "held")
+    def test_an_id_or_input_that_names_no_program_is_refused(self):
+        self.assertEqual(gate.review(OPEN_JOIN, doc("blackout:outage:tn:x", "XX-GOOGLE-1"))["review_class"], "refused")
+        self.assertEqual(gate.review({"id": "x", "published": True, "inputs": ["newprogram"]})["review_class"],
+                         "refused")
 
-    def test_an_old_self_declared_class_is_ignored(self):
-        v = gate.review({"id": "x", "review_class": "open", "published": True, "inputs": ["noisefloor"]})
-        self.assertEqual(v["review_class"], "held")
+    def test_a_join_with_no_inputs_is_refused(self):
+        self.assertEqual(gate.review({"id": "x", "published": True})["review_class"], "refused")
 
 
 class Writing(unittest.TestCase):
-    def test_a_held_join_is_refused_in_every_deployed_folder_and_in_plain_out(self):
-        held = doc("blackout:ooni:ir:x", "noisefloor-event-1", join=IRAN_JOIN)
-        for folder in (ROOT / "site" / "data" / "joins", ROOT / "functions", ROOT / "mcp", ROOT / "out" / "triage",
-                       ROOT):
+    def test_a_refused_join_is_written_nowhere(self):
+        bad = doc("blackout:outage:tn:x", "vigil:kev:cve-1")
+        for folder in (ROOT / "site" / "data", ROOT / "out" / "triage", Path(tempfile.mkdtemp())):
             with self.assertRaises(SystemExit, msg=str(folder)):
-                gate.write(IRAN_JOIN, held, folder, ("x.json",))
+                gate.write(OPEN_JOIN, bad, folder, ("x.json",))
 
-    def test_a_held_join_may_be_written_under_out_held(self):
-        v = gate.review(IRAN_JOIN)
-        self.assertIsNone(gate.allowed(v, ROOT / "out" / "held" / "three-signal"))
-
-    def test_an_open_join_not_switched_on_is_refused_in_site(self):
-        with self.assertRaises(SystemExit):
-            gate.write(OPEN_JOIN, doc("blackout:outage:tn:x"), ROOT / "site" / "data" / "joins", ("x.json",))
+    def test_an_open_join_not_switched_on_is_refused_in_deployed_folders(self):
+        for folder in (ROOT / "site" / "data", ROOT / "functions", ROOT / "mcp"):
+            with self.assertRaises(SystemExit, msg=str(folder)):
+                gate.write(OPEN_JOIN, doc("blackout:outage:tn:x"), folder, ("x.json",))
 
     def test_an_open_join_switched_on_is_allowed_in_site(self):
         v = gate.review(OPEN_JOIN | {"published": True}, doc("blackout:outage:tn:x"))
-        self.assertIsNone(gate.allowed(v, ROOT / "site" / "data" / "joins"))
+        self.assertIsNone(gate.allowed(v, ROOT / "site" / "data"))
 
     def test_write_stamps_the_verdict_into_the_file(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -168,31 +109,36 @@ class Writing(unittest.TestCase):
 
 
 class Check(unittest.TestCase):
-    def test_check_finds_a_held_join_planted_in_a_deployed_folder(self):
+    def test_check_finds_an_unpublished_or_refused_join_planted_in_a_deployed_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
             site = Path(tmp) / "site" / "data"
             site.mkdir(parents=True)
-            held = doc("blackout:ooni:ir:x", "noisefloor-event-1", join=IRAN_JOIN)
-            held["gate"] = {"review_class": "open", "may_publish": True}     # a forged stamp
-            (site / "three.json").write_text(json.dumps(held), encoding="utf-8")
+            off = doc("blackout:outage:tn:x", join=OPEN_JOIN)
+            off["gate"] = {"review_class": "open", "may_publish": True}     # a forged stamp
+            (site / "off.json").write_text(json.dumps(off), encoding="utf-8")
+            bad = doc("blackout:outage:tn:x", "vigil:kev:1", join=OPEN_JOIN | {"published": True})
+            (site / "bad.json").write_text(json.dumps(bad), encoding="utf-8")
             (site / "today.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": []}),
                                                 encoding="utf-8")
             ok = doc("blackout:outage:tn:x", join=OPEN_JOIN | {"published": True})
             (site / "ok.json").write_text(json.dumps(ok), encoding="utf-8")
             offences = gate.check([Path(tmp) / "site"])
-            self.assertEqual([Path(p).name for p, _, _ in offences], ["three.json"])
+            self.assertEqual(sorted(Path(p).name for p, _, _ in offences), ["bad.json", "off.json"])
 
     def test_the_real_deployed_folders_are_clean(self):
         self.assertEqual(gate.check(), [])
 
 
-class TriageThroughTheGate(unittest.TestCase):
-    def test_the_outage_triage_join_is_open_and_switched_on(self):
+class JoinsThroughTheGate(unittest.TestCase):
+    def test_outage_triage_is_open_and_switched_on(self):
         v = gate.review(tri.JOIN)
         self.assertEqual((v["review_class"], v["may_publish"]), ("open", True))
-        # Switched off, the gate refuses it a deployed folder again.
         off = gate.review(tri.JOIN | {"published": False})
         self.assertIsNotNone(gate.allowed(off, ROOT / "site" / "data"))
+
+    def test_three_signal_is_open_and_switched_on(self):
+        v = gate.review(ts.JOIN)
+        self.assertEqual((v["review_class"], v["may_publish"]), ("open", True))
 
     def test_triage_does_not_read_navigation_warnings_or_airspace_bulletins(self):
         at = "2026-11-12T00:25:00Z"

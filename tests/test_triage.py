@@ -476,10 +476,10 @@ class NewNoticeKinds(unittest.TestCase):
         self.assertEqual((r["reading"], c["recent"], c["recent_not_raised"], c["standing"]), ("open", [], [], []))
         self.assertNotIn("cordon:cdc", tri.JOIN["inputs"])
 
-    def test_every_notice_kind_is_declared_and_open(self):
+    def test_every_notice_kind_is_declared(self):
         for kind in tri.NOTICE_KINDS:
             self.assertIn(f"cordon:{kind}", tri.JOIN["inputs"])
-            self.assertEqual(gate.layer_class("cordon", kind)[0], "open", kind)
+        self.assertEqual(gate.review(tri.JOIN)["review_class"], "open")
 
     def test_base_rate_history_keeps_travel_advice_levels_and_names_late_kinds(self):
         def day(d, *features):

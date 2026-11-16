@@ -2,7 +2,8 @@ name: build
 # Rebuilds COP every two hours and on every push to main: the tests, a fresh snapshot of the program feeds, a daily
 # archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), the suite ledger (release ledger: what is
 # new, changed or ended since the last build), outage triage (COP's own reading of each
-# Blackout outage, with base rates from the archived days), then a deploy of site/ to Cloudflare Pages
+# Blackout outage, with base rates from the archived days), the three-signal join (the Strait of Hormuz and the
+# Gulf), then a deploy of site/ to Cloudflare Pages
 # (project cop). Needs repo secrets CLOUDFLARE_PAGES_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; without
 # them everything runs except the deploy. A program feed that fails never fails the build (snapshot.py keeps its last
 # good copy, drawn grey). The deploy also carries functions/mcp.js, COP's MCP server at /mcp, which reads the
@@ -140,7 +141,15 @@ jobs:
           python tools/triage_rates.py --archive out/rates-archive || echo "::warning::base rates failed; triage runs without them"
           python tools/triage.py --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data \
             || { rm -f site/data/triage.json; echo "::warning::outage triage failed; the page and the MCP server say it is unavailable"; }
-      - name: Review gate (stops the deploy if a held or unpublished join sits in site/, functions/ or mcp/)
+      # The three-signal join (published since Tom retired the mosaic gate, 15 Nov 2026): interference, a new notice
+      # and a connectivity drop in the Strait of Hormuz and the Gulf, with Vis's weather beside them. It replays the
+      # archive copies the step above downloaded for how often each signal fires anyway. A failure never fails the
+      # build: without three-signal.json the page and the MCP server say the join is unavailable.
+      - name: Three-signal join (site/data/three-signal.json)
+        run: |
+          python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data \
+            || { rm -f site/data/three-signal.json; echo "::warning::three-signal join failed; the page and the MCP server say it is unavailable"; }
+      - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
         env:

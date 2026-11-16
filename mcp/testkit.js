@@ -24,6 +24,9 @@ export function fixtureData() {
   const out = path.join(dir, "triage-work");
   run(["tools/triage.py", "--snapshot", path.join(dir, "today.geojson"), "--out", out,
     "--rates", path.join(out, "none.json"), "--publish", dir]);
+  // The three-signal join, as the build runs it (no archive beside the fixtures, so no base rate).
+  run(["tools/three_signal.py", "--snapshot", path.join(dir, "today.geojson"), "--out", path.join(dir, "ts-work"),
+    "--publish", dir]);
   built = dir;
   return dir;
 }

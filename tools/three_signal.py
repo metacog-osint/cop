@@ -11,15 +11,17 @@ within WINDOW_H of each other, and what Vis forecasts for the weather there.
   connectivity   a confirmed Blackout outage (BO-IND-1) or a Cloudflare-verified traffic anomaly in one of the
                  area's countries. A single-source dip is listed and does not count.
 
-Vis is a condition, not a signal: a green 72-hour window means the weather would allow an operation. It never adds
-to the count, and a red window does not remove a signal; it is reported beside the reading.
+Vis is context, not a signal: its 72-hour weather forecast for the area is listed beside the reading (the worst
+stoplight among its points there). It never adds to the count and never removes a signal.
 
-HELD. This join places public signals around military activity (the mosaic effect). tools/gate.py classes it "held":
-it writes only under out/held/, the build never runs it, and nothing publishes it. Only Tom releases a held file, by
-hand (COP's CLAUDE.md).
+Published since 15 Nov 2026, when Tom retired the mosaic gate (COP's CLAUDE.md). The voice rule that replaced it
+applies here: the record shows each layer's items, how close they fall in time and how often each fires anyway
+(the archive replay), and never states what the pattern means. The build runs it after outage triage and writes
+site/data/three-signal.json for the page and the MCP server's three_signal tool.
 
     python tools/three_signal.py                       # the published snapshot, every area
     python tools/three_signal.py --archive out/archive # also replay the archive: how often each signal fires anyway
+    python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data
 
 It never states a probability: that is the analyst's. Standard-library Python only.
 """
@@ -34,7 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402
 import triage as tri  # noqa: E402
 
-JOIN = {"id": "three-signal", "version": "0.1", "published": False,
+JOIN = {"id": "three-signal", "version": "0.2", "published": True,
         "inputs": ["noisefloor", "vis", "blackout", "cordon:navwarn", "cordon:czib", "cordon:alert",
                    "cordon:advisory"]}
 LAYERS = ("noisefloor", "cordon", "blackout", "vis")
@@ -262,10 +264,13 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
     else:
         reading = "none"
     lights = {w["stoplight_72h"] for w in weather}
-    window = ("unknown" if not weather or "vis" in dead else
-              "workable" if lights == {"green"} else "against" if "red" in lights else "marginal")
+    worst = ("unknown" if not weather or "vis" in dead else
+             "red" if "red" in lights else "amber" if lights - {"green"} else "green")
+    weather_text = ("No current Vis forecast inside the area." if worst == "unknown" else
+                    f"Vis's 72-hour weather forecast at {len(weather)} point{'s' if len(weather) != 1 else ''} in the "
+                    f"area: {worst.capitalize()} at worst.")
     caveats = ["Vis's items are forecasts at indicative thresholds, not official forecasts and not fit for flight "
-               "planning. The weather window is a condition beside the reading, never a signal."]
+               "planning. The weather is listed beside the reading as context and never counts as a signal."]
     if blind:
         caveats.append("Cordon's navigation warnings have stopped moving: the newest one anywhere is dated "
                        f"{tri.iso(newest_navwarn) if newest_navwarn else 'never'}. A new warning cannot be seen, so "
@@ -288,7 +293,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
         "signals": {s: {"present": bool(found[s]), "items": found[s]} for s in SIGNALS},
         "signals_present": present, "tightest_span": span,
         "reading": reading, "reading_text": READINGS[reading],
-        "weather_window": {"state": window, "forecasts": weather},
+        "weather": {"state": worst, "text": weather_text, "forecasts": weather},
         "context": context, "caveats": caveats,
         "verdict_draft": None if reading != "converged" else {
             "registered": False, "probability": None, "approved_by": None,
@@ -319,7 +324,7 @@ def replay(snapshots):
         for r in read(snap, seen, ooni)["records"]:
             rows.append({"day": r["read_at"][:10], "area": r["area"], "reading": r["reading"],
                          "signals_present": r["signals_present"], "no_current_data": r["no_current_data"],
-                         "weather_window": r["weather_window"]["state"]})
+                         "weather": r["weather"]["state"]})
     by_area = {}
     for key in sorted(AREAS):
         mine = [r for r in rows if r["area"] == key]
@@ -333,11 +338,87 @@ def replay(snapshots):
     return {"by_area": by_area, "rows": rows}
 
 
+PUBLIC_NAME = "three-signal.json"
+WHAT = ("For the Strait of Hormuz and the Gulf (900 km around Bandar Abbas, with Iran, the UAE, Oman, Qatar, Bahrain "
+        "and Kuwait for country-level items): whether GPS interference (Noisefloor), a new navigation warning that "
+        "names military activity or a new airspace bulletin (Cordon), and a confirmed internet outage (Blackout) fall "
+        f"in the area within {WINDOW_H} hours of each other, with Vis's weather forecast for the area beside them.")
+NOT_A_WARNING = ("A reading says which of the three signals are present and how close together they fall. It is not "
+                 "a warning, a forecast or a finding of cause, and it carries no probability. Each signal has an "
+                 "innocent explanation alone. \"None\" and \"incomplete\" (a layer with no current data) are "
+                 "different answers.")
+DRAFT_NOTE = ("A drafted question that would let this reading be scored later. It is not a registered Verdict "
+              "forecast and no likelihood is attached to it.")
+PUBLIC_KEYS = ("join", "area", "area_name", "circle", "countries", "read_at", "layer_states", "no_current_data",
+               "signals", "signals_present", "tightest_span", "reading", "reading_text", "weather", "context",
+               "caveats")
+
+
+def base_rate(by_area):
+    """How often each signal fires anyway in the area, from the archive replay, as numbers and one sentence."""
+    if not by_area:
+        return None
+    n, each = by_area["days_with_every_layer"], by_area["days_each_signal_present"]
+    if not n:
+        text = (f"None of the {by_area['days']} archived days had every layer current, so there is no base rate "
+                "yet.")
+    else:
+        text = (f"Over {n} archived day{'s' if n != 1 else ''} with every layer current, interference was present "
+                f"on {each['interference']}, a new notice on {each['notice']} and a connectivity signal on "
+                f"{each['connectivity']}; all three fell within the window on "
+                f"{by_area['days_by_reading']['converged']}.")
+    return {"text": text, "caution": by_area["caution"], **{k: by_area[k] for k in
+            ("days", "days_with_every_layer", "days_each_signal_present", "days_by_reading")}}
+
+
+def question_draft(v):
+    """The drafted Verdict question as the public sees it, marked a draft, with no probability or approval field."""
+    if not v:
+        return None
+    return {"status": "draft, not registered", "note": DRAFT_NOTE, "question": v["question"],
+            "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["note"]}
+
+
+def public(doc):
+    """The document the page and the MCP server show."""
+    by_area = ((doc.get("archive_replay") or {}).get("by_area")) or {}
+    records = []
+    for r in doc["records"]:
+        rec = {k: r[k] for k in PUBLIC_KEYS}
+        rec["base_rate"] = base_rate(by_area.get(r["area"]))
+        rec["question_draft"] = question_draft(r["verdict_draft"])
+        records.append(rec)
+    return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
+            "snapshot_generated_at": doc["snapshot_generated_at"], "windows": doc["windows"],
+            "archive_given": doc["archive_given"], "records": records}
+
+
+def publish_folder(path):
+    """Where the public document may go: site/data and nowhere else under site/."""
+    out = Path(path).resolve()
+    site = (gate.ROOT / "site").resolve()
+    if (out == site or site in out.parents) and out != site / "data":
+        raise SystemExit("three_signal.py publishes only to site/data")
+    return out
+
+
+def safe_out(path):
+    """The working folder, refused inside a deployed folder: the working document keeps the empty probability."""
+    out = Path(path).resolve()
+    for d in gate.DEPLOYED:
+        folder = (gate.ROOT / d).resolve()
+        if out == folder or folder in out.parents:
+            raise SystemExit("three_signal.py does not write its working document inside " + d + "/")
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--snapshot", default=tri.PUBLISHED, help="snapshot URL, .geojson file or .geojson.gz archive copy")
     ap.add_argument("--archive", default=None, help="folder of YYYY-MM-DD.geojson.gz: revisions, OONI history, replay")
-    ap.add_argument("--out", default=str(gate.HELD_DIR / "three-signal"))
+    ap.add_argument("--out", default=str(gate.ROOT / "out" / "three-signal"))
+    ap.add_argument("--publish", default=None, metavar="FOLDER",
+                    help=f"also write the public document, {PUBLIC_NAME}, here (the build passes site/data)")
     a = ap.parse_args(argv)
     seen = ooni = past = None
     if a.archive:
@@ -349,11 +430,15 @@ def main(argv=None):
     doc = read(tri.load(a.snapshot), seen, ooni)
     doc["archive_replay"] = past
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
-    verdict = gate.write(JOIN, doc, a.out, (f"three-signal-{stamp}.json", "latest.json"))
-    print(f"snapshot {doc['snapshot_generated_at']}  gate: {verdict['review_class']} (not for publication)")
+    out = safe_out(a.out)
+    if a.publish:
+        gate.write(JOIN, public(doc), publish_folder(a.publish), (PUBLIC_NAME,))
+    verdict = gate.write(JOIN, doc, out, (f"three-signal-{stamp}.json", "latest.json"))
+    print(f"snapshot {doc['snapshot_generated_at']}  gate: {verdict['review_class']}"
+          f"{'  published ' + PUBLIC_NAME if a.publish else ''}")
     for r in doc["records"]:
         print(f"{r['area_name']}: {r['reading']}; signals present: {', '.join(r['signals_present']) or 'none'}; "
-              f"weather window {r['weather_window']['state']}; layers {r['layer_states']}")
+              f"weather {r['weather']['state']}; layers {r['layer_states']}")
         for s in SIGNALS:
             for it in r["signals"][s]["items"]:
                 print(f"    {s}: {it['id']}  {it.get('at')}  {str(it['title'])[:90]}")
@@ -372,7 +457,7 @@ def main(argv=None):
                   f"{b['days_each_signal_present']}; readings {b['days_by_reading']}")
     else:
         print("no archive given: run with --archive out/archive")
-    print(f"wrote {Path(a.out).resolve() / 'latest.json'}")
+    print(f"wrote {out / 'latest.json'}")
     return 0
 
 

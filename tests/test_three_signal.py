@@ -1,4 +1,4 @@
-"""The held three-signal join: python tests/test_three_signal.py"""
+"""The three-signal join, published since 15 Nov 2026: python tests/test_three_signal.py"""
 
 import json
 import sys
@@ -63,7 +63,8 @@ class ThreeSignal(unittest.TestCase):
         self.assertEqual(r["reading"], "converged")
         self.assertEqual(r["signals_present"], list(ts.SIGNALS))
         self.assertLessEqual(r["tightest_span"]["hours"], ts.WINDOW_H)
-        self.assertEqual(r["weather_window"]["state"], "workable")
+        self.assertEqual(r["weather"]["state"], "green")
+        self.assertEqual(r["weather"]["text"], "Vis's 72-hour weather forecast at 1 point in the area: Green at worst.")
 
     def test_two_of_three_is_partial_and_drafts_no_question(self):
         r = hormuz(ts.read(snapshot(jam(), navwarn(), vis())))
@@ -134,10 +135,10 @@ class ThreeSignal(unittest.TestCase):
         self.assertFalse(r["signals"]["connectivity"]["present"])
         self.assertEqual(len(r["context"]["single_source_dips"]), 1)
 
-    def test_vis_is_a_condition_and_never_a_signal(self):
-        for light, state in (("green", "workable"), ("amber", "marginal"), ("red", "against")):
+    def test_vis_is_context_and_never_a_signal(self):
+        for light in ("green", "amber", "red"):
             r = hormuz(ts.read(snapshot(jam(), navwarn(), outage(), vis(light))))
-            self.assertEqual((r["reading"], r["weather_window"]["state"]), ("converged", state))
+            self.assertEqual((r["reading"], r["weather"]["state"]), ("converged", light))
         r = hormuz(ts.read(snapshot(vis("green"))))
         self.assertEqual((r["reading"], r["signals_present"]), ("none", []))
         warn = vis("red")
@@ -180,32 +181,61 @@ class ThreeSignal(unittest.TestCase):
         self.assertLess(ts.km_to_area(line, {"center": [-176.0, 54.0]}), 1)
 
 
-class Held(unittest.TestCase):
-    def test_the_gate_holds_this_join_and_its_output(self):
+class Published(unittest.TestCase):
+    def test_the_gate_lets_it_publish(self):
         doc = ts.read(snapshot(jam(), navwarn(), outage(), vis()))
         v = gate.review(ts.JOIN, doc)
-        self.assertEqual((v["review_class"], v["may_publish"]), ("held", False))
-        self.assertEqual(gate.review(ts.JOIN | {"published": True}, doc)["may_publish"], False)
+        self.assertEqual((v["review_class"], v["may_publish"]), ("open", True), v["reasons"])
+        self.assertEqual(gate.review(ts.JOIN, ts.public(doc))["may_publish"], True)
 
-    def test_its_default_folder_is_under_out_held_and_git_ignores_it(self):
-        self.assertIsNone(gate.allowed(gate.review(ts.JOIN), gate.HELD_DIR / "three-signal"))
-        self.assertIn("out/", (ROOT / ".gitignore").read_text(encoding="utf-8").split())
+    def test_the_public_record_has_the_reading_the_base_rate_and_a_draft_question_only(self):
+        snaps = [snapshot(jam(), vis(), at="2026-11-12T00:21:12Z"), snapshot(jam(), navwarn(), outage(), vis())]
+        doc = ts.read(snaps[-1])
+        doc["archive_replay"] = ts.replay(snaps)
+        pub = ts.public(doc)
+        r = pub["records"][0]
+        self.assertEqual(r["reading"], "converged")
+        self.assertIn("Over 2 archived days with every layer current", r["base_rate"]["text"])
+        self.assertEqual(r["base_rate"]["days_by_reading"]["converged"], 1)
+        q = r["question_draft"]
+        self.assertEqual(q["status"], "draft, not registered")
+        self.assertNotIn("probability", q)
+        self.assertNotIn("verdict_draft", r)
+        self.assertIn("not a warning", pub["not_a_warning"])
 
-    def test_it_cannot_be_written_into_a_deployed_folder_or_plain_out(self):
+    def test_the_voice_rule_no_inference_in_cops_own_words(self):
+        # Tom, 15 Nov 2026: "That doesn't mean we have to spell it out." The record shows what lines up and how often;
+        # it never names an operation, an intent or a window for one in COP's voice.
+        doc = ts.read(snapshot(jam(), navwarn(), outage(), vis()))
+        pub = ts.public(doc)
+        r = pub["records"][0]
+        own_words = " ".join([pub["what"], pub["not_a_warning"], r["reading_text"], r["weather"]["text"],
+                              *r["caveats"], *ts.READINGS.values()]).lower()
+        for phrase in ("workable", "operation", "would allow", "strike window", "likely", "intent", "imminent"):
+            self.assertNotIn(phrase, own_words, phrase)
+
+    def test_it_writes_the_public_file_only_to_site_data_and_its_working_file_outside_deployed_folders(self):
         snap = Path(tempfile.mkdtemp()) / "s.geojson"
         snap.write_text(json.dumps(snapshot(jam(), vis())), encoding="utf-8")
-        for folder in (ROOT / "site" / "data", ROOT / "functions", ROOT / "mcp", ROOT / "out" / "triage"):
+        for folder in (ROOT / "site" / "data", ROOT / "functions", ROOT / "mcp"):
             with self.assertRaises(SystemExit, msg=str(folder)):
                 ts.main(["--snapshot", str(snap), "--out", str(folder)])
+        with self.assertRaises(SystemExit):
+            ts.main(["--snapshot", str(snap), "--out", tempfile.mkdtemp(), "--publish", str(ROOT / "site")])
+        out, pub = tempfile.mkdtemp(), tempfile.mkdtemp()
+        ts.main(["--snapshot", str(snap), "--out", out, "--publish", pub])
+        got = json.loads((Path(pub) / ts.PUBLIC_NAME).read_text(encoding="utf-8"))
+        self.assertEqual(got["gate"]["may_publish"], True)
+        self.assertTrue((Path(out) / "latest.json").exists())
 
-    def test_the_build_the_page_and_the_mcp_server_do_not_know_about_it(self):
-        for rel in ("tools/snapshot.py", "tools/agent_index.py", "site/cop.js", "site/index.html", "functions/mcp.js",
-                    "mcp/tools.js", "mcp/data.js", "mcp/server.js"):
-            text = (ROOT / rel).read_text(encoding="utf-8")
-            self.assertNotIn("three_signal", text, rel)
-            self.assertNotIn("three-signal", text, rel)
+    def test_the_build_the_page_and_the_mcp_server_read_it(self):
         build = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
-        self.assertNotIn("tools/three_signal", build)
+        self.assertIn("python tools/three_signal.py --snapshot site/data/today.geojson", build)
+        self.assertLess(build.index("tools/three_signal.py"), build.index("python tools/gate.py --check"))
+        self.assertIn("data/three-signal.json", (ROOT / "site/cop.js").read_text(encoding="utf-8"))
+        self.assertIn("three-signal-sec", (ROOT / "site/index.html").read_text(encoding="utf-8"))
+        self.assertIn("/data/three-signal.json", (ROOT / "mcp/data.js").read_text(encoding="utf-8"))
+        self.assertIn('"three_signal"', (ROOT / "mcp/server.js").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

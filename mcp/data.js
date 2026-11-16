@@ -11,6 +11,7 @@ export const PATHS = {
   events: "/data/agent/events.json", // the programs' own dated events (Orbit's scheduled launches)
   picks: "/data/picks.json",
   triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
+  threeSignal: "/data/three-signal.json", // tools/three_signal.py --publish; absent when that step failed
 };
 
 export function shardPath(n) {
@@ -38,6 +39,7 @@ export function makeData(fetchAsset) {
     events: () => get(PATHS.events).catch(() => null), // Verdict's calendar stands without it
     picks: () => get(PATHS.picks),
     triage: () => get(PATHS.triage).catch(() => null), // the picture stands without it
+    threeSignal: () => get(PATHS.threeSignal).catch(() => null), // so does the three-signal join
     shard: (n) => get(shardPath(n)),
   };
 }

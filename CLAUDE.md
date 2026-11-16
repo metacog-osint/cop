@@ -5,6 +5,26 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 `C:\Users\PSRA User 4\.claude\plans\modular-launching-prism.md`. Design spec: the COP section of
 `D:\Projects\_ideas\reports\Non DoD sources and COP visuals.md`.
 
+## Purpose (Tom, 15 Nov 2026)
+COP is **a warning analyst's first stop for a few named warning problems**: for each problem's area it shows what
+changed this week across the layers, measured against that place's own normal; it reads that through named joins
+whose hit rates are published; and it ends each week in a signed, dated call that Verdict scores. The map is the
+index, not the product, and agents get the same through the MCP server. Tom accepted D1 to D14 of
+`D:\Projects\_ideas\cop-purpose-2026-11.md` as recommended (15 Nov 2026, evening):
+- First warning problems: the Gulf and Strait of Hormuz, then internet shutdowns (D2); Tom writes each charter.
+- The general convergence glyph is dropped; "how unusual for this place" per layer and named joins replace it, and
+  the 15-day co-occurrence measure stays a diagnostic (D3).
+- Pick the first analyst and send the brief now (D4); a weekly signed call from the week of 23 Nov, Gulf first (D5);
+  a Verdict question registered on every confirmed outage, with a second resolver (D6).
+- Picks per warning problem, from what changed, replace one pick per program in config order (D7). Not built yet.
+- Triage's three rules change (D8, as in the purpose doc §2, Change): count an episodic hazard's active interval
+  plus a lag, not its formation date; sort embassy alerts by type and count each once; take "unusual attention"
+  from Watchfloor's own 28-day z-score, computed causally (`cop-joins.md` M1 to M3). Not built yet; the rules below
+  stand until it is.
+- The mosaic gate is retired (D9, below). "Repo private" is overtaken (D10). The 12 Dec test date stays, rerun to
+  12 Jan unchanged if it misses (D11). Vis forecasts stay out of the picks (D12). Public, non-commercial, publicly
+  available information only (D13). The Red River Valley view comes later, on the same bus (D14).
+
 ## Tom's decisions (31 Oct 2026)
 - **Name:** COP (plain-language alternatives were considered and declined).
 - **Address:** `cop.theintelligence.company` (Cloudflare Pages project `cop`, default address `cop-4gw.pages.dev`
@@ -17,33 +37,44 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   engines, like the other programs. If Tom ever markets it, the sources a paid version can't use get scrubbed first,
   thoroughly and ethically. `config/sources.json` keeps `commercial_ok` for every source (true, false or unknown, with
   its basis) so that scrub starts from a list; `snapshot.py` lists any feed source missing from the register.
-- **Site public, repo private** (Tom, 31 Oct 2026). Opening the code is a one-way door, staying private costs little
+- **Site public, repo private** (Tom, 31 Oct 2026; **overtaken**: the repo went public about 12:10 PM CST
+  15 Nov 2026 to save Actions minutes, and Tom accepted that record the same day, D10). Opening the code is a one-way door, staying private costs little
   (about 600 of the free 2,000 Actions minutes a month), and the cross-program integration is the part a paid version
   would be. Never copy COP code into public repos. If it opens later: AGPL-3.0 like Noisefloor and Vigil.
 - **Review before v1:** the convergence layer (several programs agreeing over one place) is where aggregation starts
-  saying more than any single public source (the mosaic effect); review those flags before v1 ships.
-  **The gate (12 Nov 2026, `tools/gate.py`):** every join writes through it. A join is "open" only if every layer it
-  declares and every item it cites is on the gate's open list; Noisefloor, Vis and Cordon's navwarn and czib kinds are
-  military context, and any layer or kind not listed is held too. Held joins write only under `out/held/` and have no
-  switch that publishes them. `python tools/gate.py --check` runs before the deploy. A new program or item kind must be
-  added to one of the two lists there (a test fails until it is). Tom confirmed both lists on 12 Nov 2026.
-  Cordon's `fcdo` (UK FCDO travel advice), `canada` (Global Affairs Canada) and `cdc` (CDC travel health notices)
-  kinds went on the open list on 14 Nov 2026 (Tom's "Yes, as proposed": notices of the same nature as State's), and
-  `safetravel` (New Zealand MFAT SafeTravel travel advice, Cordon `50800c8`) later the same day (Tom's "Yes, add
-  safetravel", relayed by the session that asked for this change).
-  Undertow went on the open list on 14 Nov 2026 (Tom: public platform disclosures, not military context); its
-  item ids are read through `ID_PREFIXES` (see Undertow below).
-  Wake went on the open list on 15 Nov 2026 (Tom's "Open": IMF statistics on commercial shipping at strait level,
-  not military context).
-  Cordon's `faaprn` kind (the FAA's Prohibitions, Restrictions and Notices for foreign airspace: SFARs and KICZ
-  NOTAMs, Cordon `f801cbb`) went on the open list on 15 Nov 2026 (Tom's "Open, as I said", asked after being told
-  that EASA's `czib` bulletins, its European twin, are on the MILITARY list and stay there). The map showed its 20
-  items before the change (the gate governs joins, not the snapshot); no join reads it yet, so the change published
-  nothing new (local live build 15 Nov ~16:10 UTC: 20 faaprn items, triage cites none, `gate.py --check` OK).
-  Cordon's `tfr` and `faa` kinds (FAA flight restrictions, airport programs) are on neither list, so they are held.
-  **Releasing a held join (Tom, 12 Nov 2026):** only Tom releases one, by hand, outside the build, and each release
-  gets a dated line in `D:\Projects\CLAUDE_HANDOVER.md` saying what was released and to whom. Claude never copies a
-  file out of `out/held/`, and no code path may be added that does.
+  saying more than any single public source (the mosaic effect); review those flags before v1 ships. Superseded for
+  joins by Tom's ruling of 15 Nov 2026 below.
+  **The mosaic gate is retired (Tom, 15 Nov 2026, about 6:15 PM CST).** From 12 to 15 Nov `tools/gate.py` held back
+  any join that read a layer on its MILITARY list (Noisefloor, Vis, Launch, Cordon `navwarn` and `czib`, Orbit
+  `maneuver`) or any layer or kind on neither list (Cordon `tfr` and `faa`), wrote held joins only under `out/held/`,
+  and let only Tom release one by hand. Tom's ruling: the gate "was likely something I just agreed to"; "We operate
+  exclusively with publicly available information and our objective is to show what can be done with it. That
+  doesn't mean we have to spell it out, though." No held classes, no delayed release; Vis may serve as a check for
+  natural causes; Cordon's `tfr` and `faa` kinds are usable. The repo, its code and its archive and ledger releases
+  had gone public at about 12:10 PM CST that day, so the gate withheld only COP's own sentence (record and reasoning:
+  `D:\Projects\_ideas\cop-purpose-2026-11.md` §7 and D9).
+  **The voice rule replaces it** (Tom confirmed the wording, 15 Nov 2026): a join shows each layer's measurement side
+  by side, with a base rate and a descriptive reading, and never states the inference in COP's voice: no "strike
+  window open", no "attack likely", no intent, no timing of forces. A probability appears only on a question
+  registered in Verdict. Each join keeps that rule in its own wording (`three_signal.py` `READINGS`, `WHAT`,
+  `NOT_A_WARNING`; a test checks its own words for "operation", "workable", "likely" and the like).
+  **What `tools/gate.py` still does:** every join writes through it. A join must declare its inputs, each a COP
+  program (`config/programs.json`); every item it cites must belong to a declared input (otherwise "refused", written
+  nowhere); and it reaches `site/`, `functions/` or `mcp/` only when its own `published` switch is on (Tom's call, per
+  join). `python tools/gate.py --check` runs before the deploy and fails on any refused or unpublished join there.
+  Anything left in `out/held/` from before is not copied or published (the joins are regenerated from public inputs);
+  the folder is Tom's to delete.
+  **The three-signal join is published** (join 0.2, same day, Tom's "Retire and publish three-signal"): the build
+  runs `tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data` after
+  triage and writes `site/data/three-signal.json` (`three_signal.public()`: each area's reading, the three signals
+  with their items, the tightest span, Vis's weather as context only, the counts of other notices, the base rate from
+  the archive replay, the caveats and the drafted question marked "draft, not registered" with no probability field;
+  the working document stays in `out/three-signal/`). Vis is now described as the area's weather forecast ("Green at
+  worst"), not as a window. Page: the "Three signals" section (`renderThreeSignal` in `cop.js`), shown in any view that
+  shows Noisefloor, Cordon, Blackout or Vis. MCP: the `three_signal` tool. A failure never fails the build. Local live
+  build, about 6:45 PM CST 15 Nov: Hormuz read partial (interference near Doha, Abu Dhabi and Dubai; no new notice
+  naming military activity; no confirmed outage), weather Green at worst; base rate over 4 archived days with every
+  layer current: interference 4, notice 0, connectivity 0, all three 0.
 - **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; on the page and in the MCP server since step 5,
   13 Nov 2026; merged to `main` and deployed on Tom's yes, `df1e431`, 05:34 UTC 13 Nov 2026):** `JOIN["published"]` is on. The build
   downloads this month's and last month's archive copies to `out/rates-archive` (never `out/archive`, which it
@@ -227,7 +258,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   not used) "unknown"; Space-Track (`space-track`, 15 Nov 2026) `commercial_ok` false. **On the gate's open list by
   kind** (`tools/gate.py`; Tom, 13 Nov 2026, after it was first held because its launches include national-security
   payloads at named sites and times, all publicly announced): `launch`, `upcoming`, `reentries`, `late-object`,
-  `owner-change`. **`orbit:maneuver` is on the MILITARY list** (15 Nov 2026, with Tom's yes to manoeuvres in COP's
+  `owner-change`. **`orbit:maneuver` was on the MILITARY list until the gate was retired the same evening** (15 Nov 2026, with Tom's yes to manoeuvres in COP's
   feed): most watched satellites are military or intelligence satellites, so no join may cite them.
   No join reads it yet. `tests/fixtures/orbit.geojson`: its live feed of 22:03 UTC 13 Nov (21 items: 6 launches, 14
   scheduled, 1 reentry summary, no catalog changes yet), every timestamp moved back 13 days 2 hours, and from 14 Nov
@@ -246,7 +277,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   and 3.98 on the dark. The dashed outline still sets Launch's areas apart. The eleven colours together fail
   all-pairs (Orbit and Watchfloor 3.9 deutan, Orbit and Noisefloor 12.4 normal), as any 11 hues would; outlines,
   mark types and the panel's labels carry identity. Sources `faa-tfr` (US Government work, `commercial_ok` true) and `orbit-snapshot` ("unknown"), as
-  Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list** (confirmed by Tom, 14 Nov 2026;
+  Launch's `doctrine/sources.json` records them. **Held on the gate's MILITARY list until the gate was retired, 15 Nov 2026** (confirmed by Tom, 14 Nov 2026;
   Orbit was held first and later opened): closure areas and the launches they match include national-security launches and missile
   firings. No join reads it. `tests/fixtures/launch.geojson`: its live feed of 14:14 UTC 14 Nov (3 TFRs), every
   timestamp moved back 13 days 18 h 9 min. A local live build 14 Nov read it fresh, 3 items, no lint errors.
@@ -316,7 +347,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
   carries the same NGA warnings (19 of 19 on 14 Nov), so Orbit items would draw each area twice. TFRs are not
   tagged: Launch draws the space-operations ones in that preset (Cordon's copies show under Everything and
   Notices, so those seven TFRs appear twice in Everything). The gate is unchanged: no join reads `cop_also`, and
-  Cordon's `navwarn` kind stays on the MILITARY list. Checked 14 Nov on a local live build: 19 tagged, drawn
+  Cordon's `navwarn` kind stayed on the MILITARY list (retired 15 Nov 2026). Checked 14 Nov on a local live build: 19 tagged, drawn
   and clickable under Spectrum and space, no console errors.
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
@@ -346,7 +377,7 @@ Roadmap step 2 (`D:\Projects\_ideas\new-programs.md`); built 31 Oct 2026 from th
 - **Kit:** (0.5.6 since 15 Nov 2026) vendored in `doctrine/kit/` with `python D:/Projects/tic-doctrine/tools/sync.py D:/Projects/cop`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
-## MCP server (`/mcp`, built 6 Nov 2026)
+## MCP server (`/mcp`, built 6 Nov 2026; nine tools since 15 Nov 2026)
 `https://cop.theintelligence.company/mcp` lets AI agents (Claude, ChatGPT, Gemini, Claude Code) query the picture:
 read-only, public, no sign-in. Tom chose the address (6 Nov 2026) over a separate project or a workers.dev address.
 Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the reason for building it is gap 1 of
@@ -376,13 +407,13 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   exactly in `package-lock.json`, each at least two weeks old when chosen: `@modelcontextprotocol/server` 2.3.1,
   `zod` 4.6.7; dev only `@modelcontextprotocol/client` 2.3.1. `wrangler.toml` only names the output folder and keeps
   the compatibility date the project already had (2026-10-31; no bindings or env vars, checked through the API).
-- **Tools** (eight, fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier,
+- **Tools** (nine, fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier,
   text, since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full
   item with sources), `top_picks`, `outage_triage` (reads `data/triage.json` directly; a missing file is a tool
   error that says triage was not built, not that there are no outages), `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
   `upcoming_events` (Verdict's calendar plus Orbit's scheduled launches, `origin` "orbit"; a launch whose stated
   time has passed is left out; either half answers without the other and lists the absent one under `missing`;
-  Orbit's attribution only when a launch is returned). Every result carries `as_of`, `age_hours`, stale flags and
+  Orbit's attribution only when a launch is returned), `three_signal` (15 Nov 2026: reads `data/three-signal.json`; optional `area`; a missing file is a tool error). Every result carries `as_of`, `age_hours`, stale flags and
   the attribution lines to credit.
   The server's instructions tell agents to cite ids and publishers, never call a measurement a warning, quote ICD 203
   terms as given and check freshness.
@@ -403,7 +434,7 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - Outage triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py
   --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`. Tests: `python
   tests/test_triage.py` (42), `test_triage_us_power.py` (30), `test_triage_ended.py` (9), `test_rebuild_ended.py`
-  (8), `test_gate.py` (24), `test_three_signal.py` (20).
+  (8), `test_gate.py` (19), `test_three_signal.py` (21).
 - **Ended items (Tom, 13 Nov 2026: inactive items are not displayed, but every item is kept, because comparing now
   with the past is a core benefit of the suite).** Elements keeps a history log (`history/` in its repo, format
   `tic-history/1`) and serves the items that ended in the last 7 days at `data/ended.geojson`. `snapshot.py` fetches
@@ -452,7 +483,7 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
 - Tests: `python tests/test_suite_watch.py` (17).
 
 ## Not in v0
-Convergence glyph with base rates, lifeline layer, likelihood and confidence display (the kit's `judgmentChips` is
+Lifeline layer (the general convergence glyph is dropped from the plan, Tom 15 Nov 2026, D3), likelihood and confidence display (the kit's `judgmentChips` is
 wired into the card for when judgments appear), the 14-day timeline (daily snapshots are archived for it).
 
 ## The suite ledger (built 14 Nov 2026 on Tom's "History log in kit"; not yet on `main` when written)
