@@ -303,6 +303,22 @@ class Triage(unittest.TestCase):
         self.assertEqual(r["layers"]["cordon"]["recent"][0]["direction"], "unknown")
         self.assertTrue(any("no earlier level" in c for c in r["caveats"]))
 
+    def test_whole_day_attention_reads_the_same_in_both_time_formats(self):
+        """Watchfloor's items carried the end of their day (T23:59:59Z); from 16 Nov 2026 they say precision "day" with
+        the day's midnight. The archive holds both, and a day must be read the same either way: counted on the outage's
+        day, not counted when it begins after, and its end is what says whether the data reaches the outage."""
+        def new(day):
+            f = attention_item("TN", day=day)
+            f["properties"].update({"data_as_of": f"{day}T00:00:00Z", "data_as_of_precision": "day"})
+            return f
+        for day in ("2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"):
+            a = one(tri.triage(snapshot(outage(), attention_item("TN", day=day)), {}))
+            b = one(tri.triage(snapshot(outage(), new(day)), {}))
+            for key in ("unusual", "data_reaches_outage"):
+                self.assertEqual(a["layers"]["watchfloor"][key], b["layers"]["watchfloor"][key], (day, key))
+            self.assertEqual((a["reading"], len(a["layers"]["watchfloor"]["after"])),
+                             (b["reading"], len(b["layers"]["watchfloor"]["after"])), day)
+
     def test_unusual_attention_is_watchfloors_own_28_day_z_score(self):
         # D8 (cop-joins.md M3): Iran was raised on 5 of 16 archived days around the Qeshm strikes, and COP's own
         # "under 25% of archived days" share switched its signal off. Watchfloor's z-score is against the 28 days

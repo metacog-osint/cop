@@ -159,6 +159,18 @@ class ThreeSignal(unittest.TestCase):
         self.assertFalse(v["registered"])
         self.assertEqual(v["window_ends"], "2026-11-20T00:21:12Z")
 
+    def test_a_whole_day_item_counts_to_the_end_of_its_day(self):
+        """From 16 Nov 2026 Noisefloor's items say precision "day" with data_as_of at the day's midnight; older snapshots
+        carry T23:59:59Z. Both read the same: the day counts until its end, so the 96-hour look-back is unchanged."""
+        for hours_after_day_end, seen in ((95, True), (97, False)):
+            at = f"2026-11-{12 + (hours_after_day_end // 24):02d}T{hours_after_day_end % 24:02d}:00:00Z"
+            old = jam()
+            new = jam(at="2026-11-11T00:00:00Z")
+            new["properties"]["data_as_of_precision"] = "day"
+            for label, f in (("old", old), ("new", new)):
+                found = hormuz(ts.read(snapshot(f, navwarn(), outage(), vis(), at=at)))["signals"]["interference"]["present"]
+                self.assertEqual(found, seen, (label, at))
+
     def test_replay_counts_only_days_with_every_layer(self):
         a = snapshot(jam(at="2026-11-10T23:59:59Z"), vis(), at="2026-11-11T00:21:12Z", states={"blackout": "missing"})
         b = snapshot(jam(), vis())

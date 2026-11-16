@@ -440,6 +440,26 @@ class Card(unittest.TestCase):
         self.assertEqual(js.count('"Measured, not a warning"'), 1)
         self.assertIn('p.status_class === "assessed" ? "Measured, not a warning" : "Measured or reported, not a judgment"', js)
 
+    def test_whole_day_items_are_fresh_to_the_end_of_their_day(self):
+        """A day item's data_as_of is midnight UTC at its start, but it covers the whole day: judged from the end of that
+        day (never later than now), so a program publishing yesterday's items is not a day older than it is."""
+        def day_only(f):
+            for item in f["watchfloor"]["features"]:
+                item["properties"].update({"data_as_of": "2026-10-30T00:00:00Z", "data_as_of_precision": "day"})
+        plain = health_of(build(mutate=lambda f: [i["properties"].update(
+            {"data_as_of": "2026-10-30T00:00:00Z"}) for i in f["watchfloor"]["features"]])[2], "watchfloor")
+        day = health_of(build(mutate=day_only)[2], "watchfloor")
+        self.assertEqual(plain["age_hours"], 44.5)          # 30 Oct 00:00 to 31 Oct 20:30
+        self.assertEqual(day["age_hours"], 20.5)            # the day ended 31 Oct 00:00
+        self.assertEqual(day["data_as_of"], "2026-10-30T00:00:00Z", "health still reports the source's own time")
+        future = health_of(build(mutate=lambda f: [i["properties"].update(
+            {"data_as_of": "2026-10-31T00:00:00Z", "data_as_of_precision": "day"}) for i in f["watchfloor"]["features"]])[2],
+            "watchfloor")
+        self.assertEqual(future["age_hours"], 0.0)          # today's day is still running: never in the future
+        month = snap.covered_until({"data_as_of": "2026-12-01T00:00:00Z", "data_as_of_precision": "month"},
+                                   datetime(2027, 3, 1, tzinfo=timezone.utc))
+        self.assertEqual(month, datetime(2027, 1, 1, tzinfo=timezone.utc))   # December ends at New Year
+
     def test_date_only_items_show_their_date(self):
         """data_as_of_precision (kit 0.5.6): a date-only or month-only time is shown as written, never moved into the
         viewer's zone (Undertow's '2025-06' read 'May 31, 7:00 PM CDT' before)."""
