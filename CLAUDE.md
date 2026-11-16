@@ -150,8 +150,9 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   `by_country_events`), then the pooled rate with its population named ("Across all 239 countries ... (only 61
   countries showed any signal)"). State power rates do the same (`by_state_events`). The page footer leads with the
   countries that showed a signal. `triage_rates.py --today` (default: now, UTC) leaves today's partial snapshot out
-  of the background (`days_left_out_partial`); it still feeds the history and the replay. `HIT_RATE_CAUTION` stands
-  beside every rate until an outage of known cause is replayed (the STOP replay). Measured on the archive (31 Oct-16
+  of the background (`days_left_out_partial`); it still feeds the history and the replay. `HIT_RATE_CAUTION` stood
+  beside every rate until the STOP replay (below); with the replay on file it is replaced on the country rates, and
+  kept, reworded (`triage_replay.STATE_CAUTION`), on the state power rates, which STOP does not cover. Measured on the archive (31 Oct-16
   Nov): counted days 9 -> 8, country-days 2,151 -> 1,912, natural 0.74% -> 0.78%, tension context 5.25% -> 5.39%,
   open 94.0% -> 93.8%; on the 61 countries' days: natural 3.1%, tension context 21.1%, open 75.8%; state-days 884
   -> 832, natural 14.7% -> 14.8%, 30 of 52 with a signal. Readings unchanged: the 7 replayed outages keep theirs.
@@ -176,8 +177,19 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   context 13% vs 5%; 16 of India's protest shutdowns read natural on a GDACS flood active elsewhere in India (triage
   reads countries); exam shutdowns fall in GDELT's June gap (45% incomplete). Three layers, Cordon's 25 countries,
   157 matched: tension context 7.0% -> 13.4% on shutdowns, 5.8% -> 8.8% on control days. Tests:
-  `test_stop_replay.py` (17), `test_history_cordon.py` (29), both in the build. Not built: printing the hit rate
-  beside the false-alarm rate on the page; option C (forward labels).
+  `test_stop_replay.py` (17), `test_history_cordon.py` (29), both in the build. Not built: option C (forward labels).
+  **The replay beside the base rates (step 4, second half; Tom's yes of 16 Nov 2026, branch `stop-triage-wiring`).**
+  `tools/triage_replay.py` reads the newest `history/replays/stop-2025-two-layer-*` and `...-three-layer-*` manifests
+  (counts and rates only; credit "Access Now, #KeepItOn STOP"; `--replays` on `triage.py`, default `history/replays`,
+  so the build needs no new flag) and `triage.py` `attach_replay` puts them in `triage.json` as `replay` (pooled
+  shares for shutdowns and ordinary days, both layer counts, a row per country, the caveats of both runs) and as
+  `replay_rate` on each internet-outage record whose reading is natural, tension context, open or incomplete: Cordon's
+  25 countries get the three-layer figures (157 matched), every other country the two-layer ones (172) with a caveat
+  that Cordon was not replayed there. Unconfirmed dips and US power records carry none. The page prints it beside each
+  record's Base rate and as a footer paragraph with the replay caveats folded; the MCP `outage_triage` returns `replay`
+  and `replay_rate`, credits Access Now, and its note and rule 7 forbid saying triage detects, finds or predicts
+  shutdowns. `HIT_RATE_CAUTION`'s replacement is built from the figures' directions (`triage_replay.caution`). Without
+  the manifests nothing changes (the old caution stays). Tests: `test_triage_replay.py` (13) and the MCP triage test.
   **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
   and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
   change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;

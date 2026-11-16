@@ -286,6 +286,29 @@ test("outage triage gives each layer's answer, the wording, and the question onl
     assert.ok(r.reading in res.readings);
   }
   assert.ok(!JSON.stringify(res.records).includes("probability"));
+  // The STOP replay: how often documented shutdowns read each way, beside the same countries' ordinary days.
+  assert.match(res.note, /replay_rate .* never say triage detects, finds or predicts shutdowns/);
+  assert.equal(res.replay.attribution, "Access Now, #KeepItOn STOP");
+  assert.equal(res.replay.three_layer.matched_shutdowns, 157);
+  assert.ok(res.replay.caveats.some((c) => /not a test of whether triage finds shutdowns/.test(c)));
+  assert.match(res.replay.caution, /does not show that a reading identifies a shutdown or its cause/);
+  for (const r of res.records) {
+    const x = r.replay_rate;
+    if (r.reading === "unconfirmed") {
+      assert.equal(x, null, "a single-source dip has no replay figure: STOP's shutdowns are all confirmed ones");
+      continue;
+    }
+    assert.ok(x, `${r.country} has a replay figure for its reading`);
+    assert.equal(x.reading, r.reading);
+    assert.ok(x.shutdown_share >= 0 && x.shutdown_share <= 1 && x.ordinary_day_share >= 0 && x.ordinary_day_share <= 1);
+    assert.match(x.text, /of shutdowns and on [\d.]+% of those countries' ordinary days/);
+    assert.doesNotMatch(x.text, /detect|predict|likely/i);
+  }
+  assert.ok(res.records.some((r) => r.replay_rate), "at least one record carries a replay figure");
+  assert.ok(res.attribution.includes("Access Now, #KeepItOn STOP"));
+  const noReplay = T.outageTriage(index, { ...triage, replay: null }, {}, NOW);
+  assert.match(noReplay.replay_note, /No STOP replay figures/);
+  assert.ok(!noReplay.attribution.includes("Access Now, #KeepItOn STOP"));
   const credit = res.attribution.join(" ");
   for (const name of ["Blackout", "Elements", "Cordon", "Watchfloor"]) assert.match(credit, new RegExp(name));
 });
