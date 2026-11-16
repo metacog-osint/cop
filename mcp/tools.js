@@ -312,13 +312,19 @@ export function outageTriage(index, triage, args, now) {
       "The time windows are provisional. question_draft (OONI) and cause_question_draft (whether an outside " +
       "source names a government order) are drafted questions that could score the reading later: a draft is not a " +
       "registered Verdict forecast and has no likelihood, so never quote one as a forecast (list_forecasts has the " +
-      "registered ones).",
+      "registered ones). replay_rate (internet-outage records) and replay say how often Access Now's documented 2025 " +
+      "shutdowns (the STOP dataset, replayed through triage) would have read the same way, beside how often those " +
+      "countries' ordinary days would have: quote both figures together with replay.caveats, credit Access Now, " +
+      "#KeepItOn STOP, and never say triage detects, finds or predicts shutdowns. A record with no replay_rate " +
+      "(US power, unconfirmed) has no replay figure.",
     readings: triage.readings,
     ...(triage.power_readings ? { power_readings: triage.power_readings } : {}),
     layer_states: triage.layer_states,
     windows: triage.windows,
     ...(triage.ended_items ? { ended_items: triage.ended_items } : {}),
     base_rates: triage.base_rates,
+    replay: triage.replay || null,
+    ...(triage.replay ? {} : { replay_note: "No STOP replay figures were available for this snapshot; the readings carry none." }),
     ...(triage.base_rates ? {} : { base_rates_note: "No base rates were available for this snapshot; the readings stand without them." }),
     count: records.length,
     ...(records.length
@@ -331,7 +337,7 @@ export function outageTriage(index, triage, args, now) {
               : "No outages in Blackout's current data.",
         }),
     records,
-    attribution: attributionFor(index, TRIAGE_PROGRAMS),
+    attribution: [...attributionFor(index, TRIAGE_PROGRAMS), ...(triage.replay ? [triage.replay.attribution] : [])],
   };
 }
 

@@ -583,6 +583,8 @@ function triageRecord(r) {
     h("p", { class: "tri-text", text: r.reading_text }),
     h("dl", { class: "tri-layers" }, ...layers),
     r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), r.base_rate.text) : null,
+    r.replay_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Documented shutdowns, 2025. " }), r.replay_rate.text,
+      ...(r.replay_rate.caveats || []).map((c) => ` ${c}`), ` Credit: ${r.replay_rate.attribution}.`) : null,
     r.eaglei ? h("p", { class: "tri-rate" }, h("strong", { text: "How often this state goes over the line. " }),
       `${r.eaglei.text} ${r.eaglei.caveat}`) : null,
     r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
@@ -649,6 +651,19 @@ function renderTriage() {
       `and open on ${pct(s.would_read.open)}, whatever its cause. `, ...(s.cautions || []).map((c) => `${c} `)));
   } else if (triage.records.length) {
     foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
+  }
+  const rp = triage.replay;
+  if (rp) {
+    const pct = (x) => `${(x * 100).toFixed(1)}%`;
+    const pair = (pool) => rp.readings.map((k) => `${k} ${pct(pool.shutdown_shares[k])} of shutdowns against ${pct(pool.ordinary_day_shares[k])} of ordinary days`).join("; ");
+    const t = rp.three_layer, w = rp.two_layer;
+    foot.append(h("p", { class: "note" },
+      `Documented shutdowns, replayed (${rp.source}; counts and rates only; credit ${rp.attribution}). How often a documented shutdown would have read each way, and how often the same countries' ordinary days would have, each shutdown set against its own country's ordinary days. ` +
+      `Cordon's ${t.places.length} countries, all three layers (${t.matched_shutdowns} shutdowns): ${pair(t)}. ` +
+      `Every country STOP covers, Elements and Watchfloor only (${w.matched_shutdowns} shutdowns, ${rp.countries_with_shutdowns} countries): ${pair(w)}. ` +
+      "It does not say that triage detects shutdowns, and no reading is a finding of cause."),
+      h("details", { class: "tri-q" }, h("summary", { text: "Replay caveats" }),
+        ...(rp.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c }))));
   }
   const unplaced = triage.unplaced || [];
   if (unplaced.length) foot.append(h("p", { class: "note" },

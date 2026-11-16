@@ -67,6 +67,7 @@ jobs:
           python tests/test_gate.py
           python tests/test_suite_watch.py
           python tests/test_triage.py
+          python tests/test_triage_replay.py
           python tests/test_triage_us_power.py
           python tests/test_triage_ended.py
           python tests/test_register_question.py

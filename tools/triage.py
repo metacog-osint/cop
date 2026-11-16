@@ -49,6 +49,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402
+import triage_replay as replay_mod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
@@ -1286,6 +1287,32 @@ def attach_rates(doc, rates):
     return doc
 
 
+def attach_replay(doc, replay):
+    """Put the STOP replay beside the base rates (cop-purpose sequence step 4). replay: triage_replay.load()'s
+    document, or None. Each internet-outage record whose reading the replay has figures for gets `replay_rate`; the
+    others get None (US power outages and unconfirmed dips are not in STOP). With a replay on file, the country base
+    rates' "no hit rate yet" caution gives way to the replay's own; the state power rates keep theirs, reworded to say
+    the replay does not cover them, because no power outage of known cause has been replayed."""
+    import triage_rates  # noqa: E402  (it imports this module, so it is read at call time)
+    doc["replay"] = replay
+    for r in doc["records"]:
+        r["replay_rate"] = None if (not replay or r.get("outage_kind") == "power") \
+            else replay_mod.record_rate(replay, r["country"], r["reading"], country_name(r["country"]))
+    if replay and doc.get("base_rates"):
+        def swap(cs):
+            return [replay["caution"] if c == triage_rates.HIT_RATE_CAUTION else c for c in cs or []]
+        def swap_state(cs):
+            return [replay_mod.STATE_CAUTION if c == triage_rates.HIT_RATE_CAUTION else c for c in cs or []]
+        doc["base_rates"]["cautions"] = swap(doc["base_rates"].get("cautions"))
+        if doc["base_rates"].get("states"):
+            doc["base_rates"]["states"]["cautions"] = swap_state(doc["base_rates"]["states"].get("cautions"))
+        for r in doc["records"]:
+            if r.get("base_rate"):
+                r["base_rate"]["cautions"] = (swap_state if r.get("outage_kind") == "power" else swap)(
+                    r["base_rate"].get("cautions"))
+    return doc
+
+
 def _on_days(k, days, word):
     return f"on none of {days} {word}" if k == 0 else f"on {k} of {days} {word}"
 
@@ -1470,6 +1497,7 @@ def public(doc):
     records = []
     for r in doc["records"]:
         rec = {k: r[k] for k in RECORD_KEYS}
+        rec["replay_rate"] = r.get("replay_rate")
         rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
                          for name, layer in r["layers"].items()}
         rec["question_draft"] = question_draft(r["verdict_draft"])
@@ -1479,7 +1507,7 @@ def public(doc):
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
-            "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
+            "replay": doc.get("replay"), "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
             "records": records}
 
 
@@ -1509,6 +1537,8 @@ def main(argv=None):
     ap.add_argument("--ended", default=None,
                     help="Elements' ended items (data/ended.geojson): URL or file; without it the readings say the "
                          "ended hazards are missing")
+    ap.add_argument("--replays", default=str(replay_mod.REPLAYS),
+                    help="folder of the STOP replay runs (history/replays); without them the readings carry no replay figures")
     ap.add_argument("--publish", default=None, metavar="FOLDER",
                     help=f"also write the public document, {PUBLIC_NAME}, here (the build passes site/data)")
     a = ap.parse_args(argv)
@@ -1521,7 +1551,8 @@ def main(argv=None):
             ended = load(a.ended)
         except Exception as e:  # noqa: BLE001 - an unreadable list is a missing list, and the records say so
             print(f"ended items unreadable: {type(e).__name__}")
-    doc = attach_rates(triage(load(a.snapshot), (rates or {}).get("history"), ended), rates)
+    doc = attach_replay(attach_rates(triage(load(a.snapshot), (rates or {}).get("history"), ended), rates),
+                        replay_mod.load(a.replays))
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     if a.publish:
         gate.write(JOIN, public(doc), publish_folder(a.publish), (PUBLIC_NAME,))
@@ -1534,6 +1565,8 @@ def main(argv=None):
         print(f"{r['us_state'] or r['country']}  {r['reading']:<11} {r['outage']['title']}")
         if r["base_rate"]:
             print(f"    base rate: {r['base_rate']['text']}")
+        if r.get("replay_rate"):
+            print(f"    STOP replay: {r['replay_rate']['text']}")
         if r["outage_kind"] == "power":
             E = L["elements"]
             print(f"    elements in or near {r['us_state']}: {len(E['significant'])} significant, {len(E['minor'])} "
@@ -1547,6 +1580,8 @@ def main(argv=None):
               f" | watchfloor: {len(L['watchfloor']['unusual_items'])} unusual, {len(L['watchfloor']['elevated'])}"
               " elevated"
               f"{'' if L['watchfloor']['data_reaches_outage'] else ' (data ends before the outage)'}")
+    if doc["replay"] is None:
+        print("no STOP replay on file: the readings carry no replay figures")
     if rates is None:
         print("no base rates: run tools/triage_rates.py first")
     if not doc["records"]:
