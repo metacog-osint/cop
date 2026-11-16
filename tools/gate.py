@@ -31,9 +31,10 @@ DEPLOYED = ("site", "functions", "mcp")    # folders the build ships: site/ as p
 
 _ITEM_ID = re.compile(r"^([a-z]+)(?:[:\-]([^:]*))?")
 # Programs whose item ids start with an upper-case prefix instead of the program's name. Undertow's are
-# "UT-<LANE>-<key>" ("UT-GOOGLE-fe9985db2a"); the lane is read as the kind, in lower case. An upper-case prefix not
+# "UT-<LANE>-<key>" ("UT-GOOGLE-fe9985db2a"), Relief's "RL-<LANE>-<key>" ("RL-IFRC-d855019585"); the lane is
+# read as the kind, in lower case. An upper-case prefix not
 # listed here names no program, so a join citing it is refused.
-ID_PREFIXES = {"UT": "undertow"}
+ID_PREFIXES = {"UT": "undertow", "RL": "relief"}
 _PREFIXED_ID = re.compile(r"^([A-Z]+)-([A-Z0-9]+)-")
 
 

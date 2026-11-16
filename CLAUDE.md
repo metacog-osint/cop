@@ -229,7 +229,7 @@ index, not the product, and agents get the same through the MCP server. Tom acce
 
 ## How it works
 - `tools/snapshot.py` (standard library) fetches the contract-v2 feeds of the programs in `config/programs.json` (Watchfloor,
-  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit, from 14 Nov 2026 Launch and Undertow, from 15 Nov 2026 Wake; PropertyCast is not a COP layer).
+  Context, Vigil, Noisefloor, from 31 Oct Elements and Cordon on GitHub Pages, from 8 Nov 2026 Vis, from 12 Nov 2026 Blackout, from 13 Nov 2026 Headwind and Orbit, from 14 Nov 2026 Launch and Undertow, from 15 Nov 2026 Wake, from 16 Nov 2026 Relief; PropertyCast is not a COP layer).
   **Since kit 0.4.0 (1 Nov 2026)** each program's name, family, feed, site and freshness windows come from the kit's
   suite registry (`doctrine/kit/vocab/programs.json`, edited in `D:\Projects\tic-doctrine`); `config/programs.json`
   keeps only how COP draws each program. A new program goes into the registry first, then gets drawing rules here.
@@ -411,6 +411,27 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   of 14:48 UTC 15 Nov (28 items, 7 anomalies), every timestamp moved back 14 days 18 h 19 min. The MCP tests used
   "wake" as their unknown program; they use "tempo" now. Checked offline 15 Nov in the browser pane: the Maritime
   chip draws 28 teal points, a card opens with "Measured, not a warning" and the signed size line.
+- **Relief** (16 Nov 2026, kit 0.5.9, which sets its registry entry live; branch `relief-layer`, not pushed): IFRC GO
+  emergency appeals and DREF allocations, and WHO Disease Outbreak News notices (Relief `relief-0.1`; 203 items on the
+  first read, all `routine`, kind `observation`). Points at the country's label point, precision `country` (WHO notices
+  can be MultiPoint for several countries or have no geometry and list under Off the map). **Ids are
+  `RL-IFRC-<key>` and `RL-WHO-<key>`, not `relief:`**, so `tools/gate.py` reads them through `ID_PREFIXES` as program
+  `relief`, lane as kind (`ifrc`, `who`), as it does Undertow's. Its own preset **"Society"** (new; Temper, the other
+  Society program, will share it), `mark` "halos", `country_mark` "halo", `routine_in_preset` with `routine_label`
+  "IFRC appeals and WHO outbreak notices, ringed on their countries", `source_health` on (two lanes), `freshness`
+  "feed" (registry 12 h fresh, 36 h stale). No `strength` rules: nothing is an anomaly, and an appeal's amount or
+  `place_context.tail_probability` ranks size or rarity, not need. `ended`:
+  `https://relief.theintelligence.company/data/ended.geojson`. Colour: the Society family colour, earth brown
+  `#8C510A` (outlines `#3F2405`, `#E8CFA0`; CIE76 32.0 from the nearest fill, Watchfloor `#D55E00`); Temper reuses it.
+  Sources `ifrc-go-appeals` and `who-don` in `config/sources.json`, both `commercial_ok` false (IFRC: non-commercial
+  with credit, no bulk copying of the data bank; WHO: research extracts with acknowledgement, no commercial use, title,
+  date and link only, never notice text). MCP instructions rule 11: the publishers' own records, tier always routine,
+  `place_context`'s Poisson figure is a measurement against the country's own ten-year rate and not a warning, never
+  quote WHO notice text. `tests/fixtures/relief.geojson`: 11 items cut from the live feed of 04:45 UTC 16 Nov (7 IFRC
+  of different appeal types and hazards, 4 WHO: Point, MultiPoint, no geometry), full timestamps moved back 15 days
+  8 h 16 min (day-precision ones by whole days, so they stay at midnight). Built locally from the fixtures: 11 items,
+  10 placed, none dropped, lint clean. If the address is not deployed when this ships, `snapshot.py` logs "relief
+  ended items: fetch failed" until it is.
 - **Items shown in a second preset (`also_in`, 14 Nov 2026, Tom's "Yes, add the filter"):** Cordon's NGA
   warnings that name rocket launching, space debris, a space vehicle or spacecraft, or reentry (kind `navwarn`,
   title or summary, Orbit's `navwarn` pattern) also show under "Spectrum and space", in Cordon's blue dashed style,

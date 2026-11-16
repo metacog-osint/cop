@@ -1,0 +1,993 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "relief",
+ "generated_at": "2026-10-31T20:29:19Z",
+ "method_version": "relief-0.1",
+ "licence": "Relief's own text: CC BY 4.0 (The Intelligence Company). Each item keeps its source's terms: IFRC GO, non-commercial use with credit, no bulk redistribution; WHO, extracts for research with acknowledgement, title, date and link only.",
+ "attribution": "Relief, The Intelligence Company. Sources: IFRC GO (International Federation of Red Cross and Red Crescent Societies); WHO Disease Outbreak News (World Health Organization).",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "note": "Measurements and publishers' reports only: no probability, no warning. IFRC appeals show where the Red Cross and Red Crescent asked for money, not every place in need: crises led by the ICRC, the UN or governments may have no IFRC appeal.",
+ "health": {
+  "ifrc-go-appeals": {
+   "state": "up",
+   "last_ok": "2026-10-31T20:29:19Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:29:19Z",
+   "detail": "366 items",
+   "lane": "ifrc",
+   "data_as_of": "2026-10-23T00:00:00Z"
+  },
+  "who-don": {
+   "state": "up",
+   "last_ok": "2026-10-31T20:29:19Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:29:19Z",
+   "detail": "42 items",
+   "lane": "who",
+   "data_as_of": "2026-10-29T00:00:00Z"
+  }
+ },
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -78.188,
+     -1.259
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-d855019585",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-d855019585"
+    },
+    "title": "DREF: Ecuador - Floods - Imminent",
+    "summary": "IFRC launched a DREF allocation for Ecuador (Flood) on 12 Oct 2026. CHF 499,999 requested, CHF 499,999 funded (100%), 38,034 people targeted. Active; IFRC lists the end date as 30 Apr 2027. Ecuador has had 1 IFRC appeal start in the last 90 days, against an average of 0.46 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-30T05:50:44Z",
+    "countries": [
+     "EC"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/countries/60",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDREC032: Ecuador - Floods - Imminent"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "8425",
+     "code": "MDREC032",
+     "appeal_type": "DREF",
+     "hazard": "Flood",
+     "status": "Active",
+     "start_date": "2026-10-12",
+     "end_date": "2027-04-30",
+     "past_end_date": false,
+     "amount_requested_chf": 499999.0,
+     "amount_funded_chf": 499999.0,
+     "funded_share": 1.0,
+     "people_targeted": 38034,
+     "emergency_id": null,
+     "emergency_name": null,
+     "ifrc_severity": null,
+     "region": "Americas"
+    },
+    "place_context": {
+     "appeals_last_90_days": 1,
+     "mean_per_90_days": 0.455,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 18,
+     "tail_probability": 0.3654
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     42.499,
+     11.976
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-22d2b80ed7",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-22d2b80ed7"
+    },
+    "title": "DREF: Djibouti - Storm Surge",
+    "summary": "IFRC launched a DREF allocation for Djibouti (Storm Surge) on 31 Jul 2026. CHF 326,543 requested, CHF 326,543 funded (100%), 4,160 people targeted. Active; IFRC lists the end date as 31 Dec 2026. Djibouti has had 1 IFRC appeal start in the last 90 days, against an average of 0.18 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-29T02:22:44Z",
+    "countries": [
+     "DJ"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/emergencies/8034",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDRDJ010: Djibouti - Storm Surge"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "4473",
+     "code": "MDRDJ010",
+     "appeal_type": "DREF",
+     "hazard": "Storm Surge",
+     "status": "Active",
+     "start_date": "2026-07-31",
+     "end_date": "2026-12-31",
+     "past_end_date": false,
+     "amount_requested_chf": 326543.0,
+     "amount_funded_chf": 326543.0,
+     "funded_share": 1.0,
+     "people_targeted": 4160,
+     "emergency_id": "8034",
+     "emergency_name": "Djibouti Storm Surge 2026",
+     "ifrc_severity": "Yellow",
+     "region": "Africa"
+    },
+    "place_context": {
+     "appeals_last_90_days": 1,
+     "mean_per_90_days": 0.177,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 7,
+     "tail_probability": 0.1621
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     89.685,
+     24.215
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-631788e2a3",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-631788e2a3"
+    },
+    "title": "DREF: Bangladesh Measles",
+    "summary": "IFRC launched a DREF allocation for Bangladesh (Epidemic) on 14 Apr 2026. CHF 997,501 requested, CHF 997,501 funded (100%), 1,000,000 people targeted. Active; IFRC lists the end date as 31 Jan 2027. Bangladesh has had 1 IFRC appeal start in the last 90 days, against an average of 0.58 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-26T00:39:44Z",
+    "countries": [
+     "BD"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/emergencies/7881",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDRBD039: Bangladesh Measles"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "4426",
+     "code": "MDRBD039",
+     "appeal_type": "DREF",
+     "hazard": "Epidemic",
+     "status": "Active",
+     "start_date": "2026-04-14",
+     "end_date": "2027-01-31",
+     "past_end_date": false,
+     "amount_requested_chf": 997501.0,
+     "amount_funded_chf": 997501.0,
+     "funded_share": 1.0,
+     "people_targeted": 1000000,
+     "emergency_id": "7881",
+     "emergency_name": "Bangladesh: Measles Outbreak, 2026",
+     "ifrc_severity": "Orange",
+     "region": "Asia Pacific"
+    },
+    "place_context": {
+     "appeals_last_90_days": 1,
+     "mean_per_90_days": 0.581,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 23,
+     "tail_probability": 0.4407
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     37.908,
+     0.549
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-99a91b14a0",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-99a91b14a0"
+    },
+    "title": "DREF: Kenya - Population Movement",
+    "summary": "IFRC launched a DREF allocation for Kenya (Population Movement) on 29 Oct 2026. CHF 375,006 requested, CHF 375,006 funded (100%), 15,240 people targeted. Active; IFRC lists the end date as 31 Jan 2027. Kenya has had 3 IFRC appeals start in the last 90 days, against an average of 0.94 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-23T20:14:49Z",
+    "countries": [
+     "KE"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/emergencies/8129",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDRKE075: Kenya - Population Movement"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "8435",
+     "code": "MDRKE075",
+     "appeal_type": "DREF",
+     "hazard": "Population Movement",
+     "status": "Active",
+     "start_date": "2026-10-29",
+     "end_date": "2027-01-31",
+     "past_end_date": false,
+     "amount_requested_chf": 375006.0,
+     "amount_funded_chf": 375006.0,
+     "funded_share": 1.0,
+     "people_targeted": 15240,
+     "emergency_id": "8129",
+     "emergency_name": "KEN: Population Movement - 10-2026 - Kenya Population Influx- Moyale/ Mandera",
+     "ifrc_severity": "Yellow",
+     "region": "Africa"
+    },
+    "place_context": {
+     "appeals_last_90_days": 3,
+     "mean_per_90_days": 0.935,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 37,
+     "tail_probability": 0.0687
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.473,
+     4.585
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-9deae67119",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-9deae67119"
+    },
+    "title": "Emergency Appeal: Cameroon - Food Insecurity",
+    "summary": "IFRC launched an Emergency Appeal for Cameroon (Food Insecurity) on 8 Dec 2025. CHF 9,600,000 requested, CHF 2,072,159 funded (22%), 330,000 people targeted. Active; IFRC lists the end date as 30 Jun 2027. Cameroon has had 0 IFRC appeals start in the last 90 days, against an average of 0.46 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-22T03:17:45Z",
+    "countries": [
+     "CM"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/emergencies/7821",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "Emergency Appeal MDRCM042: Cameroon - Food Insecurity"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "4142",
+     "code": "MDRCM042",
+     "appeal_type": "Emergency Appeal",
+     "hazard": "Food Insecurity",
+     "status": "Active",
+     "start_date": "2025-12-08",
+     "end_date": "2027-06-30",
+     "past_end_date": false,
+     "amount_requested_chf": 9600000.0,
+     "amount_funded_chf": 2072158.62,
+     "funded_share": 0.216,
+     "people_targeted": 330000,
+     "emergency_id": "7821",
+     "emergency_name": "2026 : Cameroon Food Insecurity",
+     "ifrc_severity": "Orange",
+     "region": "Africa"
+    },
+    "place_context": {
+     "appeals_last_90_days": 0,
+     "mean_per_90_days": 0.455,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 18,
+     "tail_probability": 1.0
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     32.949,
+     1.973
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-6e3e5be78b",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-6e3e5be78b"
+    },
+    "title": "DREF: Uganda - Drought",
+    "summary": "IFRC launched a DREF allocation for Uganda (Drought) on 20 Oct 2026. CHF 72,428 requested, CHF 72,428 funded (100%), 76,800 people targeted. Active; IFRC lists the end date as 31 Dec 2026. Uganda has had 1 IFRC appeal start in the last 90 days, against an average of 0.43 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-18T07:33:46Z",
+    "countries": [
+     "UG"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/countries/176",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDRUG059: Uganda - Drought"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "8431",
+     "code": "MDRUG059",
+     "appeal_type": "DREF",
+     "hazard": "Drought",
+     "status": "Active",
+     "start_date": "2026-10-20",
+     "end_date": "2026-12-31",
+     "past_end_date": false,
+     "amount_requested_chf": 72428.0,
+     "amount_funded_chf": 72428.0,
+     "funded_share": 1.0,
+     "people_targeted": 76800,
+     "emergency_id": null,
+     "emergency_name": null,
+     "ifrc_severity": null,
+     "region": "Africa"
+    },
+    "place_context": {
+     "appeals_last_90_days": 1,
+     "mean_per_90_days": 0.43,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 17,
+     "tail_probability": 0.3492
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     26.395,
+     -14.661
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-IFRC-e27089abd5",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-1",
+     "RL-PIR-2",
+     "RL-EEI-1"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-IFRC-e27089abd5"
+    },
+    "title": "DREF: Zambia - Measles",
+    "summary": "IFRC launched a DREF allocation for Zambia (Other) on 18 Jul 2026. CHF 78,213 requested, CHF 78,213 funded (100%), 154,316 people targeted. Active; IFRC lists the end date as 30 Nov 2026. Zambia has had 0 IFRC appeals start in the last 90 days, against an average of 0.46 per 90 days over 2016-11-16 to 2026-08-17.",
+    "data_as_of": "2026-10-15T09:52:46Z",
+    "countries": [
+     "ZM"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "ifrc-go-appeals",
+      "publisher": "International Federation of Red Cross and Red Crescent Societies (IFRC), GO platform",
+      "licence": "IFRC GO terms: non-commercial use with credit; analyses allowed; the data bank is not copied or redistributed in bulk",
+      "independence_group": "ifrc",
+      "source_type": "humanitarian organisation (own appeals)",
+      "descriptor": "IFRC's own record of an Emergency Appeal or DREF allocation it launched: hazard, country, amounts requested and funded in CHF, people targeted, dates.",
+      "url": "https://go.ifrc.org/countries/12",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "DREF MDRZM028: Zambia - Measles"
+     }
+    ],
+    "appeal": {
+     "appeal_id": "4461",
+     "code": "MDRZM028",
+     "appeal_type": "DREF",
+     "hazard": "Other",
+     "status": "Active",
+     "start_date": "2026-07-18",
+     "end_date": "2026-11-30",
+     "past_end_date": false,
+     "amount_requested_chf": 78213.0,
+     "amount_funded_chf": 78213.0,
+     "funded_share": 1.0,
+     "people_targeted": 154316,
+     "emergency_id": null,
+     "emergency_name": null,
+     "ifrc_severity": null,
+     "region": "Africa"
+    },
+    "place_context": {
+     "appeals_last_90_days": 0,
+     "mean_per_90_days": 0.455,
+     "baseline_window": "2016-11-16 to 2026-08-17",
+     "appeals_in_baseline": 18,
+     "tail_probability": 1.0
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     51.144,
+     25.237
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-WHO-0b2662db99",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-3"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-WHO-0b2662db99"
+    },
+    "title": "WHO outbreak notice: Middle East respiratory syndrome (MERS) \u2013 Qatar",
+    "summary": "WHO published a Disease Outbreak News notice on 13 Nov 2026: Middle East respiratory syndrome (MERS), Qatar. First WHO notice naming Qatar in two years. WHO publishes a notice after it has verified the event, often weeks after the first report.",
+    "data_as_of": "2026-10-29T00:00:00Z",
+    "data_as_of_precision": "day",
+    "countries": [
+     "QA"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "who-don",
+      "publisher": "World Health Organization (WHO), Disease Outbreak News",
+      "licence": "WHO website terms: extracts for research with acknowledgement of WHO, not for commercial use; title, date and link only, no notice text republished",
+      "independence_group": "who",
+      "source_type": "official notice (UN agency)",
+      "descriptor": "WHO's Disease Outbreak News notice of an acute public health event, usually after a member state's notification under the International Health Regulations.",
+      "url": "https://www.who.int/emergencies/disease-outbreak-news/item/2026-DON626",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "Middle East respiratory syndrome (MERS) \u2013 Qatar",
+      "published_at": "2026-10-29T00:00:00Z"
+     }
+    ],
+    "notice": {
+     "don_id": "2026-DON626",
+     "disease": "Middle East respiratory syndrome (MERS)",
+     "place": "Qatar",
+     "regions": [],
+     "place_unread": null,
+     "prior_notices_730_days": {
+      "QA": 0
+     }
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "MultiPoint",
+    "coordinates": [
+     [
+      23.459,
+      -1.858
+     ],
+     [
+      37.908,
+      0.549
+     ],
+     [
+      7.503,
+      9.44
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-WHO-cabe47c23c",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-3"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-WHO-cabe47c23c"
+    },
+    "title": "WHO outbreak notice: Ebola disease caused by Bundibugyo virus, Democratic Republic of the Congo, Kenya and Nigeria",
+    "summary": "WHO published a Disease Outbreak News notice on 6 Nov 2026: Ebola disease caused by Bundibugyo virus, Democratic Republic of the Congo, Kenya, Nigeria. WHO's 21st notice naming Democratic Republic of the Congo in two years. WHO's 2nd notice naming Kenya in two years. WHO's 2nd notice naming Nigeria in two years. WHO publishes a notice after it has verified the event, often weeks after the first report.",
+    "data_as_of": "2026-10-22T00:00:00Z",
+    "data_as_of_precision": "day",
+    "countries": [
+     "CD",
+     "KE",
+     "NG"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "who-don",
+      "publisher": "World Health Organization (WHO), Disease Outbreak News",
+      "licence": "WHO website terms: extracts for research with acknowledgement of WHO, not for commercial use; title, date and link only, no notice text republished",
+      "independence_group": "who",
+      "source_type": "official notice (UN agency)",
+      "descriptor": "WHO's Disease Outbreak News notice of an acute public health event, usually after a member state's notification under the International Health Regulations.",
+      "url": "https://www.who.int/emergencies/disease-outbreak-news/item/2026-DON625",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "Ebola disease caused by Bundibugyo virus, Democratic Republic of the Congo, Kenya and Nigeria",
+      "published_at": "2026-10-22T00:00:00Z"
+     }
+    ],
+    "notice": {
+     "don_id": "2026-DON625",
+     "disease": "Ebola disease caused by Bundibugyo virus",
+     "place": "Democratic Republic of the Congo, Kenya and Nigeria",
+     "regions": [],
+     "place_unread": null,
+     "prior_notices_730_days": {
+      "CD": 20,
+      "KE": 1,
+      "NG": 1
+     }
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-WHO-9f6a55c523",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-3"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-WHO-9f6a55c523"
+    },
+    "title": "WHO outbreak notice: Yellow fever - WHO African Region",
+    "summary": "WHO published a Disease Outbreak News notice on 6 Nov 2026: Yellow fever, WHO African Region. WHO publishes a notice after it has verified the event, often weeks after the first report.",
+    "data_as_of": "2026-10-22T00:00:00Z",
+    "data_as_of_precision": "day",
+    "countries": [],
+    "precision_class": "none",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "who-don",
+      "publisher": "World Health Organization (WHO), Disease Outbreak News",
+      "licence": "WHO website terms: extracts for research with acknowledgement of WHO, not for commercial use; title, date and link only, no notice text republished",
+      "independence_group": "who",
+      "source_type": "official notice (UN agency)",
+      "descriptor": "WHO's Disease Outbreak News notice of an acute public health event, usually after a member state's notification under the International Health Regulations.",
+      "url": "https://www.who.int/emergencies/disease-outbreak-news/item/2026-DON624",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "Yellow fever - WHO African Region",
+      "published_at": "2026-10-22T00:00:00Z"
+     }
+    ],
+    "notice": {
+     "don_id": "2026-DON624",
+     "disease": "Yellow fever",
+     "place": "WHO African Region",
+     "regions": [
+      "WHO African Region"
+     ],
+     "place_unread": null,
+     "prior_notices_730_days": {}
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     2.552,
+     46.696
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "RL-WHO-091374c91f",
+    "program": "relief",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:29:19Z",
+    "pmesii_pt": [
+     "social"
+    ],
+    "ie_aspect": [
+     "physical",
+     "human"
+    ],
+    "ascope": [
+     "people",
+     "events"
+    ],
+    "requirement_ids": [
+     "RL-PIR-3"
+    ],
+    "method_version": "relief-0.1",
+    "visual": {
+     "type": "page",
+     "url": "https://relief.theintelligence.company/#RL-WHO-091374c91f"
+    },
+    "title": "WHO outbreak notice: Shamonda virus in human - France",
+    "summary": "WHO published a Disease Outbreak News notice on 2 Nov 2026: Shamonda virus in human, France. First WHO notice naming France in two years. WHO publishes a notice after it has verified the event, often weeks after the first report.",
+    "data_as_of": "2026-10-18T00:00:00Z",
+    "data_as_of_precision": "day",
+    "countries": [
+     "FR"
+    ],
+    "precision_class": "country",
+    "coverage_fraction": 1.0,
+    "sources": [
+     {
+      "id": "who-don",
+      "publisher": "World Health Organization (WHO), Disease Outbreak News",
+      "licence": "WHO website terms: extracts for research with acknowledgement of WHO, not for commercial use; title, date and link only, no notice text republished",
+      "independence_group": "who",
+      "source_type": "official notice (UN agency)",
+      "descriptor": "WHO's Disease Outbreak News notice of an acute public health event, usually after a member state's notification under the International Health Regulations.",
+      "url": "https://www.who.int/emergencies/disease-outbreak-news/item/2026-DON623",
+      "grade": "A2",
+      "accessed_at": "2026-10-31T20:29:19Z",
+      "title": "Shamonda virus in human - France",
+      "published_at": "2026-10-18T00:00:00Z"
+     }
+    ],
+    "notice": {
+     "don_id": "2026-DON623",
+     "disease": "Shamonda virus in human",
+     "place": "France",
+     "regions": [],
+     "place_unread": null,
+     "prior_notices_730_days": {
+      "FR": 0
+     }
+    }
+   }
+  }
+ ]
+}
