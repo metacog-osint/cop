@@ -136,7 +136,8 @@ class Archive(unittest.TestCase):
         self.assertEqual(withit["days"][0]["ended_list"], "served")
         self.assertIn("NY", withit["days"][0]["natural_states"])
         self.assertNotIn("NY", without["days"][0]["natural_states"])
-        self.assertEqual(withit["cautions"][1:], [], "every day has its list: no missing-list caution")
+        self.assertEqual(withit["cautions"][1:], [rates.HIT_RATE_CAUTION],
+                         "every day has its list: no missing-list caution, only the hit-rate one")
         self.assertTrue(any("no list of Elements' ended hazards" in c for c in without["cautions"]))
 
 

@@ -605,14 +605,23 @@ function renderTriage() {
   const b = triage.base_rates;
   if (b) {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
+    const sw = b.signal_countries_would_read;
     foot.append(h("p", { class: "note" },
-      `Base rates: over ${b.country_days.toLocaleString("en-US")} country-days in COP's archive, an outage would have read natural on ${pct(b.would_read.natural)}, ` +
-      `tension context on ${pct(b.would_read["tension context"])} and open on ${pct(b.would_read.open)}, whatever its cause. `,
+      sw && b.countries_with_signal
+        ? `Base rates over ${b.counted_days} counted days in COP's archive: ${b.countries_with_signal} of ${b.countries} countries showed a signal on at least one. ` +
+          `On those countries' days an outage would have read natural on ${pct(sw.natural)}, tension context on ${pct(sw["tension context"])} and open on ${pct(sw.open)}, whatever its cause. ` +
+          `Across all ${b.countries} countries' ${b.country_days.toLocaleString("en-US")} country-days: natural ${pct(b.would_read.natural)}, ` +
+          `tension context ${pct(b.would_read["tension context"])}, open ${pct(b.would_read.open)}. `
+        : `Base rates: over ${b.country_days.toLocaleString("en-US")} country-days in COP's archive, an outage would have read natural on ${pct(b.would_read.natural)}, ` +
+          `tension context on ${pct(b.would_read["tension context"])} and open on ${pct(b.would_read.open)}, whatever its cause. `,
       ...(b.cautions || []).map((c) => `${c} `),
       triage.windows && triage.windows.provisional ? "The time windows are provisional." : null));
     const s = b.states;
     if (s && s.state_days) foot.append(h("p", { class: "note" },
-      `US state power outages: over ${s.state_days.toLocaleString("en-US")} state-days, one would have read natural on ${pct(s.would_read.natural)} ` +
+      (s.states_with_signal != null && s.days
+        ? `US state power outages, over ${s.days} days: ${s.states_with_signal} of ${s.states} states (DC and Puerto Rico included) had a hazard that takes power lines down on at least one. ` +
+          `Across all ${s.state_days.toLocaleString("en-US")} state-days, one would have read natural on ${pct(s.would_read.natural)} `
+        : `US state power outages: over ${s.state_days.toLocaleString("en-US")} state-days, one would have read natural on ${pct(s.would_read.natural)} `) +
       `and open on ${pct(s.would_read.open)}, whatever its cause. `, ...(s.cautions || []).map((c) => `${c} `)));
   } else if (triage.records.length) {
     foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
