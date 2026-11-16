@@ -1,0 +1,223 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "cordon-embassy-alerts-2024-12-01-2025-12-31",
+ "layer": "cordon",
+ "title": "US embassy alerts by publication time, from Wayback captures of each embassy's alert feed",
+ "description": "One row per alert an embassy or consulate published (country of the post, exact UTC time, title, type from the title). For replaying triage's embassy alert notices (kind alert; security and demonstration alerts count, weather, health, event and routine do not).",
+ "sources": [
+  {
+   "id": "usembassy-alert-feed-wayback",
+   "name": "US embassy and consulate alert category RSS feeds, as captured by the Internet Archive",
+   "url": "https://<cc>.usembassy.gov/category/alert/feed/",
+   "licence": "US Government work, public domain (embassy websites, state.gov)",
+   "attribution": "U.S. Department of State, U.S. embassies and consulates (usembassy.gov); captures by the Internet Archive Wayback Machine",
+   "how": "wayback"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "tools/history_cordon_embassy.py",
+  "commit": "7e29196",
+  "params": {
+   "feed": "https://{host}/category/alert/feed/",
+   "feed_items": 10,
+   "hosts": {
+    "MM": "mm.usembassy.gov",
+    "IN": "in.usembassy.gov",
+    "PK": "pk.usembassy.gov",
+    "RU": "ru.usembassy.gov",
+    "IQ": "iq.usembassy.gov",
+    "IL": "il.usembassy.gov",
+    "PS": "il.usembassy.gov",
+    "TZ": "tz.usembassy.gov",
+    "AF": "af.usembassy.gov",
+    "UA": "ua.usembassy.gov",
+    "SY": "sy.usembassy.gov",
+    "YE": "ye.usembassy.gov",
+    "TR": "tr.usembassy.gov",
+    "KE": "ke.usembassy.gov",
+    "SD": "sd.usembassy.gov",
+    "CM": "cm.usembassy.gov",
+    "VE": "ve.usembassy.gov",
+    "BY": "by.usembassy.gov",
+    "CD": "cd.usembassy.gov",
+    "KH": "kh.usembassy.gov",
+    "PA": "pa.usembassy.gov",
+    "JO": "jo.usembassy.gov",
+    "NP": "np.usembassy.gov",
+    "GN": "gn.usembassy.gov"
+   },
+   "captures": {
+    "MM": 11,
+    "IN": 5,
+    "PK": 10,
+    "RU": 14,
+    "IQ": 16,
+    "IL": 27,
+    "PS": 27,
+    "TZ": 17,
+    "AF": 16,
+    "UA": 14,
+    "SY": 13,
+    "YE": 9,
+    "TR": 15,
+    "KE": 9,
+    "SD": 11,
+    "CM": 14,
+    "VE": 15,
+    "BY": 11,
+    "CD": 16,
+    "KH": 13,
+    "PA": 17,
+    "JO": 11,
+    "NP": 12,
+    "GN": 11
+   },
+   "unreadable": {
+    "MM": 5,
+    "IN": 4,
+    "PK": 5,
+    "RU": 6,
+    "IQ": 5,
+    "IL": 6,
+    "PS": 6,
+    "TZ": 6,
+    "AF": 5,
+    "UA": 5,
+    "SY": 6,
+    "YE": 5,
+    "TR": 5,
+    "KE": 5,
+    "SD": 6,
+    "CM": 5,
+    "VE": 5,
+    "BY": 6,
+    "CD": 6,
+    "KH": 6,
+    "PA": 6,
+    "JO": 6,
+    "NP": 5,
+    "GN": 5
+   }
+  },
+  "matches_live": false,
+  "differences": [
+   "Live Cordon reads the feeds directly (or a Google News search when they 403) for posts of countries at advisory level 3-4 plus a fixed list, and keeps ten per post; here every embassy in the list is read, from archived feeds.",
+   "An alert published and pushed off the ten-item feed between two captures is missing.",
+   "An edited alert keeps its first publication time here; Cordon's Google News fallback can re-date an edited alert.",
+   "Palestine has no embassy of its own: alerts of US Embassy Jerusalem (il.usembassy.gov) are rows for place IL, and copied to PS when the title or summary names the West Bank, Gaza or Palestinians."
+  ]
+ },
+ "coverage": {
+  "start": "2024-12-01",
+  "end": "2025-12-31",
+  "time_precision": "minute",
+  "places": [
+   "AF",
+   "BY",
+   "CD",
+   "CM",
+   "GN",
+   "IL",
+   "IN",
+   "IQ",
+   "JO",
+   "KE",
+   "KH",
+   "MM",
+   "NP",
+   "PA",
+   "PK",
+   "PS",
+   "RU",
+   "SD",
+   "SY",
+   "TR",
+   "TZ",
+   "UA",
+   "VE",
+   "YE"
+  ],
+  "place_code": "ISO 3166-1 alpha-2"
+ },
+ "gaps": [
+  {
+   "from": "2025-07-18",
+   "to": "2025-09-08",
+   "places": "IN",
+   "reason": "no capture's ten newest alerts span this stretch; alerts posted in it and pushed off the feed before the next capture are missing"
+  },
+  {
+   "from": "2025-09-22",
+   "to": "2025-09-23",
+   "places": "TZ",
+   "reason": "no capture's ten newest alerts span this stretch; alerts posted in it and pushed off the feed before the next capture are missing"
+  },
+  {
+   "from": "2025-01-12",
+   "to": "2025-01-23",
+   "places": "CD",
+   "reason": "no capture's ten newest alerts span this stretch; alerts posted in it and pushed off the feed before the next capture are missing"
+  },
+  {
+   "from": "2025-04-28",
+   "to": "2025-06-13",
+   "places": "JO",
+   "reason": "no capture's ten newest alerts span this stretch; alerts posted in it and pushed off the feed before the next capture are missing"
+  },
+  {
+   "from": "2024-12-01",
+   "to": "2025-12-31",
+   "places": "IR",
+   "reason": "no US embassy website (protecting-power or virtual presence only)"
+  }
+ ],
+ "biases": [
+  "Under-counts alerts in busy periods (many alerts between captures) and for embassies with few archived captures.",
+  "Over-represents embassies whose feeds the Archive captured often, which are the large and the newsworthy ones.",
+  "Countries with no operating embassy (Iran, and Afghanistan, Syria, Yemen where their sites were not archived) have no rows, which is not the same as no alerts."
+ ],
+ "rows": {
+  "count": 341,
+  "places": 24,
+  "days": 176
+ },
+ "row_schema": {
+  "place": "ISO alpha-2 of the post's country",
+  "at": "publication time, UTC",
+  "precision": "minute",
+  "source_id": "usembassy-alert-feed-wayback",
+  "source_ref": "the Wayback capture of the feed that first showed the alert",
+  "retrieved_at": "UTC",
+  "quality": "empty unless noted",
+  "item_id": "cordon:alert:<ISO>:<12 hex of sha256(link)>",
+  "kind": "alert",
+  "title": "the alert title as posted",
+  "alert_type_raw": "type word from the title",
+  "link": "the alert's URL",
+  "summary": "first 240 characters of the feed's excerpt",
+  "embassy_host": "usembassy.gov host",
+  "first_seen": "capture time that first showed it, UTC",
+  "countries": "[place]",
+  "place_note": "set for Palestine copies"
+ },
+ "files": [
+  {
+   "path_or_url": "history/cordon/cordon-embassy-alerts-2024-12-01-2025-12-31/rows.jsonl",
+   "sha256": "f770cb48e7f75c76295f363465527fffd18a54872f096cbacc2add3272265833",
+   "bytes": 279939
+  }
+ ],
+ "redistribution": "rows",
+ "built_at": "2026-11-16T08:39:09Z",
+ "built_by": "tools/history_cordon_embassy.py, COP Cordon-history session, 16 Nov 2026",
+ "uses": [
+  "replaying triage's embassy alert notices for 2025",
+  "base rates of security and demonstration alerts per country-day"
+ ],
+ "not_for": [
+  "a complete record of embassy alerts",
+  "countries without a captured embassy feed"
+ ],
+ "supersedes": null
+}

@@ -1,0 +1,308 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "cordon-state-advisories-2024-12-01-2025-12-31",
+ "layer": "cordon",
+ "title": "State Department travel advisory levels by update date, from Wayback captures of its RSS",
+ "description": "One row per advisory update (country, date updated, level) as State's advisories RSS showed it in an Internet Archive capture. For replaying triage's advisory notices (kind advisory) against Access Now's 2025 shutdowns.",
+ "sources": [
+  {
+   "id": "state-advisories-rss",
+   "name": "US State Department travel advisories RSS, as captured by the Internet Archive",
+   "url": "https://travel.state.gov/_res/rss/TAsTWs.xml",
+   "licence": "US Government work, public domain",
+   "attribution": "U.S. Department of State, Bureau of Consular Affairs (travel.state.gov); captures by the Internet Archive Wayback Machine",
+   "how": "wayback"
+  },
+  {
+   "id": "state-advisory-pages",
+   "name": "US State Department travel advisory pages, as captured by the Internet Archive",
+   "url": "https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories/{slug}-travel-advisory.html",
+   "licence": "US Government work, public domain",
+   "attribution": "U.S. Department of State, Bureau of Consular Affairs (travel.state.gov); captures by the Internet Archive Wayback Machine",
+   "how": "wayback"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "tools/history_cordon_state.py",
+  "commit": "9bb3065",
+  "params": {
+   "rss": "https://travel.state.gov/_res/rss/TAsTWs.xml",
+   "gap_days": 7,
+   "slugs": [
+    "afghanistan",
+    "albania",
+    "algeria",
+    "angola",
+    "belarus",
+    "burma",
+    "cambodia",
+    "cameroon",
+    "central-african-republic",
+    "chad",
+    "democratic-republic-of-the-congo",
+    "destination.afg",
+    "destination.ago",
+    "destination.alb",
+    "destination.blr",
+    "destination.caf",
+    "destination.cmr",
+    "destination.cod",
+    "destination.dza",
+    "destination.gin",
+    "destination.gnb",
+    "destination.idn",
+    "destination.ind",
+    "destination.irn",
+    "destination.irq",
+    "destination.isr",
+    "destination.jor",
+    "destination.ken",
+    "destination.khm",
+    "destination.lby",
+    "destination.ltu",
+    "destination.mmr",
+    "destination.nga",
+    "destination.npl",
+    "destination.pak",
+    "destination.pan",
+    "destination.png",
+    "destination.rus",
+    "destination.sdn",
+    "destination.ssd",
+    "destination.syr",
+    "destination.tcd",
+    "destination.tgo",
+    "destination.tur",
+    "destination.tza",
+    "destination.ukr",
+    "destination.ven",
+    "destination.vnm",
+    "destination.yem",
+    "guinea",
+    "guinea-bissau",
+    "india",
+    "indonesia",
+    "iran",
+    "iraq",
+    "israel-the-west-bank-and-gaza",
+    "israel-west-bank-and-gaza",
+    "jordan",
+    "kenya",
+    "libya",
+    "lithuania",
+    "nepal",
+    "nigeria",
+    "pakistan",
+    "panama",
+    "papua-new-guinea",
+    "russia",
+    "south-sudan",
+    "sudan",
+    "syria",
+    "tanzania",
+    "togo",
+    "turkey",
+    "turkey-turkiye",
+    "turkiye",
+    "ukraine",
+    "venezuela",
+    "vietnam",
+    "yemen"
+   ],
+   "captures_read": 52,
+   "captures_failed": []
+  },
+  "matches_live": false,
+  "differences": [
+   "Live Cordon reads State's JSON (cadataapi.state.gov), which carries the update time; the RSS carries the date only, so every row is day precision.",
+   "An update that appeared and was replaced between two captures is missed.",
+   "Tier is derived the way Cordon marks it (level changed in the 30 days before), not read from a stored change log.",
+   "Departure posture (kind posture, read from the advisory text) is not rebuilt.",
+   "Gaza and the West Bank are State's combined Israel, West Bank and Gaza advisory, copied to place PS."
+  ]
+ },
+ "coverage": {
+  "start": "2024-12-01",
+  "end": "2025-12-31",
+  "time_precision": "day",
+  "places": [
+   "AF",
+   "AL",
+   "AO",
+   "BY",
+   "CD",
+   "CF",
+   "CM",
+   "DZ",
+   "GN",
+   "GW",
+   "ID",
+   "IL",
+   "IN",
+   "IQ",
+   "IR",
+   "JO",
+   "KE",
+   "KH",
+   "LT",
+   "LY",
+   "MM",
+   "NG",
+   "NP",
+   "PA",
+   "PG",
+   "PK",
+   "PS",
+   "RU",
+   "SD",
+   "SS",
+   "SY",
+   "TD",
+   "TG",
+   "TR",
+   "TZ",
+   "UA",
+   "VE",
+   "VN",
+   "YE"
+  ],
+  "place_code": "ISO 3166-1 alpha-2"
+ },
+ "gaps": [
+  {
+   "from": "2024-12-19",
+   "to": "2025-01-12",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 24 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-01-12",
+   "to": "2025-01-22",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 10 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-02-09",
+   "to": "2025-02-20",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 11 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-02-20",
+   "to": "2025-03-06",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 14 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-03-10",
+   "to": "2025-04-01",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 22 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-04-01",
+   "to": "2025-04-23",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 22 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-04-23",
+   "to": "2025-06-17",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 55 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-06-17",
+   "to": "2025-07-07",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 20 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-07-07",
+   "to": "2025-08-09",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 33 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-08-09",
+   "to": "2025-09-07",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 29 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-09-07",
+   "to": "2025-11-15",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 69 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-11-19",
+   "to": "2025-11-29",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 10 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-12-12",
+   "to": "2025-12-26",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 14 days; a level update inside the gap would show only in the next capture's dates"
+  },
+  {
+   "from": "2025-12-26",
+   "to": "2025-12-31",
+   "places": "all",
+   "reason": "no capture of the advisories RSS for 21 days; a level update inside the gap would show only in the next capture's dates"
+  }
+ ],
+ "biases": [
+  "Levels are exact on the day of each update; the risk is a missed update between captures, flagged capture-gap on the row that followed.",
+  "A 'reissued after periodic review without changes' notice carries a new date at the same level; triage reads it as not raised.",
+  "The Archive's captures are irregular and thin in autumn 2025."
+ ],
+ "rows": {
+  "count": 96,
+  "places": 39,
+  "days": 74
+ },
+ "row_schema": {
+  "place": "ISO alpha-2",
+  "at": "date the advisory was updated (UTC day)",
+  "precision": "day",
+  "source_id": "state-advisories-rss",
+  "source_ref": "the Wayback capture that first showed the row",
+  "retrieved_at": "UTC",
+  "quality": "capture-gap, lead-in",
+  "item_id": "cordon:advisory:<key>",
+  "kind": "advisory",
+  "level": "1-4",
+  "level_text": "State's words",
+  "name": "State's name for the place",
+  "state_slug": "State's page slug",
+  "link": "State's advisory page",
+  "change_note": "State's reissue note",
+  "first_seen": "capture time that first showed the row, UTC",
+  "capture_gap_days": "days since the previous capture",
+  "countries": "[place]",
+  "place_note": "set for Palestine"
+ },
+ "files": [
+  {
+   "path_or_url": "history/cordon/cordon-state-advisories-2024-12-01-2025-12-31/rows.jsonl",
+   "sha256": "c8d9d775c0a8207569dbc53316b9613b592fdd667b7cb428897ceeff3f7df36f",
+   "bytes": 70045
+  }
+ ],
+ "redistribution": "rows",
+ "built_at": "2026-11-16T08:38:53Z",
+ "built_by": "tools/history_cordon_state.py, COP Cordon-history session, 16 Nov 2026",
+ "uses": [
+  "replaying triage's State advisory notices for 2025",
+  "base rates of advisory updates per country-day"
+ ],
+ "not_for": [
+  "a complete record of advisory updates (captures are irregular)",
+  "posture or departure status"
+ ],
+ "supersedes": null
+}

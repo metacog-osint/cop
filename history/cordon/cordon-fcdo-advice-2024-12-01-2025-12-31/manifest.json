@@ -1,0 +1,517 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "cordon-fcdo-advice-2024-12-01-2025-12-31",
+ "layer": "cordon",
+ "title": "UK FCDO travel-advice updates and the statements in force, from GOV.UK and Wayback captures",
+ "description": "One row per FCDO update to a country's travel advice, with the FCDO's own note, the 'advise against' statements in force after it, and whether it changed them. For replaying triage's FCDO notices (kind fcdo; counted only where the statements changed).",
+ "sources": [
+  {
+   "id": "fcdo-change-history",
+   "name": "GOV.UK Content API, foreign travel advice, change history",
+   "url": "https://www.gov.uk/api/content/foreign-travel-advice",
+   "licence": "Open Government Licence v3.0",
+   "attribution": "Contains public sector information licensed under the Open Government Licence v3.0 (UK Foreign, Commonwealth & Development Office)",
+   "how": "api"
+  },
+  {
+   "id": "fcdo-page-wayback",
+   "name": "GOV.UK foreign travel advice pages, as captured by the Internet Archive",
+   "url": "https://www.gov.uk/foreign-travel-advice",
+   "licence": "Open Government Licence v3.0",
+   "attribution": "Contains public sector information licensed under the Open Government Licence v3.0 (UK Foreign, Commonwealth & Development Office); captures by the Internet Archive",
+   "how": "wayback"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "tools/history_cordon_fcdo.py",
+  "commit": "7e29196",
+  "params": {
+   "api": "https://www.gov.uk/api/content/foreign-travel-advice/{slug}",
+   "page": "https://www.gov.uk/foreign-travel-advice/{slug}",
+   "gap_days": 7,
+   "lead_in_days": 31,
+   "countries": [
+    "MM",
+    "IN",
+    "PK",
+    "RU",
+    "IQ",
+    "PS",
+    "IR",
+    "TZ",
+    "AF",
+    "UA",
+    "SY",
+    "YE",
+    "TR",
+    "KE",
+    "SD",
+    "CM",
+    "VE",
+    "BY",
+    "CD",
+    "KH",
+    "PA",
+    "JO",
+    "NP",
+    "GN"
+   ],
+   "validation": {
+    "checked": 22,
+    "agree": 22,
+    "disagree": []
+   },
+   "per_country": {
+    "MM": {
+     "entries": 198,
+     "captures": 39,
+     "unreadable": 0,
+     "max_gap_days": 51,
+     "gap_from": "2025-06-05",
+     "gap_to": "2025-07-26",
+     "changes": 1
+    },
+    "IN": {
+     "entries": 257,
+     "captures": 46,
+     "unreadable": 0,
+     "max_gap_days": 47,
+     "gap_from": "2025-09-23",
+     "gap_to": "2025-11-09",
+     "changes": 0
+    },
+    "PK": {
+     "entries": 210,
+     "captures": 39,
+     "unreadable": 0,
+     "max_gap_days": 70,
+     "gap_from": "2025-05-08",
+     "gap_to": "2025-07-17",
+     "changes": 1
+    },
+    "RU": {
+     "entries": 207,
+     "captures": 69,
+     "unreadable": 0,
+     "max_gap_days": 61,
+     "gap_from": "2025-11-22",
+     "gap_to": "2025-12-31",
+     "changes": 0
+    },
+    "IQ": {
+     "entries": 127,
+     "captures": 35,
+     "unreadable": 0,
+     "max_gap_days": 66,
+     "gap_from": "2025-10-26",
+     "gap_to": "2025-12-31",
+     "changes": 1
+    },
+    "PS": {
+     "entries": 195,
+     "captures": 40,
+     "unreadable": 0,
+     "max_gap_days": 47,
+     "gap_from": "2025-11-30",
+     "gap_to": "2025-12-31",
+     "changes": 1
+    },
+    "IR": {
+     "entries": 86,
+     "captures": 64,
+     "unreadable": 0,
+     "max_gap_days": 38,
+     "gap_from": "2025-10-26",
+     "gap_to": "2025-12-03",
+     "changes": 0
+    },
+    "TZ": {
+     "entries": 131,
+     "captures": 34,
+     "unreadable": 0,
+     "max_gap_days": 53,
+     "gap_from": "2025-09-08",
+     "gap_to": "2025-10-31",
+     "changes": 0
+    },
+    "AF": {
+     "entries": 95,
+     "captures": 91,
+     "unreadable": 0,
+     "max_gap_days": 45,
+     "gap_from": "2025-11-15",
+     "gap_to": "2025-12-30",
+     "changes": 0
+    },
+    "UA": {
+     "entries": 181,
+     "captures": 91,
+     "unreadable": 0,
+     "max_gap_days": 27,
+     "gap_from": "2025-05-30",
+     "gap_to": "2025-06-26",
+     "changes": 0
+    },
+    "SY": {
+     "entries": 49,
+     "captures": 31,
+     "unreadable": 0,
+     "max_gap_days": 46,
+     "gap_from": "2025-11-21",
+     "gap_to": "2025-12-31",
+     "changes": 0
+    },
+    "YE": {
+     "entries": 38,
+     "captures": 28,
+     "unreadable": 0,
+     "max_gap_days": 104,
+     "gap_from": "2025-09-21",
+     "gap_to": "2025-12-31",
+     "changes": 0
+    },
+    "TR": {
+     "entries": 277,
+     "captures": 67,
+     "unreadable": 0,
+     "max_gap_days": 38,
+     "gap_from": "2025-11-25",
+     "gap_to": "2025-12-31",
+     "changes": 0
+    },
+    "KE": {
+     "entries": 209,
+     "captures": 26,
+     "unreadable": 0,
+     "max_gap_days": 87,
+     "gap_from": "2025-03-30",
+     "gap_to": "2025-06-25",
+     "changes": 1
+    },
+    "SD": {
+     "entries": 151,
+     "captures": 28,
+     "unreadable": 0,
+     "max_gap_days": 66,
+     "gap_from": "2025-09-07",
+     "gap_to": "2025-11-12",
+     "changes": 1
+    },
+    "CM": {
+     "entries": 76,
+     "captures": 20,
+     "unreadable": 0,
+     "max_gap_days": 86,
+     "gap_from": "2025-06-04",
+     "gap_to": "2025-08-29",
+     "changes": 0
+    },
+    "VE": {
+     "entries": 100,
+     "captures": 34,
+     "unreadable": 0,
+     "max_gap_days": 92,
+     "gap_from": "2025-05-25",
+     "gap_to": "2025-08-25",
+     "changes": 0
+    },
+    "BY": {
+     "entries": 84,
+     "captures": 29,
+     "unreadable": 0,
+     "max_gap_days": 87,
+     "gap_from": "2025-04-24",
+     "gap_to": "2025-07-20",
+     "changes": 0
+    },
+    "CD": {
+     "entries": 194,
+     "captures": 32,
+     "unreadable": 0,
+     "max_gap_days": 53,
+     "gap_from": "2025-04-09",
+     "gap_to": "2025-06-01",
+     "changes": 0
+    },
+    "KH": {
+     "entries": 106,
+     "captures": 30,
+     "unreadable": 0,
+     "max_gap_days": 74,
+     "gap_from": "2024-12-30",
+     "gap_to": "2025-03-14",
+     "changes": 3
+    },
+    "PA": {
+     "entries": 132,
+     "captures": 15,
+     "unreadable": 0,
+     "max_gap_days": 87,
+     "gap_from": "2025-06-03",
+     "gap_to": "2025-08-29",
+     "changes": 0
+    },
+    "JO": {
+     "entries": 197,
+     "captures": 40,
+     "unreadable": 0,
+     "max_gap_days": 43,
+     "gap_from": "2025-05-02",
+     "gap_to": "2025-06-14",
+     "changes": 0
+    },
+    "NP": {
+     "entries": 129,
+     "captures": 16,
+     "unreadable": 0,
+     "max_gap_days": 70,
+     "gap_from": "2025-05-12",
+     "gap_to": "2025-07-21",
+     "changes": 0
+    },
+    "GN": {
+     "entries": 108,
+     "captures": 19,
+     "unreadable": 0,
+     "max_gap_days": 80,
+     "gap_from": "2025-06-10",
+     "gap_to": "2025-08-29",
+     "changes": 0
+    }
+   }
+  },
+  "matches_live": false,
+  "differences": [
+   "Live Cordon marks an item anomaly when its own diff saw the statements change; here the change is read from page captures and dated to an update's time, so an update that is not the real cause can carry the flag (estimated-date).",
+   "A change that went in and out between two captures is missed.",
+   "Statements are read from the page's warning text (whole country or parts, all travel or all but essential), not from alert_status, which the API gives only for today.",
+   "The change history lists only updates the FCDO published as such; the API may omit older notes."
+  ]
+ },
+ "coverage": {
+  "start": "2024-12-01",
+  "end": "2025-12-31",
+  "time_precision": "minute",
+  "places": [
+   "AF",
+   "BY",
+   "CD",
+   "CM",
+   "GN",
+   "IN",
+   "IQ",
+   "IR",
+   "JO",
+   "KE",
+   "KH",
+   "MM",
+   "NP",
+   "PA",
+   "PK",
+   "PS",
+   "RU",
+   "SD",
+   "SY",
+   "TR",
+   "TZ",
+   "UA",
+   "VE",
+   "YE"
+  ],
+  "place_code": "ISO 3166-1 alpha-2"
+ },
+ "gaps": [
+  {
+   "from": "2025-06-05",
+   "to": "2025-07-26",
+   "places": "MM",
+   "reason": "longest stretch without a page capture is 51 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-09-23",
+   "to": "2025-11-09",
+   "places": "IN",
+   "reason": "longest stretch without a page capture is 47 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-05-08",
+   "to": "2025-07-17",
+   "places": "PK",
+   "reason": "longest stretch without a page capture is 70 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-11-22",
+   "to": "2025-12-31",
+   "places": "RU",
+   "reason": "longest stretch without a page capture is 61 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-10-26",
+   "to": "2025-12-31",
+   "places": "IQ",
+   "reason": "longest stretch without a page capture is 66 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-11-30",
+   "to": "2025-12-31",
+   "places": "PS",
+   "reason": "longest stretch without a page capture is 47 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-10-26",
+   "to": "2025-12-03",
+   "places": "IR",
+   "reason": "longest stretch without a page capture is 38 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-09-08",
+   "to": "2025-10-31",
+   "places": "TZ",
+   "reason": "longest stretch without a page capture is 53 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-11-15",
+   "to": "2025-12-30",
+   "places": "AF",
+   "reason": "longest stretch without a page capture is 45 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-05-30",
+   "to": "2025-06-26",
+   "places": "UA",
+   "reason": "longest stretch without a page capture is 27 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-11-21",
+   "to": "2025-12-31",
+   "places": "SY",
+   "reason": "longest stretch without a page capture is 46 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-09-21",
+   "to": "2025-12-31",
+   "places": "YE",
+   "reason": "longest stretch without a page capture is 104 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-11-25",
+   "to": "2025-12-31",
+   "places": "TR",
+   "reason": "longest stretch without a page capture is 38 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-03-30",
+   "to": "2025-06-25",
+   "places": "KE",
+   "reason": "longest stretch without a page capture is 87 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-09-07",
+   "to": "2025-11-12",
+   "places": "SD",
+   "reason": "longest stretch without a page capture is 66 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-06-04",
+   "to": "2025-08-29",
+   "places": "CM",
+   "reason": "longest stretch without a page capture is 86 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-05-25",
+   "to": "2025-08-25",
+   "places": "VE",
+   "reason": "longest stretch without a page capture is 92 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-04-24",
+   "to": "2025-07-20",
+   "places": "BY",
+   "reason": "longest stretch without a page capture is 87 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-04-09",
+   "to": "2025-06-01",
+   "places": "CD",
+   "reason": "longest stretch without a page capture is 53 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2024-12-30",
+   "to": "2025-03-14",
+   "places": "KH",
+   "reason": "longest stretch without a page capture is 74 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-06-03",
+   "to": "2025-08-29",
+   "places": "PA",
+   "reason": "longest stretch without a page capture is 87 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-05-02",
+   "to": "2025-06-14",
+   "places": "JO",
+   "reason": "longest stretch without a page capture is 43 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-05-12",
+   "to": "2025-07-21",
+   "places": "NP",
+   "reason": "longest stretch without a page capture is 70 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  },
+  {
+   "from": "2025-06-10",
+   "to": "2025-08-29",
+   "places": "GN",
+   "reason": "longest stretch without a page capture is 80 days; a statement change in it is dated to the best-matching update (estimated-date)"
+  }
+ ],
+ "biases": [
+  "Update dates and times are exact (the FCDO's own); the statements by date are only as good as the page captures around them.",
+  "Whole-country versus parts is read from wording; a destination named neither as the country nor as parts is read as parts and flagged parsed-best-effort.",
+  "Countries the Archive captured rarely have long carried-forward stretches (capture-gap)."
+ ],
+ "rows": {
+  "count": 346,
+  "places": 24,
+  "days": 192
+ },
+ "row_schema": {
+  "place": "ISO alpha-2",
+  "at": "update time, UTC",
+  "precision": "minute",
+  "source_id": "fcdo-change-history",
+  "source_ref": "the API URL the entry came from",
+  "retrieved_at": "UTC",
+  "quality": "estimated-date, capture-gap, level-unknown, parsed-best-effort, lead-in, no-update-in-history",
+  "item_id": "cordon:fcdo:<slug>",
+  "kind": "fcdo",
+  "slug": "GOV.UK slug",
+  "name": "country",
+  "note": "the FCDO's own change note",
+  "alert_status": "statements in force after the update, or null",
+  "alert_status_changed": "true when this update changed the statements",
+  "from_alert_status": "the statements before it, when changed",
+  "status_refs": "Wayback captures the statements were read from",
+  "countries": "[place]"
+ },
+ "files": [
+  {
+   "path_or_url": "history/cordon/cordon-fcdo-advice-2024-12-01-2025-12-31/rows.jsonl",
+   "sha256": "f86c8cc806095ade662247baf5a948844afa0aad0ca16d03ee8dca700b38a3fe",
+   "bytes": 254642
+  }
+ ],
+ "redistribution": "rows",
+ "built_at": "2026-11-16T08:39:06Z",
+ "built_by": "tools/history_cordon_fcdo.py, COP Cordon-history session, 16 Nov 2026",
+ "uses": [
+  "replaying triage's FCDO notices for 2025",
+  "base rates of FCDO statement changes per country-day"
+ ],
+ "not_for": [
+  "a legal or authoritative record of what the FCDO advised on a day"
+ ],
+ "supersedes": null
+}
