@@ -471,6 +471,22 @@ class Card(unittest.TestCase):
         kit = (ROOT / "site" / "vendor" / "tic-doctrine.js").read_text(encoding="utf-8")
         self.assertIn("export function asOfDateLabel(item, locale)", kit)
 
+    def test_reported_activity_is_told_apart(self):
+        """Undertow's reported-activity items (16 Nov 2026): the card names the reporter, its grade, the reports and
+        the state, says it is not a takedown, and never calls a quiet operation ended. The MCP rule says the same."""
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn("const a = p.activity;", js)
+        self.assertIn('"Reported activity: a researcher\'s report, not a takedown"', js)
+        for k in ('fact("Reported by"', 'fact("First report"', 'fact("Last report"', 'fact("State"'):
+            self.assertIn(k, js)
+        self.assertIn("(not a sign the operation ended)", js)
+        server = (ROOT / "mcp" / "server.js").read_text(encoding="utf-8")
+        rule = next(line for line in server.splitlines() if line.startswith("8. Undertow"))
+        for k in ("reported-activity item", "activity block", "DFRLab", "CheckFirst", "CORRECTIV",
+                  "quiet never means the operation ended", "not that it found the operation running",
+                  "they are not an origin"):
+            self.assertIn(k, server if k in ("DFRLab", "CheckFirst", "CORRECTIV") else rule)
+
     def test_view_keeps_every_pick_inside_the_map(self):
         today, picks, health, _ = build()
         by_id = {f["properties"]["id"]: f for f in today["features"]}
