@@ -19,8 +19,8 @@ index, not the product, and agents get the same through the MCP server. Tom acce
 - Picks per warning problem, from what changed, replace one pick per program in config order (D7). Not built yet.
 - Triage's three rules change (D8, as in the purpose doc §2, Change): count an episodic hazard's active interval
   plus a lag, not its formation date; sort embassy alerts by type and count each once; take "unusual attention"
-  from Watchfloor's own 28-day z-score, computed causally (`cop-joins.md` M1 to M3). Not built yet; the rules below
-  stand until it is.
+  from Watchfloor's own 28-day z-score, computed causally (`cop-joins.md` M1 to M3). Built 15 Nov 2026 with the
+  wider input (M5) and the D6 path, join 0.9, branch `triage/step2`: see "Triage step 2" under Outage triage.
 - The mosaic gate is retired (D9, below). "Repo private" is overtaken (D10). The 12 Dec test date stays, rerun to
   12 Jan unchanged if it misses (D11). Vis forecasts stay out of the picks (D12). Public, non-commercial, publicly
   available information only (D13). The Red River Valley view comes later, on the same bus (D14).
@@ -94,6 +94,56 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   2026, when the archive holds 28 days, and look at the windows then. Watchfloor lags a day, so run triage a second
   time the day after an outage. The build now reruns triage every two hours, so the second look happens by itself
   while the outage is still in Blackout's feed.
+  **Triage step 2 (join 0.9; D8, M5 and D6 of the purpose doc, Tom's yes of 15 Nov 2026; branch `triage/step2`,
+  built 15-16 Nov 2026).** The three 12 Nov rules above are replaced:
+  (1) *Episodic hazards* (`cop-joins.md` M2): a GDACS cyclone or flood (`EPISODIC_GDACS`) counts while active, from
+  its "from" to its "to" plus `EPISODIC_LAG_H` (48 h), not only when it began in the 72 hours. Standing kinds
+  (drought, volcano status) keep "began in the window". MURASU-26 (red, India; last advisory 3 Nov 06:00 UTC) now
+  reads significant on the 4 Nov snapshot, standing on 5 Nov.
+  (2) *Embassy alerts* (M1): sorted by the type their own titles give (`alert_type`): security and demonstration
+  count; weather, natural disaster, health, routine messages and security alerts about a holiday or a scheduled
+  event (`EVENT_WORDS`) are listed under `recent_not_counted` and not counted (a weather alert adds a caveat pointing
+  to Elements). An alert counts once, from the earliest date COP saw on it in snapshots taken by the outage's time
+  (`alert_first_dated`, from `history.alert_dates`), so a re-dated edit is "re-dated", not fresh. The 48-hour window
+  is 48 hours (it was floored to midnight, so up to 72); a date with no time counts from the start of its day.
+  (3) *Unusual attention* (M3): a Watchfloor item naming the country, raised on its own 28-day z-score (baseline
+  `wf-28d`: the 28 complete days before the day it measures, never that day; `more-context/pipeline/measures.py`).
+  Raised on the 90-day median only is standing attention ("elevated"), listed and not counted. A Watchfloor day that
+  begins after the outage is listed as after, not counted. The 25%-of-archived-days share is gone, so the replay is
+  causal: each day reads the z-scores its own snapshot carried.
+  (4) *"Deliberate" is now "tension context"* (`tri.TENSION`) on the page, in the MCP server and in triage.json
+  (readings, base-rate keys, `by_country`). "Deliberate" stays Blackout's own word for its BO-H-1A judgment. Reading
+  texts say what the layers showed and how often that happens anyway; none states a cause.
+  (5) *Wider input* (M5): besides IODA's `outage` items, Cloudflare Radar's verified anomalies (`radar-anomaly`,
+  BO-IND-10; network scope when the title names an AS, with a caveat) and Outage Center entries that name a country
+  (`radar-outage`, BO-IND-9; Cloudflare's stated cause quoted in `outage.stated_cause`, never assessed). Both are
+  timed from the start in Blackout's summary ("since <t>, ongoing" / "from <t> to <t>"), not the run time, and count
+  as confirmed. A Radar entry with no country goes to `unplaced` (listed on the page, not read). Records carry
+  `outage.source`, `started_at`, `ended_at`, `network`; one more than 7 days old gets a caveat.
+  (6) *Two questions on every confirmed outage* (D6; M6): the OONI question as before, now with Verdict's fields
+  (`resolution`: known_at the day after the 72-hour window, resolve_by a week later, "check after" in the rule), and
+  `cause_question_draft`: whether Cloudflare's Outage Center ("government directed"), Access Now, or two of
+  Reuters, AP and AFP attribute the outage to a government order within 7 days (`CAUSE_WINDOW_D`; void if already
+  published before registration). Each public draft has `verdict_id`; `registerable` is true for confirmed outages.
+  **Registering one is Tom's, one command, his number:** `python tools/register_question.py <verdict_id>
+  <probability> [--commit] [--dry-run] [--rise]` (in a COP checkout; reads the live triage.json or `--triage`). It
+  builds a tic-feed/2 forecast (program verdict, VD-PIR-2, the kit's likelihood term and rule-based confidence,
+  alternatives per question), checks it with the kit's contract and Verdict's own `forecast_problems`, refuses an
+  unconfirmed outage, a closed window, a question settled before it is asked, and a Verdict checkout not on main or
+  behind origin/main, then appends it to `verdict/drafts/cop-triage.json` approved by `--approved-by` (default Tom
+  Brummer) and runs Verdict's `register`. Verdict's CI wants the commit within the hour: `--commit` commits the two
+  files (never pushes) and the command prints the push. The build never runs it (a test checks).
+  Measured on COP's archive (31 Oct-16 Nov 2026, 17 days, 9 counted for readings, 2,151 country-days), before
+  (main `4d76f56`) and after: natural 0.74% -> 0.74%, deliberate 5.35% -> tension context 5.25%, open 93.91% ->
+  94.00%; fresh notice 2.09% -> 1.02%; unusual attention 3.32% -> 3.69%. Twelve notices stopped counting (Holiday
+  Travel in Russia and Ukraine, Cartagena Independence Day, the ASEAN Summit, Mexico's El Nino weather alert,
+  Guatemala's "Message for U.S. Citizens", a re-dated Mexico City demonstration alert, and five more than 48 hours
+  old that the midnight floor had counted); none started counting. Iran's attention now counts on 4, 5, 6, 8 and 11 Nov
+  (0 days before). Countries' tension-context shares moved both ways: Colombia 67% -> 11%, Russia 44% -> 11%, Saudi
+  Arabia 78% -> 56%; China and Croatia 0% -> 67%, Peru 56%, Ireland and Poland 44%, Iran 22% (raised on their own
+  28-day z-scores, which the old share switched off). The replay: the 4 archived IODA outages keep their readings
+  (Tunisia open; DR Congo, Niger, Seychelles unconfirmed); 3 Radar anomalies are new (Iraq, Russia, Algeria: open).
+  No archived outage changes reading. Scripts: `out/compare.py`, `out/notice_diff.py` in the worktree (not kept).
   **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
   and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
   change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;

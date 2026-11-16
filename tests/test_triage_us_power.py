@@ -400,7 +400,7 @@ class CountyMatch(unittest.TestCase):
         self.assertEqual(len(rec["layers"]["elements"]["outage_counties"]), 10)
         verdict = gate.review(tri.JOIN, pub)
         self.assertEqual(verdict["review_class"], "open", verdict)
-        self.assertEqual(tri.JOIN["version"], "0.8")
+        self.assertEqual(tri.JOIN["version"], "0.9")
 
 
 if __name__ == "__main__":

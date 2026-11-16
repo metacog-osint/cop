@@ -279,16 +279,22 @@ export function outageTriage(index, triage, args, now) {
     note:
       triage.not_a_warning +
       " Quote a reading with its base_rate and caveats, and say what each layer showed in its own words (layers.*.showed). " +
-      "The readings: natural, deliberate, open, unconfirmed (a single-source dip, no reading given), incomplete (a layer " +
-      "has no current data). Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
+      "The readings: natural, tension context (a fresh security or demonstration notice, or press attention unusual " +
+      "against the country's own last 28 days, with no active hazard: the context the outage sits in, never its cause), " +
+      "open, unconfirmed (a single-source dip, no reading given), incomplete (a layer has no current data). " +
+      "\"Deliberate\" is Blackout's own word for its likely-shutdown judgment, never a triage reading. Each record's " +
+      "outage.source says which Blackout kind it is (IODA, a Cloudflare-verified anomaly or a Radar Outage Center " +
+      "entry); started_at is when it began; network is set when Cloudflare saw it on one network; stated_cause is " +
+      "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
       "ODIN's reporting utilities, us_state names the state): they are read against hazards in or near that state, " +
       "Cordon and Watchfloor answer \"Not covered\" there (neither nothing found nor no data), so they read natural, " +
       "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
       "history. A hazard row with ended_at had ended before the snapshot: it comes from Elements' list of items that " +
       "ended in the last 7 days (ended_items gives that list's state; when it is missing the caveats say so). " +
-      "The time windows are provisional. question_draft is a drafted question that could score " +
-      "the reading later: it is not a registered Verdict forecast and has no likelihood, so never quote it as a " +
-      "forecast (list_forecasts has the registered ones).",
+      "The time windows are provisional. question_draft (OONI) and cause_question_draft (whether an outside " +
+      "source names a government order) are drafted questions that could score the reading later: a draft is not a " +
+      "registered Verdict forecast and has no likelihood, so never quote one as a forecast (list_forecasts has the " +
+      "registered ones).",
     readings: triage.readings,
     ...(triage.power_readings ? { power_readings: triage.power_readings } : {}),
     layer_states: triage.layer_states,

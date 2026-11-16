@@ -530,7 +530,7 @@ function renderPanel() {
 }
 // Outage triage: for each Blackout outage, what Elements, Cordon and Watchfloor show under it. A reading sorts
 // reports; the section says so, and shows "nothing found" and "no current data" as the different answers they are.
-const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "raised" };
+const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "unusual_items" };
 // A hazard that ended before the snapshot (from Elements' ended list) says when it ended; it is not on the map.
 function triageItem(row) {
   const ended = row.ended_at ? h("span", { class: "row-meta" }, " (ended ", timeEl(row.ended_at), ")") : null;
@@ -551,7 +551,8 @@ function triageRecord(r) {
     BY_ID.has(r.outage.id)
       ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, r.outage.title)
       : h("span", { class: "tri-outage", text: r.outage.title }),
-    h("div", { class: "row-meta" }, r.outage_kind === "power" ? "ODIN reading at " : "Outage at ", timeEl(r.outage.data_as_of)),
+    h("div", { class: "row-meta" }, r.outage_kind === "power" ? "ODIN reading at " : "Began ",
+      timeEl(r.outage.started_at || r.outage.data_as_of), r.outage.source ? ` · ${r.outage.source}` : null),
     h("div", { class: "badges" },
       h("span", { class: "badge" + (down ? " stale" : " measure"), text: `Reading: ${r.reading}` }),
       h("span", { class: "badge", text: "Not a warning or a forecast" })),
@@ -562,18 +563,20 @@ function triageRecord(r) {
       `${r.eaglei.text} ${r.eaglei.caveat}`) : null,
     r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
     ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })),
-    triageQuestion(r.question_draft));
+    triageQuestion(r.question_draft),
+    triageQuestion(r.cause_question_draft, "Second question, on cause (a draft, not registered)"));
 }
 // The drafted Verdict question: how this reading could be scored later. A draft, never shown as a forecast.
-function triageQuestion(q) {
+function triageQuestion(q, label) {
   if (!q) return null;
   const rise = q.rise_form;
   return h("details", { class: "tri-q" },
-    h("summary", { text: "Question to score it by (a draft, not registered)" }),
+    h("summary", { text: label || "Question to score it by (a draft, not registered)" }),
     h("p", { text: q.note }),
     h("p", {}, h("strong", { text: "Question. " }), q.question),
     h("p", {}, h("strong", { text: "Settled by. " }), q.rule_draft),
     h("p", {}, h("strong", { text: "Window ends. " }), timeEl(q.window_ends)),
+    q.verdict_id ? h("p", { class: "row-meta", text: `Verdict id if registered: ${q.verdict_id}` }) : null,
     q.reference ? h("p", {}, h("strong", { text: "Reference. " }), q.reference) : null,
     ...(q.notes || []).map((n) => h("p", { class: "tri-caveat", text: n })),
     q.caution ? h("p", { class: "tri-caveat", text: q.caution }) : null,
@@ -604,7 +607,7 @@ function renderTriage() {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
     foot.append(h("p", { class: "note" },
       `Base rates: over ${b.country_days.toLocaleString("en-US")} country-days in COP's archive, an outage would have read natural on ${pct(b.would_read.natural)}, ` +
-      `deliberate on ${pct(b.would_read.deliberate)} and open on ${pct(b.would_read.open)}, whatever its cause. `,
+      `tension context on ${pct(b.would_read["tension context"])} and open on ${pct(b.would_read.open)}, whatever its cause. `,
       ...(b.cautions || []).map((c) => `${c} `),
       triage.windows && triage.windows.provisional ? "The time windows are provisional." : null));
     const s = b.states;
@@ -614,6 +617,10 @@ function renderTriage() {
   } else if (triage.records.length) {
     foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
   }
+  const unplaced = triage.unplaced || [];
+  if (unplaced.length) foot.append(h("p", { class: "note" },
+    `Not read: ${count(unplaced.length, "Cloudflare Radar entry", "Cloudflare Radar entries")} ${unplaced.length === 1 ? "names" : "name"} no place, so no country layer can sit under ${unplaced.length === 1 ? "it" : "them"}: `,
+    ...unplaced.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
 }
 // The three-signal join: which of three signals fall in one area within the window, each layer's items in its own
 // words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never what it means.

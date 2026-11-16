@@ -9,7 +9,7 @@ US state power outages (Blackout's BO-IND-14: a state where ODIN's reporting uti
 out) are read against Elements for that state, not the whole country (rules approved by Tom, 13 Nov 2026): NWS
 alerts by their own county codes, point hazards within STATE_NEAR_KM of the state, and warnings for hazards that
 take power lines down counted at Elements' Severe level. Cordon and Watchfloor carry nothing at US-state level, so
-they answer "Not covered" and such an outage reads natural, open or incomplete, never deliberate. Where Blackout's
+they answer "Not covered" and such an outage reads natural, open or incomplete. Where Blackout's
 item lists the counties with meters out (us_counties, Blackout 2ea3a4d; Tom, 14 Nov 2026, "build the county-level
 match"), Elements is read for those counties instead of the whole state: NWS alerts by shared county codes, point
 hazards within STATE_NEAR_KM of an outage county's internal point, areas over one; a hazard elsewhere in the state
@@ -60,7 +60,7 @@ UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
 # convergence branch; it reaches the site only when Tom merges that branch to main.
-JOIN = {"id": "outage-triage", "version": "0.8", "published": True,
+JOIN = {"id": "outage-triage", "version": "0.9", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture",
                    "cordon:fcdo", "cordon:canada", "cordon:safetravel"]}
 # The Cordon kinds triage reads, all on the gate's open list. CDC (kind cdc) is open there too but not read here.
@@ -81,13 +81,30 @@ SAFETRAVEL_LEVELS = ("normal", "low", "medium", "high", "avoid")
 LAYERS = ("elements", "cordon", "watchfloor")
 # Windows, all measured from the outage's own time (its data_as_of). PROVISIONAL (Tom, 12 Nov 2026): first picks, not
 # validated; look at them again when the base rates are rerun on a deeper archive (about 28 Nov 2026).
-HAZARD_BEFORE_H = 72     # a hazard that BEGAN this long before the outage can explain it; one already running is
-                         # standing context (a volcano alert in Hawaii does not explain an outage in the US)
+HAZARD_BEFORE_H = 72     # a hazard that BEGAN this long before the outage counts; one already running is standing
+                         # context (a volcano alert in Hawaii says nothing about an outage in the US)
 HAZARD_AFTER_H = 6       # reports of a hazard trail the event a little
 HAZARD_NEAR_KM = 300     # a hazard with no country (an offshore earthquake) counts within this of the country
+# Episodic hazards (D8, Tom, 15 Nov 2026; cop-joins.md M2): a cyclone or flood counts while it is active, from its
+# GDACS "from" to its "to" plus this lag, not only when it began in the 72 hours. GDACS dates a cyclone from its
+# formation: MURASU-26 (red, India) formed 1 Nov, last advisory 3 Nov 06:00, and read "standing" on 4 and 5 Nov.
+# Standing kinds (drought, volcano status) keep the "began in the window" rule.
+EPISODIC_GDACS = {"TC": "tropical cyclone", "FL": "flood"}
+EPISODIC_LAG_H = 48      # an episodic hazard still counts this long after its last advisory (damage outlasts it)
 NOTICE_RECENT_H = 48     # a notice dated this long before the outage counts; older ones are standing context
-ATTENTION_USUAL_SHARE = 0.25  # raised attention counts only where the country had it on fewer than this share of
-                              # archived days: against its own baseline, not the world's
+# Embassy alerts are sorted by the type their own titles give (D8; cop-joins.md M1). Security and demonstration
+# alerts count. Weather, natural-disaster and health alerts, routine messages, and security alerts about a holiday
+# or a scheduled event are listed and not counted.
+ALERT_COUNTED = ("security", "demonstration")
+ALERT_TYPES = (("weather alert", "weather"), ("natural disaster alert", "natural disaster"),
+               ("health alert", "health"), ("demonstration alert", "demonstration"),
+               ("security alert", "security"), ("emergency alert", "security"))
+EVENT_WORDS = ("holiday", "independence day", "national day", "summit", "anniversary", "festival", "celebration",
+               "christmas", "new year", "marathon", "parade", "world cup", "olympic", "concert", "conference")
+# Unusual attention (D8; cop-joins.md M3): Watchfloor's own z-score against the 28 complete days before the day it
+# measures (its baseline wf-28d), which never includes that day. Watchfloor's 90-day "elevated" items are standing
+# attention: listed, not counted.
+ATTENTION_BASELINE = "wf-28d"
 OONI_WINDOW_H = 72       # the Verdict question's window
 OONI_RISE_POINTS = 10    # where OONI is already over its threshold, the question asks about a rise this large
 # Elements items that are standing background, not an event that takes a network down.
@@ -116,26 +133,31 @@ EAGLEI_DOI = "10.6084/m9.figshare.24237376"
 VOLCANO_ALERT = {"NORMAL": 0, "UNASSIGNED": 0, "ADVISORY": 1, "WATCH": 2, "WARNING": 3}
 VOLCANO_COLOUR = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
 
+# The reading once called "deliberate" is "tension context" (D8, Tom, 15 Nov 2026; cop-joins.md M1): it names what
+# the layers showed, not a cause. "Deliberate" stays Blackout's own word, for its likely-shutdown judgment (BO-H-1A).
+TENSION = "tension context"
 READINGS = {
     "incomplete": "A layer has no current data, so this outage cannot be triaged yet. Silence is not quiet.",
     "unconfirmed": "Blackout calls this a single-source dip, not a confirmed outage. Context is listed, no reading.",
-    "natural": "A significant natural hazard sits under this outage in place and time. A natural cause has support.",
-    "deliberate": "No new hazard under it, and a notice was issued or raised in the two days before it, or press "
-                  "attention is above this country's own normal. A deliberate cut is worth a call.",
-    "open": "No new hazard, no fresh notice and no unusual attention. Nothing here separates an accident from a "
-            "deliberate cut.",
+    "natural": "A significant natural hazard was active in or near this country around the outage's hour. The base "
+               "rate below says how often that is so anyway.",
+    TENSION: "No active hazard, and a security or demonstration notice was issued or raised in the two days before "
+             "the outage, or press attention was unusual for this country against its own last 28 days. That is the "
+             "context the outage sits in, not its cause; the base rate below says how often it is there anyway.",
+    "open": "No active hazard, no fresh notice and no unusual attention. These layers show nothing that tells one "
+            "kind of outage from another.",
 }
 # A US state power outage: Cordon and Watchfloor don't cover US states, so these three are the only readings.
 POWER_READINGS = {
     "incomplete": "Elements has no current data, so this outage cannot be triaged yet. Silence is not quiet.",
     "natural": "A hazard that takes power lines down began in or near this state in the 72 hours before the reading. "
-               "A weather or natural cause has support.",
+               "The base rate below says how often that is so anyway.",
     "open": "No hazard that takes power lines down began in or near this state in the 72 hours before the reading. "
             "Nothing here separates a storm already past, failed equipment, a utility's planned shutoff or an attack.",
 }
 POWER_CAVEATS = (
-    "Cordon and Watchfloor carry nothing at US-state level, so no layer here can point to a deliberate cut: a state "
-    "power outage reads natural, open or incomplete, never deliberate.",
+    "Cordon and Watchfloor carry nothing at US-state level, so no layer here can show tension context: a state "
+    "power outage reads natural, open or incomplete.",
     "One ODIN reading, summed over the state's utilities that report to ODIN. DOE's line is more than 50,000 "
     "customers out for an hour or more, and a meter is close to, not the same as, a customer.",
 )
@@ -153,9 +175,8 @@ VOLCANO_UNKNOWN = ("A volcano alert in the window has no earlier level in COP's 
                    "knowing whether it was raised.")
 NOT_COVERED = {
     "cordon": "Not covered: Cordon carries travel advisories and embassy notices for other countries, nothing at "
-              "US-state level, so it cannot point to a deliberate cut here.",
-    "watchfloor": "Not covered: Watchfloor follows press attention in conflict zones, nothing at US-state level, so "
-                  "it cannot point to a deliberate cut here.",
+              "US-state level.",
+    "watchfloor": "Not covered: Watchfloor follows press attention in conflict zones, nothing at US-state level.",
 }
 EAGLEI_CAVEAT = ("EAGLE-I reads more utilities than ODIN (about 92% of US customers by 2022), so a state over the line "
                  "at ODIN's reporting utilities alone is rarer still. Coverage grew over these years, so earlier "
@@ -333,17 +354,33 @@ def _classify(f, at, lo, hi, volcano_levels=None, power=False):
     warning = _power_warning(p) if power else None
     if warning:
         extra["power_hazard"] = POWER_HAZARDS[warning]
+    episodic = episodic_kind(p)
+    if episodic:
+        extra.update(episodic=episodic, active_until=iso(end))
     row = _row(p, hours_before_outage=round((at - start).total_seconds() / 3600, 1), **extra)
     if kind in BACKGROUND:
         return "background", row
     if p.get("tier") in ("anomaly", "warning") or warning:
+        if episodic:   # active at the outage: from its start to its last advisory plus the lag
+            active = start <= hi and end + timedelta(hours=EPISODIC_LAG_H) >= at
+            return ("significant" if active else "standing"), row
         return ("significant" if start >= lo and not standing_only else "standing"), row
     return "minor", row
 
 
+def episodic_kind(p):
+    """"tropical cyclone" or "flood" for a GDACS item of an episodic kind, else None."""
+    if _kind(p.get("id")) != "gdacs":
+        return None
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    code = str(m.get("hazard_code") or str(p.get("id")).split(":")[-1].split("-")[0]).upper()
+    return EPISODIC_GDACS.get(code)
+
+
 def hazards(features, cc, at, volcano_levels=None):
     """Elements items under the outage: in or near the country, overlapping the hazard window. A significant hazard
-    counts only if it began inside the window; one that began earlier and is still running is "standing"."""
+    counts only if it began inside the window, or, for a cyclone or flood, if it was active at the outage (its last
+    advisory less than EPISODIC_LAG_H before it); one that began earlier and is still running is "standing"."""
     lo, hi = at - timedelta(hours=HAZARD_BEFORE_H), at + timedelta(hours=HAZARD_AFTER_H)
     out = {"significant": [], "standing": [], "minor": [], "background": []}
     for f in features:
@@ -607,16 +644,52 @@ def notice_level(p):
 LEVELLED_KINDS = {"advisory", "canada", "fcdo", "safetravel"}
 
 
-def notices(features, cc, at, levels=None):
+def alert_type(title):
+    """An embassy alert's type from its own title ("US embassy (MX): Weather Alert: ..."): security, demonstration,
+    weather, natural disaster, health, event (a security alert about a holiday or a scheduled event) or routine
+    (messages for US citizens, consular visits, anything that names no alert type)."""
+    t = str(title or "")
+    t = t.split("): ", 1)[1] if t.startswith("US embassy (") and "): " in t else t
+    low = t.strip().lower()
+    for prefix, kind in ALERT_TYPES:
+        if low.startswith(prefix):
+            if kind == "security" and any(w in low for w in EVENT_WORDS):
+                return "event"
+            return kind
+    return "routine"
+
+
+def alert_first_dated(item_id, dated, at, alert_dates):
+    """The earliest date COP has seen on this embassy alert in snapshots taken at or before `at`, or `dated`.
+    Embassy alerts are re-dated when edited (cordon:alert:CO:937adfcbfd2a: 6 Nov, then 12 Nov, then 13 Nov), and
+    an edit is not a fresh notice. alert_dates: {id: [[snapshot generated_at, data_as_of], ...]} from
+    triage_rates.py, or None."""
+    best = dated
+    for seen, d in (alert_dates or {}).get(item_id, []):
+        s, d = utc(seen), utc(d)
+        if s and d and s <= at and (best is None or d < best):
+            best = d
+    return best
+
+
+def _day_dated(p, dated):
+    """True when a notice carries a date and no time (SafeTravel dates its advice by the day)."""
+    return p.get("data_as_of_precision") == "day" or (dated and (dated.hour, dated.minute, dated.second) == (0, 0, 0))
+
+
+def notices(features, cc, at, levels=None, alert_dates=None):
     """Cordon's travel and embassy notices for the country, against the outage's time.
 
     recent: dated in the NOTICE_RECENT_H before the outage and not a lowering or a re-issue at the same level; these
-    count toward a reading. recent_not_raised: dated in the window but lowered or unchanged. standing: older.
-    after: dated after the outage. An advisory whose earlier level is not in the archive counts, marked "unknown".
-    FCDO, Canada and SafeTravel advice that Cordon did not mark as changed is an edit at the same level: direction
-    "unchanged", not counted."""
-    lo = (at - timedelta(hours=NOTICE_RECENT_H)).replace(hour=0, minute=0, second=0, microsecond=0)  # dates are days
-    recent, not_raised, standing, after = [], [], [], []
+    count toward a reading. recent_not_raised: dated in the window but lowered, unchanged, or an embassy alert
+    re-dated from an earlier date. recent_not_counted: embassy alerts in the window of a type that is not counted
+    (weather, natural disaster, health, event, routine). standing: older. after: dated after the outage. An
+    advisory whose earlier level is not in the archive counts, marked "unknown". FCDO, Canada and SafeTravel advice
+    that Cordon did not mark as changed is an edit at the same level: direction "unchanged", not counted. A notice
+    dated by the day only counts from the start of the day the window opens on."""
+    lo = at - timedelta(hours=NOTICE_RECENT_H)
+    lo_day = lo.replace(hour=0, minute=0, second=0, microsecond=0)
+    recent, not_raised, not_counted, standing, after = [], [], [], [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "cordon" or cc not in (p.get("countries") or []):
@@ -631,21 +704,49 @@ def notices(features, cc, at, levels=None):
             row["direction"] = "unchanged"     # Cordon saw no change of level or advice: an edit
         elif kind in LEVELLED_KINDS:
             row["direction"] = _direction(p.get("id"), dated, notice_level(p), levels)
-        if not dated or dated < lo:
+        first = dated
+        if kind == "alert":
+            row["alert_type"] = alert_type(p.get("title"))
+            first = alert_first_dated(p.get("id"), dated, at, alert_dates) if dated else None
+            if first and dated and first < dated:
+                row["first_dated"] = iso(first)
+        in_window = bool(dated) and (dated >= lo or (_day_dated(p, dated) and dated >= lo_day))
+        if not dated or (not in_window and dated < at):
             standing.append(row)
         elif dated > at:
             after.append(row)
         elif row.get("direction") in ("lowered", "unchanged"):
             not_raised.append(row)
+        elif kind == "alert" and first < lo:
+            row["direction"] = "re-dated"      # first seen before the window: an edit, not a fresh notice
+            not_raised.append(row)
+        elif kind == "alert" and row["alert_type"] not in ALERT_COUNTED:
+            not_counted.append(row)
         else:
             recent.append(row)
-    return {"recent": recent, "recent_not_raised": not_raised, "standing": standing, "after": after}
+    return {"recent": recent, "recent_not_raised": not_raised, "recent_not_counted": not_counted,
+            "standing": standing, "after": after}
 
 
-def attention(features, cc, at, shares=None):
-    """Watchfloor items naming the country, whether that data reaches the outage's hour, and whether raised
-    attention is unusual for this country. shares: {cc: share of archived days with raised attention}, or None."""
-    raised, routine, newest = [], [], None
+def _wf_z(p):
+    """The z-score a Watchfloor item carries against its own baseline (country items: measures.score; zone and topic
+    items: measures.attention, else the violence score), or None."""
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    for key in ("score", "attention"):
+        if isinstance(m.get(key), dict) and m[key].get("z") is not None:
+            return m[key]["z"]
+    v = m.get("violence") if isinstance(m.get("violence"), dict) else {}
+    s = v.get("named_score") if isinstance(v.get("named_score"), dict) else v
+    return s.get("z") if isinstance(s, dict) else None
+
+
+def attention(features, cc, at):
+    """Watchfloor items naming the country, whether that data reaches the outage's hour, and whether attention is
+    unusual for this country: an item Watchfloor raised on its own 28-day z-score (baseline wf-28d: the 28 complete
+    days before the day it measures, so the day never sets its own baseline). Raised on the 90-day median only
+    ("elevated") is standing attention, listed and not counted. A Watchfloor day that begins after the outage is
+    listed as after it and not counted."""
+    unusual, elevated, routine, after, newest = [], [], [], [], None
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "watchfloor":
@@ -655,11 +756,19 @@ def attention(features, cc, at, shares=None):
             newest = dated
         if cc not in (p.get("countries") or []):
             continue
-        (raised if p.get("tier") in ("anomaly", "warning") else routine).append(_row(p, kind=_kind_wf(p.get("id"))))
-    own = None if shares is None else shares.get(cc, 0.0)
-    return {"raised": raised, "routine": routine,
-            "own_rate": own,                       # None: no archive baseline was given
-            "unusual": bool(raised) and (own is None or own < ATTENTION_USUAL_SHARE),
+        base = (p.get("baseline_ref") or {}).get("id") if isinstance(p.get("baseline_ref"), dict) else None
+        row = _row(p, kind=_kind_wf(p.get("id")), z=_wf_z(p), baseline=base)
+        if dated and dated - timedelta(days=1) >= at:     # data_as_of is the end of the day it measures
+            after.append(row)
+        elif p.get("tier") not in ("anomaly", "warning"):
+            routine.append(row)
+        elif base == ATTENTION_BASELINE:
+            unusual.append(row)
+        else:
+            elevated.append(row)
+    return {"raised": unusual + elevated, "unusual_items": unusual, "elevated": elevated, "routine": routine,
+            "after": after, "baseline": ATTENTION_BASELINE,
+            "unusual": bool(unusual),
             "data_reaches_outage": bool(newest and newest >= at),
             "newest_data": iso(newest) if newest else None}
 
@@ -849,24 +958,147 @@ def power_record(f, features, states, history=None, ended_info=None):
     }
 
 
+# The Blackout kinds triage reads (M5, Tom, 15 Nov 2026; cop-joins.md M5). IODA's country-level drops, Cloudflare
+# Radar's verified traffic anomalies (one network or a country) and Radar's Outage Center entries that name a
+# country. A Radar entry that names no place (a platform outage) cannot be placed, so it is listed, not triaged.
+INPUT_KINDS = {"outage": "IODA", "radar-anomaly": "Cloudflare Radar (verified anomaly)",
+               "radar-outage": "Cloudflare Radar Outage Center"}
+_ISO = r"(\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?Z)"
+_SPAN_RE = re.compile(rf"(?:since {_ISO}, ongoing|from {_ISO} to {_ISO})")
+_CAUSE_RE = re.compile(r"Cause as Cloudflare states it: ([^.]+)\.")
+_NET_RE = re.compile(r", AS(\d+)(?: \(([^)]*)\))?:")
+OLD_START_D = 7          # Elements keeps ended hazards for 7 days: an outage that began earlier is read with a gap
+CAUSE_WINDOW_D = 7       # the cause question's window (cop-joins.md M6)
+CAUSE_RESOLVERS = ("Cloudflare Radar's Outage Center lists it with the cause \"government directed\"; Access Now "
+                   "names it a shutdown (a #KeepItOn statement or its STOP data); or two of Reuters, the Associated "
+                   "Press and AFP report that authorities ordered it")
+CAUSE_SOURCE = "Cloudflare Radar Outage Center; Access Now (#KeepItOn, STOP); Reuters, Associated Press, AFP"
+OONI_SOURCE = "Blackout's OONI readings (OONI data, CC BY-NC-SA 4.0), as published in Blackout's feed"
+RESOLVE_GRACE_D = 7      # resolve_by: this long after the check time
+
+
+def radar_span(p):
+    """(start, end) of a Cloudflare Radar item from Blackout's summary ("since <t>, ongoing" or "from <t> to <t>"):
+    its data_as_of is the run time while it is ongoing (cop-joins.md D5). (None, None) when the summary has neither."""
+    m = _SPAN_RE.search(str(p.get("summary") or ""))
+    if not m:
+        return None, None
+    return (utc(m.group(1)), None) if m.group(1) else (utc(m.group(2)), utc(m.group(3)))
+
+
+def outage_input(p):
+    """What triage reads from one Blackout outage item, or None if it is not one triage reads: {source, at (when it
+    began), ended, confirmed, network, stated_cause, timed_from}."""
+    kind = _kind(p.get("id"))
+    if kind not in INPUT_KINDS:
+        return None
+    if kind == "outage":
+        return {"source": INPUT_KINDS[kind], "at": utc(p.get("data_as_of")), "ended": None,
+                "confirmed": p.get("indicator_id") == CONFIRMED_OUTAGE, "network": None, "stated_cause": None,
+                "timed_from": "start"}
+    start, end = radar_span(p)
+    net = _NET_RE.search(str(p.get("title") or ""))
+    cause = _CAUSE_RE.search(str(p.get("summary") or ""))
+    return {"source": INPUT_KINDS[kind], "at": start or utc(p.get("data_as_of")), "ended": iso(end) if end else None,
+            "confirmed": True,       # Cloudflare's analysts verified the anomaly or listed the outage
+            "network": {"asn": int(net.group(1)), "name": net.group(2)} if net else None,
+            "stated_cause": cause.group(1).strip() if cause and kind == "radar-outage" else None,
+            "timed_from": "start" if start else "run"}
+
+
+def _check_phrase(t):
+    """Verdict's wording for a rule's earliest check: "check after HH:MM UTC on D Mon YYYY"."""
+    return f"check after {t.strftime('%H:%M')} UTC on {t.day} {t.strftime('%b %Y')}"
+
+
+def _qid(cc, inp, at, what):
+    net = f"-as{inp['network']['asn']}" if inp.get("network") else ""
+    return f"cop-{cc.lower()}{net}-outage-{at.strftime('%Y%m%dt%H%M')}-{what}"
+
+
+def cause_question(cc, inp, at):
+    """The second resolver (D6; cop-joins.md M6): whether an outside source attributes the outage to a government
+    order within CAUSE_WINDOW_D days. It names cause, which the OONI question does not."""
+    check = at.replace(second=0, microsecond=0) + timedelta(days=CAUSE_WINDOW_D)
+    where = cc + (f" (AS{inp['network']['asn']})" if inp.get("network") else "")
+    caution = None
+    sc = (inp.get("stated_cause") or "").lower()
+    if "government" in sc:
+        caution = ("Cloudflare already states a government-directed cause, so this question is settled before it "
+                   "is asked. Skip it.")
+    elif sc:
+        caution = (f"Cloudflare already states another cause ({inp['stated_cause']}); a Yes needs Cloudflare to "
+                   "change it or another resolver to name a government order.")
+    return {
+        "registered": False, "probability": None, "approved_by": None, "what": "cause",
+        "id_slug": _qid(cc, inp, at, "cause"),
+        "question": f"Will an outside source attribute the outage in {where} that began {iso(at)} to a government "
+                    f"order within {CAUSE_WINDOW_D} days?",
+        "window_ends": iso(check),
+        "rule_draft": f"Yes if, on a {_check_phrase(check)}, any of these has attributed this outage to a "
+                      f"government order or a government-directed shutdown: {CAUSE_RESOLVERS}. No otherwise.",
+        "resolution": {"source": CAUSE_SOURCE, "known_at": iso(check),
+                       "resolve_by": iso(check + timedelta(days=RESOLVE_GRACE_D)),
+                       "void_if": "an attribution of this outage to a government order was published before this "
+                                  "forecast's published_at"},
+        "caution": caution, "rise_form": None,
+    }
+
+
+def ooni_question(cc, inp, at, ooni_row):
+    """The OONI question drafted since 13 Nov 2026 (scenario 2's scoring line), with its rise form where OONI is
+    already over the line."""
+    until = at + timedelta(hours=OONI_WINDOW_H)
+    blocked_now = ooni_row is not None
+    now_rate = _rate(ooni_row["title"]) if blocked_now else None
+    rise = None
+    if blocked_now and now_rate is not None:
+        target = round(now_rate + OONI_RISE_POINTS, 1)
+        rise = {
+            "question": f"Will Blackout's OONI rate for {cc} reach {target}% or more within "
+                        f"{OONI_WINDOW_H} hours of the outage of {iso(at)}?",
+            "rule_draft": f"Yes if a Blackout OONI reading for {cc} dated inside the window ending "
+                          f"{iso(until)} is {target}% or more, a rise of {OONI_RISE_POINTS} points over the "
+                          f"{now_rate}% reading at the outage. No otherwise.",
+            "notes": ["The baseline is the reading at the outage, not a 30-day rate: COP's archive holds "
+                      "Blackout only since 12 Nov 2026.",
+                      "Blackout's OONI rate covers the past 7 days, so a one-day rise shows up damped.",
+                      f"The {OONI_RISE_POINTS}-point rise is provisional."]}
+    check = until + timedelta(days=1)     # Blackout's OONI reading for the window's last day comes out the day after
+    return {
+        "registered": False, "probability": None, "approved_by": None, "what": "ooni",
+        "id_slug": _qid(cc, inp, at, "ooni"),
+        "question": f"Will OONI confirm blocking in {cc} within {OONI_WINDOW_H} hours of the outage of {iso(at)}?",
+        "window_ends": iso(until),
+        "rule_draft": f"Yes if Blackout's OONI reading for {cc} is at or above its {OONI_BLOCKING} threshold for a "
+                      f"day inside the window ending {iso(until)} ({_check_phrase(check)}). No otherwise.",
+        "resolution": {"source": OONI_SOURCE, "known_at": iso(check),
+                       "resolve_by": iso(check + timedelta(days=RESOLVE_GRACE_D)), "void_if": None},
+        "caution": ("OONI is already at or above the threshold here, so this question is settled before it is "
+                    "asked. Use the rise form instead, or skip it.") if blocked_now else None,
+        "rise_form": rise,
+    }
+
+
 def triage(snapshot, history=None, ended=None):
     """One record per Blackout outage in the snapshot. history: triage_rates.py's "history" block (each advisory's
-    earlier levels, each country's share of days with raised attention), or None when there is no archive. ended:
-    Elements' list of items that ended in the last 7 days (data/ended.geojson), or None when it could not be read;
-    the layer states come from the live snapshot alone."""
+    and volcano's earlier levels, the dates COP has seen on each embassy alert), or None when there is no archive.
+    ended: Elements' list of items that ended in the last 7 days (data/ended.geojson), or None when it could not be
+    read; the layer states come from the live snapshot alone."""
     levels = (history or {}).get("advisory_levels")
-    shares = (history or {}).get("attention_share")
+    alert_dates = (history or {}).get("alert_dates")
     volcanoes = (history or {}).get("volcano_levels")
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: layer_state(snapshot, features, pid) for pid in LAYERS + ("blackout",)}
-    features, ended_info = with_ended(features, ended, utc(snapshot.get("generated_at")))
+    snap_at = utc(snapshot.get("generated_at"))
+    features, ended_info = with_ended(features, ended, snap_at)
     ooni = {}
     for f in features:
         p = f["properties"]
         if p.get("cop_program") == "blackout" and p.get("indicator_id") == OONI_BLOCKING and not p.get("cop_stale"):
             for cc in p.get("countries") or []:
                 ooni[cc] = _row(p)
-    records = []
+    records, unplaced = [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "blackout" or p.get("cop_stale"):
@@ -876,16 +1108,21 @@ def triage(snapshot, history=None, ended=None):
             if rec:
                 records.append(rec)
             continue
-        if _kind(p.get("id")) != "outage":
+        inp = outage_input(p)
+        if not inp:
             continue
-        at = utc(p.get("data_as_of"))
+        if not p.get("countries"):
+            unplaced.append(_row(p, source=inp["source"]))
+            continue
+        at = inp["at"]
         for cc in p.get("countries") or []:
             if not at:
                 continue
-            haz, note = hazards(features, cc, at, volcanoes), notices(features, cc, at, levels)
-            att = attention(features, cc, at, shares)
+            haz = hazards(features, cc, at, volcanoes)
+            note = notices(features, cc, at, levels, alert_dates)
+            att = attention(features, cc, at)
             dead = [pid for pid in LAYERS if states[pid] in ("stale", "missing")]
-            confirmed = p.get("indicator_id") == CONFIRMED_OUTAGE
+            confirmed = inp["confirmed"]
             if dead:
                 reading = "incomplete"
             elif not confirmed:
@@ -893,46 +1130,57 @@ def triage(snapshot, history=None, ended=None):
             elif haz["significant"]:
                 reading = "natural"
             elif note["recent"] or att["unusual"]:
-                reading = "deliberate"
+                reading = TENSION
             else:
                 reading = "open"
-            until = at + timedelta(hours=OONI_WINDOW_H)
-            blocked_now = cc in ooni
             caveats = [ended_caveat(ended_info)] if ended_caveat(ended_info) else []
+            if inp["network"]:
+                caveats.append(f"Cloudflare saw this on one network (AS{inp['network']['asn']}), and the other "
+                               "layers are read for the whole country.")
+            if inp["timed_from"] == "run":
+                caveats.append("Blackout's item gives no start time, so the outage is timed from Blackout's run.")
+            if snap_at and at < snap_at - timedelta(days=OLD_START_D):
+                caveats.append(f"The outage began more than {OLD_START_D} days before this snapshot, so a hazard "
+                               "that ended before then is not in Elements' lists, and the layers show today's "
+                               "items, not those of the day it began.")
+            if inp["stated_cause"]:
+                caveats.append(f"Cloudflare states a cause for this outage ({inp['stated_cause']}); COP quotes it "
+                               "and does not assess it.")
             if not att["data_reaches_outage"] and "watchfloor" not in dead:
                 caveats.append(f"Watchfloor's newest data ({att['newest_data']}) ends before this outage, so it "
                                "shows attention before the outage, not during it. Run again after its next day "
                                "is in.")
+            if att["after"] and not att["unusual_items"] and not att["elevated"] and not att["routine"]:
+                caveats.append("Watchfloor's data in this snapshot begins after the outage, so it is listed and "
+                               "not counted.")
             if history is None:
-                caveats.append("No archive baseline was given: raised attention is counted without checking it "
-                               "against this country's own normal, and advisory and volcano alert levels are not "
-                               "compared with the ones they replaced. Run tools/triage_rates.py first.")
+                caveats.append("No archive baseline was given: advisory and volcano alert levels are not compared "
+                               "with the ones they replaced, and an embassy alert's earlier dates are not known. "
+                               "Run tools/triage_rates.py first.")
             if any(n.get("direction") == "unknown" for n in note["recent"]):
                 caveats.append("An advisory or travel advice in the window has no earlier level in the archive, so "
                                "it is counted without knowing whether it was raised.")
+            if any(n.get("alert_type") in ("weather", "natural disaster") for n in note["recent_not_counted"]):
+                caveats.append("An embassy weather or natural-disaster alert sits in the window. It points to a "
+                               "hazard, which Elements is the layer for, so it is listed and not counted.")
             if any(h.get("level_change") == "unknown" for h in haz["significant"]):
                 caveats.append(VOLCANO_UNKNOWN)
             if haz["standing"]:
                 caveats.append("A hazard that began before the window is still running in this country. It is "
-                               "listed as standing and does not make the reading natural.")
-            now_rate = _rate(ooni[cc]["title"]) if blocked_now else None
-            rise = None
-            if blocked_now and now_rate is not None:
-                target = round(now_rate + OONI_RISE_POINTS, 1)
-                rise = {
-                    "question": f"Will Blackout's OONI rate for {cc} reach {target}% or more within "
-                                f"{OONI_WINDOW_H} hours of the outage of {iso(at)}?",
-                    "rule_draft": f"Yes if a Blackout OONI reading for {cc} dated inside the window ending "
-                                  f"{iso(until)} is {target}% or more, a rise of {OONI_RISE_POINTS} points over the "
-                                  f"{now_rate}% reading at the outage. No otherwise.",
-                    "notes": ["The baseline is the reading at the outage, not a 30-day rate: COP's archive holds "
-                              "Blackout only since 12 Nov 2026.",
-                              "Blackout's OONI rate covers the past 7 days, so a one-day rise shows up damped.",
-                              f"The {OONI_RISE_POINTS}-point rise is provisional."]}
+                               "listed as standing and is not counted.")
+            others = sorted({g["properties"].get("id") for g in features
+                             if g["properties"].get("cop_program") == "blackout" and g is not f
+                             and cc in (g["properties"].get("countries") or [])
+                             and outage_input(g["properties"])})
+            if others:
+                caveats.append(f"Blackout reports {_n(len(others), 'other outage item')} for {cc} in this snapshot, "
+                               "each read on its own: " + ", ".join(others) + ".")
             records.append({
                 "join": JOIN["id"], "country": cc, "outage_kind": "internet", "us_state": None,
                 "us_state_name": None,
-                "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary")),
+                "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary"),
+                               source=inp["source"], started_at=iso(at), ended_at=inp["ended"],
+                               network=inp["network"], stated_cause=inp["stated_cause"]),
                 "layers": {
                     "elements": {"state": states["elements"], **haz,
                                  "found": bool(haz["significant"] or haz["minor"])},
@@ -944,26 +1192,21 @@ def triage(snapshot, history=None, ended=None):
                 "reading": reading, "reading_text": READINGS[reading],
                 "caveats": caveats,
                 "eaglei": None,
-                "verdict_draft": {
-                    "registered": False, "probability": None, "approved_by": None,
-                    "question": f"Will OONI confirm blocking in {cc} within {OONI_WINDOW_H} hours of the outage "
-                                f"of {iso(at)}?",
-                    "window_ends": iso(until),
-                    "rule_draft": f"Yes if Blackout's OONI reading for {cc} is at or above its {OONI_BLOCKING} "
-                                  f"threshold for a day inside the window ending {iso(until)}. No otherwise.",
-                    "caution": ("OONI is already at or above the threshold here, so this question is settled "
-                                "before it is asked. Use the rise form instead, or skip it.") if blocked_now else None,
-                    "rise_form": rise,
-                },
+                "verdict_draft": ooni_question(cc, inp, at, ooni.get(cc)),
+                "cause_draft": cause_question(cc, inp, at),
+                "registerable": bool(confirmed),
             })
-    records.sort(key=lambda r: (r["reading"] in ("incomplete", "unconfirmed"), r["outage"]["data_as_of"] or ""),
-                 reverse=False)
+    records.sort(key=lambda r: (r["reading"] in ("incomplete", "unconfirmed"),
+                                r["outage"].get("started_at") or r["outage"]["data_as_of"] or ""))
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"), "layer_states": states,
             "windows": {"hazard_before_hours": HAZARD_BEFORE_H, "hazard_after_hours": HAZARD_AFTER_H,
-                        "hazard_near_km": HAZARD_NEAR_KM, "state_near_km": STATE_NEAR_KM,
+                        "hazard_near_km": HAZARD_NEAR_KM, "episodic_lag_hours": EPISODIC_LAG_H,
+                        "episodic_kinds": sorted(EPISODIC_GDACS.values()), "state_near_km": STATE_NEAR_KM,
                         "power_still_out_hours": POWER_STILL_OUT_H, "notice_recent_hours": NOTICE_RECENT_H,
-                        "attention_usual_share": ATTENTION_USUAL_SHARE, "ooni_window_hours": OONI_WINDOW_H,
-                        "ooni_rise_points": OONI_RISE_POINTS, "provisional": True},
+                        "alert_types_counted": list(ALERT_COUNTED), "attention_baseline": ATTENTION_BASELINE,
+                        "ooni_window_hours": OONI_WINDOW_H, "ooni_rise_points": OONI_RISE_POINTS,
+                        "cause_window_days": CAUSE_WINDOW_D, "provisional": True},
+            "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced,
             "baseline_given": history is not None, "ended_items": ended_info,
             "records": records}
 
@@ -992,7 +1235,7 @@ def attach_rates(doc, rates):
             r["base_rate"] = None
             continue
         days = b.get("by_country_days") or 0
-        own = (b.get("by_country") or {}).get(r["country"], {"natural": 0.0, "deliberate": 0.0, "open": 1.0})
+        own = (b.get("by_country") or {}).get(r["country"], {"natural": 0.0, TENSION: 0.0, "open": 1.0})
         here = own.get(r["reading"])
         r["base_rate"] = {
             "share_of_country_days": share,
@@ -1083,21 +1326,29 @@ def showed(name, layer):
             parts = [f"Nothing found: no travel or embassy notice was issued or raised in the {NOTICE_RECENT_H} "
                      "hours before the outage."]
         if layer["recent_not_raised"]:
-            parts.append(f"{_n(len(layer['recent_not_raised']), 'notice')} lowered, re-issued at the same level "
-                         "or edited without a change of level or advice (not counted).")
+            parts.append(f"{_n(len(layer['recent_not_raised']), 'notice')} lowered, re-issued at the same level, "
+                         "edited without a change of level or advice, or an embassy alert re-dated from an earlier "
+                         "date (not counted).")
+        if layer.get("recent_not_counted"):
+            kinds = sorted({r.get("alert_type") or "routine" for r in layer["recent_not_counted"]})
+            parts.append(f"{_n(len(layer['recent_not_counted']), 'embassy alert')} of a type not counted "
+                         f"({', '.join(kinds)}).")
         if layer["standing"]:
             parts.append(f"{_n(len(layer['standing']), 'older notice')} standing (not counted).")
         if layer["after"]:
             parts.append(f"{_n(len(layer['after']), 'notice')} dated after the outage.")
         return " ".join(parts)
-    own = layer["own_rate"]
-    if layer["raised"] and layer["unusual"]:
-        text = ("Press attention is raised, with no archive baseline to check it against." if own is None else
-                f"Press attention is raised, which is unusual here: raised on {own:.0%} of archived days.")
-    elif layer["raised"]:
-        text = f"Press attention is raised, but it is on {own:.0%} of archived days here, so it is not counted."
+    if layer["unusual"]:
+        zs = [r["z"] for r in layer["unusual_items"] if isinstance(r.get("z"), (int, float))]
+        text = ("Press attention is unusual here: Watchfloor raised it against this country's own last 28 days"
+                + (f" (z {max(zs):g})." if zs else "."))
+    elif layer.get("elevated"):
+        text = ("Press attention is high against its 90-day median, but not unusual against its own last 28 days, "
+                "so it is standing attention and not counted.")
     else:
         text = "Nothing found: press attention is not raised."
+    if layer.get("after"):
+        text += f" {_n(len(layer['after']), 'Watchfloor item')} for days after the outage (not counted)."
     if not layer["data_reaches_outage"]:
         text += " Its newest data ends before the outage."
     return text
@@ -1106,25 +1357,36 @@ def showed(name, layer):
 PUBLIC_NAME = "triage.json"
 LAYER_NAMES = {"elements": "Natural hazards (Elements)", "cordon": "Travel and embassy notices (Cordon)",
                "watchfloor": "Press attention (Watchfloor)"}
-WHAT = ("For each internet outage Blackout reports, what three other layers show for that country around that "
-        "hour: natural hazards (Elements), travel and embassy notices (Cordon: the State Department's advisories "
-        "and embassy notices, and UK, Canadian and New Zealand travel advice when its level or advice changes) "
-        "and press "
-        "attention (Watchfloor). "
+WHAT = ("For each internet outage Blackout reports from IODA (country-level drops) and Cloudflare Radar (anomalies "
+        "Cloudflare verified, on a network or a country, and Outage Center entries that name a country), what "
+        "three other layers show for that country around the hour it began: natural hazards (Elements), travel "
+        "and embassy notices (Cordon: the State Department's advisories, embassy security and demonstration "
+        "alerts, and UK, Canadian and New Zealand travel advice when its level or advice changes) and press "
+        "attention (Watchfloor, against each country's own last 28 days). A Radar entry that names no place is "
+        "listed, not read. "
         "For each US state where ODIN's reporting utilities show more than 50,000 meters without power, the same "
         "layers for that state: hazards in or near it, while Cordon and Watchfloor do not cover US states.")
 NOT_A_WARNING = ("A reading sorts public reports. It is not a warning, not a forecast and not a finding of cause, "
                  "and it carries no probability. \"Nothing found\" and \"No current data\" are different answers.")
 DRAFT_NOTE = ("A drafted question that would let this reading be scored later. It is not a registered Verdict "
               "forecast and no likelihood is attached to it.")
+CAUSE_NOTE = ("A second drafted question, on cause, beside the OONI line: whether an outside source names a "
+              "government order. It is not a registered Verdict forecast and no likelihood is attached to it.")
 
 
-def question_draft(v):
+def verdict_id(v):
+    """The id the drafted question would get in Verdict's ledger: verdict:<day it is known>:<slug>, or None."""
+    known = ((v.get("resolution") or {}).get("known_at") or "")[:10]
+    return f"verdict:{known}:{v['id_slug']}" if known and v.get("id_slug") else None
+
+
+def question_draft(v, note=DRAFT_NOTE):
     """The drafted Verdict question as the public sees it: the question, its window and rule, and that it is a
     draft. The empty probability and approval fields stay in out/: published, they would read as a forecast."""
     rise = v.get("rise_form")
-    out = {"status": "draft, not registered", "note": DRAFT_NOTE, "question": v["question"],
+    out = {"status": "draft, not registered", "note": note, "verdict_id": verdict_id(v), "question": v["question"],
            "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["caution"],
+           "resolution": v.get("resolution"),
            "rise_form": None if not rise else {"question": rise["question"], "rule_draft": rise["rule_draft"],
                                                "notes": rise["notes"]}}
     if v.get("reference"):            # a state power outage: the EAGLE-I reference and the question's own notes
@@ -1146,11 +1408,14 @@ def public(doc):
         rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
                          for name, layer in r["layers"].items()}
         rec["question_draft"] = question_draft(r["verdict_draft"])
+        rec["cause_question_draft"] = question_draft(r["cause_draft"], CAUSE_NOTE) if r.get("cause_draft") else None
+        rec["registerable"] = bool(r.get("registerable"))
         records.append(rec)
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
-            "ended_items": doc.get("ended_items"), "records": records}
+            "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
+            "records": records}
 
 
 def publish_folder(path):
@@ -1214,8 +1479,8 @@ def main(argv=None):
             continue
         print(f"    elements: {len(L['elements']['significant'])} significant, {len(L['elements']['minor'])} minor"
               f" | cordon: {len(L['cordon']['recent'])} recent, {len(L['cordon']['standing'])} standing"
-              f" | watchfloor: {len(L['watchfloor']['raised'])} raised"
-              f"{' (usual here)' if L['watchfloor']['raised'] and not L['watchfloor']['unusual'] else ''}"
+              f" | watchfloor: {len(L['watchfloor']['unusual_items'])} unusual, {len(L['watchfloor']['elevated'])}"
+              " elevated"
               f"{'' if L['watchfloor']['data_reaches_outage'] else ' (data ends before the outage)'}")
     if rates is None:
         print("no base rates: run tools/triage_rates.py first")
