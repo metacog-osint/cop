@@ -413,7 +413,10 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   and OpenAI's items, which name no target, not at all (all 369 list under Off the map; before, 264 were drawn on
   the countries their description names). On 16 Nov, 47 of Undertow's 434 items carry a place.
   **`undertow-watch-register`** (16 Nov 2026, with Undertow's first watch row, Armenia, DFRLab, target Armenia):
-  `commercial_ok` false while its only row is DFRLab's (each row's licence travels in the item's source). Both: call DISARM techniques provisional while
+  `commercial_ok` false while its only row is DFRLab's (each row's licence travels in the item's source). Rule 8
+  names it since 16 Nov 2026 (Tom's yes, after the live inspector read showed rule 8 described reported activity only
+  as reports on tracked operations): a `UT-WATCH-` item names no tracked operation, is marked at the targets entered
+  from the report, and has no matched disclosure unless `activity.closed_into` names one. Both: call DISARM techniques provisional while
   `disarm_rules_status` reads "proposed". The card shows a "Reported activity" badge and Reported by, First report,
   Last report, Reports and State facts (`renderCard`, `p.activity`); `get_item` returns the whole block (the shards
   keep every field); `search_items` rows do not carry it, but the title ends "(active)" or "(quiet)".
