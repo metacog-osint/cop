@@ -17,7 +17,7 @@
  "derived_from": [],
  "method": {
   "code": "tools/history_cordon_embassy.py",
-  "commit": "7e29196",
+  "commit": "b148ec1",
   "params": {
    "feed": "https://{host}/category/alert/feed/",
    "feed_items": 10,
@@ -106,7 +106,8 @@
    "An alert published and pushed off the ten-item feed between two captures is missing.",
    "An edited alert keeps its first publication time here; Cordon's Google News fallback can re-date an edited alert.",
    "Palestine has no embassy of its own: alerts of US Embassy Jerusalem (il.usembassy.gov) are rows for place IL, and copied to PS when the title or summary names the West Bank, Gaza or Palestinians."
-  ]
+  ],
+  "commit_note": "Cherry-picked onto main from 7e29196 (branch claude/history-cordon-d273c9); same code."
  },
  "coverage": {
   "start": "2024-12-01",

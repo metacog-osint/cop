@@ -25,7 +25,7 @@
  "derived_from": [],
  "method": {
   "code": "tools/history_cordon_state.py",
-  "commit": "9bb3065",
+  "commit": "def979d",
   "params": {
    "rss": "https://travel.state.gov/_res/rss/TAsTWs.xml",
    "gap_days": 7,
@@ -120,7 +120,8 @@
    "Tier is derived the way Cordon marks it (level changed in the 30 days before), not read from a stored change log.",
    "Departure posture (kind posture, read from the advisory text) is not rebuilt.",
    "Gaza and the West Bank are State's combined Israel, West Bank and Gaza advisory, copied to place PS."
-  ]
+  ],
+  "commit_note": "Cherry-picked onto main from 9bb3065 (branch claude/history-cordon-d273c9); same code."
  },
  "coverage": {
   "start": "2024-12-01",

@@ -77,9 +77,10 @@
  ],
  "method": {
   "code": "tools/stop_replay.py",
-  "commit": "uncommitted sha256:af9a402ec75a0641",
+  "commit": "f83188f",
   "reading_rule": "natural if a significant hazard (tri.hazards); else tension context if tri.notices counts a Cordon notice in the 48 hours before, or the country was on a Watchfloor Rising list the day before; else open; incomplete when that Watchfloor day is missing, partial or unscored and nothing else counted",
-  "outage_hour_utc": 12
+  "outage_hour_utc": 12,
+  "commit_note": "Run by this file before one edit that changed only the caveat text (Cordon's 25 countries; Myanmar left out of the matched comparison), which this manifest already carries; results are unchanged."
  },
  "results": {
   "two_layer": {

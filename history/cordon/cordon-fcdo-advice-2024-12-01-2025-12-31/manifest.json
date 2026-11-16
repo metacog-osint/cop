@@ -25,7 +25,7 @@
  "derived_from": [],
  "method": {
   "code": "tools/history_cordon_fcdo.py",
-  "commit": "7e29196",
+  "commit": "b148ec1",
   "params": {
    "api": "https://www.gov.uk/api/content/foreign-travel-advice/{slug}",
    "page": "https://www.gov.uk/foreign-travel-advice/{slug}",
@@ -287,7 +287,8 @@
    "A change that went in and out between two captures is missed.",
    "Statements are read from the page's warning text (whole country or parts, all travel or all but essential), not from alert_status, which the API gives only for today.",
    "The change history lists only updates the FCDO published as such; the API may omit older notes."
-  ]
+  ],
+  "commit_note": "Cherry-picked onto main from 7e29196 (branch claude/history-cordon-d273c9); same code."
  },
  "coverage": {
   "start": "2024-12-01",
