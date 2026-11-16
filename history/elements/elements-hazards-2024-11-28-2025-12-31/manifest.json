@@ -1,0 +1,134 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "elements-hazards-2024-11-28-2025-12-31",
+ "layer": "elements",
+ "title": "Elements' significant hazards outside the US, rebuilt from GDACS and USGS PAGER",
+ "description": "One row per hazard per country: GDACS events alerted orange or red, and USGS earthquakes of M4.5+ with a PAGER alert of yellow or higher, as Elements would have carried them (tier anomaly). For replaying triage's natural reading.",
+ "sources": [
+  {
+   "id": "gdacs",
+   "name": "GDACS event list (European Commission JRC and UN OCHA)",
+   "url": "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH",
+   "licence": "GDACS data free to use with attribution (gdacs.org terms of use)",
+   "attribution": "GDACS, European Commission Joint Research Centre and UN OCHA",
+   "how": "api"
+  },
+  {
+   "id": "usgs",
+   "name": "USGS earthquake catalog (FDSN event service), PAGER alerts",
+   "url": "https://earthquake.usgs.gov/fdsnws/event/1/query",
+   "licence": "US Government work, public domain",
+   "attribution": "U.S. Geological Survey",
+   "how": "api"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "tools/history_elements.py",
+  "commit": "uncommitted sha256:e182d597ebf56122",
+  "params": {
+   "gdacs_types": [
+    "EQ",
+    "TC",
+    "FL",
+    "VO",
+    "DR",
+    "WF"
+   ],
+   "gdacs_alerts": [
+    "orange",
+    "red"
+   ],
+   "usgs_min_mag": 4.5,
+   "pager_alerts": [
+    "yellow",
+    "orange",
+    "red"
+   ],
+   "near_km": 300
+  },
+  "matches_live": false,
+  "differences": [
+   "GDACS's list gives each event's alert level as it stands now, not as it stood on each day: an event raised to orange late counts from its start.",
+   "Elements reads GDACS and USGS live every 2 hours; an event GDACS or USGS revised or deleted since is as it stands now.",
+   "Earthquakes are placed by the kit's thinned Natural Earth outlines (point in polygon), not by Elements' own place lookup.",
+   "NWS, SPC, USGS volcano, MeteoAlarm, tsunami, CEMS and EMSC items are not rebuilt."
+  ]
+ },
+ "coverage": {
+  "start": "2024-11-28",
+  "end": "2025-12-31",
+  "time_precision": "minute",
+  "places": "all",
+  "place_code": "ISO 3166-1 alpha-2"
+ },
+ "gaps": [
+  {
+   "from": "2024-11-28",
+   "to": "2025-12-31",
+   "places": "Europe",
+   "reason": "MeteoAlarm red warnings have no public archive"
+  },
+  {
+   "from": "2024-11-28",
+   "to": "2025-12-31",
+   "places": "US",
+   "reason": "NWS Extreme alerts, SPC level 4-5 outlooks and USGS volcano alerts not rebuilt"
+  },
+  {
+   "from": "2024-11-28",
+   "to": "2025-12-31",
+   "places": "all",
+   "reason": "tsunami messages not rebuilt (most follow a PAGER-alerted earthquake, which is)"
+  }
+ ],
+ "biases": [
+  "Low in Europe and the US, where Elements' other sources make most significant hazards.",
+  "GDACS alert levels are the latest, so a hazard that peaked later is counted early."
+ ],
+ "rows": {
+  "count": 233,
+  "places": 95,
+  "days": 399
+ },
+ "row_schema": {
+  "place": "ISO alpha-2 of a country the hazard names or lies in or near (null: unplaced)",
+  "at": "start of the hazard, UTC",
+  "precision": "minute",
+  "source_id": "gdacs or usgs",
+  "source_ref": "the query URL that returned it",
+  "retrieved_at": "UTC",
+  "quality": "list of flags",
+  "item_id": "the Elements item id it would have had",
+  "tier": "anomaly",
+  "hazard_code": "EQ, TC, FL, VO, DR, WF",
+  "alert_level": "GDACS or PAGER level",
+  "from": "GDACS event start",
+  "to": "GDACS event end (episodic TC and FL count while active)",
+  "magnitude": "USGS magnitude",
+  "km_from_country": "0 inside; else km to the outline",
+  "countries": "the countries the item names",
+  "geometry": "GeoJSON point",
+  "name": "title",
+  "severity": "GDACS severity text"
+ },
+ "files": [
+  {
+   "path_or_url": "history/elements/elements-hazards-2024-11-28-2025-12-31/rows.jsonl",
+   "sha256": "ff01679bdeee4422c5ac4034d584dac4dd9f227658a54b3db5d8c7cd50347bc3",
+   "bytes": 164463
+  }
+ ],
+ "redistribution": "rows",
+ "built_at": "2026-11-16T05:41:29Z",
+ "built_by": "tools/history_elements.py, COP STOP-replay session, 15-16 Nov 2026",
+ "uses": [
+  "replaying triage's natural reading outside the US for 2025",
+  "base rates of significant hazards per country-day"
+ ],
+ "not_for": [
+  "US or European hazard rates (gaps above)",
+  "a record of GDACS alert levels by day"
+ ],
+ "supersedes": null
+}

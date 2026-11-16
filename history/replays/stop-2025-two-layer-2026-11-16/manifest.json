@@ -1,0 +1,2637 @@
+{
+ "contract": "cop-layer-history/1",
+ "run_id": "stop-2025-two-layer-2026-11-16",
+ "title": "Triage replayed on Access Now's documented 2025 shutdowns: Elements and Watchfloor",
+ "inputs": [
+  {
+   "dataset_id": "elements-hazards-2024-11-28-2025-12-31",
+   "sha256": "ff01679bdeee4422c5ac4034d584dac4dd9f227658a54b3db5d8c7cd50347bc3"
+  },
+  {
+   "dataset_id": "watchfloor-country-attention-2024-12-01-2025-12-31",
+   "sha256": "3973aac3346b1f080c253622a61ff9e9ede5e6eee3cd21796f11d3e061e3f107"
+  }
+ ],
+ "labels": {
+  "source": "Access Now #KeepItOn STOP dataset (public sheet, first tab, the 2025 dataset)",
+  "file": "D:/Projects/blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv",
+  "sha256": "8c53686df2c17eba873504445243061c414d20c369b5c169d91a911ad6c28326",
+  "licence": "No data licence stated; counts only",
+  "attribution": "Access Now, #KeepItOn STOP",
+  "rows_used": 254,
+  "redistribution": "aggregates"
+ },
+ "controls": {
+  "how": "every 2025 day in each shutdown country with no STOP shutdown starting, running or ending within 7 days (open-ended shutdowns taken as 30 days)",
+  "seed": null
+ },
+ "layers_replayed": [
+  "elements",
+  "watchfloor (country items)"
+ ],
+ "layers_not_replayed": [
+  "cordon",
+  "watchfloor zone items"
+ ],
+ "method": {
+  "code": "tools/stop_replay.py",
+  "commit": "uncommitted sha256:af9a402ec75a0641",
+  "reading_rule": "natural if a significant hazard (tri.hazards); else tension context if the country was on a Watchfloor Rising list the day before; else open; incomplete when that Watchfloor day is missing, partial or unscored (no country had a 28-day z)",
+  "outage_hour_utc": 12
+ },
+ "results": {
+  "shutdowns": 255,
+  "distinct_country_days": 238,
+  "shutdowns_read": {
+   "open": 183,
+   "tension context": 14,
+   "natural": 30,
+   "incomplete": 28
+  },
+  "shutdowns_shares": {
+   "natural": 0.1176,
+   "tension context": 0.0549,
+   "open": 0.7176,
+   "incomplete": 0.1098
+  },
+  "matched": {
+   "how": "shutdowns in countries with at least one control day, each set against its own country's control shares",
+   "shutdowns": 172,
+   "left_out": [
+    "MM"
+   ],
+   "shutdowns_shares": {
+    "natural": 0.1512,
+    "tension context": 0.0814,
+    "open": 0.6221,
+    "incomplete": 0.1453
+   },
+   "control_shares": {
+    "natural": 0.058,
+    "tension context": 0.0561,
+    "open": 0.8352,
+    "incomplete": 0.0507
+   }
+  },
+  "control_days": 11127,
+  "by_country": [
+   {
+    "country": "MM",
+    "name": "Myanmar",
+    "shutdowns": 83,
+    "shutdowns_read": {
+     "open": 76,
+     "natural": 4,
+     "incomplete": 3
+    },
+    "control_days": 0,
+    "control_read": {},
+    "control_shares": {
+     "natural": null,
+     "tension context": null,
+     "open": null,
+     "incomplete": null
+    }
+   },
+   {
+    "country": "IN",
+    "name": "India",
+    "shutdowns": 63,
+    "shutdowns_read": {
+     "open": 32,
+     "tension context": 5,
+     "incomplete": 3,
+     "natural": 23
+    },
+    "control_days": 67,
+    "control_read": {
+     "open": 56,
+     "tension context": 3,
+     "natural": 8
+    },
+    "control_shares": {
+     "natural": 0.1194,
+     "tension context": 0.0448,
+     "open": 0.8358,
+     "incomplete": 0.0
+    }
+   },
+   {
+    "country": "PK",
+    "name": "Pakistan",
+    "shutdowns": 15,
+    "shutdowns_read": {
+     "open": 12,
+     "incomplete": 2,
+     "natural": 1
+    },
+    "control_days": 159,
+    "control_read": {
+     "open": 124,
+     "tension context": 15,
+     "incomplete": 14,
+     "natural": 6
+    },
+    "control_shares": {
+     "natural": 0.0377,
+     "tension context": 0.0943,
+     "open": 0.7799,
+     "incomplete": 0.0881
+    }
+   },
+   {
+    "country": "RU",
+    "name": "Russia",
+    "shutdowns": 13,
+    "shutdowns_read": {
+     "open": 12,
+     "incomplete": 1
+    },
+    "control_days": 108,
+    "control_read": {
+     "open": 83,
+     "tension context": 4,
+     "incomplete": 19,
+     "natural": 2
+    },
+    "control_shares": {
+     "natural": 0.0185,
+     "tension context": 0.037,
+     "open": 0.7685,
+     "incomplete": 0.1759
+    }
+   },
+   {
+    "country": "IQ",
+    "name": "Iraq",
+    "shutdowns": 7,
+    "shutdowns_read": {
+     "open": 5,
+     "tension context": 1,
+     "incomplete": 1
+    },
+    "control_days": 222,
+    "control_read": {
+     "open": 203,
+     "tension context": 16,
+     "incomplete": 3
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0721,
+     "open": 0.9144,
+     "incomplete": 0.0135
+    }
+   },
+   {
+    "country": "PS",
+    "name": "Palestine",
+    "shutdowns": 6,
+    "shutdowns_read": {
+     "open": 3,
+     "incomplete": 2,
+     "tension context": 1
+    },
+    "control_days": 233,
+    "control_read": {
+     "open": 180,
+     "tension context": 35,
+     "incomplete": 18
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.1502,
+     "open": 0.7725,
+     "incomplete": 0.0773
+    }
+   },
+   {
+    "country": "IR",
+    "name": "Iran",
+    "shutdowns": 6,
+    "shutdowns_read": {
+     "incomplete": 5,
+     "open": 1
+    },
+    "control_days": 293,
+    "control_read": {
+     "open": 271,
+     "tension context": 22
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0751,
+     "open": 0.9249,
+     "incomplete": 0.0
+    }
+   },
+   {
+    "country": "TZ",
+    "name": "Tanzania",
+    "shutdowns": 5,
+    "shutdowns_read": {
+     "tension context": 1,
+     "open": 4
+    },
+    "control_days": 233,
+    "control_read": {
+     "open": 212,
+     "tension context": 7,
+     "incomplete": 14
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.03,
+     "open": 0.9099,
+     "incomplete": 0.0601
+    }
+   },
+   {
+    "country": "CM",
+    "name": "Cameroon",
+    "shutdowns": 4,
+    "shutdowns_read": {
+     "open": 4
+    },
+    "control_days": 285,
+    "control_read": {
+     "open": 245,
+     "tension context": 7,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0246,
+     "open": 0.8596,
+     "incomplete": 0.1158
+    }
+   },
+   {
+    "country": "AF",
+    "name": "Afghanistan",
+    "shutdowns": 4,
+    "shutdowns_read": {
+     "open": 3,
+     "natural": 1
+    },
+    "control_days": 298,
+    "control_read": {
+     "open": 249,
+     "tension context": 9,
+     "incomplete": 33,
+     "natural": 7
+    },
+    "control_shares": {
+     "natural": 0.0235,
+     "tension context": 0.0302,
+     "open": 0.8356,
+     "incomplete": 0.1107
+    }
+   },
+   {
+    "country": "UA",
+    "name": "Ukraine",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "open": 3
+    },
+    "control_days": 276,
+    "control_read": {
+     "open": 212,
+     "tension context": 31,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.1123,
+     "open": 0.7681,
+     "incomplete": 0.1196
+    }
+   },
+   {
+    "country": "SY",
+    "name": "Syria",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "open": 1,
+     "incomplete": 2
+    },
+    "control_days": 262,
+    "control_read": {
+     "open": 239,
+     "tension context": 22,
+     "incomplete": 1
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.084,
+     "open": 0.9122,
+     "incomplete": 0.0038
+    }
+   },
+   {
+    "country": "YE",
+    "name": "Yemen",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "open": 3
+    },
+    "control_days": 279,
+    "control_read": {
+     "open": 215,
+     "tension context": 19,
+     "incomplete": 33,
+     "natural": 12
+    },
+    "control_shares": {
+     "natural": 0.043,
+     "tension context": 0.0681,
+     "open": 0.7706,
+     "incomplete": 0.1183
+    }
+   },
+   {
+    "country": "TR",
+    "name": "Turkey",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "open": 3
+    },
+    "control_days": 297,
+    "control_read": {
+     "open": 235,
+     "tension context": 19,
+     "natural": 10,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0337,
+     "tension context": 0.064,
+     "open": 0.7912,
+     "incomplete": 0.1111
+    }
+   },
+   {
+    "country": "KE",
+    "name": "Kenya",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "incomplete": 2,
+     "open": 1
+    },
+    "control_days": 306,
+    "control_read": {
+     "open": 284,
+     "tension context": 13,
+     "natural": 3,
+     "incomplete": 6
+    },
+    "control_shares": {
+     "natural": 0.0098,
+     "tension context": 0.0425,
+     "open": 0.9281,
+     "incomplete": 0.0196
+    }
+   },
+   {
+    "country": "SD",
+    "name": "Sudan",
+    "shutdowns": 3,
+    "shutdowns_read": {
+     "incomplete": 1,
+     "open": 2
+    },
+    "control_days": 257,
+    "control_read": {
+     "open": 226,
+     "tension context": 15,
+     "incomplete": 16
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0584,
+     "open": 0.8794,
+     "incomplete": 0.0623
+    }
+   },
+   {
+    "country": "VE",
+    "name": "Venezuela",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "tension context": 2
+    },
+    "control_days": 325,
+    "control_read": {
+     "open": 260,
+     "tension context": 29,
+     "incomplete": 33,
+     "natural": 3
+    },
+    "control_shares": {
+     "natural": 0.0092,
+     "tension context": 0.0892,
+     "open": 0.8,
+     "incomplete": 0.1015
+    }
+   },
+   {
+    "country": "BY",
+    "name": "Belarus",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "open": 1,
+     "tension context": 1
+    },
+    "control_days": 332,
+    "control_read": {
+     "open": 271,
+     "tension context": 25,
+     "incomplete": 33,
+     "natural": 3
+    },
+    "control_shares": {
+     "natural": 0.009,
+     "tension context": 0.0753,
+     "open": 0.8163,
+     "incomplete": 0.0994
+    }
+   },
+   {
+    "country": "CD",
+    "name": "Democratic Republic of the Congo",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "open": 2
+    },
+    "control_days": 330,
+    "control_read": {
+     "open": 249,
+     "natural": 46,
+     "incomplete": 26,
+     "tension context": 9
+    },
+    "control_shares": {
+     "natural": 0.1394,
+     "tension context": 0.0273,
+     "open": 0.7545,
+     "incomplete": 0.0788
+    }
+   },
+   {
+    "country": "KH",
+    "name": "Cambodia",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "incomplete": 2
+    },
+    "control_days": 307,
+    "control_read": {
+     "open": 271,
+     "tension context": 21,
+     "natural": 15
+    },
+    "control_shares": {
+     "natural": 0.0489,
+     "tension context": 0.0684,
+     "open": 0.8827,
+     "incomplete": 0.0
+    }
+   },
+   {
+    "country": "PA",
+    "name": "Panama",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "open": 1,
+     "incomplete": 1
+    },
+    "control_days": 334,
+    "control_read": {
+     "open": 313,
+     "tension context": 12,
+     "incomplete": 9
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0359,
+     "open": 0.9371,
+     "incomplete": 0.0269
+    }
+   },
+   {
+    "country": "JO",
+    "name": "Jordan",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "incomplete": 1,
+     "open": 1
+    },
+    "control_days": 292,
+    "control_read": {
+     "open": 265,
+     "tension context": 27
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0925,
+     "open": 0.9075,
+     "incomplete": 0.0
+    }
+   },
+   {
+    "country": "NP",
+    "name": "Nepal",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "open": 2
+    },
+    "control_days": 301,
+    "control_read": {
+     "open": 256,
+     "tension context": 11,
+     "incomplete": 28,
+     "natural": 6
+    },
+    "control_shares": {
+     "natural": 0.0199,
+     "tension context": 0.0365,
+     "open": 0.8505,
+     "incomplete": 0.093
+    }
+   },
+   {
+    "country": "GN",
+    "name": "Guinea",
+    "shutdowns": 2,
+    "shutdowns_read": {
+     "open": 2
+    },
+    "control_days": 328,
+    "control_read": {
+     "open": 285,
+     "tension context": 10,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0305,
+     "open": 0.8689,
+     "incomplete": 0.1006
+    }
+   },
+   {
+    "country": "TD",
+    "name": "Chad",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 347,
+    "control_read": {
+     "open": 304,
+     "tension context": 10,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0288,
+     "open": 0.8761,
+     "incomplete": 0.0951
+    }
+   },
+   {
+    "country": "US",
+    "name": "United States of America",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 349,
+    "control_read": {
+     "open": 244,
+     "natural": 104,
+     "incomplete": 1
+    },
+    "control_shares": {
+     "natural": 0.298,
+     "tension context": 0.0,
+     "open": 0.6991,
+     "incomplete": 0.0029
+    }
+   },
+   {
+    "country": "SS",
+    "name": "South Sudan",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 345,
+    "control_read": {
+     "open": 234,
+     "tension context": 12,
+     "incomplete": 31,
+     "natural": 68
+    },
+    "control_shares": {
+     "natural": 0.1971,
+     "tension context": 0.0348,
+     "open": 0.6783,
+     "incomplete": 0.0899
+    }
+   },
+   {
+    "country": "AL",
+    "name": "Albania",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 320,
+    "control_read": {
+     "open": 263,
+     "tension context": 18,
+     "incomplete": 33,
+     "natural": 6
+    },
+    "control_shares": {
+     "natural": 0.0187,
+     "tension context": 0.0563,
+     "open": 0.8219,
+     "incomplete": 0.1031
+    }
+   },
+   {
+    "country": "PG",
+    "name": "Papua New Guinea",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 348,
+    "control_read": {
+     "open": 306,
+     "natural": 4,
+     "tension context": 5,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0115,
+     "tension context": 0.0144,
+     "open": 0.8793,
+     "incomplete": 0.0948
+    }
+   },
+   {
+    "country": "LT",
+    "name": "Lithuania",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 320,
+    "control_read": {
+     "open": 274,
+     "tension context": 15,
+     "incomplete": 31
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0469,
+     "open": 0.8562,
+     "incomplete": 0.0969
+    }
+   },
+   {
+    "country": "LY",
+    "name": "Libya",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "tension context": 1
+    },
+    "control_days": 349,
+    "control_read": {
+     "open": 291,
+     "tension context": 25,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0716,
+     "open": 0.8338,
+     "incomplete": 0.0946
+    }
+   },
+   {
+    "country": "VN",
+    "name": "Vietnam",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 304,
+    "control_read": {
+     "open": 277,
+     "tension context": 24,
+     "natural": 3
+    },
+    "control_shares": {
+     "natural": 0.0099,
+     "tension context": 0.0789,
+     "open": 0.9112,
+     "incomplete": 0.0
+    }
+   },
+   {
+    "country": "NG",
+    "name": "Nigeria",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "natural": 1
+    },
+    "control_days": 320,
+    "control_read": {
+     "open": 252,
+     "tension context": 17,
+     "incomplete": 9,
+     "natural": 42
+    },
+    "control_shares": {
+     "natural": 0.1313,
+     "tension context": 0.0531,
+     "open": 0.7875,
+     "incomplete": 0.0281
+    }
+   },
+   {
+    "country": "DZ",
+    "name": "Algeria",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "incomplete": 1
+    },
+    "control_days": 346,
+    "control_read": {
+     "open": 309,
+     "tension context": 17,
+     "incomplete": 20
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0491,
+     "open": 0.8931,
+     "incomplete": 0.0578
+    }
+   },
+   {
+    "country": "TG",
+    "name": "Togo",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "incomplete": 1
+    },
+    "control_days": 259,
+    "control_read": {
+     "open": 254,
+     "incomplete": 5
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0,
+     "open": 0.9807,
+     "incomplete": 0.0193
+    }
+   },
+   {
+    "country": "AO",
+    "name": "Angola",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "tension context": 1
+    },
+    "control_days": 350,
+    "control_read": {
+     "open": 307,
+     "tension context": 15,
+     "incomplete": 28
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0429,
+     "open": 0.8771,
+     "incomplete": 0.08
+    }
+   },
+   {
+    "country": "ID",
+    "name": "Indonesia",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "tension context": 1
+    },
+    "control_days": 346,
+    "control_read": {
+     "open": 246,
+     "tension context": 10,
+     "natural": 60,
+     "incomplete": 30
+    },
+    "control_shares": {
+     "natural": 0.1734,
+     "tension context": 0.0289,
+     "open": 0.711,
+     "incomplete": 0.0867
+    }
+   },
+   {
+    "country": "CF",
+    "name": "Central African Republic",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 350,
+    "control_read": {
+     "open": 317,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0,
+     "open": 0.9057,
+     "incomplete": 0.0943
+    }
+   },
+   {
+    "country": "GW",
+    "name": "Guinea-Bissau",
+    "shutdowns": 1,
+    "shutdowns_read": {
+     "open": 1
+    },
+    "control_days": 350,
+    "control_read": {
+     "open": 317,
+     "incomplete": 33
+    },
+    "control_shares": {
+     "natural": 0.0,
+     "tension context": 0.0,
+     "open": 0.9057,
+     "incomplete": 0.0943
+    }
+   }
+  ],
+  "by_scope": {
+   "one city or district": {
+    "shutdowns": 145,
+    "read": {
+     "open": 105,
+     "natural": 25,
+     "tension context": 6,
+     "incomplete": 9
+    },
+    "shares": {
+     "natural": 0.1724,
+     "tension context": 0.0414,
+     "open": 0.7241,
+     "incomplete": 0.0621
+    },
+    "matched": {
+     "shutdowns": 78,
+     "shares": {
+      "natural": 0.2821,
+      "tension context": 0.0769,
+      "open": 0.5641,
+      "incomplete": 0.0769
+     },
+     "control_shares": {
+      "natural": 0.0959,
+      "tension context": 0.0527,
+      "open": 0.8263,
+      "incomplete": 0.0251
+     }
+    }
+   },
+   "nationwide": {
+    "shutdowns": 52,
+    "read": {
+     "tension context": 7,
+     "open": 32,
+     "incomplete": 12,
+     "natural": 1
+    },
+    "shares": {
+     "natural": 0.0192,
+     "tension context": 0.1346,
+     "open": 0.6154,
+     "incomplete": 0.2308
+    },
+    "matched": {
+     "shutdowns": 52,
+     "shares": {
+      "natural": 0.0192,
+      "tension context": 0.1346,
+      "open": 0.6154,
+      "incomplete": 0.2308
+     },
+     "control_shares": {
+      "natural": 0.0219,
+      "tension context": 0.048,
+      "open": 0.8633,
+      "incomplete": 0.0667
+     }
+    }
+   },
+   "several cities in one region": {
+    "shutdowns": 34,
+    "read": {
+     "open": 27,
+     "tension context": 1,
+     "natural": 3,
+     "incomplete": 3
+    },
+    "shares": {
+     "natural": 0.0882,
+     "tension context": 0.0294,
+     "open": 0.7941,
+     "incomplete": 0.0882
+    },
+    "matched": {
+     "shutdowns": 23,
+     "shares": {
+      "natural": 0.087,
+      "tension context": 0.0435,
+      "open": 0.7391,
+      "incomplete": 0.1304
+     },
+     "control_shares": {
+      "natural": 0.0425,
+      "tension context": 0.0612,
+      "open": 0.832,
+      "incomplete": 0.0643
+     }
+    }
+   },
+   "several regions": {
+    "shutdowns": 24,
+    "read": {
+     "open": 19,
+     "incomplete": 4,
+     "natural": 1
+    },
+    "shares": {
+     "natural": 0.0417,
+     "tension context": 0.0,
+     "open": 0.7917,
+     "incomplete": 0.1667
+    },
+    "matched": {
+     "shutdowns": 19,
+     "shares": {
+      "natural": 0.0526,
+      "tension context": 0.0,
+      "open": 0.7368,
+      "incomplete": 0.2105
+     },
+     "control_shares": {
+      "natural": 0.0199,
+      "tension context": 0.0859,
+      "open": 0.7988,
+      "incomplete": 0.0954
+     }
+    }
+   }
+  },
+  "by_cause": {
+   "Conflict": {
+    "shutdowns": 107,
+    "read": {
+     "open": 88,
+     "natural": 4,
+     "tension context": 3,
+     "incomplete": 12
+    },
+    "shares": {
+     "natural": 0.0374,
+     "tension context": 0.028,
+     "open": 0.8224,
+     "incomplete": 0.1121
+    },
+    "matched": {
+     "shutdowns": 36,
+     "shares": {
+      "natural": 0.0278,
+      "tension context": 0.0833,
+      "open": 0.6389,
+      "incomplete": 0.25
+     },
+     "control_shares": {
+      "natural": 0.0332,
+      "tension context": 0.0777,
+      "open": 0.8094,
+      "incomplete": 0.0797
+     }
+    }
+   },
+   "Protests": {
+    "shutdowns": 57,
+    "read": {
+     "open": 29,
+     "tension context": 5,
+     "incomplete": 4,
+     "natural": 19
+    },
+    "shares": {
+     "natural": 0.3333,
+     "tension context": 0.0877,
+     "open": 0.5088,
+     "incomplete": 0.0702
+    },
+    "matched": {
+     "shutdowns": 56,
+     "shares": {
+      "natural": 0.3393,
+      "tension context": 0.0893,
+      "open": 0.5,
+      "incomplete": 0.0714
+     },
+     "control_shares": {
+      "natural": 0.0789,
+      "tension context": 0.0481,
+      "open": 0.8402,
+      "incomplete": 0.0327
+     }
+    }
+   },
+   "Information control": {
+    "shutdowns": 18,
+    "read": {
+     "tension context": 2,
+     "open": 14,
+     "incomplete": 1,
+     "natural": 1
+    },
+    "shares": {
+     "natural": 0.0556,
+     "tension context": 0.1111,
+     "open": 0.7778,
+     "incomplete": 0.0556
+    },
+    "matched": {
+     "shutdowns": 18,
+     "shares": {
+      "natural": 0.0556,
+      "tension context": 0.1111,
+      "open": 0.7778,
+      "incomplete": 0.0556
+     },
+     "control_shares": {
+      "natural": 0.0343,
+      "tension context": 0.0466,
+      "open": 0.8348,
+      "incomplete": 0.0842
+     }
+    }
+   },
+   "Communal violence": {
+    "shutdowns": 16,
+    "read": {
+     "open": 13,
+     "incomplete": 1,
+     "natural": 2
+    },
+    "shares": {
+     "natural": 0.125,
+     "tension context": 0.0,
+     "open": 0.8125,
+     "incomplete": 0.0625
+    },
+    "matched": {
+     "shutdowns": 16,
+     "shares": {
+      "natural": 0.125,
+      "tension context": 0.0,
+      "open": 0.8125,
+      "incomplete": 0.0625
+     },
+     "control_shares": {
+      "natural": 0.1194,
+      "tension context": 0.0448,
+      "open": 0.8358,
+      "incomplete": 0.0
+     }
+    }
+   },
+   "Unknown": {
+    "shutdowns": 12,
+    "read": {
+     "open": 9,
+     "tension context": 1,
+     "incomplete": 1,
+     "natural": 1
+    },
+    "shares": {
+     "natural": 0.0833,
+     "tension context": 0.0833,
+     "open": 0.75,
+     "incomplete": 0.0833
+    },
+    "matched": {
+     "shutdowns": 10,
+     "shares": {
+      "natural": 0.1,
+      "tension context": 0.1,
+      "open": 0.7,
+      "incomplete": 0.1
+     },
+     "control_shares": {
+      "natural": 0.1098,
+      "tension context": 0.0433,
+      "open": 0.8358,
+      "incomplete": 0.0111
+     }
+    }
+   },
+   "Other": {
+    "shutdowns": 11,
+    "read": {
+     "open": 11
+    },
+    "shares": {
+     "natural": 0.0,
+     "tension context": 0.0,
+     "open": 1.0,
+     "incomplete": 0.0
+    },
+    "matched": {
+     "shutdowns": 8,
+     "shares": {
+      "natural": 0.0,
+      "tension context": 0.0,
+      "open": 1.0,
+      "incomplete": 0.0
+     },
+     "control_shares": {
+      "natural": 0.0111,
+      "tension context": 0.0586,
+      "open": 0.8449,
+      "incomplete": 0.0854
+     }
+    }
+   },
+   "Exam cheating": {
+    "shutdowns": 11,
+    "read": {
+     "open": 5,
+     "tension context": 1,
+     "incomplete": 5
+    },
+    "shares": {
+     "natural": 0.0,
+     "tension context": 0.0909,
+     "open": 0.4545,
+     "incomplete": 0.4545
+    },
+    "matched": {
+     "shutdowns": 11,
+     "shares": {
+      "natural": 0.0,
+      "tension context": 0.0909,
+      "open": 0.4545,
+      "incomplete": 0.4545
+     },
+     "control_shares": {
+      "natural": 0.0009,
+      "tension context": 0.069,
+      "open": 0.9097,
+      "incomplete": 0.0204
+     }
+    }
+   },
+   "Visits by government officials": {
+    "shutdowns": 8,
+    "read": {
+     "open": 6,
+     "incomplete": 1,
+     "natural": 1
+    },
+    "shares": {
+     "natural": 0.125,
+     "tension context": 0.0,
+     "open": 0.75,
+     "incomplete": 0.125
+    },
+    "matched": {
+     "shutdowns": 4,
+     "shares": {
+      "natural": 0.0,
+      "tension context": 0.0,
+      "open": 0.75,
+      "incomplete": 0.25
+     },
+     "control_shares": {
+      "natural": 0.0498,
+      "tension context": 0.0467,
+      "open": 0.7858,
+      "incomplete": 0.1175
+     }
+    }
+   },
+   "Religious holiday/anniversary": {
+    "shutdowns": 8,
+    "read": {
+     "incomplete": 3,
+     "natural": 2,
+     "open": 3
+    },
+    "shares": {
+     "natural": 0.25,
+     "tension context": 0.0,
+     "open": 0.375,
+     "incomplete": 0.375
+    },
+    "matched": {
+     "shutdowns": 7,
+     "shares": {
+      "natural": 0.2857,
+      "tension context": 0.0,
+      "open": 0.2857,
+      "incomplete": 0.4286
+     },
+     "control_shares": {
+      "natural": 0.061,
+      "tension context": 0.0802,
+      "open": 0.7959,
+      "incomplete": 0.0629
+     }
+    }
+   },
+   "Elections": {
+    "shutdowns": 5,
+    "read": {
+     "tension context": 1,
+     "open": 4
+    },
+    "shares": {
+     "natural": 0.0,
+     "tension context": 0.2,
+     "open": 0.8,
+     "incomplete": 0.0
+    },
+    "matched": {
+     "shutdowns": 4,
+     "shares": {
+      "natural": 0.0,
+      "tension context": 0.25,
+      "open": 0.75,
+      "incomplete": 0.0
+     },
+     "control_shares": {
+      "natural": 0.0022,
+      "tension context": 0.0402,
+      "open": 0.8534,
+      "incomplete": 0.1041
+     }
+    }
+   },
+   "Political instability": {
+    "shutdowns": 2,
+    "read": {
+     "tension context": 1,
+     "open": 1
+    },
+    "shares": {
+     "natural": 0.0,
+     "tension context": 0.5,
+     "open": 0.5,
+     "incomplete": 0.0
+    },
+    "matched": {
+     "shutdowns": 2,
+     "shares": {
+      "natural": 0.0,
+      "tension context": 0.5,
+      "open": 0.5,
+      "incomplete": 0.0
+     },
+     "control_shares": {
+      "natural": 0.0,
+      "tension context": 0.015,
+      "open": 0.9078,
+      "incomplete": 0.0772
+     }
+    }
+   }
+  }
+ },
+ "sensitivity": [
+  {
+   "id": "same-day-attention",
+   "label": "Sensitivity variant, not triage's rule: unusual attention on the shutdown's own day also counts (live triage reads only Watchfloor days that ended before the outage, and attention on the day can be about the shutdown itself).",
+   "results": {
+    "shutdowns": 255,
+    "distinct_country_days": 238,
+    "shutdowns_read": {
+     "open": 177,
+     "tension context": 21,
+     "natural": 30,
+     "incomplete": 27
+    },
+    "shutdowns_shares": {
+     "natural": 0.1176,
+     "tension context": 0.0824,
+     "open": 0.6941,
+     "incomplete": 0.1059
+    },
+    "matched": {
+     "how": "shutdowns in countries with at least one control day, each set against its own country's control shares",
+     "shutdowns": 172,
+     "left_out": [
+      "MM"
+     ],
+     "shutdowns_shares": {
+      "natural": 0.1512,
+      "tension context": 0.1221,
+      "open": 0.5872,
+      "incomplete": 0.1395
+     },
+     "control_shares": {
+      "natural": 0.058,
+      "tension context": 0.0917,
+      "open": 0.7999,
+      "incomplete": 0.0505
+     }
+    },
+    "control_days": 11127,
+    "by_country": [
+     {
+      "country": "MM",
+      "name": "Myanmar",
+      "shutdowns": 83,
+      "shutdowns_read": {
+       "open": 76,
+       "natural": 4,
+       "incomplete": 3
+      },
+      "control_days": 0,
+      "control_read": {},
+      "control_shares": {
+       "natural": null,
+       "tension context": null,
+       "open": null,
+       "incomplete": null
+      }
+     },
+     {
+      "country": "IN",
+      "name": "India",
+      "shutdowns": 63,
+      "shutdowns_read": {
+       "open": 32,
+       "tension context": 5,
+       "incomplete": 3,
+       "natural": 23
+      },
+      "control_days": 67,
+      "control_read": {
+       "open": 54,
+       "tension context": 5,
+       "natural": 8
+      },
+      "control_shares": {
+       "natural": 0.1194,
+       "tension context": 0.0746,
+       "open": 0.806,
+       "incomplete": 0.0
+      }
+     },
+     {
+      "country": "PK",
+      "name": "Pakistan",
+      "shutdowns": 15,
+      "shutdowns_read": {
+       "open": 12,
+       "incomplete": 2,
+       "natural": 1
+      },
+      "control_days": 159,
+      "control_read": {
+       "open": 114,
+       "tension context": 25,
+       "incomplete": 14,
+       "natural": 6
+      },
+      "control_shares": {
+       "natural": 0.0377,
+       "tension context": 0.1572,
+       "open": 0.717,
+       "incomplete": 0.0881
+      }
+     },
+     {
+      "country": "RU",
+      "name": "Russia",
+      "shutdowns": 13,
+      "shutdowns_read": {
+       "open": 12,
+       "incomplete": 1
+      },
+      "control_days": 108,
+      "control_read": {
+       "open": 82,
+       "tension context": 5,
+       "incomplete": 19,
+       "natural": 2
+      },
+      "control_shares": {
+       "natural": 0.0185,
+       "tension context": 0.0463,
+       "open": 0.7593,
+       "incomplete": 0.1759
+      }
+     },
+     {
+      "country": "IQ",
+      "name": "Iraq",
+      "shutdowns": 7,
+      "shutdowns_read": {
+       "open": 5,
+       "tension context": 1,
+       "incomplete": 1
+      },
+      "control_days": 222,
+      "control_read": {
+       "open": 194,
+       "tension context": 26,
+       "incomplete": 2
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1171,
+       "open": 0.8739,
+       "incomplete": 0.009
+      }
+     },
+     {
+      "country": "PS",
+      "name": "Palestine",
+      "shutdowns": 6,
+      "shutdowns_read": {
+       "tension context": 2,
+       "open": 2,
+       "incomplete": 2
+      },
+      "control_days": 233,
+      "control_read": {
+       "open": 157,
+       "tension context": 58,
+       "incomplete": 18
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.2489,
+       "open": 0.6738,
+       "incomplete": 0.0773
+      }
+     },
+     {
+      "country": "IR",
+      "name": "Iran",
+      "shutdowns": 6,
+      "shutdowns_read": {
+       "tension context": 1,
+       "incomplete": 4,
+       "open": 1
+      },
+      "control_days": 293,
+      "control_read": {
+       "open": 257,
+       "tension context": 36
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1229,
+       "open": 0.8771,
+       "incomplete": 0.0
+      }
+     },
+     {
+      "country": "TZ",
+      "name": "Tanzania",
+      "shutdowns": 5,
+      "shutdowns_read": {
+       "tension context": 2,
+       "open": 3
+      },
+      "control_days": 233,
+      "control_read": {
+       "open": 207,
+       "tension context": 12,
+       "incomplete": 14
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0515,
+       "open": 0.8884,
+       "incomplete": 0.0601
+      }
+     },
+     {
+      "country": "CM",
+      "name": "Cameroon",
+      "shutdowns": 4,
+      "shutdowns_read": {
+       "open": 3,
+       "tension context": 1
+      },
+      "control_days": 285,
+      "control_read": {
+       "open": 238,
+       "tension context": 14,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0491,
+       "open": 0.8351,
+       "incomplete": 0.1158
+      }
+     },
+     {
+      "country": "AF",
+      "name": "Afghanistan",
+      "shutdowns": 4,
+      "shutdowns_read": {
+       "open": 3,
+       "natural": 1
+      },
+      "control_days": 298,
+      "control_read": {
+       "open": 242,
+       "tension context": 16,
+       "incomplete": 33,
+       "natural": 7
+      },
+      "control_shares": {
+       "natural": 0.0235,
+       "tension context": 0.0537,
+       "open": 0.8121,
+       "incomplete": 0.1107
+      }
+     },
+     {
+      "country": "UA",
+      "name": "Ukraine",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "open": 3
+      },
+      "control_days": 276,
+      "control_read": {
+       "open": 197,
+       "tension context": 46,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1667,
+       "open": 0.7138,
+       "incomplete": 0.1196
+      }
+     },
+     {
+      "country": "SY",
+      "name": "Syria",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "open": 1,
+       "incomplete": 2
+      },
+      "control_days": 262,
+      "control_read": {
+       "open": 226,
+       "tension context": 35,
+       "incomplete": 1
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1336,
+       "open": 0.8626,
+       "incomplete": 0.0038
+      }
+     },
+     {
+      "country": "YE",
+      "name": "Yemen",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "open": 3
+      },
+      "control_days": 279,
+      "control_read": {
+       "open": 206,
+       "tension context": 28,
+       "incomplete": 33,
+       "natural": 12
+      },
+      "control_shares": {
+       "natural": 0.043,
+       "tension context": 0.1004,
+       "open": 0.7384,
+       "incomplete": 0.1183
+      }
+     },
+     {
+      "country": "TR",
+      "name": "Turkey",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "open": 2,
+       "tension context": 1
+      },
+      "control_days": 297,
+      "control_read": {
+       "open": 224,
+       "tension context": 30,
+       "natural": 10,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0337,
+       "tension context": 0.101,
+       "open": 0.7542,
+       "incomplete": 0.1111
+      }
+     },
+     {
+      "country": "KE",
+      "name": "Kenya",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "incomplete": 2,
+       "open": 1
+      },
+      "control_days": 306,
+      "control_read": {
+       "open": 273,
+       "tension context": 24,
+       "natural": 3,
+       "incomplete": 6
+      },
+      "control_shares": {
+       "natural": 0.0098,
+       "tension context": 0.0784,
+       "open": 0.8922,
+       "incomplete": 0.0196
+      }
+     },
+     {
+      "country": "SD",
+      "name": "Sudan",
+      "shutdowns": 3,
+      "shutdowns_read": {
+       "incomplete": 1,
+       "open": 2
+      },
+      "control_days": 257,
+      "control_read": {
+       "open": 216,
+       "tension context": 25,
+       "incomplete": 16
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0973,
+       "open": 0.8405,
+       "incomplete": 0.0623
+      }
+     },
+     {
+      "country": "VE",
+      "name": "Venezuela",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "tension context": 2
+      },
+      "control_days": 325,
+      "control_read": {
+       "open": 245,
+       "tension context": 44,
+       "incomplete": 33,
+       "natural": 3
+      },
+      "control_shares": {
+       "natural": 0.0092,
+       "tension context": 0.1354,
+       "open": 0.7538,
+       "incomplete": 0.1015
+      }
+     },
+     {
+      "country": "BY",
+      "name": "Belarus",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "open": 1,
+       "tension context": 1
+      },
+      "control_days": 332,
+      "control_read": {
+       "open": 252,
+       "tension context": 44,
+       "incomplete": 33,
+       "natural": 3
+      },
+      "control_shares": {
+       "natural": 0.009,
+       "tension context": 0.1325,
+       "open": 0.759,
+       "incomplete": 0.0994
+      }
+     },
+     {
+      "country": "CD",
+      "name": "Democratic Republic of the Congo",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "open": 2
+      },
+      "control_days": 330,
+      "control_read": {
+       "open": 243,
+       "natural": 46,
+       "incomplete": 26,
+       "tension context": 15
+      },
+      "control_shares": {
+       "natural": 0.1394,
+       "tension context": 0.0455,
+       "open": 0.7364,
+       "incomplete": 0.0788
+      }
+     },
+     {
+      "country": "KH",
+      "name": "Cambodia",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "incomplete": 2
+      },
+      "control_days": 307,
+      "control_read": {
+       "open": 259,
+       "tension context": 33,
+       "natural": 15
+      },
+      "control_shares": {
+       "natural": 0.0489,
+       "tension context": 0.1075,
+       "open": 0.8436,
+       "incomplete": 0.0
+      }
+     },
+     {
+      "country": "PA",
+      "name": "Panama",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "open": 1,
+       "incomplete": 1
+      },
+      "control_days": 334,
+      "control_read": {
+       "open": 304,
+       "tension context": 21,
+       "incomplete": 9
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0629,
+       "open": 0.9102,
+       "incomplete": 0.0269
+      }
+     },
+     {
+      "country": "JO",
+      "name": "Jordan",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "incomplete": 1,
+       "open": 1
+      },
+      "control_days": 292,
+      "control_read": {
+       "open": 249,
+       "tension context": 43
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1473,
+       "open": 0.8527,
+       "incomplete": 0.0
+      }
+     },
+     {
+      "country": "NP",
+      "name": "Nepal",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "open": 2
+      },
+      "control_days": 301,
+      "control_read": {
+       "open": 249,
+       "tension context": 18,
+       "incomplete": 28,
+       "natural": 6
+      },
+      "control_shares": {
+       "natural": 0.0199,
+       "tension context": 0.0598,
+       "open": 0.8272,
+       "incomplete": 0.093
+      }
+     },
+     {
+      "country": "GN",
+      "name": "Guinea",
+      "shutdowns": 2,
+      "shutdowns_read": {
+       "tension context": 1,
+       "open": 1
+      },
+      "control_days": 328,
+      "control_read": {
+       "open": 280,
+       "tension context": 15,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0457,
+       "open": 0.8537,
+       "incomplete": 0.1006
+      }
+     },
+     {
+      "country": "TD",
+      "name": "Chad",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 347,
+      "control_read": {
+       "open": 294,
+       "tension context": 20,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0576,
+       "open": 0.8473,
+       "incomplete": 0.0951
+      }
+     },
+     {
+      "country": "US",
+      "name": "United States of America",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 349,
+      "control_read": {
+       "open": 244,
+       "natural": 104,
+       "incomplete": 1
+      },
+      "control_shares": {
+       "natural": 0.298,
+       "tension context": 0.0,
+       "open": 0.6991,
+       "incomplete": 0.0029
+      }
+     },
+     {
+      "country": "SS",
+      "name": "South Sudan",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 345,
+      "control_read": {
+       "open": 225,
+       "tension context": 21,
+       "incomplete": 31,
+       "natural": 68
+      },
+      "control_shares": {
+       "natural": 0.1971,
+       "tension context": 0.0609,
+       "open": 0.6522,
+       "incomplete": 0.0899
+      }
+     },
+     {
+      "country": "AL",
+      "name": "Albania",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 320,
+      "control_read": {
+       "open": 249,
+       "tension context": 32,
+       "incomplete": 33,
+       "natural": 6
+      },
+      "control_shares": {
+       "natural": 0.0187,
+       "tension context": 0.1,
+       "open": 0.7781,
+       "incomplete": 0.1031
+      }
+     },
+     {
+      "country": "PG",
+      "name": "Papua New Guinea",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 348,
+      "control_read": {
+       "open": 303,
+       "natural": 4,
+       "tension context": 8,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0115,
+       "tension context": 0.023,
+       "open": 0.8707,
+       "incomplete": 0.0948
+      }
+     },
+     {
+      "country": "LT",
+      "name": "Lithuania",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 320,
+      "control_read": {
+       "open": 262,
+       "tension context": 27,
+       "incomplete": 31
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0844,
+       "open": 0.8187,
+       "incomplete": 0.0969
+      }
+     },
+     {
+      "country": "LY",
+      "name": "Libya",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "tension context": 1
+      },
+      "control_days": 349,
+      "control_read": {
+       "open": 276,
+       "tension context": 40,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.1146,
+       "open": 0.7908,
+       "incomplete": 0.0946
+      }
+     },
+     {
+      "country": "VN",
+      "name": "Vietnam",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "tension context": 1
+      },
+      "control_days": 304,
+      "control_read": {
+       "open": 257,
+       "tension context": 44,
+       "natural": 3
+      },
+      "control_shares": {
+       "natural": 0.0099,
+       "tension context": 0.1447,
+       "open": 0.8454,
+       "incomplete": 0.0
+      }
+     },
+     {
+      "country": "NG",
+      "name": "Nigeria",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "natural": 1
+      },
+      "control_days": 320,
+      "control_read": {
+       "open": 239,
+       "tension context": 30,
+       "incomplete": 9,
+       "natural": 42
+      },
+      "control_shares": {
+       "natural": 0.1313,
+       "tension context": 0.0938,
+       "open": 0.7469,
+       "incomplete": 0.0281
+      }
+     },
+     {
+      "country": "DZ",
+      "name": "Algeria",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "incomplete": 1
+      },
+      "control_days": 346,
+      "control_read": {
+       "open": 297,
+       "tension context": 29,
+       "incomplete": 20
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0838,
+       "open": 0.8584,
+       "incomplete": 0.0578
+      }
+     },
+     {
+      "country": "TG",
+      "name": "Togo",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "incomplete": 1
+      },
+      "control_days": 259,
+      "control_read": {
+       "open": 254,
+       "incomplete": 5
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0,
+       "open": 0.9807,
+       "incomplete": 0.0193
+      }
+     },
+     {
+      "country": "AO",
+      "name": "Angola",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "tension context": 1
+      },
+      "control_days": 350,
+      "control_read": {
+       "open": 298,
+       "tension context": 24,
+       "incomplete": 28
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0686,
+       "open": 0.8514,
+       "incomplete": 0.08
+      }
+     },
+     {
+      "country": "ID",
+      "name": "Indonesia",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "tension context": 1
+      },
+      "control_days": 346,
+      "control_read": {
+       "open": 239,
+       "tension context": 17,
+       "natural": 60,
+       "incomplete": 30
+      },
+      "control_shares": {
+       "natural": 0.1734,
+       "tension context": 0.0491,
+       "open": 0.6908,
+       "incomplete": 0.0867
+      }
+     },
+     {
+      "country": "CF",
+      "name": "Central African Republic",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 350,
+      "control_read": {
+       "open": 317,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0,
+       "open": 0.9057,
+       "incomplete": 0.0943
+      }
+     },
+     {
+      "country": "GW",
+      "name": "Guinea-Bissau",
+      "shutdowns": 1,
+      "shutdowns_read": {
+       "open": 1
+      },
+      "control_days": 350,
+      "control_read": {
+       "open": 317,
+       "incomplete": 33
+      },
+      "control_shares": {
+       "natural": 0.0,
+       "tension context": 0.0,
+       "open": 0.9057,
+       "incomplete": 0.0943
+      }
+     }
+    ],
+    "by_scope": {
+     "one city or district": {
+      "shutdowns": 145,
+      "read": {
+       "open": 104,
+       "tension context": 7,
+       "natural": 25,
+       "incomplete": 9
+      },
+      "shares": {
+       "natural": 0.1724,
+       "tension context": 0.0483,
+       "open": 0.7172,
+       "incomplete": 0.0621
+      },
+      "matched": {
+       "shutdowns": 78,
+       "shares": {
+        "natural": 0.2821,
+        "tension context": 0.0897,
+        "open": 0.5513,
+        "incomplete": 0.0769
+       },
+       "control_shares": {
+        "natural": 0.0959,
+        "tension context": 0.0863,
+        "open": 0.7927,
+        "incomplete": 0.0251
+       }
+      }
+     },
+     "nationwide": {
+      "shutdowns": 52,
+      "read": {
+       "tension context": 13,
+       "open": 27,
+       "incomplete": 11,
+       "natural": 1
+      },
+      "shares": {
+       "natural": 0.0192,
+       "tension context": 0.25,
+       "open": 0.5192,
+       "incomplete": 0.2115
+      },
+      "matched": {
+       "shutdowns": 52,
+       "shares": {
+        "natural": 0.0192,
+        "tension context": 0.25,
+        "open": 0.5192,
+        "incomplete": 0.2115
+       },
+       "control_shares": {
+        "natural": 0.0219,
+        "tension context": 0.0796,
+        "open": 0.832,
+        "incomplete": 0.0665
+       }
+      }
+     },
+     "several cities in one region": {
+      "shutdowns": 34,
+      "read": {
+       "open": 27,
+       "tension context": 1,
+       "natural": 3,
+       "incomplete": 3
+      },
+      "shares": {
+       "natural": 0.0882,
+       "tension context": 0.0294,
+       "open": 0.7941,
+       "incomplete": 0.0882
+      },
+      "matched": {
+       "shutdowns": 23,
+       "shares": {
+        "natural": 0.087,
+        "tension context": 0.0435,
+        "open": 0.7391,
+        "incomplete": 0.1304
+       },
+       "control_shares": {
+        "natural": 0.0425,
+        "tension context": 0.0977,
+        "open": 0.7963,
+        "incomplete": 0.0635
+       }
+      }
+     },
+     "several regions": {
+      "shutdowns": 24,
+      "read": {
+       "open": 19,
+       "incomplete": 4,
+       "natural": 1
+      },
+      "shares": {
+       "natural": 0.0417,
+       "tension context": 0.0,
+       "open": 0.7917,
+       "incomplete": 0.1667
+      },
+      "matched": {
+       "shutdowns": 19,
+       "shares": {
+        "natural": 0.0526,
+        "tension context": 0.0,
+        "open": 0.7368,
+        "incomplete": 0.2105
+       },
+       "control_shares": {
+        "natural": 0.0199,
+        "tension context": 0.1393,
+        "open": 0.7455,
+        "incomplete": 0.0954
+       }
+      }
+     }
+    },
+    "by_cause": {
+     "Conflict": {
+      "shutdowns": 107,
+      "read": {
+       "open": 87,
+       "tension context": 5,
+       "natural": 4,
+       "incomplete": 11
+      },
+      "shares": {
+       "natural": 0.0374,
+       "tension context": 0.0467,
+       "open": 0.8131,
+       "incomplete": 0.1028
+      },
+      "matched": {
+       "shutdowns": 36,
+       "shares": {
+        "natural": 0.0278,
+        "tension context": 0.1389,
+        "open": 0.6111,
+        "incomplete": 0.2222
+       },
+       "control_shares": {
+        "natural": 0.0332,
+        "tension context": 0.1231,
+        "open": 0.764,
+        "incomplete": 0.0797
+       }
+      }
+     },
+     "Protests": {
+      "shutdowns": 57,
+      "read": {
+       "open": 27,
+       "tension context": 7,
+       "incomplete": 4,
+       "natural": 19
+      },
+      "shares": {
+       "natural": 0.3333,
+       "tension context": 0.1228,
+       "open": 0.4737,
+       "incomplete": 0.0702
+      },
+      "matched": {
+       "shutdowns": 56,
+       "shares": {
+        "natural": 0.3393,
+        "tension context": 0.125,
+        "open": 0.4643,
+        "incomplete": 0.0714
+       },
+       "control_shares": {
+        "natural": 0.0789,
+        "tension context": 0.0805,
+        "open": 0.8078,
+        "incomplete": 0.0327
+       }
+      }
+     },
+     "Information control": {
+      "shutdowns": 18,
+      "read": {
+       "tension context": 3,
+       "open": 13,
+       "incomplete": 1,
+       "natural": 1
+      },
+      "shares": {
+       "natural": 0.0556,
+       "tension context": 0.1667,
+       "open": 0.7222,
+       "incomplete": 0.0556
+      },
+      "matched": {
+       "shutdowns": 18,
+       "shares": {
+        "natural": 0.0556,
+        "tension context": 0.1667,
+        "open": 0.7222,
+        "incomplete": 0.0556
+       },
+       "control_shares": {
+        "natural": 0.0343,
+        "tension context": 0.075,
+        "open": 0.8065,
+        "incomplete": 0.0842
+       }
+      }
+     },
+     "Communal violence": {
+      "shutdowns": 16,
+      "read": {
+       "open": 13,
+       "incomplete": 1,
+       "natural": 2
+      },
+      "shares": {
+       "natural": 0.125,
+       "tension context": 0.0,
+       "open": 0.8125,
+       "incomplete": 0.0625
+      },
+      "matched": {
+       "shutdowns": 16,
+       "shares": {
+        "natural": 0.125,
+        "tension context": 0.0,
+        "open": 0.8125,
+        "incomplete": 0.0625
+       },
+       "control_shares": {
+        "natural": 0.1194,
+        "tension context": 0.0746,
+        "open": 0.806,
+        "incomplete": 0.0
+       }
+      }
+     },
+     "Unknown": {
+      "shutdowns": 12,
+      "read": {
+       "open": 9,
+       "tension context": 1,
+       "incomplete": 1,
+       "natural": 1
+      },
+      "shares": {
+       "natural": 0.0833,
+       "tension context": 0.0833,
+       "open": 0.75,
+       "incomplete": 0.0833
+      },
+      "matched": {
+       "shutdowns": 10,
+       "shares": {
+        "natural": 0.1,
+        "tension context": 0.1,
+        "open": 0.7,
+        "incomplete": 0.1
+       },
+       "control_shares": {
+        "natural": 0.1098,
+        "tension context": 0.0725,
+        "open": 0.8066,
+        "incomplete": 0.0111
+       }
+      }
+     },
+     "Other": {
+      "shutdowns": 11,
+      "read": {
+       "open": 11
+      },
+      "shares": {
+       "natural": 0.0,
+       "tension context": 0.0,
+       "open": 1.0,
+       "incomplete": 0.0
+      },
+      "matched": {
+       "shutdowns": 8,
+       "shares": {
+        "natural": 0.0,
+        "tension context": 0.0,
+        "open": 1.0,
+        "incomplete": 0.0
+       },
+       "control_shares": {
+        "natural": 0.0111,
+        "tension context": 0.0978,
+        "open": 0.8062,
+        "incomplete": 0.0849
+       }
+      }
+     },
+     "Exam cheating": {
+      "shutdowns": 11,
+      "read": {
+       "open": 5,
+       "tension context": 1,
+       "incomplete": 5
+      },
+      "shares": {
+       "natural": 0.0,
+       "tension context": 0.0909,
+       "open": 0.4545,
+       "incomplete": 0.4545
+      },
+      "matched": {
+       "shutdowns": 11,
+       "shares": {
+        "natural": 0.0,
+        "tension context": 0.0909,
+        "open": 0.4545,
+        "incomplete": 0.4545
+       },
+       "control_shares": {
+        "natural": 0.0009,
+        "tension context": 0.113,
+        "open": 0.8682,
+        "incomplete": 0.018
+       }
+      }
+     },
+     "Visits by government officials": {
+      "shutdowns": 8,
+      "read": {
+       "open": 6,
+       "incomplete": 1,
+       "natural": 1
+      },
+      "shares": {
+       "natural": 0.125,
+       "tension context": 0.0,
+       "open": 0.75,
+       "incomplete": 0.125
+      },
+      "matched": {
+       "shutdowns": 4,
+       "shares": {
+        "natural": 0.0,
+        "tension context": 0.0,
+        "open": 0.75,
+        "incomplete": 0.25
+       },
+       "control_shares": {
+        "natural": 0.0498,
+        "tension context": 0.0669,
+        "open": 0.7658,
+        "incomplete": 0.1175
+       }
+      }
+     },
+     "Religious holiday/anniversary": {
+      "shutdowns": 8,
+      "read": {
+       "incomplete": 3,
+       "natural": 2,
+       "open": 3
+      },
+      "shares": {
+       "natural": 0.25,
+       "tension context": 0.0,
+       "open": 0.375,
+       "incomplete": 0.375
+      },
+      "matched": {
+       "shutdowns": 7,
+       "shares": {
+        "natural": 0.2857,
+        "tension context": 0.0,
+        "open": 0.2857,
+        "incomplete": 0.4286
+       },
+       "control_shares": {
+        "natural": 0.061,
+        "tension context": 0.1336,
+        "open": 0.7424,
+        "incomplete": 0.0629
+       }
+      }
+     },
+     "Elections": {
+      "shutdowns": 5,
+      "read": {
+       "tension context": 3,
+       "open": 2
+      },
+      "shares": {
+       "natural": 0.0,
+       "tension context": 0.6,
+       "open": 0.4,
+       "incomplete": 0.0
+      },
+      "matched": {
+       "shutdowns": 4,
+       "shares": {
+        "natural": 0.0,
+        "tension context": 0.75,
+        "open": 0.25,
+        "incomplete": 0.0
+       },
+       "control_shares": {
+        "natural": 0.0022,
+        "tension context": 0.0683,
+        "open": 0.8254,
+        "incomplete": 0.1041
+       }
+      }
+     },
+     "Political instability": {
+      "shutdowns": 2,
+      "read": {
+       "tension context": 1,
+       "open": 1
+      },
+      "shares": {
+       "natural": 0.0,
+       "tension context": 0.5,
+       "open": 0.5,
+       "incomplete": 0.0
+      },
+      "matched": {
+       "shutdowns": 2,
+       "shares": {
+        "natural": 0.0,
+        "tension context": 0.5,
+        "open": 0.5,
+        "incomplete": 0.0
+       },
+       "control_shares": {
+        "natural": 0.0,
+        "tension context": 0.0257,
+        "open": 0.897,
+        "incomplete": 0.0772
+       }
+      }
+     }
+    }
+   }
+  }
+ ],
+ "caveats": [
+  "Two of triage's three layers: Cordon's travel and embassy notices are not replayed yet, so tension context here rests on unusual attention alone, and the real rate is higher for shutdowns and control days alike.",
+  "Watchfloor's zone items are not replayed, only its country items.",
+  "STOP dates a shutdown by the day; each is read at 12:00 UTC on its first day, with Watchfloor's last full day before it.",
+  "STOP's 2025 list is mostly shutdowns in conflict and protests, and Myanmar and India are over half of it, so the country rows matter more than the pooled ones.",
+  "Most STOP shutdowns are regional; triage reads countries, so a regional shutdown is read as its country.",
+  "Each shutdown is compared with its own country's control days. Myanmar has none (its shutdowns, with 7 days either side and open-ended ones taken as 30 days, cover all of 2025), so its 83 shutdowns are in the all-shutdowns shares and left out of the matched comparison.",
+  "A replay says how often a documented shutdown would have read each way, and how often any day would have. It is not a test of whether triage finds shutdowns, and no reading is a finding of cause."
+ ],
+ "redistribution": "aggregates",
+ "built_at": "2026-11-16T14:46:30Z"
+}

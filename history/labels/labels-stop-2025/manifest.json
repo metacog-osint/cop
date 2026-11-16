@@ -1,0 +1,119 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "labels-stop-2025",
+ "layer": "labels",
+ "title": "Access Now's documented 2025 internet shutdowns (#KeepItOn STOP), as outage labels",
+ "description": "Each STOP row that began in the year, one per country it names: the shutdown's start day, end day if any, geographic scope, shutdown type and STOP's actual cause. Labels outages of known cause (government-ordered shutdowns) for replays.",
+ "sources": [
+  {
+   "id": "accessnow-stop",
+   "name": "Access Now #KeepItOn STOP dataset, public sheet, first tab",
+   "url": "https://docs.google.com/spreadsheets/d/1DvPAuHNLp5BXGb0nnZDGNoiIwEeu2ogdXEIDvT4Hyfk",
+   "licence": "No data licence stated by Access Now; credited as the source, counts only",
+   "attribution": "Access Now, #KeepItOn STOP",
+   "how": "archive-file"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "tools/stop_replay.py load_stop",
+  "commit": "see the replay run",
+  "params": {
+   "year": 2025
+  },
+  "matches_live": true,
+  "differences": []
+ },
+ "coverage": {
+  "start": "2025-01-01",
+  "end": "2025-12-31",
+  "time_precision": "day",
+  "places": [
+   "AF",
+   "AL",
+   "AO",
+   "BY",
+   "CD",
+   "CF",
+   "CM",
+   "DZ",
+   "GN",
+   "GW",
+   "ID",
+   "IN",
+   "IQ",
+   "IR",
+   "JO",
+   "KE",
+   "KH",
+   "LT",
+   "LY",
+   "MM",
+   "NG",
+   "NP",
+   "PA",
+   "PG",
+   "PK",
+   "PS",
+   "RU",
+   "SD",
+   "SS",
+   "SY",
+   "TD",
+   "TG",
+   "TR",
+   "TZ",
+   "UA",
+   "US",
+   "VE",
+   "VN",
+   "YE"
+  ],
+  "place_code": "ISO 3166-1 alpha-2"
+ },
+ "gaps": [
+  {
+   "from": "2025-01-01",
+   "to": "2025-12-31",
+   "places": "all",
+   "reason": "STOP lists shutdowns Access Now documented; undocumented ones are missing"
+  }
+ ],
+ "biases": [
+  "Weighted to countries where Access Now's partners work (Myanmar and India are over half).",
+  "48 start dates are STOP's estimates."
+ ],
+ "rows": {
+  "count": 255,
+  "places": 39,
+  "days": null
+ },
+ "row_schema": {
+  "country": "ISO alpha-2",
+  "start": "first day",
+  "end": "last day or null",
+  "estimated": "STOP's start_date_type is Estimated",
+  "scope": "nationwide or STOP's geo scope",
+  "type": "STOP shutdown_type",
+  "cause": "STOP actual_cause"
+ },
+ "files": [
+  {
+   "path_or_url": "D:/Projects/blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv",
+   "sha256": "8c53686df2c17eba873504445243061c414d20c369b5c169d91a911ad6c28326",
+   "bytes": 414901
+  }
+ ],
+ "redistribution": "aggregates",
+ "built_at": "2026-11-16T14:43:38Z",
+ "built_by": "tools/stop_replay.py",
+ "uses": [
+  "hit rates for joins that read outages",
+  "outage cause labels by country and day"
+ ],
+ "not_for": [
+  "publishing STOP's rows",
+  "a complete record of shutdowns"
+ ],
+ "supersedes": null
+}
