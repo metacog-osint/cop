@@ -1,0 +1,375 @@
+{
+ "contract": "cop-layer-history/1",
+ "dataset_id": "watchfloor-country-attention-2024-12-01-2025-12-31",
+ "layer": "watchfloor",
+ "title": "Watchfloor's country attention and violence, rebuilt from GDELT Events with Watchfloor's own code",
+ "description": "One row per country-day: distinct GDELT articles with an event located there, and with a violent event, each with its 28-day z, and whether the country was on Watchfloor's Rising list (the wf-28d anomaly triage reads as unusual attention).",
+ "sources": [
+  {
+   "id": "gdelt-events",
+   "name": "GDELT Events 2.0, 15-minute export files (English and translated streams)",
+   "url": "http://data.gdeltproject.org/gdeltv2/",
+   "licence": "GDELT: free and open for any use with citation",
+   "attribution": "The GDELT Project (gdeltproject.org)",
+   "how": "archive-file"
+  }
+ ],
+ "derived_from": [],
+ "method": {
+  "code": "more-context/scripts/backfill_events.py (Watchfloor), then tools/history_watchfloor.py",
+  "commit": "uncommitted sha256:bc4f907c86d01098",
+  "params": {
+   "root": "gdelt-events (local backfill folder)",
+   "rising_z": 2.5,
+   "rising_ratio": 1.5,
+   "min_articles": {
+    "attention": 40,
+    "violence": 15
+   },
+   "listed_max": 15
+  },
+  "matches_live": true,
+  "differences": [
+   "Country items only. Watchfloor's zone items (attention on press named for a zone, from GDELT's GKG) are not rebuilt; triage also counts those.",
+   "Built from GDELT's files as they stand now; the live cycle read them within minutes.",
+   "FIPS codes sharing one ISO code (West Bank and Gaza: PS) are merged; the live feed keeps them apart."
+  ]
+ },
+ "coverage": {
+  "start": "2024-12-01",
+  "end": "2025-12-31",
+  "time_precision": "day",
+  "places": "all",
+  "place_code": "ISO 3166-1 alpha-2 (from FIPS 10-4 by more-context/catalog/fips_iso.json)"
+ },
+ "gaps": [
+  {
+   "from": "2025-06-12",
+   "to": "2025-06-12",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-14",
+   "to": "2025-06-14",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-15",
+   "to": "2025-06-15",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-16",
+   "to": "2025-06-16",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-17",
+   "to": "2025-06-17",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-18",
+   "to": "2025-06-18",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-19",
+   "to": "2025-06-19",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-20",
+   "to": "2025-06-20",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-21",
+   "to": "2025-06-21",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-22",
+   "to": "2025-06-22",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-23",
+   "to": "2025-06-23",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-24",
+   "to": "2025-06-24",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-25",
+   "to": "2025-06-25",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-26",
+   "to": "2025-06-26",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-27",
+   "to": "2025-06-27",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-28",
+   "to": "2025-06-28",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-29",
+   "to": "2025-06-29",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-06-30",
+   "to": "2025-06-30",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2025-07-01",
+   "to": "2025-07-01",
+   "places": "all",
+   "reason": "partial day (over a tenth of GDELT's files missing): counted, not scored"
+  },
+  {
+   "from": "2024-12-01",
+   "to": "2024-12-01",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-02",
+   "to": "2024-12-02",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-03",
+   "to": "2024-12-03",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-04",
+   "to": "2024-12-04",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-05",
+   "to": "2024-12-05",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-06",
+   "to": "2024-12-06",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-07",
+   "to": "2024-12-07",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-08",
+   "to": "2024-12-08",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-09",
+   "to": "2024-12-09",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-10",
+   "to": "2024-12-10",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-11",
+   "to": "2024-12-11",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-12",
+   "to": "2024-12-12",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-13",
+   "to": "2024-12-13",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2024-12-14",
+   "to": "2024-12-14",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-02",
+   "to": "2025-07-02",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-03",
+   "to": "2025-07-03",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-04",
+   "to": "2025-07-04",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-05",
+   "to": "2025-07-05",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-06",
+   "to": "2025-07-06",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-07",
+   "to": "2025-07-07",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-08",
+   "to": "2025-07-08",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-09",
+   "to": "2025-07-09",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-10",
+   "to": "2025-07-10",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-11",
+   "to": "2025-07-11",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-12",
+   "to": "2025-07-12",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-13",
+   "to": "2025-07-13",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-14",
+   "to": "2025-07-14",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  },
+  {
+   "from": "2025-07-15",
+   "to": "2025-07-15",
+   "places": "all",
+   "reason": "unscored day (under 14 complete days in its 28-day baseline): counted, no z, no Rising list possible"
+  }
+ ],
+ "biases": [
+  "GDELT geocodes place names in the text, so attention is noisy; violence is less so.",
+  "English and machine-translated press only, as GDELT carries them."
+ ],
+ "rows": {
+  "count": 83265,
+  "places": 232,
+  "days": 396
+ },
+ "row_schema": {
+  "place": "ISO alpha-2",
+  "at": "the UTC day",
+  "precision": "day",
+  "source_id": "gdelt-events",
+  "source_ref": "the day file it came from",
+  "retrieved_at": "UTC",
+  "quality": "partial-day, unscored-day, merged-fips",
+  "fips": "GDELT codes merged",
+  "urls": "distinct articles with an event there",
+  "violent": "of those, with a violent event",
+  "urls_z": "28-day log z of urls",
+  "urls_ratio": "urls / expected",
+  "violent_z": "28-day log z of violent",
+  "rising_attention": "on the attention Rising list",
+  "rising_violence": "on the violence Rising list",
+  "unusual": "either: what triage counts as unusual attention"
+ },
+ "files": [
+  {
+   "path_or_url": "history/watchfloor/watchfloor-country-attention-2024-12-01-2025-12-31/rows.jsonl.gz",
+   "sha256": "3973aac3346b1f080c253622a61ff9e9ede5e6eee3cd21796f11d3e061e3f107",
+   "bytes": 1535239
+  }
+ ],
+ "redistribution": "rows",
+ "built_at": "2026-11-16T14:28:25Z",
+ "built_by": "tools/history_watchfloor.py, COP STOP-replay session, 15-16 Nov 2026",
+ "uses": [
+  "replaying triage's attention signal for any country and day in range",
+  "per-country attention baselines"
+ ],
+ "not_for": [
+  "zone-level attention",
+  "a count of events (it counts articles)"
+ ],
+ "supersedes": null
+}

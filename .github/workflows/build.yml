@@ -73,6 +73,8 @@ jobs:
           python tests/test_rebuild_ended.py
           python tests/test_three_signal.py
           python tests/test_ledger.py
+          python tests/test_stop_replay.py
+          python tests/test_history_cordon.py
           npm test
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck

@@ -1,0 +1,3 @@
+# History datasets: hashed byte for byte in their manifests (cop-layer-history/1), so never convert line endings.
+history/**/rows.jsonl -text
+history/**/*.gz binary
