@@ -105,7 +105,9 @@
     },
     {
       "id": "undertow",
+      "ended": "https://undertow.theintelligence.company/data/ended.geojson",
       "preset": "information",
+      "source_health": true,
       "freshness": "feed",
       "mark": "halos",
       "country_mark": "halo",
