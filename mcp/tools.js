@@ -307,6 +307,41 @@ export function outageTriage(index, triage, args, now) {
   };
 }
 
+// --- three_signal ---------------------------------------------------------------------------------------------------
+
+const THREE_SIGNAL_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis"];
+
+export function threeSignal(index, doc, args, now) {
+  if (!doc) {
+    throw new ToolError(
+      "The three-signal join was not built for this snapshot. That says nothing about the area: use search_items " +
+        "with near (lat 27.2, lon 56.4, km 900) for each program's own items.",
+    );
+  }
+  const area = args && args.area ? String(args.area).toLowerCase() : null;
+  const records = (doc.records || []).filter((r) => !area || r.area === area);
+  if (area && !records.length) throw new ToolError(`No area "${area}" in the three-signal join.`);
+  return {
+    as_of: doc.snapshot_generated_at,
+    age_hours: ageHours(doc.snapshot_generated_at, now),
+    source: index.bus_url,
+    join: doc.join.id,
+    what: doc.what,
+    note:
+      doc.not_a_warning +
+      " Report what each signal's items show in their own words (signals.*.items, with ids to cite), the tightest " +
+      "span, Vis's weather as context (weather.text; Vis's items are forecasts, not official forecasts) and the base " +
+      "rate. Do not state what the pattern means. The time windows are provisional. question_draft is a drafted " +
+      "question that could score the reading later: it is not a registered Verdict forecast and has no likelihood.",
+    readings: doc.readings,
+    windows: doc.windows,
+    archive_given: doc.archive_given,
+    count: records.length,
+    records,
+    attribution: attributionFor(index, THREE_SIGNAL_PROGRAMS),
+  };
+}
+
 // --- Verdict --------------------------------------------------------------------------------------------------------
 
 function verdictPart(verdict, part) {

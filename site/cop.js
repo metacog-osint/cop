@@ -64,6 +64,9 @@ try {
 // Outage triage is COP's own join, built after the snapshot. The picture stands without it, so a miss is not an error.
 let triage = null;
 try { triage = await getJSON("data/triage.json"); } catch { triage = null; }
+// The three-signal join (published since 15 Nov 2026), built after triage. The picture stands without it too.
+let threeSignal = null;
+try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSignal = null; }
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
@@ -514,6 +517,7 @@ function renderPanel() {
     ...(!offAnom.length && !routineCounts.length ? [h("li", { class: "empty", text: "None for this view." })] : []));
 
   renderTriage();
+  renderThreeSignal();
   renderHealth();
   renderBar();
   renderCredits();
@@ -610,6 +614,55 @@ function renderTriage() {
   } else if (triage.records.length) {
     foot.append(h("p", { class: "note", text: "No base rates were available for this picture, so the readings stand without them." }));
   }
+}
+// The three-signal join: which of three signals fall in one area within the window, each layer's items in its own
+// words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never what it means.
+const TS_SIGNALS = { interference: ["noisefloor", "Interference (Noisefloor)"],
+  notice: ["cordon", "New notice (Cordon)"], connectivity: ["blackout", "Connectivity (Blackout)"] };
+const TS_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis"];
+function threeSignalRecord(r) {
+  const nodata = r.no_current_data || [];
+  const signals = Object.entries(TS_SIGNALS).map(([key, [pid, name]]) => {
+    const dead = nodata.includes(pid) || (key === "notice" && nodata.includes("cordon:navwarn"));
+    const items = r.signals[key].items;
+    const said = r.signals[key].present ? `Present: ${count(items.length, "item")}.` : dead ? "No current data." : "Not present.";
+    return h("div", { class: "tri-layer" + (dead ? " dead" : "") },
+      h("dt", {}, dotFor(pid, { cop_stale: dead }), name),
+      h("dd", {}, said, items.length ? h("span", { class: "tri-items" }, ...items.slice(0, 4).map(triageItem)) : null));
+  });
+  const span = r.tightest_span;
+  const c = r.context;
+  return h("li", { class: "tri" },
+    h("span", { class: "tri-outage", text: r.area_name }),
+    h("div", { class: "row-meta" }, "Read at ", timeEl(r.read_at)),
+    h("div", { class: "badges" },
+      h("span", { class: "badge" + (r.reading === "incomplete" ? " stale" : " measure"), text: `Reading: ${r.reading}` }),
+      h("span", { class: "badge", text: "Not a warning or a forecast" })),
+    h("p", { class: "tri-text", text: r.reading_text }),
+    h("dl", { class: "tri-layers" }, ...signals),
+    span ? h("p", { class: "tri-rate" }, h("strong", { text: "Tightest span. " }),
+      `All three within ${span.hours} hours, `, timeEl(span.from), " to ", timeEl(span.to), ".") : null,
+    h("p", { class: "tri-rate" }, h("strong", { text: "Weather (Vis, context only). " }), r.weather.text),
+    h("p", { class: "tri-rate" }, h("strong", { text: "Also in the area. " }),
+      `${count(c.notices_other.length, "other new warning")}, ${count(c.notices_standing.length, "standing notice")}, ` +
+      `${count(c.single_source_dips.length, "single-source dip")}, ${count(c.embassy_alerts.length, "embassy alert")}.`),
+    r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), `${r.base_rate.text} ${r.base_rate.caution}`)
+      : h("p", { class: "tri-caveat", text: "No archive was read for this picture, so there is no base rate." }),
+    ...(r.caveats || []).map((t) => h("p", { class: "tri-caveat", text: t })),
+    triageQuestion(r.question_draft));
+}
+function renderThreeSignal() {
+  const sec = $("three-signal-sec");
+  sec.hidden = !TS_PROGRAMS.some(visibleProgram);
+  if (sec.hidden) return;
+  const list = $("three-signal");
+  if (!threeSignal) {
+    $("three-signal-note").textContent = "The three-signal join is not available for this picture.";
+    list.replaceChildren();
+    return;
+  }
+  $("three-signal-note").textContent = `${threeSignal.what} ${threeSignal.not_a_warning}`;
+  list.replaceChildren(...threeSignal.records.map(threeSignalRecord));
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {

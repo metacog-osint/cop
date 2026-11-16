@@ -1,19 +1,21 @@
-"""The review gate for COP's joins: which may publish, and which are held.
+"""The write path for COP's joins: what a join must state before it is written, and when it may publish.
 
-A join places several programs' public items around one place and time. Most of that is harmless. It stops being
-harmless when the join places public signals around military activity, because the picture then says more than any
-one source did (the mosaic effect). This module decides that in code, so no join decides it for itself:
+A join places several programs' public items around one place and time. Until 15 Nov 2026 this module also held
+back any join that read layers it listed as military context (the mosaic gate). Tom retired that rule on 15 Nov 2026:
+"We operate exclusively with publicly available information and our objective is to show what can be done with it.
+That doesn't mean we have to spell it out, though." Every layer is now usable in a join. What replaces the lists is a
+rule of voice, kept in each join's own wording: a join shows each layer's measurement side by side, with a base rate
+and a descriptive reading, and never states the inference (intent, a strike, the timing of forces) in COP's voice.
 
-  open   every layer the join reads, and every item it cites, is on the OPEN list. It may publish once its own
-         "published" switch is on (Tom's call, per join).
-  held   anything else: a layer on the MILITARY list, or a layer or kind this file has never heard of. A held join is
-         written only under out/held/, which git ignores and the build never deploys. There is no switch in code that
-         publishes a held join; releasing one is a person's act, outside this repo's build.
+What this module still checks, so no join decides it for itself:
 
-A join's class is the stricter of two readings: the layers it declares in JOIN["inputs"], and the item ids found in
-the document it produced. Declaring "open" and then citing a Noisefloor item is caught by the second reading.
+  inputs     the join declares the layers it reads (JOIN["inputs"]), each one a COP program.
+  citations  every item id the join's document cites belongs to a declared input. A join that cites a layer it never
+             declared is refused, so its stated inputs and its credits can be trusted.
+  publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (Tom's call, per
+             join).
 
-    python tools/gate.py --check        # fail if anything under site/ is a held or unpublished join (run by the build)
+    python tools/gate.py --check        # fail if anything under site/ is a refused or unpublished join (run by the build)
 
 Standard-library Python only.
 """
@@ -26,50 +28,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOYED = ("site", "functions", "mcp")    # folders the build ships: site/ as pages, the other two as the MCP server
-HELD_DIR = ROOT / "out" / "held"
-
-# Layers by program, then by item kind (the second part of an item id). None means every kind of that program.
-# A program or kind on neither list is held: a new layer is reviewed before any join may publish with it.
-OPEN = {
-    "elements": None,                              # natural hazards
-    "blackout": None,                              # internet outages, censorship measurements, provider status
-    "watchfloor": None,                            # press attention
-    "context": None,                               # press framing
-    "vigil": None,                                 # ransomware claims, exploited vulnerabilities
-    "headwind": None,                              # prices against their own range, sanctions-list and rule changes (Tom, 14 Nov 2026)
-    # launches, scheduled launches, reentries, catalog changes (Tom, 13 Nov 2026); its "maneuver" kind is held below
-    "orbit": {"launch", "upcoming", "reentries", "late-object", "owner-change"},
-    # platforms' and the EEAS's public disclosures of influence operations, at operation level (Tom, 14 Nov 2026:
-    # public platform disclosures, not military context)
-    "undertow": None,
-    # IMF PortWatch statistics on commercial shipping through 28 maritime chokepoints, weekly (Tom, 15 Nov 2026:
-    # open, not military context)
-    "wake": None,
-    # travel advisories, embassy alerts, embassy operating status; UK FCDO, Global Affairs Canada and New Zealand
-    # MFAT SafeTravel travel advice and CDC travel health notices (Tom, 14 Nov 2026: notices of the same nature as
-    # State's, not military context); the FAA's prohibitions, restrictions and notices for foreign airspace (SFARs
-    # and KICZ NOTAMs; Tom, 15 Nov 2026, "Open, as I said", knowing EASA's czib bulletins stay held below)
-    "cordon": {"advisory", "alert", "posture", "fcdo", "canada", "cdc", "safetravel", "faaprn"},
-}
-MILITARY = {
-    "noisefloor": (None, "GPS interference: most of it comes from military jamming and spoofing"),
-    "vis": (None, "operational weather and night light in conflict zones: when forces can fly or move"),
-    "cordon": ({"navwarn", "czib"}, "navigation warnings and conflict-zone airspace bulletins: firing areas, "
-                                    "exercises and threats to aircraft"),
-    # Launch (14 Nov 2026; held, confirmed by Tom the same day): no join reads it yet.
-    "launch": (None, "launch and reentry closure areas and the scheduled launches they coincide with, including "
-                     "national-security launches and missile firings"),
-    # Orbit's orbit changes in watched satellites (Tom, 14 Nov 2026: in COP's feed, held from joins): most of the
-    # watch list is military and intelligence satellites.
-    "orbit": ({"maneuver"}, "orbit changes in watched satellites, most of them military or intelligence satellites"),
-}
 
 _ITEM_ID = re.compile(r"^([a-z]+)(?:[:\-]([^:]*))?")
 # Programs whose item ids start with an upper-case prefix instead of the program's name. Undertow's are
 # "UT-<LANE>-<key>" ("UT-GOOGLE-fe9985db2a"); the lane is read as the kind, in lower case. An upper-case prefix not
-# listed here names no program, so a join citing it is held.
+# listed here names no program, so a join citing it is refused.
 ID_PREFIXES = {"UT": "undertow"}
 _PREFIXED_ID = re.compile(r"^([A-Z]+)-([A-Z0-9]+)-")
+
+
+def programs():
+    """The program ids COP draws (config/programs.json)."""
+    cfg = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
+    return {p["id"] for p in cfg.get("programs", [])}
 
 
 def layer_of(item_id):
@@ -83,22 +54,6 @@ def layer_of(item_id):
     program = m.group(1)
     kind = (m.group(2) or "") if ":" in str(item_id) else ""
     return program, kind
-
-
-def layer_class(program, kind=None):
-    """("open" | "held", reason). kind None asks about the whole program."""
-    if program in MILITARY:
-        kinds, why = MILITARY[program]
-        if kinds is None or kind in kinds:
-            return "held", f"{program}{':' + kind if kind else ''} is military context ({why})"
-    if program in OPEN:
-        kinds = OPEN[program]
-        if kinds is None or kind in kinds:
-            return "open", ""
-        if not kind:
-            return "held", f"{program} has kinds that are military context: name the kinds this join reads"
-        return "held", f"{program}:{kind} is not on the open list (unreviewed kind)"
-    return "held", f"{program or 'an unnamed layer'} is not on the open list (unreviewed layer)"
 
 
 def cited_ids(doc):
@@ -123,31 +78,30 @@ def cited_ids(doc):
 
 
 def review(join, doc=None):
-    """The gate's verdict on a join and, when given, the document it produced."""
+    """The verdict on a join and, when given, the document it produced: "open" when its inputs and citations are in
+    order, "refused" otherwise. may_publish also needs the join's own switch."""
+    known = programs()
     reasons = []
     inputs = join.get("inputs")
     if not inputs:
         reasons.append("the join declares no inputs")
     for entry in inputs or []:
-        program, _, kind = str(entry).partition(":")
-        cls, why = layer_class(program, kind or None)
-        if cls == "held":
-            reasons.append("declared input: " + why)
+        program = str(entry).partition(":")[0]
+        if program not in known:
+            reasons.append(f"declared input: {program or 'an unnamed layer'} is not a COP program")
     declared = {str(e) for e in inputs or []}
     for item_id in sorted(cited_ids(doc) if doc is not None else ()):
         program, kind = layer_of(item_id)
-        cls, why = layer_class(program, kind or None)
-        if cls == "held":
-            reasons.append(f"cites {item_id}: {why}")
+        if program not in known:
+            reasons.append(f"cites {item_id}: it names no COP program")
         elif program not in declared and f"{program}:{kind}" not in declared:
             reasons.append(f"cites {item_id}: {program}{':' + kind if kind else ''} is not among the join's "
                            "declared inputs")
     reasons = sorted(set(reasons))
-    cls = "held" if reasons else "open"
+    cls = "refused" if reasons else "open"
     return {"review_class": cls, "reasons": reasons,
             "may_publish": cls == "open" and join.get("published") is True,
-            "rule": "open joins publish when switched on; held joins stay under out/held/ and never reach the "
-                    "site or the MCP server"}
+            "rule": "a join publishes when its inputs and citations are in order and its own switch is on"}
 
 
 def _inside(path, folder):
@@ -157,18 +111,17 @@ def _inside(path, folder):
 
 def allowed(verdict, folder):
     """None if a document with this verdict may be written in folder, or the reason it may not."""
+    if verdict["review_class"] != "open":
+        return "the join's inputs or citations are not in order"
     folder = Path(folder).resolve()
     deployed = any(_inside(folder, ROOT / d) for d in DEPLOYED)
     if deployed and not verdict["may_publish"]:
-        what = "a held join" if verdict["review_class"] == "held" else "a join that is not switched on to publish"
-        return f"the gate does not write {what} inside {', '.join(d + '/' for d in DEPLOYED)}"
-    if verdict["review_class"] == "held" and _inside(folder, ROOT) and not _inside(folder, HELD_DIR):
-        return "the gate writes a held join only under out/held/"
+        return f"a join that is not switched on to publish is not written inside {', '.join(d + '/' for d in DEPLOYED)}"
     return None
 
 
 def write(join, doc, folder, names):
-    """Stamp doc with the gate's verdict and write it as each of names in folder, or refuse (SystemExit)."""
+    """Stamp doc with the verdict and write it as each of names in folder, or refuse (SystemExit)."""
     verdict = review(join, doc)
     refusal = allowed(verdict, folder)
     if refusal:
@@ -183,7 +136,7 @@ def write(join, doc, folder, names):
 
 
 def check(folders=None):
-    """Offences among the deployed folders: any JSON there that is a join the gate would not publish."""
+    """Offences among the deployed folders: any JSON there that is a join that may not publish."""
     offences = []
     for folder in folders or [ROOT / d for d in DEPLOYED]:
         for path in sorted(Path(folder).rglob("*")):
@@ -207,16 +160,18 @@ def check(folders=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--check", action="store_true", help="fail if a held or unpublished join sits in a deployed folder")
+    ap.add_argument("--check", action="store_true",
+                    help="fail if a refused or unpublished join sits in a deployed folder")
     a = ap.parse_args(argv)
     if not a.check:
         ap.print_help()
         return 0
     offences = check()
     for path, cls, reasons in offences:
-        print(f"GATE: {path} is a {cls} join and must not be deployed. " + "; ".join(reasons))
+        why = "; ".join(reasons) or "its publish switch is off"
+        print(f"GATE: {path} is a join that may not be deployed ({cls}). {why}")
     if not offences:
-        print("gate: no held or unpublished join in " + ", ".join(d + "/" for d in DEPLOYED))
+        print("gate: no refused or unpublished join in " + ", ".join(d + "/" for d in DEPLOYED))
     return 1 if offences else 0
 
 

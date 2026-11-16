@@ -1,4 +1,4 @@
-// COP's MCP server: eight read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
+// COP's MCP server: nine read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
 // functions/mcp.js at https://cop.theintelligence.company/mcp.
 //
 // Built on the official MCP TypeScript SDK v2 (@modelcontextprotocol/server). Its createMcpHandler serves
@@ -25,6 +25,7 @@ How to use these tools well:
 7. outage_triage is COP's own reading across layers: for each Blackout outage, whether a new natural hazard (Elements), a fresh travel or embassy notice (Cordon) or unusual press attention (Watchfloor) sits under it in that country around that hour; for each US state power outage (outage_kind "power"), whether a hazard that takes power lines down began in or near that state, where Cordon and Watchfloor answer "Not covered". A reading (natural, deliberate, open, unconfirmed or incomplete) sorts public reports. It is not a warning, not a forecast and not a finding of cause, and it carries no probability, so never present one as such. Always give its base rate (how often an outage would have read that way whatever its cause) and its caveats with it. "Nothing found" and "No current data" are different answers: never report a layer with no current data as quiet. Each record's question_draft is a drafted question, not a registered Verdict forecast, and has no likelihood.
 8. Undertow's items are the publishers' own reports of influence operations they disrupted or named, at operation level. An item's countries list the operation's origin beside its targets, and only the targets are marked on the map. The origin is where the publisher says the operators were, never a finding of who directed them, and Undertow's confidence (Low or Moderate, never High) is about origin only. Each item's disarm_rules_status says whether its DISARM technique mapping has been reviewed; while it reads "proposed", call the techniques provisional.
 9. Wake's items are IMF PortWatch's counts of AIS-visible vessel transits through maritime chokepoints, as 7-day means that Wake computes and compares with the 90 days before and the same weeks a year earlier. Tier "anomaly" means the week is unusual against those baselines, not a warning or a finding of cause. PortWatch publishes weekly, so the newest day is usually 2 to 9 days old: give the week the item covers. A ship crossing with its transponder off is not counted.
+10. three_signal is COP's own reading of the Strait of Hormuz and the Gulf: whether GPS interference (Noisefloor), a new navigation warning naming military activity or a new airspace bulletin (Cordon), and a confirmed internet outage (Blackout) fall in the area within 48 hours of each other, with Vis's weather forecast beside them as context. A reading (converged, partial, none or incomplete) says which signals are present and how close together they fall. It is not a warning, a forecast or a finding of cause, and it carries no probability: report what each layer shows and the base rate (how often each signal fires anyway in the archive), and do not state what the pattern means. question_draft is a drafted question, not a registered Verdict forecast.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -76,6 +77,10 @@ const TriageInput = z.object({
     .describe("ISO 3166-1 alpha-2 country code. Default: every outage in the snapshot."),
 });
 
+const ThreeSignalInput = z.object({
+  area: z.string().regex(/^[a-z0-9-]{1,40}$/).optional().describe("An area key (hormuz). Default: every area."),
+});
+
 const ForecastInput = z.object({
   status: z.enum(T.FORECAST_STATUSES).optional().describe("open, resolved or all (default all)."),
 });
@@ -85,8 +90,8 @@ const EventsInput = z.object({
   origin: z.enum(T.EVENT_ORIGINS).optional().describe("Only events found by this program."),
 });
 
-// data: { index(), programs(), picks(), triage(), verdict(), events(), shard(n) }, each a promise of the parsed file
-// (see data.js; triage() and events() resolve to null when the file is absent).
+// data: { index(), programs(), picks(), triage(), threeSignal(), verdict(), events(), shard(n) }, each a promise of the
+// parsed file (see data.js; triage(), threeSignal() and events() resolve to null when the file is absent).
 export function buildServer(data, clock = Date.now) {
   const server = new McpServer(
     { name: "cop", title: "COP, The Intelligence Company", version: VERSION, websiteUrl: SITE },
@@ -186,6 +191,16 @@ export function buildServer(data, clock = Date.now) {
       "changes, scheduled orbital launches), with the forecasts that name them.",
     EventsInput,
     async (a, now) => T.upcomingEvents(await data.verdict().catch(() => null), await data.events(), a, now),
+  );
+  tool(
+    "three_signal",
+    "Three-signal join",
+    "COP's reading of the Strait of Hormuz and the Gulf: whether GPS interference (Noisefloor), a new navigation " +
+      "warning or airspace bulletin (Cordon) and a confirmed internet outage (Blackout) fall in the area within 48 " +
+      "hours of each other, with each layer's items, Vis's weather forecast as context and how often each signal " +
+      "fires anyway. A reading is not a warning, a forecast or a finding of cause.",
+    ThreeSignalInput,
+    async (a, now) => T.threeSignal(await data.index(), await data.threeSignal(), a, now),
   );
   return server;
 }

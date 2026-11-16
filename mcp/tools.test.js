@@ -13,6 +13,7 @@ const verdict = readJson(dir, "agent/verdict.json");
 const events = readJson(dir, "agent/events.json");
 const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
+const threeSignal = readJson(dir, "three-signal.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -282,4 +283,22 @@ test("a cold request's work fits well inside the CPU budget", () => {
   // snapshot (956 items, 278 KB): parse 1.5 ms + two searches 0.6 ms, after the switch to filtering raw rows
   // (turning every row into an object first made the searches 5.0 ms).
   assert.ok(p + s < 5, `cold request work ${(p + s).toFixed(2)} ms`);
+});
+
+test("three-signal gives the reading, the layers' items and the wording, and a missing file is a tool error", () => {
+  const res = T.threeSignal(index, threeSignal, {}, NOW);
+  assert.equal(res.join, "three-signal");
+  assert.equal(res.count, 1);
+  const r = res.records[0];
+  assert.equal(r.area, "hormuz");
+  assert.ok(["converged", "partial", "none", "incomplete"].includes(r.reading));
+  assert.deepEqual(Object.keys(r.signals), ["interference", "notice", "connectivity"]);
+  assert.ok(r.weather && typeof r.weather.text === "string");
+  assert.match(res.note, /Do not state what the pattern means/);
+  assert.equal(r.verdict_draft, undefined, "the working draft with its empty probability is not published");
+  assert.deepEqual(res.attribution, T.threeSignal(index, threeSignal, { area: "hormuz" }, NOW).attribution);
+  assert.ok(res.attribution.length > 1, "COP's credit plus the programs it reads");
+  assert.equal(T.threeSignal(index, threeSignal, { area: "hormuz" }, NOW).count, 1);
+  assert.throws(() => T.threeSignal(index, threeSignal, { area: "baltic" }, NOW), T.ToolError);
+  assert.throws(() => T.threeSignal(index, null, {}, NOW), /not built for this snapshot/);
 });
