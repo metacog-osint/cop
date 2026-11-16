@@ -29,6 +29,7 @@ import argparse
 import json
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -39,6 +40,11 @@ THIN_OUTAGES = 20     # fewer real outages than this: the replay counts are anec
 # Cordon began carrying embassy alerts on 8 Nov 2026. Days before that had a different notice signal, so the notice
 # count and the readings are measured only from this day on. Hazards and attention use every day.
 NOTICE_VALID_FROM = "2026-11-08"
+# No outage of known cause has been replayed yet (the STOP replay, cop-purpose sequence step 4), so the join has a
+# false-alarm side and no hit rate. Said beside every rate until a replay measures one.
+HIT_RATE_CAUTION = ("No hit rate yet: no outage of known cause has been replayed, so it has not been shown that a "
+                    "reading tells one kind of outage from another. These rates say only how often each reading "
+                    "happens anyway.")
 
 
 def all_countries():
@@ -130,10 +136,12 @@ def background_day(snapshot, countries, hist=None):
            and tri._kind(f["properties"].get("id")) not in tri.BACKGROUND]
     other = [f for f in features if f["properties"].get("cop_program") in ("cordon", "watchfloor")]
     hazard, standing, notice, raised, unusual, notice_kinds = set(), set(), set(), set(), set(), Counter()
+    events = {}   # what made each country's signal: the distinct items behind it, so one notice is one event
     for cc in countries:
         h = tri.hazards(haz, cc, at, volcanoes)
         if h["significant"]:
             hazard.add(cc)
+            events[cc] = {"hazards": {r["id"] for r in h["significant"]}}
         elif h["standing"]:
             standing.add(cc)
         recent = tri.notices(other, cc, at, levels, alert_dates)["recent"]
@@ -145,6 +153,8 @@ def background_day(snapshot, countries, hist=None):
             raised.add(cc)
         if a["unusual"]:
             unusual.add(cc)
+        if cc not in hazard and (recent or a["unusual"]):
+            events[cc] = {"notices": {r["id"] for r in recent}, "unusual": a["unusual"]}
     n = len(countries)
     day = snapshot["generated_at"][:10]
     natural = hazard
@@ -156,7 +166,7 @@ def background_day(snapshot, countries, hist=None):
             "would_read": {"natural": len(natural), tri.TENSION: len(tension),
                            "open": n - len(natural) - len(tension)},
             "recent_notice_kinds": dict(sorted(notice_kinds.items())),
-            "_natural": natural, "_tension": tension}
+            "_natural": natural, "_tension": tension, "_events": events}
 
 
 def state_background_day(snapshot, hist=None):
@@ -172,27 +182,65 @@ def state_background_day(snapshot, hist=None):
            and (f["properties"].get("tier") in ("anomaly", "warning") or tri._power_warning(f["properties"]))]
     volcanoes = (hist or {}).get("volcano_levels")
     states = sorted(tri.us_states())
-    natural = {st for st in states if tri.state_hazards(haz, st, at, None, volcanoes)["significant"]}
+    natural, events = set(), {}
+    for st in states:
+        sig = tri.state_hazards(haz, st, at, None, volcanoes)["significant"]
+        if sig:
+            natural.add(st)
+            events[st] = {r["id"] for r in sig}
     return {"day": snapshot["generated_at"][:10], "snapshot": snapshot["generated_at"], "states": len(states),
-            "ended_list": ended_list_kind(snapshot), "natural": len(natural), "natural_states": sorted(natural)}
+            "ended_list": ended_list_kind(snapshot), "natural": len(natural), "natural_states": sorted(natural),
+            "_events": events}
 
 
 def _share(part, whole):
     return round(part / whole, 4) if whole else None
 
 
-def rates(snapshots):
-    """snapshots: iterable of snapshot dicts, any order."""
+def _country_events(days, counted):
+    """Per country, over the counted days: how many days read natural or tension context, and the distinct events
+    behind them (Elements hazards; Cordon notices; runs of consecutive days with unusual attention). A notice that
+    counts for three days is one notice; a regional alert is one notice in each country it names."""
+    by_day = {id(d): d.pop("_events") for d in days}
+    out = {}
+    for i, d in enumerate(counted):
+        for cc, e in by_day[id(d)].items():
+            c = out.setdefault(cc, {"natural": {"days": 0, "hazards": set()},
+                                    tri.TENSION: {"days": 0, "notices": set(), "attention_runs": 0, "_last": None}})
+            if "hazards" in e:
+                c["natural"]["days"] += 1
+                c["natural"]["hazards"] |= e["hazards"]
+                continue
+            t = c[tri.TENSION]
+            t["days"] += 1
+            t["notices"] |= e["notices"]
+            if e["unusual"]:
+                if t["_last"] != i - 1:
+                    t["attention_runs"] += 1
+                t["_last"] = i
+    return {cc: {"natural": {"days": c["natural"]["days"], "hazards": len(c["natural"]["hazards"])},
+                 tri.TENSION: {"days": c[tri.TENSION]["days"], "notices": len(c[tri.TENSION]["notices"]),
+                               "attention_runs": c[tri.TENSION]["attention_runs"]}}
+            for cc, c in sorted(out.items())}
+
+
+def rates(snapshots, today=None):
+    """snapshots: iterable of snapshot dicts, any order. today: the build's UTC date (YYYY-MM-DD); a snapshot taken
+    on it is today's partial day so far, so it is left out of the background (it still feeds the history and the
+    replay). None leaves nothing out."""
     snapshots = sorted(snapshots, key=lambda s: s.get("generated_at") or "")
     countries = all_countries()
     hist = history(snapshots)
-    outages, days, skipped, sdays, sskipped = {}, [], [], [], []
+    outages, days, skipped, sdays, sskipped, partial = {}, [], [], [], [], []
     for snap in snapshots:
         for r in tri.triage(snap, hist, snap.get("cop_ended"))["records"]:
             outages[(r["outage"]["id"], r["country"])] = {
                 "outage": r["outage"]["id"], "country": r["country"], "us_state": r.get("us_state"),
                 "source": r["outage"].get("source"), "started_at": r["outage"].get("started_at"),
                 "reading": r["reading"], "seen_in": snap["generated_at"]}
+        if today and (snap.get("generated_at") or "")[:10] >= today:
+            partial.append(snap["generated_at"][:10])
+            continue
         row = background_day(snap, countries, hist)
         (days.append(row) if row else skipped.append((snap.get("generated_at") or "?")[:10]))
         srow = state_background_day(snap, hist)
@@ -208,6 +256,12 @@ def rates(snapshots):
     by_country = {cc: {k: _share(v, len(counted)) for k, v in sorted(c.items())} |
                       {"open": _share(len(counted) - c["natural"] - c[tri.TENSION], len(counted))}
                   for cc, c in sorted(per.items())}
+    events = _country_events(days, counted)
+    # The pooled rate mostly counts countries that never show a signal; the countries that did are the population
+    # a reading should be held against.
+    sig_days = len(events) * len(counted)
+    sig_nat = sum(e["natural"]["days"] for e in events.values())
+    sig_ten = sum(e[tri.TENSION]["days"] for e in events.values())
     cd = sum(d["countries"] for d in days)
     rcd = sum(d["countries"] for d in counted)
     total = {k: sum(d["would_read"][k] for d in counted) for k in ("natural", tri.TENSION, "open")}
@@ -227,6 +281,7 @@ def rates(snapshots):
                     for r in [(snap.get("cop_ended") or {}).get("rebuilt")] if isinstance(r, dict) and r.get("log_from")),
                    default=None)
     cautions += _list_cautions(counted, "counted days", log_from)
+    cautions.append(HIT_RATE_CAUTION)
     # A notice kind Cordon added after NOTICE_VALID_FROM could not count on the days before it existed.
     present = {}
     for snap in snapshots:
@@ -248,6 +303,11 @@ def rates(snapshots):
     sd = sum(d["states"] for d in sdays)
     snat = sum(d["natural"] for d in sdays)
     per_state = Counter(st for d in sdays for st in d["natural_states"])
+    state_events = {}
+    for d in sdays:
+        for st, ids in d.pop("_events").items():
+            state_events.setdefault(st, set()).update(ids)
+    state_events = {st: {"days": per_state[st], "hazards": len(ids)} for st, ids in sorted(state_events.items())}
     s_no_list = sum(1 for d in sdays if d["ended_list"] == "none")
     scautions = [f"{s_no_list} of {len(sdays)} days have no list of Elements' ended hazards (archived from 14 Nov 2026): "
                  "on those days a warning that ran out before the day's one snapshot is missed, so most thunderstorm "
@@ -257,11 +317,13 @@ def rates(snapshots):
     scautions += _list_cautions(sdays, "days", log_from)
     if len(sdays) < THIN_DAYS:
         scautions.insert(0, f"Only {len(sdays)} archived days: a first look, not a settled rate.")
+    scautions.append(HIT_RATE_CAUTION)
     return {
         "join": tri.JOIN,
         "archive": {"days": len(snapshots), "first": snapshots[0]["generated_at"] if snapshots else None,
                     "last": snapshots[-1]["generated_at"] if snapshots else None,
                     "days_left_out_layer_down": skipped,
+                    "days_left_out_partial": partial,
                     "readings_counted_from": NOTICE_VALID_FROM, "days_counted_for_readings": len(counted)},
         "cautions": cautions,
         "history": hist,
@@ -284,6 +346,14 @@ def rates(snapshots):
             "by_country": by_country,
             "by_country_note": "Share of counted days each country would have read natural or tension context. A "
                                "country not listed read open on every day.",
+            "countries": len(countries),
+            "countries_with_signal": len(events),
+            "signal_countries_would_read": {"natural": _share(sig_nat, sig_days), tri.TENSION: _share(sig_ten, sig_days),
+                                            "open": _share(sig_days - sig_nat - sig_ten, sig_days)},
+            "by_country_events": events,
+            "by_country_events_note": "Per country, over the counted days: the days that read natural or tension "
+                                      "context and the distinct events behind them (Elements hazards; Cordon "
+                                      "notices; runs of consecutive days with unusual attention).",
             "days": days,
         },
         "state_background": {
@@ -298,6 +368,9 @@ def rates(snapshots):
                          for st, n in sorted(per_state.items())},
             "by_state_note": "Share of archived days each state would have read natural. A state not listed read "
                              "open on every day.",
+            "states": sdays[0]["states"] if sdays else len(tri.us_states()),
+            "states_with_signal": len(state_events),
+            "by_state_events": state_events,
             "cautions": scautions,
             "days": sdays,
         },
@@ -308,16 +381,20 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--archive", default=str(tri.ROOT / "out" / "archive"), help="folder of YYYY-MM-DD.geojson.gz")
     ap.add_argument("--out", default=str(tri.ROOT / "out" / "triage"))
+    ap.add_argument("--today", default=None,
+                    help="the build's UTC date, YYYY-MM-DD (default: now); its partial day is left out")
     a = ap.parse_args(argv)
+    today = a.today or datetime.now(timezone.utc).date().isoformat()
     out = tri.safe_out(a.out)
     files = sorted(f for f in Path(a.archive).glob("*.geojson.gz") if f.name.count(".") == 2)
     if not files:
         raise SystemExit(f"no *.geojson.gz in {a.archive}")
-    doc = rates(attach_ended(tri.load(f), f) for f in files)
+    doc = rates((attach_ended(tri.load(f), f) for f in files), today)
     tri.gate.write(tri.JOIN, doc, out, ("base-rates.json",))
     b, arc = doc["background"], doc["archive"]
     print(f"{arc['days']} days, {arc['first']} to {arc['last']}; left out (a layer down): "
-          f"{arc['days_left_out_layer_down'] or 'none'}; readings counted on {arc['days_counted_for_readings']} days "
+          f"{arc['days_left_out_layer_down'] or 'none'}; left out (today's partial day): "
+          f"{arc['days_left_out_partial'] or 'none'}; readings counted on {arc['days_counted_for_readings']} days "
           f"from {arc['readings_counted_from']}")
     print(f"replay: {doc['replay']['outages']} outages {doc['replay']['by_reading']}")
     print(f"background over {b['country_days']} country-days: new hazard {b['hazard']:.1%} (standing hazard only "

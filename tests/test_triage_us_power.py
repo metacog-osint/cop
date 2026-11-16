@@ -289,6 +289,26 @@ class Question(unittest.TestCase):
 
 
 class RatesAndPublic(unittest.TestCase):
+    def test_state_rate_counts_one_long_hazard_once_and_says_none(self):
+        first, second = day_snapshot(), day_snapshot()
+        second["generated_at"] = "2026-11-14T23:30:00Z"
+        s = rates.rates([first, second])["state_background"]
+        ev = s["by_state_events"]
+        self.assertEqual(ev["CA"], {"days": 2, "hazards": 5}, "the same five hazards on two days count five times, not ten")
+        self.assertEqual(s["states_with_signal"], 4)
+        self.assertNotIn("_events", s["days"][0])
+        r = {"reading": "natural", "us_state": "TX", "us_state_name": "Texas"}
+        tx = tri._state_rate(r, s)
+        self.assertIn("on none of 2 days.", tx["text"])
+        self.assertNotIn("from", tx["text"].split(".")[0])
+
+    def test_state_rate_leaves_out_todays_partial_day(self):
+        first, today = day_snapshot(), day_snapshot()
+        today["generated_at"] = "2026-11-15T01:53:00Z"
+        doc = rates.rates([first, today], today="2026-11-15")
+        self.assertEqual(doc["state_background"]["by_state_days"], 1)
+        self.assertEqual(doc["archive"]["days_left_out_partial"], ["2026-11-15"])
+
     def test_state_background_from_the_archive(self):
         doc = rates.rates([day_snapshot()])
         s = doc["state_background"]
@@ -306,9 +326,12 @@ class RatesAndPublic(unittest.TestCase):
         r = rates.rates([snap])
         pub = tri.public(tri.attach_rates(tri.triage(snap, r["history"]), r))
         ca = by_state(pub)["CA"]
-        self.assertEqual(ca["base_rate"]["text"], "A state power outage would have read \"natural\" whatever its "
-                                                  "cause on 7.7% of 52 state-days, and on 100% of 1 days in "
-                                                  "California.")
+        self.assertEqual(ca["base_rate"]["text"], "In California, a state power outage would have read \"natural\" "
+                                                  "whatever its cause on 1 of 1 days, from 5 hazards that take power "
+                                                  "lines down. Across all 52 states, DC and Puerto Rico included, 7.7% "
+                                                  "of 52 state-days.")
+        self.assertEqual((ca["base_rate"]["this_states_days"], ca["base_rate"]["events"]), (1, {"days": 1, "hazards": 5}))
+        self.assertIn(rates.HIT_RATE_CAUTION, ca["base_rate"]["cautions"])
         q = ca["question_draft"]
         self.assertEqual(q["status"], "draft, not registered")
         self.assertTrue(q["reference"] and q["notes"])

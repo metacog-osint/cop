@@ -144,6 +144,17 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   28-day z-scores, which the old share switched off). The replay: the 4 archived IODA outages keep their readings
   (Tunisia open; DR Congo, Niger, Seychelles unconfirmed); 3 Radar anomalies are new (Iraq, Russia, Algeria: open).
   No archived outage changes reading. Scripts: `out/compare.py`, `out/notice_diff.py` in the worktree (not kept).
+  **Base-rate population (M4 of the 15 Nov joins review; Tom's yes, 15 Nov 2026, state rates included):** each
+  reading's base rate leads with the country's own count and the distinct events behind it ("In Saudi Arabia ...
+  on 5 of 8 counted days, from 3 notices"; hazards, notices, runs of consecutive days with unusual attention:
+  `by_country_events`), then the pooled rate with its population named ("Across all 239 countries ... (only 61
+  countries showed any signal)"). State power rates do the same (`by_state_events`). The page footer leads with the
+  countries that showed a signal. `triage_rates.py --today` (default: now, UTC) leaves today's partial snapshot out
+  of the background (`days_left_out_partial`); it still feeds the history and the replay. `HIT_RATE_CAUTION` stands
+  beside every rate until an outage of known cause is replayed (the STOP replay). Measured on the archive (31 Oct-16
+  Nov): counted days 9 -> 8, country-days 2,151 -> 1,912, natural 0.74% -> 0.78%, tension context 5.25% -> 5.39%,
+  open 94.0% -> 93.8%; on the 61 countries' days: natural 3.1%, tension context 21.1%, open 75.8%; state-days 884
+  -> 832, natural 14.7% -> 14.8%, 30 of 52 with a signal. Readings unchanged: the 7 replayed outages keep theirs.
   **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
   and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
   change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;

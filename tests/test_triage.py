@@ -177,13 +177,66 @@ class Triage(unittest.TestCase):
         self.assertEqual(doc["background"]["country_days"], n)
         self.assertEqual(doc["background"]["would_read_country_days"], n)
         self.assertEqual(d["recent_notice_kinds"], {"alert": 2})
-        self.assertEqual(len(doc["cautions"]), 3, "one day, no outages, no ended list: three cautions")
+        self.assertEqual(len(doc["cautions"]), 4, "one day, no outages, no ended list, no hit rate: four cautions")
+        self.assertEqual(doc["cautions"][-1], rates.HIT_RATE_CAUTION)
         self.assertTrue(any("no list of Elements' ended hazards" in c for c in doc["cautions"]))
         by = doc["background"]["by_country"]
         self.assertEqual(by["TN"], {tri.TENSION: 0.0, "natural": 1.0, "open": 0.0})
         self.assertEqual(by["DZ"][tri.TENSION], 1.0)
         self.assertNotIn("FR", by, "a country that only ever read open is not listed")
         self.assertNotIn("_natural", d)
+
+    def test_events_count_each_notice_once_and_each_attention_run_once(self):
+        days = []
+        for i, day in enumerate(("2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13")):
+            feats = [alert("DZ", "a", "2026-11-10T00:00:00Z")] if i < 2 else []   # one alert, counted on two days
+            if i in (0, 1, 3):                                                       # attention on 10, 11 and 13 Nov
+                feats.append(attention_item("DZ", day))
+            s = snapshot(*feats)
+            s["generated_at"] = f"{day}T23:00:00Z"
+            days.append(s)
+        b = rates.rates(days)["background"]
+        dz = b["by_country_events"]["DZ"][tri.TENSION]
+        self.assertEqual(dz["notices"], 1, "one alert over two days is one notice")
+        self.assertEqual(dz["attention_runs"], 2, "10-11 Nov is one run, 13 Nov another")
+        self.assertEqual(dz["days"], 3)
+        self.assertEqual(b["countries_with_signal"], 1)
+        self.assertEqual(b["signal_countries_would_read"][tri.TENSION], 0.75)
+        self.assertNotIn("_events", b["days"][0])
+
+    def test_a_regional_alert_is_one_notice_in_each_country(self):
+        regional = item("cordon", "cordon:alert:DZ:regional", ["DZ", "TN", "LY"], "routine", "2026-11-12T00:00:00Z",
+                        title="US embassy (DZ): Security Alert: U.S. Embassy (November 11, 2026)")
+        b = rates.rates([snapshot(regional)])["background"]
+        for cc in ("DZ", "TN", "LY"):
+            self.assertEqual(b["by_country_events"][cc][tri.TENSION]["notices"], 1)
+
+    def test_base_rate_text_leads_with_the_country_and_names_its_events(self):
+        base = rates.rates([snapshot(alert("TN", "a", "2026-11-12T00:00:00Z"))])
+        doc = tri.attach_rates(tri.triage(snapshot(outage(), alert("TN", "a", "2026-11-12T00:00:00Z"))), base)
+        tn = doc["records"][0]["base_rate"]
+        self.assertTrue(tn["text"].startswith('In Tunisia, an outage would have read "tension context" whatever its '
+                                              "cause on 1 of 1 counted days, from 1 notice. Across all "), tn["text"])
+        self.assertIn("(only 1 country showed any signal)", tn["text"])
+        self.assertEqual((tn["this_countrys_days"], tn["counted_days"]), (1, 1))
+        quiet = tri.attach_rates(tri.triage(snapshot(outage("DZ"))), rates.rates([snapshot()]))["records"][0]
+        self.assertIn("on 1 of 1 counted days. Across all", quiet["base_rate"]["text"],
+                      "open names no events")
+        self.assertIsNone(quiet["base_rate"]["events"])
+
+    def test_base_rate_text_says_none_when_the_country_never_read_that_way(self):
+        base = rates.rates([snapshot()])
+        rec = {"reading": tri.TENSION, "country": "TN"}
+        doc = tri.attach_rates({"records": [rec], "join": tri.JOIN}, base)
+        self.assertIn("on none of 1 counted days. Across all", doc["records"][0]["base_rate"]["text"])
+
+    def test_todays_partial_day_is_left_out_of_the_background(self):
+        yesterday, today = snapshot(), snapshot()
+        yesterday["generated_at"], today["generated_at"] = "2026-11-14T22:33:00Z", "2026-11-15T01:53:00Z"
+        doc = rates.rates([yesterday, today], today="2026-11-15")
+        self.assertEqual([d["day"] for d in doc["background"]["days"]], ["2026-11-14"])
+        self.assertEqual(doc["archive"]["days_left_out_partial"], ["2026-11-15"])
+        self.assertEqual(len(rates.rates([yesterday, today])["background"]["days"]), 2, "no date given: nothing left out")
 
     def test_a_day_with_a_layer_down_is_left_out_of_the_rates(self):
         good = snapshot()

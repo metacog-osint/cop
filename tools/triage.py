@@ -212,6 +212,7 @@ def load(where):
 
 
 _RINGS = None
+_NAMES = None
 
 
 def _rings(cc):
@@ -220,6 +221,15 @@ def _rings(cc):
         data = json.loads(COUNTRIES.read_text(encoding="utf-8"))
         _RINGS = {c["cc"]: c["rings"] for c in data["countries"]}
     return _RINGS.get(cc) or []
+
+
+def country_name(cc):
+    """The kit's name for an ISO alpha-2 code, or the code itself."""
+    global _NAMES
+    if _NAMES is None:
+        data = json.loads(COUNTRIES.read_text(encoding="utf-8"))
+        _NAMES = {c["cc"]: c.get("name") or c["cc"] for c in data["countries"]}
+    return _NAMES.get(cc) or cc
 
 
 def _km(lat1, lon1, lat2, lon2):
@@ -1222,9 +1232,15 @@ def attach_rates(doc, rates):
     n = b["would_read_country_days"]
     sb = rates.get("state_background")
     doc["base_rates"] = {"country_days": n, "would_read": b["would_read"],
+                         "counted_days": b.get("by_country_days"), "countries": b.get("countries"),
+                         "countries_with_signal": b.get("countries_with_signal"),
+                         "signal_countries_would_read": b.get("signal_countries_would_read"),
                          "archive": rates["archive"], "cautions": rates["cautions"],
                          "states": None if not sb else {"state_days": sb["state_days"],
                                                         "would_read": sb["would_read"],
+                                                        "days": sb.get("by_state_days"),
+                                                        "states": sb.get("states"),
+                                                        "states_with_signal": sb.get("states_with_signal"),
                                                         "cautions": sb["cautions"]}}
     for r in doc["records"]:
         if r.get("outage_kind") == "power":
@@ -1237,13 +1253,41 @@ def attach_rates(doc, rates):
         days = b.get("by_country_days") or 0
         own = (b.get("by_country") or {}).get(r["country"], {"natural": 0.0, TENSION: 0.0, "open": 1.0})
         here = own.get(r["reading"])
+        ev = (b.get("by_country_events") or {}).get(r["country"]) or {
+            "natural": {"days": 0, "hazards": 0}, TENSION: {"days": 0, "notices": 0, "attention_runs": 0}}
+        k = days - ev["natural"]["days"] - ev[TENSION]["days"] if r["reading"] == "open" else ev[r["reading"]]["days"]
+        world = (f"Across all {b['countries']} countries, {share:.1%} of {n:,} country-days"
+                 + (f" (only {b['countries_with_signal']} countr{'y' if b['countries_with_signal'] == 1 else 'ies'} "
+                    "showed any signal)."
+                    if b.get("countries_with_signal") is not None else "."))
         r["base_rate"] = {
             "share_of_country_days": share,
             "share_of_this_countrys_days": here,
-            "text": f"An outage would have read \"{r['reading']}\" whatever its cause on {share:.1%} of "
-                    f"{n} country-days worldwide, and on {here:.0%} of {days} days in {r['country']}.",
+            "this_countrys_days": k,
+            "counted_days": days,
+            "events": None if r["reading"] == "open" else ev[r["reading"]],
+            "text": f"In {country_name(r['country'])}, an outage would have read \"{r['reading']}\" whatever its "
+                    f"cause {_on_days(k, days, 'counted days')}{_from_events(r['reading'], ev, k)}. {world}",
             "cautions": rates["cautions"]}
     return doc
+
+
+def _on_days(k, days, word):
+    return f"on none of {days} {word}" if k == 0 else f"on {k} of {days} {word}"
+
+
+def _from_events(reading, ev, k):
+    """", from 2 notices and 1 run of unusual attention": the distinct events behind a country's days."""
+    if not k or reading == "open":
+        return ""
+    if reading == "natural":
+        parts = [_n(ev["natural"]["hazards"], "hazard")]
+    else:
+        t = ev[TENSION]
+        parts = ([_n(t["notices"], "notice")] if t["notices"] else []) + (
+            [f"{t['attention_runs']} run{'' if t['attention_runs'] == 1 else 's'} of unusual attention"]
+            if t["attention_runs"] else [])
+    return ", from " + " and ".join(parts) if parts else ""
 
 
 def _state_rate(r, sb):
@@ -1255,9 +1299,16 @@ def _state_rate(r, sb):
     n, days = sb["state_days"], sb.get("by_state_days") or 0
     own = (sb.get("by_state") or {}).get(r["us_state"], {"natural": 0.0, "open": 1.0})
     here = own.get(r["reading"])
+    ev = (sb.get("by_state_events") or {}).get(r["us_state"]) or {"days": 0, "hazards": 0}
+    k = ev["days"] if r["reading"] == "natural" else days - ev["days"]
+    hz = ev["hazards"]
+    src = (f", from {hz} hazard{' that takes' if hz == 1 else 's that take'} power lines down"
+           if r["reading"] == "natural" and k else "")
     return {"share_of_state_days": share, "share_of_this_states_days": here,
-            "text": f"A state power outage would have read \"{r['reading']}\" whatever its cause on {share:.1%} of "
-                    f"{n} state-days, and on {here:.0%} of {days} days in {r['us_state_name']}.",
+            "this_states_days": k, "days": days, "events": ev if r["reading"] == "natural" else None,
+            "text": f"In {r['us_state_name']}, a state power outage would have read \"{r['reading']}\" whatever its "
+                    f"cause {_on_days(k, days, 'days')}{src}. Across all {sb.get('states', '')} states, DC and Puerto Rico included, {share:.1%} of "
+                    f"{n:,} state-days.",
             "cautions": sb["cautions"]}
 
 
