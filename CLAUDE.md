@@ -400,9 +400,18 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   noncommercial use). Two more on 16 Nov 2026 (Undertow's reported-activity slice): `checkfirst-rss` (B2) and
   `correctiv-rss` (B3), both `commercial_ok` "unknown" (no terms published; names, dates and links only). From then
   Undertow's reporter items are reported activity, one per reporter and operation, with an `activity` block (state
-  active or quiet) and no origin. The MCP instructions name DFRLab, and rule 8 says that `countries` lists the origin beside the
-  targets, that an origin is never a finding of who directed an operation, that its confidence is about origin
-  only, and to call DISARM techniques provisional while `disarm_rules_status` reads "proposed".
+  active or quiet) and no origin. Until 16 Nov 2026 this line said the MCP instructions named DFRLab; they did not
+  (`d92a3e6` changed only this file and `config/sources.json`). **Since 16 Nov 2026 (branch
+  `undertow/reporter-sources`)** the instructions name DFRLab, CheckFirst and CORRECTIV as reports kept apart from
+  disclosures, and rule 8 has two parts. Disclosures: `countries` lists the origin beside the targets, only targets
+  are marked, an origin is never a finding of who directed an operation, confidence is about origin only.
+  Reported activity (an `activity` block): give the reporter, grade, first and last report and state; "quiet"
+  never means ended; a name match says the reporter wrote about the operation, not that it found it running; its
+  `countries` are the countries named in the reports (they can include the operators' country, and all are marked
+  on the map), not an origin, and it adds no origin or confidence. Both: call DISARM techniques provisional while
+  `disarm_rules_status` reads "proposed". The card shows a "Reported activity" badge and Reported by, First report,
+  Last report, Reports and State facts (`renderCard`, `p.activity`); `get_item` returns the whole block (the shards
+  keep every field); `search_items` rows do not carry it, but the title ends "(active)" or "(quiet)".
   `tests/fixtures/undertow.geojson`: 22 items of its live feed of 01:24 UTC 15 Nov (every lane, every geometry kind
   and confidence state), every timestamp moved back 14 days 5 h 18 min. **Size:** with all 425 items a local live
   build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows

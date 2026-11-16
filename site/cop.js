@@ -421,6 +421,22 @@ function renderCard(f) {
   fact("Place", PRECISION[p.precision_class] || "Not stated");
   const pubs = [...new Set((p.sources || []).map((s) => s.publisher).filter(Boolean))];
   if (pubs.length) fact("Sources", pubs.slice(0, 3).join("; ") + (pubs.length > 3 ? ` and ${pubs.length - 3} more` : ""));
+  // Undertow's reported activity (16 Nov 2026): a reporter wrote about an operation it tracks. Not a takedown, no
+  // origin, and "quiet" is a reporter falling silent, never an operation ending.
+  const a = p.activity;
+  if (a && typeof a === "object") {
+    badges.append(h("span", { class: "badge", text: "Reported activity: a researcher's report, not a takedown" }));
+    if (a.reporter_name) fact("Reported by", a.grade ? `${a.reporter_name} (grade ${a.grade})` : a.reporter_name);
+    if (typeof a.first_report === "string") fact("First report", timeEl(a.first_report));
+    if (typeof a.last_report === "string") fact("Last report", timeEl(a.last_report));
+    if (Number.isFinite(a.reports)) fact("Reports", String(a.reports));
+    if (a.state === "active" || a.state === "quiet") {
+      const days = Number.isFinite(a.quiet_after_days) ? a.quiet_after_days : 180;
+      fact("State", a.state === "active"
+        ? `Active: reported within the last ${days} days`
+        : `Quiet: no report from this reporter in ${days} days (not a sign the operation ended)`);
+    }
+  }
   card.append(facts);
   // What else is drawn under the click that opened this card, top first: the card of each is one press away.
   const here = (state.here || []).filter((id) => id !== p.id && BY_ID.has(id));
