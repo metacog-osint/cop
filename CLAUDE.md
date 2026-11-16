@@ -299,7 +299,9 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   (the best brown reaches only 3.03 on the dark land). Rings against Context's filled markers carry identity too.
   Six sources in `config/sources.json`, as Undertow's `doctrine/sources.json` records them: Meta (MIT), the EEAS
   (reuse with acknowledgement) and DISARM (CC BY-SA 4.0) `commercial_ok` true; Google, OpenAI's RSS and TikTok's
-  Code reports "unknown". The MCP instructions name it, and rule 8 says that `countries` lists the origin beside the
+  Code reports "unknown". A seventh, `dfrlab-rss` (16 Nov 2026, Undertow `a3e1a65`): DFRLab articles naming an
+  operation Undertow tracks, as corroboration (grade B2), `commercial_ok` false (Atlantic Council terms:
+  noncommercial use). The MCP instructions name it, and rule 8 says that `countries` lists the origin beside the
   targets, that an origin is never a finding of who directed an operation, that its confidence is about origin
   only, and to call DISARM techniques provisional while `disarm_rules_status` reads "proposed".
   `tests/fixtures/undertow.geojson`: 22 items of its live feed of 01:24 UTC 15 Nov (every lane, every geometry kind
