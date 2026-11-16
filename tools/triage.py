@@ -682,6 +682,19 @@ def alert_first_dated(item_id, dated, at, alert_dates):
     return best
 
 
+def day_span(p):
+    """(start, end) of the UTC day a whole-day item measures, from its own fields. Watchfloor's and Noisefloor's items
+    say `data_as_of_precision` "day" with data_as_of at that day's midnight (from 16 Nov 2026, kit 0.5.6), so the day
+    runs from data_as_of for 24 hours. Snapshots archived before then carry the end of the day (T23:59:59Z) and no
+    precision, so the day is the 24 hours before data_as_of. (None, None) with no time."""
+    dated = utc(p.get("data_as_of"))
+    if dated is None:
+        return None, None
+    if p.get("data_as_of_precision") == "day":
+        return dated, dated + timedelta(days=1)
+    return dated - timedelta(days=1), dated
+
+
 def _day_dated(p, dated):
     """True when a notice carries a date and no time (SafeTravel dates its advice by the day)."""
     return p.get("data_as_of_precision") == "day" or (dated and (dated.hour, dated.minute, dated.second) == (0, 0, 0))
@@ -762,13 +775,14 @@ def attention(features, cc, at):
         if p.get("cop_program") != "watchfloor":
             continue
         dated = utc(p.get("data_as_of"))
-        if dated and (newest is None or dated > newest):
-            newest = dated
+        day_start, day_end = day_span(p)
+        if day_end and (newest is None or day_end > newest):
+            newest = day_end
         if cc not in (p.get("countries") or []):
             continue
         base = (p.get("baseline_ref") or {}).get("id") if isinstance(p.get("baseline_ref"), dict) else None
         row = _row(p, kind=_kind_wf(p.get("id")), z=_wf_z(p), baseline=base)
-        if dated and dated - timedelta(days=1) >= at:     # data_as_of is the end of the day it measures
+        if day_start and day_start >= at:                 # the day it measures begins after the outage
             after.append(row)
         elif p.get("tier") not in ("anomaly", "warning"):
             routine.append(row)

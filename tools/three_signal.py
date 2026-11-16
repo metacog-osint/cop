@@ -182,7 +182,8 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
             if not inside:
                 continue
             row = tri._row(p, kind=_nf_kind(p.get("id")), km_from_centre=km, at=p.get("data_as_of"))
-            if row["kind"] in INTERFERENCE_KINDS and p.get("tier") in ("anomaly", "warning") and dated and dated >= lo:
+            day_end = tri.day_span(p)[1]       # a whole-day item counts to the end of its day, not its midnight start
+            if row["kind"] in INTERFERENCE_KINDS and p.get("tier") in ("anomaly", "warning") and day_end and day_end >= lo:
                 found["interference"].append(row)
             elif row["kind"] == "ended":
                 context["interference_ended"].append(row)

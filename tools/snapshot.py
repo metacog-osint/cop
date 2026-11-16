@@ -23,7 +23,7 @@ import re
 import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -57,6 +57,22 @@ def utc(s):
         return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
     except ValueError:
         return None
+
+
+def covered_until(props, now):
+    """When an item's data stops being news, for judging a program's freshness. A source that gives no time
+    (data_as_of_precision "day" or "month", kit 0.5.6) puts data_as_of at midnight UTC at the start of that day or
+    month, but the data covers the whole period, so it counts to the end of it, never later than now. Without this a
+    program publishing whole-UTC-day items read a day older than it is (Watchfloor and Noisefloor, 16 Nov 2026)."""
+    dt = utc(props.get("data_as_of"))
+    if dt is None:
+        return None
+    prec = props.get("data_as_of_precision")
+    if prec == "day":
+        dt += timedelta(days=1)
+    elif prec == "month":
+        dt = dt.replace(year=dt.year + (dt.month == 12), month=dt.month % 12 + 1)
+    return min(dt, now) if prec in ("day", "month") else dt
 
 
 def iso(dt):
@@ -413,9 +429,12 @@ def build(feeds, reports, previous, now):
         all_dropped += dropped
         newest = max((utc(i.get("properties", {}).get("data_as_of")) for i in items
                       if utc(i.get("properties", {}).get("data_as_of"))), default=None)
+        covered = max((c for c in (covered_until(i.get("properties") or {}, now) for i in items) if c), default=None)
         if feed is not None and prog.get("freshness") == "feed" and utc(feed.get("generated_at")):
             newest = utc(feed.get("generated_at"))  # notice programs: items carry issue dates, the feed is current
-        age = round((now - newest).total_seconds() / 3600, 1) if newest else None
+        if feed is not None and prog.get("freshness") == "feed" and utc(feed.get("generated_at")):
+            covered = newest      # a feed-time program is judged by the feed, not by its items
+        age = round((now - covered).total_seconds() / 3600, 1) if covered else None
         state = state_for(age, prog, feed is not None)
         # A source's register key is its id, else its publisher; one that gives neither as text is the linter's.
         keys = {s.get("id") or s.get("publisher") for i in items for s in (i["properties"].get("sources") or [])

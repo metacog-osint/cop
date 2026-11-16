@@ -380,6 +380,14 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   coded column `data_as_of_precision` (about 2 bytes a row, some 4 KB on the live bus of 2,146 rows, 555 KB on
   15 Nov); `search_items` rows name it only when it is set, and MCP rule 4 says to give a date-only item's date or
   month, never a time, and never to move it into another zone.
+  **Whole-day items from Watchfloor and Noisefloor (16 Nov 2026, branch `fix/day-precision-freshness`):** both feeds
+  now say `data_as_of_precision: "day"` with `data_as_of` at the day's midnight (they sent `T23:59:59Z`, which read
+  "5:59 PM CST"). Three readers had assumed the end of the day, so each now counts a day item to its end:
+  `snapshot.covered_until` for a program's age (fresh 36 h, late past it; a day item counts to the end of its day, never
+  later than now; `health.json` still reports the source's own time), `triage.day_span` for Watchfloor's "day begins
+  after the outage" and "data reaches the outage", and `three_signal` for Noisefloor's 96-hour look-back. Archived
+  snapshots keep the old `T23:59:59Z` with no precision, and `day_span` reads both the same. Deploy this before the
+  Watchfloor and Noisefloor feed commits go live, or both programs read "late" for about 15 hours a day.
   **`ended` and `source_health` (16 Nov 2026, same branch):** Undertow keeps the kit's history log (`tic-history/1`,
   Undertow `393758e`) and serves `https://undertow.theintelligence.company/data/ended.geojson`; its feed's `health`
   block is keyed by the source id its items carry (`meta-threat-research`, `google-iob`, `openai-news-rss`,
