@@ -73,6 +73,7 @@ jobs:
           python tests/test_register_question.py
           python tests/test_rebuild_ended.py
           python tests/test_three_signal.py
+          python tests/test_undertow_sanctions.py
           python tests/test_ledger.py
           python tests/test_stop_replay.py
           python tests/test_history_cordon.py
@@ -153,6 +154,15 @@ jobs:
         run: |
           python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data \
             || { rm -f site/data/three-signal.json; echo "::warning::three-signal join failed; the page and the MCP server say it is unavailable"; }
+      # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
+      # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
+      # writes out/undertow-sanctions/ only. A failure never fails the build.
+      - name: Undertow sanctions join (out/undertow-sanctions/)
+        run: |
+          python tools/undertow_sanctions.py --snapshot site/data/today.geojson \
+            --list-changes https://headwind.theintelligence.company/data/list-changes.json \
+            --out out/undertow-sanctions --publish site/data \
+            || echo "::warning::Undertow sanctions join failed"
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages

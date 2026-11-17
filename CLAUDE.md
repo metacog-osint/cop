@@ -388,7 +388,7 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   "halos", preset "Information" beside Context (its registry family), `routine_in_preset`, `freshness` "feed" (items
   carry disclosure dates, some months old). Its ids are `UT-<LANE>-<key>`, not `undertow:<kind>:...`, so the gate
   reads them through `ID_PREFIXES` in `tools/gate.py` (the lane is the kind; an unlisted upper-case prefix is held).
-  **On the gate's open list** (Tom, 14 Nov 2026). No join reads it yet. Colour: magenta `#CD00A0` (outlines
+  **On the gate's open list** (Tom, 14 Nov 2026). One join reads it, unpublished: the sanctions join (below). Colour: magenta `#CD00A0` (outlines
   `#670050`, `#F3BFE7`). A search over sRGB on a 5-step grid found 107 colours that pass the dataviz validator
   against all eleven others, every one a magenta or a dark brown; `#CD00A0`'s worst pairs are Vigil, colour-blind
   ΔE 9.0 (target 8), and Context, normal 16.9 (floor 15), with contrast 4.59 on the light land and 3.82 on the dark
@@ -423,6 +423,20 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   `disarm_rules_status` reads "proposed". The card shows a "Reported activity" badge and Reported by, First report,
   Last report, Reports and State facts (`renderCard`, `p.activity`); `get_item` returns the whole block (the shards
   keep every field); `search_items` rows do not carry it, but the title ends "(active)" or "(quiet)".
+  **The Undertow sanctions join** (16 Nov 2026, join 0.1, branch `undertow/sanctions-join`; Tom's "Yes, as
+  recommended" to `_ideas\drafts\2026-11-16-undertow-cross-suite-joins.md`): `tools/undertow_sanctions.py` matches the
+  entries of Headwind's `data/list-changes.json` (fetched by URL; 30 days) that Headwind types `entity` exactly against
+  `config/undertow-names.json` (15 rows: SDA, ANO Dialog and Struktura on OFAC, EU, UK, France and Canada, each name as
+  Headwind prints it; Haimai and CGTN are on no list, so no row), and puts each match beside the Undertow items whose
+  `operation.sponsor` names the organisation: "Headwind saw <name> added to <list> (<programmes>) on <date>. <Publisher>
+  names <organisation> in its disclosure of <operation>." A person is never matched; a row whose entry id Headwind
+  shows under another name is listed in `stale_rows` and matches nothing. Headwind prints an EU entry's first alias,
+  which for SDA is Polish and for ANO Dialog Russian, so those rows carry that string. Base rate: listing actions
+  (one per list and date) from Undertow's `operation.listed_by` (Undertow's standing listings, read from the publishers'
+  notices), per month since the first; on Undertow's 16 Nov local build 5 in 41 months, 0.12 a month, last 21 Feb 2025.
+  Inputs `undertow` and `headwind:sanctions`; **`published` is off** (Tom's call), so the build writes only
+  `out/undertow-sanctions/`. No page or MCP view yet: they come with the switch. `config/undertow-names.json`
+  `checked_by` is empty until Tom checks the table.
   `tests/fixtures/undertow.geojson`: 22 items of its live feed of 01:24 UTC 15 Nov (every lane, every geometry kind
   and confidence state), every timestamp moved back 14 days 5 h 18 min. **Size:** with all 425 items a local live
   build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows
