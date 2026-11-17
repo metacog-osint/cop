@@ -162,6 +162,7 @@ export function searchItems(index, args, now) {
   if (a.since && !Number.isFinite(since)) throw new ToolError(`since must be an ISO 8601 time, got "${a.since}".`);
   const near = a.near || null;
   const limit = Math.min(Math.max(1, a.limit ?? LIMIT_DEFAULT), LIMIT_MAX);
+  const offset = Math.max(0, Math.floor(a.offset ?? 0));
 
   const C = cols(index);
   const wantPrograms = programs && programs.map((p) => stored(index, "program", p));
@@ -191,7 +192,8 @@ export function searchItems(index, args, now) {
     hits.push([rank(r[C.tier]), km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
   }
   hits.sort((x, y) => x[0] - y[0] || x[1] - y[1] || (y[2] < x[2] ? -1 : y[2] > x[2] ? 1 : 0) || (x[3] < y[3] ? -1 : 1));
-  const page = hits.slice(0, limit).map((h) => {
+  // Paging (17 Nov 2026): offset skips that many matches in this order, so offset 50 then 100 walks every match.
+  const page = hits.slice(offset, offset + limit).map((h) => {
     const o = toObject(index, h[4]);
     return h[5] === null ? o : { ...o, distance_km: Math.round(h[5] * 10) / 10 };
   });
@@ -199,7 +201,13 @@ export function searchItems(index, args, now) {
     ...busEnvelope(index, now),
     matched: hits.length,
     returned: page.length,
-    ...(hits.length > page.length ? { more: `${hits.length - page.length} more; narrow the filters or raise limit (max ${LIMIT_MAX})` } : {}),
+    ...(offset ? { offset } : {}),
+    ...(hits.length > offset + page.length
+      ? {
+          next_offset: offset + page.length,
+          more: `${hits.length - offset - page.length} more; pass offset ${offset + page.length} for the next page, or narrow the filters`,
+        }
+      : {}),
     order: near ? "warnings, then anomalies, then routine; nearest first within each" : "warnings, then anomalies, then routine; newest first within each",
     note: MEASURED_NOTE,
     items: page.map(publicRow),

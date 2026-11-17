@@ -1,8 +1,8 @@
 """Build the small files COP's MCP server reads (site/data/agent/).
 
-The server at /mcp (functions/mcp.js) runs on Cloudflare's free plan, which allows about 10 ms of CPU per request.
-today.geojson is about 1.5 MB, and parsing it alone takes about that long, so this step, run right after
-snapshot.py, writes small files the server reads instead:
+The server at /mcp (functions/mcp.js) is a Pages Function. Until 17 Nov 2026 the account was on Cloudflare's free
+plan, about 10 ms of CPU per request; on Workers Paid it is 30 s. Parsing the 1.5 MB today.geojson on every request
+would still be slow, so this step, run right after snapshot.py, writes small files the server reads instead:
 
     index.json      one compact row per bus item, naming the shard that holds the full item
     items/NN.json   the full contract-v2 items, in SHARDS files, keyed by id
@@ -36,7 +36,7 @@ _spec.loader.exec_module(snap)  # also puts the vendored kit on sys.path
 
 CONTRACT = "tic-agent/1"
 SHARDS = 32
-INDEX_WARN_BYTES = 600 * 1024
+INDEX_WARN_BYTES = 2 * 1024 * 1024
 VERDICT = "https://metacog-osint.github.io/verdict/data/"
 VERDICT_FILES = {"forecasts": "forecasts.json", "scores": "scores.json", "calendar": "calendar.geojson"}
 PREVIOUS = "https://cop.theintelligence.company/data/agent/verdict.json"
@@ -397,12 +397,13 @@ def main(argv=None):
     snap.write_json(out / "events.json", events)
 
     size = (out / "index.json").stat().st_size
-    # The free plan allows 10 ms of CPU per request. Measured 6 Nov 2026: a 278 KB index cost 2.1 ms on a cold
-    # request (parse plus two searches), so 600 KB is about 5 ms, half the limit. Past that, slim the rows. The CODED
-    # columns (15 Nov 2026) took the live index from 632 KB to 536 KB.
+    # Measured 6 Nov 2026: a 278 KB index cost 2.1 ms on a cold request (parse plus two searches). The free plan's
+    # 10 ms CPU cap set a 600 KB warning until 17 Nov 2026; on Workers Paid the cap is 30 s, so the warning now guards
+    # answer time, not a hard limit: 2 MB is roughly 15 ms cold. The CODED columns (15 Nov 2026) took the live index
+    # from 632 KB to 536 KB.
     if size > INDEX_WARN_BYTES:  # an annotation on the Actions run, never a failure
         print(f"::warning::agent index.json is {size // 1024} KB, over {INDEX_WARN_BYTES // 1024} KB; "
-              "the MCP server's cold requests are nearing half the free plan's 10 ms CPU limit")
+              "the MCP server's cold requests are getting slow: slim the rows")
     print(f"agent index: {len(index['rows'])} items, {size // 1024} KB, {SHARDS} shards; "
           f"verdict: {', '.join(p + ('' if verdict[p] and not verdict[p].get('stale') else ' (stale)' if verdict[p] else ' (missing)') for p in VERDICT_FILES)}; "
           f"program events: {len(events['events'])}"
