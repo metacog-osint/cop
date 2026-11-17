@@ -1,0 +1,25 @@
+{
+  "note": "Hand-kept name table for the Undertow sanctions join (tools/undertow_sanctions.py). One row per organisation and list: the organisation as Undertow keeps it (config/operations.json in Undertow), the list by Headwind's list id, and the name exactly as Headwind prints that list's entry in data/list-changes.json, which is the string the join matches. The entry id is a cross-check only: if Headwind shows the entry id under another name, the join reports the row as stale and matches nothing. Organisations only; never a person. Read 16 Nov 2026 from Headwind's copies of the lists (OFAC 14 Nov, EU and UK 14 Nov, France 6 Nov, Canada 16 Nov) through Headwind's own parsers, and each listing checked against the publisher's notice. Haimai and China Global Television Network are on none of the five lists, so they have no row: a first listing of either would not match until Tom enters the name as the list prints it.",
+  "read_on": "2026-11-16",
+  "checked_by": "",
+  "organisations": ["Social Design Agency", "ANO Dialog", "Struktura", "Haimai", "China Global Television Network"],
+  "rows": [
+    {"organisation": "Social Design Agency", "list": "ofac-sdn", "name": "SOCIAL DESIGN AGENCY", "entry_id": "45230"},
+    {"organisation": "Social Design Agency", "list": "eu-fsf", "name": "Agencja Projektów Społecznych", "entry_id": "155817",
+     "printed_note": "Headwind prints the EU entry's first alias, here Polish; the English alias is \"Social Design Agency\"."},
+    {"organisation": "Social Design Agency", "list": "uk-sanctions", "name": "Social Design Agency", "entry_id": "RUS2292"},
+    {"organisation": "Social Design Agency", "list": "france-gels", "name": "Social Design Agency", "entry_id": "6841"},
+    {"organisation": "Social Design Agency", "list": "canada-sema", "name": "The Social Design Agency", "entry_id": "Russia|1, Part 2|690"},
+    {"organisation": "ANO Dialog", "list": "ofac-sdn", "name": "AUTONOMOUS NON-PROFIT ORGANIZATION DIALOG", "entry_id": "49725"},
+    {"organisation": "ANO Dialog", "list": "eu-fsf", "name": "АНО Диалог", "entry_id": "155828",
+     "printed_note": "Headwind prints the EU entry's first alias, here Russian; the Latin alias is \"ANO Dialog\"."},
+    {"organisation": "ANO Dialog", "list": "uk-sanctions", "name": "ANO DIALOG", "entry_id": "RUS2294"},
+    {"organisation": "ANO Dialog", "list": "france-gels", "name": "ANO Dialog", "entry_id": "6845"},
+    {"organisation": "ANO Dialog", "list": "canada-sema", "name": "ANO Dialog", "entry_id": "Russia|1, Part 2|692"},
+    {"organisation": "Struktura", "list": "ofac-sdn", "name": "COMPANY GROUP STRUCTURA LLC", "entry_id": "45231"},
+    {"organisation": "Struktura", "list": "eu-fsf", "name": "“Struktura”", "entry_id": "155821"},
+    {"organisation": "Struktura", "list": "uk-sanctions", "name": "Structura National Technologies", "entry_id": "RUS2293"},
+    {"organisation": "Struktura", "list": "france-gels", "name": "Structura National Technologies", "entry_id": "6842"},
+    {"organisation": "Struktura", "list": "canada-sema", "name": "Structura National Technologies LLC", "entry_id": "Russia|1, Part 2|691"}
+  ]
+}
