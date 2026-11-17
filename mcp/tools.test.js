@@ -52,7 +52,14 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   const all = T.searchItems(index, { limit: 50 }, NOW);
   assert.equal(all.matched, rows.length);
   assert.equal(all.returned, 50);
-  assert.match(all.more, /more/);
+  assert.match(all.more, /pass offset 50/);
+  assert.equal(all.next_offset, 50);
+  const next = T.searchItems(index, { limit: 50, offset: 50 }, NOW);
+  assert.equal(next.offset, 50);
+  assert.equal(next.matched, all.matched);
+  const seen = new Set(all.items.map((x) => x.id));
+  for (const x of next.items) assert.ok(!seen.has(x.id), "pages don't overlap");
+  if (rows.length <= 100) assert.equal(next.next_offset, undefined);
   const rank = { warning: 0, anomaly: 1, routine: 2 };
   for (let i = 1; i < all.items.length; i++) {
     const a = all.items[i - 1], b = all.items[i];
@@ -333,8 +340,8 @@ test("a layer with no current data reads incomplete and says so, never quiet", (
   assert.match(res.readings.incomplete, /Silence is not quiet/);
 });
 
-// The free Workers plan allows about 10 ms of CPU per request. Node and workerd run the same V8, so time the work a
-// request does here: parsing the index the first time an isolate sees it, then a search. COP_AGENT_DATA can point
+// Until 17 Nov 2026 the free Workers plan allowed about 10 ms of CPU per request; Workers Paid allows 30 s, so this
+// now guards answer time rather than a hard cap. Node and workerd run the same V8, so time the work a request does here: parsing the index the first time an isolate sees it, then a search. COP_AGENT_DATA can point
 // at a real site/data/ folder (after tools/agent_index.py) to time the real snapshot.
 test("a cold request's work fits well inside the CPU budget", () => {
   const real = process.env.COP_AGENT_DATA;
@@ -356,7 +363,9 @@ test("a cold request's work fits well inside the CPU budget", () => {
   // Two searches on a freshly parsed index stand in for one cold request with room to spare. On the real 6 Nov
   // snapshot (956 items, 278 KB): parse 1.5 ms + two searches 0.6 ms, after the switch to filtering raw rows
   // (turning every row into an object first made the searches 5.0 ms).
-  assert.ok(p + s < 5, `cold request work ${(p + s).toFixed(2)} ms`);
+  // 25 ms: well under any visible delay, and loose enough for a busy laptop (the 5 ms bound of the free-plan days
+  // failed there even on untouched main).
+  assert.ok(p + s < 25, `cold request work ${(p + s).toFixed(2)} ms`);
 });
 
 test("three-signal gives the reading, the layers' items and the wording, and a missing file is a tool error", () => {

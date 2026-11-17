@@ -566,9 +566,9 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   summary: Second, Minute or Hour keep the time (`at`); Day, Morning, Afternoon or Night keep the date only; anything
   coarser (Week, Month, a quarter) is left out, because its date is a placeholder, and counted under `skipped` with
   every unreadable item, so a change in Orbit's wording shows as a number. An item's own `event` object (Verdict's
-  calendar shape) wins over the text. Every launch is `verified: false` (an aggregator's date). Why the slices: the free plan allows 10 ms of CPU per request and
+  calendar shape) wins over the text. Every launch is `verified: false` (an aggregator's date). Why the slices: the free plan allowed 10 ms of CPU per request (Workers Paid since 17 Nov 2026: 30 s) and
   parsing the 1.5 MB bus takes about that. Measured 6 Nov on the real bus (956 items, 278 KB index): a cold request
-  costs about 2.1 ms (parse 1.5, two searches 0.6). The build annotates a warning past 600 KB (`INDEX_WARN_BYTES`).
+  costs about 2.1 ms (parse 1.5, two searches 0.6). The build annotates a warning past 2 MB (`INDEX_WARN_BYTES`; 600 KB until the move to Workers Paid, 17 Nov 2026).
   Since 15 Nov the six repeated-label columns (`CODED`: program, kind, tier, status_class, us_person_data, stale) are
   stored as numbers into the index's `codes` lists; `mcp/tools.js` compares numbers and decodes only the rows it
   returns, so tool output is unchanged (checked on the live bus: 8 searches and all 2,123 rows identical). That took
@@ -585,7 +585,7 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   Cordon's FAA items and Elements' US hazards) and `search_items` takes `state` ("US-ND"); an item for the whole
   country does not match a state. Triage is unchanged (its state matching keeps its own approved rules).
 - **Tools** (nine, fixed order, all `readOnlyHint`): `suite_status`, `search_items` (program, country, kind, tier,
-  text, since, near; 20 rows by default, 50 at most; warnings, then anomalies, then routine), `get_item` (the full
+  text, since, near; 20 rows by default, 50 at most, `offset` for the next page since 17 Nov 2026; warnings, then anomalies, then routine), `get_item` (the full
   item with sources), `top_picks`, `outage_triage` (reads `data/triage.json` directly; a missing file is a tool
   error that says triage was not built, not that there are no outages), `list_forecasts`, `forecast_record` (says plainly when nothing has resolved),
   `upcoming_events` (Verdict's calendar plus Orbit's scheduled launches, `origin` "orbit"; a launch whose stated
@@ -594,8 +594,9 @@ Plan: `[local path]`; the reason for building it is gap 1 of
   the attribution lines to credit.
   The server's instructions tell agents to cite ids and publishers, never call a measurement a warning, quote ICD 203
   terms as given and check freshness.
-- **Limits:** Pages Functions share the free 100,000 requests a day with Workers. The project is "fail open", so past
-  the quota `/mcp` stops answering until 00:00 UTC while the map keeps serving. A browser opening `/mcp` gets a short
+- **Limits:** on Workers Paid since 17 Nov 2026 (Tom, $5 a month for the account): no daily request cap (10 million a
+  month included), 30 s CPU per request. Before that, Pages Functions shared the free 100,000 requests a day with
+  Workers and `/mcp` would stop answering at the quota while the map kept serving. A browser opening `/mcp` gets a short
   plain-text help page.
 - **Checked live 13 Nov 2026:** the SDK client against `https://cop.theintelligence.company/mcp` listed the eight
   tools and called `outage_triage` (all, one country, a country with no outage). **Not yet checked:** a Claude

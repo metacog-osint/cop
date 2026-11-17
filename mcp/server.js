@@ -72,6 +72,13 @@ const SearchInput = z.object({
     .optional()
     .describe("Only items within km of this point (items with an area count when the point is inside or near it)."),
   limit: z.number().int().min(1).max(T.LIMIT_MAX).optional().describe(`Items to return, default ${T.LIMIT_DEFAULT}.`),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .max(100000)
+    .optional()
+    .describe("Skip this many matches, for the next page: pass the next_offset a previous result gave."),
 });
 
 const GetItemInput = z.object({ id: z.string().min(1).max(200).describe("An item id from search_items or top_picks.") });
