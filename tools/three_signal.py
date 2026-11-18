@@ -46,9 +46,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402
 import triage as tri  # noqa: E402
 
-JOIN = {"id": "three-signal", "version": "0.3", "published": True,
+JOIN = {"id": "three-signal", "version": "0.4", "published": True,
         "inputs": ["noisefloor", "vis", "blackout", "cordon:navwarn", "cordon:czib", "cordon:alert",
-                   "cordon:advisory", "watchfloor"]}
+                   "cordon:advisory", "watchfloor", "wake:ukmto"]}
 LAYERS = ("noisefloor", "cordon", "blackout", "vis", "watchfloor")
 SIGNALS = ("interference", "notice", "connectivity", "press")
 SIGNAL_PROGRAM = {"interference": "noisefloor", "notice": "cordon", "connectivity": "blackout", "press": "watchfloor"}
@@ -68,6 +68,16 @@ RATE_DAYS = 30           # trailing archived days for each signal's base rate in
 RATE_MIN_DAYS = 14       # days with every layer current needed before a base rate changes what counts
 RATE_SATURATED = 0.5     # a signal present on more than this share of those days counts only when it rises ...
 RATE_PERCENTILE = 0.9    # ... above this percentile of its own daily item counts (nearest rank)
+# Join 0.4 (Tom's option D, 18 Nov 2026, _ideas/drafts/2026-11-18-ukmto-three-signal-replay.md): UKMTO's reports in
+# the circle, read from Wake's items, are context; its Attack reports count toward the notice only when their number
+# in the look-back is above its own RATE_PERCENTILE over the RATE_DAYS days before (the test 0.3 applies to a
+# saturated signal), measured on UKMTO's own series, never pooled with Cordon's notices.
+UKMTO_PREFIX = "wake:ukmto:"
+UKMTO_COUNTED = ("Attack",)  # UKMTO's own type name; Advisory, Suspicious Activity, Hijack and the rest are context
+UKMTO_KEEP_D = 30            # Wake keeps a report in its feed for 30 days from the incident (Wake's ukmto.py WINDOW_DAYS)
+UKMTO_CREDIT = "UKMTO (UK Maritime Trade Operations, Royal Navy), via Wake"
+UKMTO_NOTE = ("UKMTO's reports as published: Wake has not verified them and they name no one responsible. A report "
+              "type such as \"Attack\" is UKMTO's, not a finding of COP's.")
 
 # An area is a circle, because interference and warnings ignore borders, plus the countries whose country-level
 # items (outages, airspace bulletins, embassy alerts) are read with it.
@@ -217,6 +227,80 @@ def signal_rates(rows, area, day):
     return out
 
 
+def _is_ukmto(p):
+    return str(p.get("id") or "").startswith(UKMTO_PREFIX)
+
+
+def ukmto_add(hist, doc, covers=True):
+    """Add the UKMTO reports a snapshot (or, with covers=False, one of Wake's ended lists) carries to hist, in place.
+    A report keeps its earliest copy. A snapshot carrying any report covers every report published from
+    UKMTO_KEEP_D days before it, because Wake's feed holds the last 30 days; an ended list covers nothing by itself."""
+    got = False
+    for f in doc.get("features", []):
+        p = f.get("properties") if isinstance(f, dict) else None
+        if isinstance(p, dict) and _is_ukmto(p) and isinstance(p.get("measures"), dict):
+            got = True
+            hist["reports"].setdefault(p["id"], f)
+    at = tri.utc(doc.get("generated_at"))
+    if covers and got and at:
+        start = at - timedelta(days=UKMTO_KEEP_D)
+        old = tri.utc(hist.get("covered_from"))
+        if old is None or start < old:
+            hist["covered_from"] = tri.iso(start)
+    return hist
+
+
+def ukmto_history(docs=(), ended=()):
+    """Every UKMTO report the archive's snapshots (docs) and Wake's ended lists carried: {"reports": {id: feature},
+    "covered_from": the earliest publication time from which every report is in hand, or None}. COP never reads
+    UKMTO itself: Wake is the suite's reader."""
+    hist = {"reports": {}, "covered_from": None}
+    for d in docs:
+        ukmto_add(hist, d)
+    for d in ended:
+        ukmto_add(hist, d, covers=False)
+    return hist
+
+
+def ukmto_read(hist, area, at):
+    """What UKMTO's reports in the circle say at `at`: the look-back's rows (newest first), its Attack count, the
+    daily series of look-back Attack counts over the RATE_DAYS days before and whether the count is above its own
+    RATE_PERCENTILE. Each report is dated by when UKMTO published it (measures.created_at), never its incident time:
+    report 209 was published 17 Nov 2026 for an incident on 13 Nov. Causal: nothing published after `at` is read."""
+    lo = at - timedelta(hours=LOOKBACK_H)
+    placed = []
+    for f in (hist or {}).get("reports", {}).values():
+        p, m = f["properties"], f["properties"]["measures"]
+        created = tri.utc(m.get("created_at")) or tri.utc(p.get("data_as_of"))
+        if not created or created > at:
+            continue
+        inside, km = _in_area(f, area)
+        if inside:
+            placed.append((created, f, km))
+    attacks = [c for c, f, _ in placed if f["properties"]["measures"].get("report_type") in UKMTO_COUNTED]
+    rows = []
+    for created, f, km in sorted((x for x in placed if x[0] > lo), key=lambda x: (x[0], x[1]["properties"]["id"]),
+                                 reverse=True):
+        p, m = f["properties"], f["properties"]["measures"]
+        rows.append(tri._row(p, kind="ukmto", source="ukmto", report_type=m.get("report_type"), place=m.get("place"),
+                             published_at=tri.iso(created), incident_at=m.get("incident_at"), km_from_centre=km,
+                             at=tri.iso(created), counted_type=m.get("report_type") in UKMTO_COUNTED))
+    now_n = sum(1 for c in attacks if lo < c <= at)
+    covered = tri.utc((hist or {}).get("covered_from"))
+    need = at - timedelta(days=RATE_DAYS, hours=LOOKBACK_H)
+    enough = bool(covered and covered <= need)
+    series = [sum(1 for c in attacks if t - timedelta(hours=LOOKBACK_H) < c <= t)
+              for t in (at - timedelta(days=k) for k in range(1, RATE_DAYS + 1))] if enough else []
+    p90 = _percentile(series, RATE_PERCENTILE) if series else None
+    return {"credit": UKMTO_CREDIT, "note": UKMTO_NOTE, "reports": rows, "attacks_in_lookback": now_n,
+            "rate": {"enough": enough, "history_from": tri.iso(covered) if covered else None,
+                     "history_needed_from": tri.iso(need), "window_days": RATE_DAYS,
+                     "days_with_an_attack": sum(1 for c in series if c) if series else None,
+                     "mean_per_lookback": round(sum(series) / len(series), 2) if series else None,
+                     "p90_count": p90},
+            "counts": bool(enough and now_n > p90)}
+
+
 def ooni_history(snapshots):
     """{cc: [[snapshot time, rate], ...]} of Blackout's OONI readings, oldest first."""
     out = {}
@@ -231,8 +315,9 @@ def ooni_history(snapshots):
     return out
 
 
-def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
-    """One record for one area from one snapshot. rates: signal_rates() for this area and day, or None."""
+def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None):
+    """One record for one area from one snapshot. rates: signal_rates() for this area and day, or None. ukmto: the
+    archive's ukmto_history() (the snapshot's own reports are added to it here), or None for the snapshot alone."""
     at = tri.utc(snapshot.get("generated_at"))
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: tri.layer_state(snapshot, features, pid) for pid in LAYERS}
@@ -346,16 +431,27 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
                                         dark_low_light_hours=None if m.get("dark_low_light_min") is None
                                         else round(m["dark_low_light_min"] / 60, 1),
                                         moon_lit=m.get("moon_lit"), km_from_centre=km, kind="forecast"))
+    # UKMTO's reports (join 0.4): context always; its attacks join the notice signal only on a surge.
+    hist = ukmto_add({"reports": dict((ukmto or {}).get("reports") or {}),
+                      "covered_from": (ukmto or {}).get("covered_from")}, snapshot)
+    uk = ukmto_read(hist, area, at)
+    context["ukmto"] = uk
+    surge = [r for r in uk["reports"] if r["counted_type"]] if uk["counts"] else []
     # Base rates: a saturated signal counts only when today's count rises above its own 90th percentile.
     sig_rates = (rates or {}).get("signals") or {}
     counts = {}
     for s in SIGNALS:
         r = sig_rates.get(s) or {}
         counts[s] = bool(found[s]) and not (r.get("saturated") and len(found[s]) <= (r.get("p90_count") or 0))
+    # Cordon's notices keep their own rate; UKMTO's attacks are measured on their own series and are added after.
+    cordon_counts = counts["notice"]
+    counts["notice"] = cordon_counts or bool(surge)
     # The tightest span that holds one counted item of every signal, if there is one.
     span = None
     times = {s: sorted(tri.utc(r["at"]) for r in found[s] if tri.utc(r.get("at"))) if counts[s] else []
              for s in SIGNALS}
+    times["notice"] = sorted(([tri.utc(r["at"]) for r in found["notice"] if tri.utc(r.get("at"))] if cordon_counts
+                              else []) + [tri.utc(r["at"]) for r in surge])
     if all(times.values()):
         for start in sorted(t for ts in times.values() for t in ts):
             picks = [next((t for t in times[s] if t >= start), None) for s in SIGNALS]
@@ -364,6 +460,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
                 if span is None or hours < span["hours"]:
                     span = {"from": tri.iso(start), "to": tri.iso(max(picks)), "hours": round(hours, 1)}
     present = [s for s in SIGNALS if counts[s]]
+    found["notice"] = found["notice"] + surge
     usual = [s for s in SIGNALS if found[s] and not counts[s]]
     dead = [pid for pid in LAYERS if states[pid] in ("stale", "missing")]
     if dead:
@@ -413,6 +510,23 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
     if found["press"] or context["press_other"]:
         caveats.append("Watchfloor's country items measure press reporting of a whole country for a whole day, a day "
                        "behind; they say how much was written, not what happened.")
+    if uk["reports"]:
+        caveats.append(f"UKMTO's reports (Royal Navy), via Wake: {UKMTO_NOTE}")
+    n, ur = uk["attacks_in_lookback"], uk["rate"]
+    if not ur["enough"] and n:
+        caveats.append(f"UKMTO's Attack reports count toward the notice only when their number in the {LOOKBACK_H} "
+                       f"hours is above its own {round(RATE_PERCENTILE * 100)}th percentile over the last {RATE_DAYS} "
+                       f"days. COP holds UKMTO's reports only from {ur['history_from'] or 'today'}, not yet from "
+                       f"{ur['history_needed_from']}, so the {n} in the look-back are listed as context, not counted.")
+    elif ur["enough"] and n and not uk["counts"]:
+        caveats.append(f"UKMTO published {n} Attack report{'s' if n != 1 else ''} in the circle in the {LOOKBACK_H} "
+                       f"hours, within its own rate (90th percentile {ur['p90_count']} over the last {RATE_DAYS} days, "
+                       f"an attack in the look-back on {ur['days_with_an_attack']} of them), so they are listed, not "
+                       "counted.")
+    elif uk["counts"]:
+        caveats.append(f"UKMTO published {n} Attack reports in the circle in the {LOOKBACK_H} hours, above their own "
+                       f"90th percentile ({ur['p90_count']}) over the last {RATE_DAYS} days, so they count toward the "
+                       "notice. The count is UKMTO's; it says nothing about who was responsible.")
     if context["ooni"]:
         caveats.append("Blackout's OONI tier is a fixed threshold, so Iran is an anomaly there on any ordinary day. "
                        "The rate's movement against the archive is listed as context and is not a signal.")
@@ -440,28 +554,40 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
     }
 
 
-def read(snapshot, seen=None, ooni=None, rows=None):
-    """rows: replay rows (raw counts) for the base rates; None reads every signal as it fires."""
+def read(snapshot, seen=None, ooni=None, rows=None, ukmto=None):
+    """rows: replay rows (raw counts) for the base rates; None reads every signal as it fires. ukmto: the archive's
+    ukmto_history(), or None (the snapshot's own 30 days of reports, never enough for a rate)."""
     day = (snapshot.get("generated_at") or "")[:10]
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"),
             "windows": {"window_hours": WINDOW_H, "lookback_hours": LOOKBACK_H, "question_days": QUESTION_DAYS,
                         "rate_days": RATE_DAYS, "rate_min_days": RATE_MIN_DAYS, "watchfloor_z": WATCHFLOOR_Z,
                         "provisional": True},
             "archive_given": seen is not None,
-            "records": [read_area(snapshot, k, a, seen, ooni, None if rows is None else signal_rates(rows, k, day))
-                        for k, a in sorted(AREAS.items())]}
+            "records": [read_area(snapshot, k, a, seen, ooni, None if rows is None else signal_rates(rows, k, day),
+                                  ukmto) for k, a in sorted(AREAS.items())]}
 
 
-def replay(snapshots):
-    """How often each signal fires in each area anyway, one row per archived day and area."""
+def replay(snapshots, ended=()):
+    """How often each signal fires in each area anyway, one row per archived day and area. UKMTO's history grows
+    day by day from the snapshots (and Wake's ended lists) dated up to each day, so each day reads only what COP had
+    then. Rows keep raw counts: notice is Cordon's items only, and UKMTO's attacks have their own column."""
     snapshots = sorted(snapshots, key=lambda s: s.get("generated_at") or "")
+    ended = sorted(ended, key=lambda s: s.get("generated_at") or "")
     seen, ooni = first_seen(snapshots), ooni_history(snapshots)
-    rows = []
+    rows, hist, e = [], ukmto_history(), 0
     for snap in snapshots:
-        for r in read(snap, seen, ooni)["records"]:
+        while e < len(ended) and (ended[e].get("generated_at") or "") <= (snap.get("generated_at") or ""):
+            ukmto_add(hist, ended[e], covers=False)
+            e += 1
+        ukmto_add(hist, snap)
+        for r in read(snap, seen, ooni, None, hist)["records"]:
+            uk = r["context"]["ukmto"]
             rows.append({"day": r["read_at"][:10], "area": r["area"], "reading": r["reading"],
                          "signals_present": r["signals_present"], "no_current_data": r["no_current_data"],
-                         "counts": {s: len(r["signals"][s]["items"]) for s in SIGNALS},
+                         "counts": {s: len([i for i in r["signals"][s]["items"] if i.get("source") != "ukmto"])
+                                    for s in SIGNALS},
+                         "ukmto_attacks": uk["attacks_in_lookback"],
+                         "ukmto_counted": uk["counts"] if uk["rate"]["enough"] else None,
                          "weather": r["weather"]["state"]})
     by_area = {}
     for key in sorted(AREAS):
@@ -471,6 +597,9 @@ def replay(snapshots):
             "days": len(mine), "days_with_every_layer": len(full),
             "days_each_signal_present": {s: sum(s in r["signals_present"] for r in full) for s in SIGNALS},
             "days_by_reading": {k: sum(r["reading"] == k for r in mine) for k in READINGS},
+            "ukmto": {"days_with_history": sum(r.get("ukmto_counted") is not None for r in mine),
+                      "days_counted": sum(bool(r.get("ukmto_counted")) for r in mine),
+                      "days_with_an_attack": sum(bool(r.get("ukmto_attacks")) for r in mine)},
             "caution": "A day counts only when all five layers had current data. Blackout joined COP on 12 Nov 2026, "
                        "so earlier days are incomplete and say nothing about how often the four converge. The counts "
                        "here are raw: they are what each day's base rate is measured from."}
@@ -484,7 +613,8 @@ WHAT = ("For the Strait of Hormuz and the Gulf (900 km around Bandar Abbas, with
         "renewal, or a US embassy security alert), a confirmed internet outage (Blackout) and unusual press reporting "
         "of violence in one of those countries (Watchfloor) fall in the area within "
         f"{WINDOW_H} hours of each other, each measured against how often it fires there anyway, with Vis's weather "
-        "forecast for the area beside them.")
+        "forecast and UKMTO's reports in the circle (via Wake) beside them. UKMTO's Attack reports add to the notice "
+        "only when their number rises above its own rate there.")
 NOT_A_WARNING = ("A reading says which of the four signals are present and how close together they fall. It is not "
                  "a warning, a forecast or a finding of cause, and it carries no probability. Each signal has an "
                  "innocent explanation alone. \"None\" and \"incomplete\" (a layer with no current data) are "
@@ -568,8 +698,12 @@ def main(argv=None):
         if not files:
             raise SystemExit(f"no *.geojson.gz in {a.archive}")
         snaps = [tri.load(f) for f in files]
-        seen, ooni, past = first_seen(snaps), ooni_history(snaps), replay(snaps)
-    doc = read(tri.load(a.snapshot), seen, ooni, past["rows"] if past else None)
+        ended = [tri.load(f) for f in sorted(Path(a.archive).glob("*.wake-ended.json.gz"))]
+        seen, ooni, past = first_seen(snaps), ooni_history(snaps), replay(snaps, ended)
+        uk_hist = ukmto_history(snaps, ended)
+    else:
+        uk_hist = None
+    doc = read(tri.load(a.snapshot), seen, ooni, past["rows"] if past else None, uk_hist)
     doc["archive_replay"] = past
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     out = safe_out(a.out)
@@ -592,13 +726,17 @@ def main(argv=None):
               f"notices, {len(c['notices_renewal'])} renewals, {len(c['single_source_dips'])} single-source dips, "
               f"{len(c['embassy_alerts'])} other embassy alerts, {len(c['press_other'])} other press items, "
               f"{len(c['interference_ended'])} interference ended")
+        u = c["ukmto"]
+        print(f"    UKMTO: {len(u['reports'])} reports in the circle in the look-back, {u['attacks_in_lookback']} "
+              f"Attack; history from {u['rate']['history_from']} (needs {u['rate']['history_needed_from']}); "
+              f"p90 {u['rate']['p90_count']}; {'COUNTED' if u['counts'] else 'context only'}")
         for o in c["ooni"]:
             print(f"    OONI {o['country']}: {o['rate']}%  lowest in archive {o['lowest_in_archive']}  "
                   f"{'MOVED' if o['moved'] else 'no move'}")
     if past:
         for key, b in past["by_area"].items():
             print(f"archive, {key}: {b['days_with_every_layer']} of {b['days']} days had every layer; signal days "
-                  f"{b['days_each_signal_present']}; readings {b['days_by_reading']}")
+                  f"{b['days_each_signal_present']}; readings {b['days_by_reading']}; UKMTO {b['ukmto']}")
     else:
         print("no archive given: run with --archive out/archive")
     print(f"wrote {out / 'latest.json'}")

@@ -743,6 +743,7 @@ function threeSignalRecord(r) {
     span ? h("p", { class: "tri-rate" }, h("strong", { text: "Tightest span. " }),
       `All four within ${span.hours} hours, `, timeEl(span.from), " to ", timeEl(span.to), ".") : null,
     h("p", { class: "tri-rate" }, h("strong", { text: "Weather (Vis, context only). " }), r.weather.text),
+    ukmtoContext(c.ukmto),
     h("p", { class: "tri-rate" }, h("strong", { text: "Also in the area. " }),
       `${count(c.notices_other.length, "other new warning")}, ${count(c.notices_standing.length, "standing notice")}, ` +
       `${count((c.notices_renewal || []).length, "scheduled bulletin renewal")}, ` +
@@ -752,6 +753,22 @@ function threeSignalRecord(r) {
       : h("p", { class: "tri-caveat", text: "No archive was read for this picture, so there is no base rate." }),
     ...(r.caveats || []).map((t) => h("p", { class: "tri-caveat", text: t })),
     triageQuestion(r.question_draft));
+}
+// UKMTO's reports in the circle (join 0.4, Tom's option D): context beside the reading, credited to UKMTO via Wake.
+// Its attacks add to the notice only on a surge against their own rate; the record says which, in its caveats.
+function ukmtoContext(uk) {
+  if (!uk) return null;
+  const n = uk.reports.length;
+  const rate = uk.rate || {};
+  const said = !n ? "No UKMTO report published in the circle in the look-back."
+    : `${count(n, "report")} published in the circle in the look-back, ${uk.attacks_in_lookback} of type Attack` +
+      (uk.counts ? ", above their own rate here, so counted toward the notice."
+        : rate.enough ? `, within their own rate here (90th percentile ${rate.p90_count}), so not counted.`
+        : ", listed only: COP's UKMTO history is not yet long enough for a rate.");
+  const rows = uk.reports.slice(0, 6).map((x) => h("span", { class: "tri-item" },
+    triageItem(x), h("span", { class: "row-meta" }, " (published ", timeEl(x.published_at), ")")));
+  return h("p", { class: "tri-rate" }, h("strong", { text: "UKMTO reports (context). " }), said,
+    rows.length ? h("span", { class: "tri-items" }, ...rows) : null, ` ${uk.note} Source: ${uk.credit}.`);
 }
 function renderThreeSignal() {
   const sec = $("three-signal-sec");

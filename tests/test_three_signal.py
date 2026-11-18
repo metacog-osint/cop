@@ -72,6 +72,116 @@ def hormuz(doc):
     return next(r for r in doc["records"] if r["area"] == "hormuz")
 
 
+GULF_OF_OMAN = {"type": "Point", "coordinates": [57.2, 25.3]}
+BAB_EL_MANDEB = {"type": "Point", "coordinates": [43.4, 12.6]}
+
+
+def ukmto(n, created, incident=None, rtype="Attack", geometry=GULF_OF_OMAN):
+    """A Wake UKMTO item as COP's snapshot carries it (wake-2.4)."""
+    return item("wake", f"wake:ukmto:ukmto-{n}", [], "routine", created, geometry,
+                title=f"UKMTO report {n}: {rtype}, Gulf of Oman", measures={
+                    "ukmto_number": n, "report_type": rtype, "place": "Gulf of Oman",
+                    "incident_at": incident or created, "created_at": created})
+
+
+def history(reports, covered_from="2026-09-01T00:00:00Z"):
+    return {"reports": {f["properties"]["id"]: f for f in reports}, "covered_from": covered_from}
+
+
+def steady(per_day=1, days=40, at=NOW, start=1000):
+    """One Attack report (or per_day of them) published every day for `days` days before `at`, inside the circle."""
+    t0 = ts.tri.utc(at)
+    return [ukmto(start + d * per_day + i, ts.tri.iso(t0 - ts.timedelta(days=d, hours=3 + i)))
+            for d in range(days) for i in range(per_day)]
+
+
+class Ukmto(unittest.TestCase):
+    """Option D (Tom, 18 Nov 2026): UKMTO's reports are context; attacks count as a notice only on a surge."""
+
+    def test_reports_are_listed_and_a_steady_rate_never_counts(self):
+        r = hormuz(ts.read(snapshot(jam(), vis()), ukmto=history(steady())))
+        uk = r["context"]["ukmto"]
+        self.assertEqual(uk["attacks_in_lookback"], 4)
+        self.assertEqual(len(uk["reports"]), 4)
+        self.assertTrue(uk["rate"]["enough"])
+        self.assertEqual(uk["rate"]["p90_count"], 4)
+        self.assertFalse(uk["counts"])
+        self.assertFalse(r["signals"]["notice"]["present"])
+        self.assertEqual(r["signals_present"], ["interference"])
+        self.assertIn("Royal Navy", uk["credit"])
+        self.assertIn("not verified", uk["note"].replace("has not verified", "not verified"))
+        self.assertTrue(any("within its own rate" in c for c in r["caveats"]))
+        # Many a day, every day, is still steady.
+        r = hormuz(ts.read(snapshot(jam(), vis()), ukmto=history(steady(per_day=3))))
+        self.assertFalse(r["context"]["ukmto"]["counts"])
+
+    def test_a_surge_against_the_areas_own_rate_counts_toward_the_notice(self):
+        t0 = ts.tri.utc(NOW)
+        burst = [ukmto(2000 + i, ts.tri.iso(t0 - ts.timedelta(hours=10 + i))) for i in range(5)]
+        r = hormuz(ts.read(snapshot(jam(), outage(), press(), vis()), ukmto=history(steady() + burst)))
+        uk = r["context"]["ukmto"]
+        self.assertEqual((uk["attacks_in_lookback"], uk["rate"]["p90_count"], uk["counts"]), (9, 4, True))
+        self.assertTrue(r["signals"]["notice"]["counts"])
+        self.assertEqual(r["reading"], "converged")
+        self.assertTrue(all(i["source"] == "ukmto" for i in r["signals"]["notice"]["items"]))
+        self.assertTrue(any("count toward the notice" in c for c in r["caveats"]))
+        # The replay keeps Cordon's notice count raw and UKMTO's attacks in their own column.
+        row = ts.replay([snapshot(jam(), *steady(), *burst, vis())])["rows"][0]
+        self.assertEqual((row["counts"]["notice"], row["ukmto_attacks"]), (0, 9))
+        self.assertIsNone(row["ukmto_counted"], "one snapshot holds 30 days, not enough for a rate")
+
+    def test_not_counted_before_the_history_reaches_back_far_enough(self):
+        t0 = ts.tri.utc(NOW)
+        burst = [ukmto(2000 + i, ts.tri.iso(t0 - ts.timedelta(hours=10 + i))) for i in range(8)]
+        r = hormuz(ts.read(snapshot(jam(), vis(), *burst)))  # no archive: the snapshot's own 30 days only
+        uk = r["context"]["ukmto"]
+        self.assertEqual((uk["attacks_in_lookback"], uk["rate"]["enough"], uk["counts"]), (8, False, False))
+        self.assertFalse(r["signals"]["notice"]["present"])
+        self.assertTrue(any("listed as context, not counted" in c for c in r["caveats"]))
+        # 33 days of history is one short of the 30 days plus the 96-hour look-back.
+        short = history(steady() + burst, ts.tri.iso(t0 - ts.timedelta(days=33)))
+        self.assertFalse(hormuz(ts.read(snapshot(jam(), vis()), ukmto=short))["context"]["ukmto"]["rate"]["enough"])
+        # The archive's snapshots extend it: Wake keeps 30 days, so a snapshot 5 days old covers from 35 days back.
+        old = snapshot(ukmto(1, "2026-11-07T00:00:00Z"), at="2026-11-08T00:21:12Z")
+        self.assertTrue(ts.ukmto_read(ts.ukmto_history([old]), ts.AREAS["hormuz"], t0)["rate"]["enough"])
+        self.assertIsNone(ts.ukmto_history([], [old])["covered_from"], "an ended list covers nothing by itself")
+
+    def test_a_report_is_dated_by_when_ukmto_published_it(self):
+        """Report 209 was published 17 Nov 2026 for an incident on 13 Nov."""
+        late = ukmto(209, "2026-11-12T09:00:00Z", incident="2026-11-07T22:00:00Z")
+        future = ukmto(210, "2026-11-13T06:00:00Z", incident="2026-11-12T22:00:00Z")
+        uk = hormuz(ts.read(snapshot(jam(), vis(), late, future)))["context"]["ukmto"]
+        self.assertEqual([x["id"] for x in uk["reports"]], ["wake:ukmto:ukmto-209"])
+        self.assertEqual((uk["reports"][0]["published_at"], uk["reports"][0]["incident_at"]),
+                         ("2026-11-12T09:00:00Z", "2026-11-07T22:00:00Z"))
+        stale = ukmto(208, "2026-11-08T09:00:00Z", incident="2026-11-12T00:00:00Z")
+        self.assertEqual(hormuz(ts.read(snapshot(stale, vis())))["context"]["ukmto"]["reports"], [])
+
+    def test_a_report_outside_the_circle_is_ignored(self):
+        red_sea = ukmto(300, "2026-11-12T09:00:00Z", geometry=BAB_EL_MANDEB)
+        uk = hormuz(ts.read(snapshot(red_sea, vis())))["context"]["ukmto"]
+        self.assertEqual((uk["reports"], uk["attacks_in_lookback"]), ([], 0))
+
+    def test_advisories_and_suspicious_activity_are_context_only(self):
+        t0 = ts.tri.utc(NOW)
+        others = [ukmto(3000 + i, ts.tri.iso(t0 - ts.timedelta(hours=5 + i)), rtype=t)
+                  for i, t in enumerate(["Advisory", "Suspicious Activity"] * 5)]
+        r = hormuz(ts.read(snapshot(jam(), vis()), ukmto=history(steady() + others)))
+        uk = r["context"]["ukmto"]
+        self.assertEqual((len(uk["reports"]), uk["attacks_in_lookback"], uk["counts"]), (14, 4, False))
+        self.assertEqual({x["report_type"] for x in uk["reports"] if not x["counted_type"]},
+                         {"Advisory", "Suspicious Activity"})
+        self.assertFalse(r["signals"]["notice"]["present"])
+
+    def test_the_gate_lets_it_cite_ukmto_reports(self):
+        t0 = ts.tri.utc(NOW)
+        burst = [ukmto(2000 + i, ts.tri.iso(t0 - ts.timedelta(hours=10 + i))) for i in range(5)]
+        doc = ts.read(snapshot(jam(), vis()), ukmto=history(steady() + burst))
+        self.assertIn("wake:ukmto", ts.JOIN["inputs"])
+        v = gate.review(ts.JOIN, ts.public(doc))
+        self.assertEqual((v["review_class"], v["may_publish"]), ("open", True), v["reasons"])
+
+
 class ThreeSignal(unittest.TestCase):
     def test_all_four_inside_the_window_converge(self):
         r = hormuz(ts.read(snapshot(jam(), navwarn(), outage(), press(), vis())))
@@ -328,8 +438,14 @@ class Published(unittest.TestCase):
         doc = ts.read(snapshot(jam(), navwarn(), outage(), press(), vis()))
         pub = ts.public(doc)
         r = pub["records"][0]
+        t0 = ts.tri.utc(NOW)
+        burst = [ukmto(2000 + i, ts.tri.iso(t0 - ts.timedelta(hours=10 + i))) for i in range(5)]
+        surged = hormuz(ts.public(ts.read(snapshot(jam(), vis()), ukmto=history(steady() + burst))))
+        short = hormuz(ts.public(ts.read(snapshot(jam(), vis(), *burst))))
+        steady_ = hormuz(ts.public(ts.read(snapshot(jam(), vis()), ukmto=history(steady()))))
         own_words = " ".join([pub["what"], pub["not_a_warning"], r["reading_text"], r["weather"]["text"],
-                              *r["caveats"], *ts.READINGS.values()]).lower()
+                              *r["caveats"], *ts.READINGS.values(), *surged["caveats"], *short["caveats"],
+                              *steady_["caveats"], ts.UKMTO_NOTE]).lower()
         for phrase in ("workable", "operation", "would allow", "strike window", "likely", "intent", "imminent"):
             self.assertNotIn(phrase, own_words, phrase)
 
