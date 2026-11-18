@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How COP scores · The Intelligence Company</title>
+<link rel="canonical" href="https://cop.theintelligence.company/scoring.html">
+<meta name="description" content="Every rule COP uses to choose, read and age what it shows: the picks, each program's strength rule, freshness and expiry, outage triage and the three-signal join, with every threshold and the base rates measured on COP's own archive.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Intelligence Company">
+<meta property="og:title" content="How COP scores: every rule and threshold">
+<meta property="og:description" content="The picks, strength rules, freshness and expiry, outage triage and the three-signal join, in plain words, with every threshold and base rate. Readings are descriptive, never warnings.">
+<meta property="og:url" content="https://cop.theintelligence.company/scoring.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23142235'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23e3a83b' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e3a83b'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="shared/tic-time.css">
+<link rel="stylesheet" href="cop.css">
+<link rel="stylesheet" href="scoring.css">
+</head>
+<body class="doc">
+<a class="skip" href="#main">Skip to the rules</a>
+<header class="bar">
+  <a class="brand" href="./" aria-label="COP, the map">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10.5" class="mark-ring"/><circle cx="16" cy="16" r="3.5" class="mark-dot"/></svg>
+    <span class="brand-name">COP</span>
+    <span class="brand-sub">The Intelligence Company</span>
+  </a>
+  <p class="bar-times" id="bar-times" aria-live="polite">Reading the live figures…</p>
+  <nav class="bar-nav" aria-label="Site">
+    <a href="./">Map</a>
+    <span id="time-settings"></span>
+  </nav>
+</header>
+
+<main class="doc-main" id="main">
+  <h1>How COP scores</h1>
+  <p class="doc-lede">Every rule COP uses to choose what stands out, to read one layer against another and to say how
+    old its data is, with every threshold. The figures marked <span class="live-tag">live</span> are read from the
+    picture this page sits beside, so they match the map.</p>
+
+  <section class="doc-box" aria-labelledby="voice-h">
+    <h2 id="voice-h">What a reading is, and what it is not</h2>
+    <ul>
+      <li><strong>Descriptive, never a warning.</strong> A pick, a triage reading or a three-signal reading says what
+        the layers measured and how often that happens anyway. It never says what will happen, who did something or
+        why. No reading carries a probability.</li>
+      <li><strong>Each program measures against its own normal.</strong> "Anomaly" means unusual against that program's
+        own baseline. Strength is never compared across programs.</li>
+      <li><strong>Judgments are kept apart.</strong> Vis's forecasts and Blackout's assessments are the programs' own
+        judgments, with a likelihood and a separate confidence. They are labelled so and are never picks.</li>
+      <li><strong>Probabilities live in Verdict only.</strong> A probability appears only on a question registered in
+        <a href="https://metacog-osint.github.io/verdict/">Verdict</a>, the public forecast ledger, where it is scored.
+        A question COP drafts beside a reading is marked "draft, not registered" and has no likelihood.</li>
+      <li><strong>Base rates come with every reading.</strong> COP replays its own daily archive to say how often
+        each reading happens on ordinary days. The windows below are first picks, marked provisional, and are looked at
+        again as the archive grows.</li>
+      <li><strong>"Nothing found" and "no current data" are different answers.</strong> A layer with no current data
+        makes a reading "incomplete", never quiet.</li>
+    </ul>
+  </section>
+
+  <nav class="doc-toc" aria-label="On this page">
+    <a href="#picks">Picks</a> · <a href="#strength">Strength rules</a> · <a href="#freshness">Freshness and expiry</a>
+    · <a href="#triage">Outage triage</a> · <a href="#three">Three signals</a> · <a href="#sources">Where the rules live</a>
+  </nav>
+
+  <section id="picks" aria-labelledby="picks-h">
+    <h2 id="picks-h">Today's picks</h2>
+    <ol>
+      <li>A candidate is an item at tier <code>anomaly</code> that has a place on the map. Routine items, forecasts and
+        assessments are never candidates. Neither is an item whose program is stale, or whose own source its program
+        could not read on its last run.</li>
+      <li>Each program ranks its own candidates by its strength rule (below): the first rule that applies wins, a lower
+        rule never outranks a higher one, and within a rule the larger value comes first (its size, for a signed
+        measure). A program with no rule keeps its feed's own order.</li>
+      <li>Picks are taken one program at a time, in the order the programs are listed, each giving its next candidate,
+        until there are <strong id="max-picks">5</strong> picks or no candidates are left.</li>
+      <li>Watchfloor and Context both read GDELT, so they are one voice: they share one turn, alternating their own
+        queues, and one zone gives at most one pick, which names the other program's reading of that zone.</li>
+      <li>Picks are chosen when the picture is built. A pick that passes its valid-until time afterwards is named under
+        the picks and no longer listed.</li>
+    </ol>
+  </section>
+
+  <section id="strength" aria-labelledby="strength-h">
+    <h2 id="strength-h">Strength rules <span class="live-tag">live</span></h2>
+    <p>What each program's anomalies are ranked by, in rule order. x is the program's own measure, shown on the card
+      as the program states it.</p>
+    <div class="doc-table-wrap"><table class="doc-table" id="strength-table">
+      <thead><tr><th scope="col">Program</th><th scope="col">Ranked by</th></tr></thead>
+      <tbody><tr><td colspan="2">Reading the picture's configuration…</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section id="freshness" aria-labelledby="freshness-h">
+    <h2 id="freshness-h">Freshness and expiry</h2>
+    <ul>
+      <li><strong>Age</strong> is measured from the newest data time in a program's feed, or from the feed's own
+        publication time for programs whose items carry issue dates (notices, launches, outage events). An item dated
+        by day only counts to the end of its day, never later than now.</li>
+      <li><strong>Fresh, late, stale.</strong> Older than a program's fresh window it reads <em>late</em>; older than its
+        stale window, or with no data at all, it reads <em>stale</em> and draws grey.</li>
+      <li><strong>A failed feed</strong> keeps its last good items, drawn grey and marked "no current data", never
+        picked. A program that reports each source's health has the items of a source it could not read treated the
+        same way, one source at a time.</li>
+      <li><strong>Expiry.</strong> An item past its own valid-until time stops standing out: it leaves the default
+        view, shows where routine items show, and its card says "Expired" with the time.</li>
+    </ul>
+    <div class="doc-table-wrap"><table class="doc-table" id="fresh-table">
+      <caption>Each program's windows and its state now <span class="live-tag">live</span></caption>
+      <thead><tr><th scope="col">Program</th><th scope="col">Fresh up to</th><th scope="col">Stale after</th><th scope="col">Now</th></tr></thead>
+      <tbody><tr><td colspan="4">Reading the picture's health…</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section id="triage" aria-labelledby="triage-h">
+    <h2 id="triage-h">Outage triage</h2>
+    <p>For each internet outage Blackout reports (IODA country-level drops, Cloudflare Radar's verified anomalies and
+      its Outage Center entries that name a country), what three other layers showed for that country around the hour
+      it began. A separate set of rules reads US state power outages.</p>
+    <h3>Internet outages: the three layers</h3>
+    <dl class="doc-rules">
+      <dt>Natural hazard (Elements)</dt>
+      <dd>An Elements item at tier anomaly or warning, in the country or within <b>300 km</b> of it (for a hazard with
+        no country), that began in the <b>72 hours</b> before the outage or up to <b>6 hours</b> after it. A tropical
+        cyclone or flood counts while active, from its start to its last advisory plus <b>48 hours</b>. A hazard that
+        began earlier and is still running is listed as standing, not counted. A volcano alert counts only when its
+        level was raised; a daily re-send at the same or a lower level is standing. Fire detections, drought, fire
+        incidents and convective outlooks are background, listed only.</dd>
+      <dt>Fresh notice (Cordon)</dt>
+      <dd>A State Department advisory, departure posture or embassy alert, or UK, Canadian or New Zealand travel advice,
+        dated in the <b>48 hours</b> before the outage and not lowered or re-issued at the same level. Embassy alerts
+        count only when their own title says security or demonstration, and not when they are about a holiday or a
+        scheduled event; each alert counts once, from the earliest date COP saw on it. UK, Canadian and New Zealand
+        advice counts only when the level or the advice changed: an edit is listed, not counted.</dd>
+      <dt>Unusual attention (Watchfloor)</dt>
+      <dd>A Watchfloor item naming the country, raised on its own z-score against the <b>28 complete days</b> before
+        the day it measures (never that day). Attention high only against the 90-day median is standing, listed and not
+        counted. A Watchfloor day that begins after the outage is listed as after, not counted.</dd>
+    </dl>
+    <h3>Internet outages: the reading, in order</h3>
+    <ol>
+      <li><strong>Incomplete</strong>: a layer has no current data.</li>
+      <li><strong>Unconfirmed</strong>: Blackout calls the drop single-source (only a drop seen by more than one
+        signal, BO-IND-1, or a Cloudflare-verified anomaly is confirmed). Context is listed, no reading.</li>
+      <li><strong>Natural</strong>: a counted hazard.</li>
+      <li><strong>Tension context</strong>: no counted hazard, and a fresh notice or unusual attention. That is the
+        context the outage sits in, not its cause.</li>
+      <li><strong>Open</strong>: none of these. The layers show nothing that tells one kind of outage from another.</li>
+    </ol>
+    <h3>US state power outages</h3>
+    <p>A state with more than <b>50,000</b> meters out at the utilities ODIN reads. Natural when a hazard that takes
+      power lines down began in or near the outage's counties (or the state, when the item lists none) in the same 72-
+      and 6-hour window: NWS warnings for wind, winter storms, ice, blizzards, lake-effect snow, tropical storms and
+      hurricanes, storm surge, tornadoes, severe thunderstorms, extreme cold and heat, Red Flag and dust storms, plus
+      anything Elements rates anomaly. A point hazard counts within <b>100 km</b> of an outage county. Otherwise open,
+      or incomplete when Elements has no current data. Cordon and Watchfloor carry nothing at state level.</p>
+    <h3>Base rates <span class="live-tag">live</span></h3>
+    <div id="triage-rates" class="doc-live"><p>Reading triage.json…</p></div>
+  </section>
+
+  <section id="three" aria-labelledby="three-h">
+    <h2 id="three-h">Three signals: the Strait of Hormuz and the Gulf</h2>
+    <p>Whether three signals, each routine alone, fall in one area within <b>48 hours</b> of each other. The area is a
+      circle of <b>900 km</b> around Bandar Abbas, with Iran, the UAE, Oman, Qatar, Bahrain and Kuwait for country-level
+      items. A signal counts when it is dated in the <b>96 hours</b> before the reading.</p>
+    <dl class="doc-rules">
+      <dt>Interference (Noisefloor)</dt>
+      <dd>A Noisefloor anomaly or warning inside the circle that is new, rising or an event. An area that ended is
+        context.</dd>
+      <dt>Notice (Cordon)</dt>
+      <dd>A new navigation warning inside the circle whose text names military activity (firing, gunnery, missile,
+        rocket, military, exercises including naval exercises, hazardous operations, mines, drones, UAVs or other unmanned
+        craft, attack, GPS or GNSS interference,
+        jamming, spoofing, warships, submarines, space debris, launches), or a new or revised EASA conflict-zone
+        bulletin for one of the six countries. If Cordon's newest navigation warning anywhere is more than <b>14
+        days</b> old, that feed has stopped moving and the area reads incomplete unless all three converge without
+        it.</dd>
+      <dt>Connectivity (Blackout)</dt>
+      <dd>A confirmed outage or a Cloudflare-verified anomaly in one of the six countries. A single-source dip is
+        listed and does not count. An OONI censorship rate that rose <b>5 points</b> or more above its lowest in the
+        archive is listed as context.</dd>
+      <dt>Weather (Vis), context only</dt>
+      <dd>Vis's 72-hour forecast at its points in the circle, worst stoplight shown. It never adds a signal and never
+        removes one.</dd>
+    </dl>
+    <p><strong>Readings:</strong> <em>converged</em> (all three within 48 hours), <em>partial</em> (some present),
+      <em>none</em>, or <em>incomplete</em> (a layer with no current data). Converged is the pattern the join looks
+      for; it is not a warning, and the call is the analyst's.</p>
+    <h3>Base rate <span class="live-tag">live</span></h3>
+    <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
+  </section>
+
+  <section id="sources" aria-labelledby="sources-h">
+    <h2 id="sources-h">Where the rules live</h2>
+    <p>COP's code is public at <a href="https://github.com/metacog-osint/cop">github.com/metacog-osint/cop</a>. The
+      rules on this page are in <code>tools/snapshot.py</code> (picks, strength, freshness),
+      <code>config/programs.json</code> (each program's rule and windows, from the suite registry),
+      <code>tools/triage.py</code> and <code>tools/triage_rates.py</code> (outage triage and its base rates) and
+      <code>tools/three_signal.py</code> (the three-signal join). The machine-readable versions of the live figures are
+      <a href="data/triage.json">triage.json</a>, <a href="data/three-signal.json">three-signal.json</a> and
+      <a href="data/health.json">health.json</a>; AI agents get the same through COP's MCP server at
+      <code>/mcp</code>.</p>
+  </section>
+
+  <footer class="credits">
+    <p>COP, The Intelligence Company. Publicly available information only. The STOP replay figures are from Access
+      Now's #KeepItOn STOP dataset (credit "Access Now, #KeepItOn STOP"; counts and rates only).</p>
+  </footer>
+</main>
+<script src="shared/tic-time.js"></script>
+<script type="module" src="scoring.js"></script>
+</body>
+</html>
