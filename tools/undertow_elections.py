@@ -39,7 +39,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 import gate  # noqa: E402
+from tic_doctrine import contract  # noqa: E402
 
 JOIN = {"id": "undertow-elections", "version": "0.1", "published": False,
         "inputs": ["undertow", "verdict:calendar"],
@@ -112,9 +114,19 @@ def item_period(p):
 
     A watch row's activity_period is when the activity ran. A disclosure's operation.period is its own period, cut at
     the date it was published (a disclosure cannot describe days after it). A reporter's item with an activity block
-    and no activity_period has only report dates, which this join never uses."""
+    and no activity_period has only report dates, which this join never uses. An item that states event_start
+    (feed contract revision 2.1: when what it describes ran in the world) is read from that first, by the kit's
+    contract.event_interval, cut at its data_as_of like a disclosure."""
     act = p.get("activity") or {}
     published = _day(p["data_as_of"]) if p.get("data_as_of") else None
+    span = contract.event_interval(p)
+    if span is not None and span[0] is not None:
+        start, end = span
+        exclusive = p.get("event_time_precision") in ("hour", "day", "month") and end > start
+        a, b = start.date(), (end - timedelta(microseconds=1)).date() if exclusive else end.date()
+        if published and b > published:
+            b = max(a, published)
+        return (a, b, "event time", f"{p.get('event_start')} to {p.get('event_end') or 'data_as_of'}"), None
     if act.get("activity_period"):
         ap = act["activity_period"]
         try:

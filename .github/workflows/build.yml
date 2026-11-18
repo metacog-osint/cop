@@ -79,6 +79,7 @@ jobs:
           python tests/test_triage_log.py
           python tests/test_stop_replay.py
           python tests/test_history_cordon.py
+          python tests/test_rev21.py
           npm test
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
@@ -128,6 +129,11 @@ jobs:
             FIRST="--first"
           fi
           python tools/ledger.py --snapshot site/data/today.geojson --assets out/ledger $FIRST || skip "the tool failed"
+          # The state as it was before the ledger was keyed on subject_id (kit 0.6.0): kept once, never replaced, and
+          # uploaded before the new state so the old one cannot be lost.
+          if [ -f out/ledger/state-before-subject-id.json.gz ] && ! echo "${ASSETS:-}" | grep -qx "state-before-subject-id.json.gz"; then
+            gh release upload ledger out/ledger/state-before-subject-id.json.gz || skip "the state before re-keying could not be kept"
+          fi
           gh release upload ledger out/ledger/state.json.gz $(ls "out/ledger/$DAY.jsonl.gz" 2>/dev/null) --clobber \
             || echo "::warning::suite ledger: upload failed; the next build logs these changes again from the last state"
       # Outage triage reads the snapshot just built and writes site/data/triage.json for the page and the MCP server.

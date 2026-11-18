@@ -48,8 +48,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "doctrine" / "kit" / "python"))
 import gate  # noqa: E402
 import triage_replay as replay_mod  # noqa: E402
+from tic_doctrine import contract  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
@@ -307,14 +309,68 @@ def ended_caveat(info):
         else ENDED_MISSING
 
 
+# --- Feed contract revision 2.1 (kit 0.6.0, 18 Nov 2026): the stated field first, the old reading as fallback -------
+# A feed that has migrated states what COP used to work out from `measures` keys, titles and summaries. Each reader
+# below takes the stated field when the item carries it and falls back to the old reading when it does not, so a join
+# does not move on the day a feed migrates, and an item without the fields reads exactly as before.
+LAST_CHANGES = ("new", "raised", "lowered", "changed", "ended", "none")
+
+
+def stated_event(p):
+    """(start, end) from the item's own event_start and event_end (kit contract.event_interval: precision widened
+    to its whole hour, day or month; no end runs to data_as_of), or None when it states no event time. end is None
+    when the item states no event_end, so a caller keeps its own end (valid_until, the run time)."""
+    span = contract.event_interval(p)
+    if span is None:
+        return None
+    return span[0], (span[1] if contract.parse_utc(p.get("event_end")) else None)
+
+
+def stated_change(p):
+    """(last_change, last_change_at) as the item states them, or (None, None) when it states no last_change from
+    the vocabulary. last_change_at is a datetime or None."""
+    lc = p.get("last_change")
+    if lc not in LAST_CHANGES:
+        return None, None
+    return lc, utc(p.get("last_change_at"))
+
+
+# A notice's stated last_change as notices() words its direction: new and raised count, the rest do not.
+NOTICE_STATED = {"new": "new", "raised": "raised", "lowered": "lowered", "changed": "unchanged", "none": "unchanged",
+                 "ended": "lowered"}
+# A volcano's stated last_change as volcano_change() words it; "new" and "ended" leave it to COP's archive.
+VOLCANO_STATED = {"raised": "raised", "lowered": "lowered", "changed": "unchanged", "none": "unchanged"}
+
+
+def place_countries(p):
+    """The countries a join by place reads: the item's countries, unless it says they are only named
+    (place_basis "named": a victim's country, a network's home, an operator's origin), which a join by place skips."""
+    return [] if p.get("place_basis") == "named" else (p.get("countries") or [])
+
+
+def item_rate(p):
+    """A Blackout OONI item's anomaly rate in percent: its signal when the signal is a share or a percent, else the
+    number in its title ("35.9%"). None when neither gives one."""
+    sig = p.get("signal") if isinstance(p.get("signal"), dict) else {}
+    v = sig.get("value")
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v):
+        if sig.get("unit") == "share":
+            return round(v * 100, 1)
+        if sig.get("unit") == "percent":
+            return float(v)
+    return _rate(p.get("title"))
+
+
 def _interval(p):
     """(start, end) of what an item describes, from its own fields. An NWS alert starts at its onset: its data_as_of
-    moves with every update of the same warning (Tom, 13 Nov 2026)."""
+    moves with every update of the same warning (Tom, 13 Nov 2026). event_start and event_end (revision 2.1) come
+    first when the item states them."""
     m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
     at = utc(p.get("data_as_of"))
     onset = utc(m.get("onset")) if _kind(p.get("id")) == "nws" else None
-    start = utc(m.get("from")) or onset or at
-    end = utc(m.get("to")) or utc(p.get("valid_until")) or at
+    ev_start, ev_end = stated_event(p) or (None, None)
+    start = ev_start or utc(m.get("from")) or onset or at
+    end = ev_end or utc(m.get("to")) or utc(p.get("valid_until")) or at
     if start and end and end < start:
         end = start
     return start, end
@@ -367,7 +423,11 @@ def _classify(f, at, lo, hi, volcano_levels=None, power=False):
         return None, None
     extra, standing_only = {}, False
     if kind == "usgs-volcano":
-        change, since = volcano_change(p.get("id"), utc(p.get("data_as_of")), volcano_level(p), volcano_levels)
+        lc, lc_at = stated_change(p)
+        if lc in VOLCANO_STATED:      # the program's own record of the level (revision 2.1) before COP's archive
+            change, since = VOLCANO_STATED[lc], (iso(lc_at) if lc_at else None)
+        else:
+            change, since = volcano_change(p.get("id"), utc(p.get("data_as_of")), volcano_level(p), volcano_levels)
         extra["level_change"] = change
         if change == "raised":
             start = utc(since) or start
@@ -411,8 +471,8 @@ def hazards(features, cc, at, volcano_levels=None):
         if p.get("cop_program") != "elements":
             continue
         km = None
-        if cc not in (p.get("countries") or []):
-            if p.get("countries"):
+        if cc not in place_countries(p):
+            if place_countries(p):
                 continue
             km = km_to_country(f.get("geometry"), cc)
             if km is None or km > HAZARD_NEAR_KM:
@@ -728,7 +788,7 @@ def notices(features, cc, at, levels=None, alert_dates=None):
     recent, not_raised, not_counted, standing, after = [], [], [], [], []
     for f in features:
         p = f["properties"]
-        if p.get("cop_program") != "cordon" or cc not in (p.get("countries") or []):
+        if p.get("cop_program") != "cordon" or cc not in place_countries(p):
             continue
         if _kind(p.get("id")) not in NOTICE_KINDS:
             continue
@@ -736,14 +796,22 @@ def notices(features, cc, at, levels=None, alert_dates=None):
         m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
         kind = _kind(p.get("id"))
         row = _row(p, kind=kind, level=m.get("level"))
-        if kind in CHANGE_ONLY_KINDS and p.get("tier") not in ("anomaly", "warning"):
+        lc, lc_at = stated_change(p)
+        if lc is not None:
+            # Cordon's own record (revision 2.1) before COP's archive: when the notice last moved, and which way. A
+            # fresh notice or a raise counts from that time; any other change is an edit or a standing notice.
+            row["last_change"] = lc
+            dated = lc_at or dated
+            row["direction"] = NOTICE_STATED.get(lc, "unchanged")
+        elif kind in CHANGE_ONLY_KINDS and p.get("tier") not in ("anomaly", "warning"):
             row["direction"] = "unchanged"     # Cordon saw no change of level or advice: an edit
         elif kind in LEVELLED_KINDS:
             row["direction"] = _direction(p.get("id"), dated, notice_level(p), levels)
         first = dated
         if kind == "alert":
             row["alert_type"] = alert_type(p.get("title"))
-            first = alert_first_dated(p.get("id"), dated, at, alert_dates) if dated else None
+            if lc is None:
+                first = alert_first_dated(p.get("id"), dated, at, alert_dates) if dated else None
             if first and dated and first < dated:
                 row["first_dated"] = iso(first)
         in_window = bool(dated) and (dated >= lo or (_day_dated(p, dated) and dated >= lo_day))
@@ -791,7 +859,7 @@ def attention(features, cc, at):
         day_start, day_end = day_span(p)
         if day_end and (newest is None or day_end > newest):
             newest = day_end
-        if cc not in (p.get("countries") or []):
+        if cc not in place_countries(p):
             continue
         base = (p.get("baseline_ref") or {}).get("id") if isinstance(p.get("baseline_ref"), dict) else None
         row = _row(p, kind=_kind_wf(p.get("id")), z=_wf_z(p), baseline=base)
@@ -1015,8 +1083,12 @@ RESOLVE_GRACE_D = 7      # resolve_by: this long after the check time
 
 
 def radar_span(p):
-    """(start, end) of a Cloudflare Radar item from Blackout's summary ("since <t>, ongoing" or "from <t> to <t>"):
-    its data_as_of is the run time while it is ongoing (cop-joins.md D5). (None, None) when the summary has neither."""
+    """(start, end) of a Cloudflare Radar item: its own event_start and event_end when it states them (revision 2.1;
+    no event_end means ongoing), else from Blackout's summary ("since <t>, ongoing" or "from <t> to <t>"): its
+    data_as_of is the run time while it is ongoing (cop-joins.md D5). (None, None) when it gives neither."""
+    stated = stated_event(p)
+    if stated is not None and stated[0] is not None:
+        return stated
     m = _SPAN_RE.search(str(p.get("summary") or ""))
     if not m:
         return None, None
@@ -1030,7 +1102,8 @@ def outage_input(p):
     if kind not in INPUT_KINDS:
         return None
     if kind == "outage":
-        return {"source": INPUT_KINDS[kind], "at": utc(p.get("data_as_of")), "ended": None,
+        start, end = stated_event(p) or (None, None)
+        return {"source": INPUT_KINDS[kind], "at": start or utc(p.get("data_as_of")), "ended": iso(end) if end else None,
                 "confirmed": p.get("indicator_id") == CONFIRMED_OUTAGE, "network": None, "stated_cause": None,
                 "timed_from": "start"}
     start, end = radar_span(p)

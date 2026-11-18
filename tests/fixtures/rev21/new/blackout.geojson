@@ -1,0 +1,328 @@
+{
+ "type": "FeatureCollection",
+ "contract": "tic-feed/2",
+ "program": "blackout",
+ "generated_at": "2026-11-18T17:45:51Z",
+ "mode": "live",
+ "language_key": "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/language-key.md",
+ "licence": "Blackout code MIT; OONI data CC BY-NC-SA 4.0; IODA credited; Cloudflare Radar data CC BY-NC 4.0 (cut for a test fixture)",
+ "attribution": "Blackout, The Intelligence Company (cut for a test fixture).",
+ "health": {
+  "ioda-gatech": {
+   "state": "fresh",
+   "checked_at": "2026-11-18T17:45:51Z",
+   "last_ok": "2026-11-18T17:45:51Z",
+   "last_error": null,
+   "failures": 0,
+   "data_as_of": "2026-11-18T17:45:51Z",
+   "detail": "fixture lane"
+  },
+  "ooni-api": {
+   "state": "fresh",
+   "checked_at": "2026-11-18T17:45:51Z",
+   "last_ok": "2026-11-18T17:45:51Z",
+   "last_error": null,
+   "failures": 0,
+   "data_as_of": "2026-11-18T17:45:51Z",
+   "detail": "fixture lane"
+  },
+  "cloudflare-radar": {
+   "state": "fresh",
+   "checked_at": "2026-11-18T17:45:51Z",
+   "last_ok": "2026-11-18T17:45:51Z",
+   "last_error": null,
+   "failures": 0,
+   "data_as_of": "2026-11-18T17:45:51Z",
+   "detail": "fixture lane"
+  }
+ },
+ "contract_rev": "2.1",
+ "kit": "0.6.0",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     5.611,
+     52.422
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:outage:nl:2026-11-18T02",
+    "program": "blackout",
+    "title": "Netherlands: single-signal dip, 89.7% (merit-nt)",
+    "summary": "Netherlands (NL): 89.7% connectivity drop (BGP no drop, active probing -0.1%, darknet -89.7%) over 16 min, against the same hours of the 7 days before. z-score -5.99 against the same 7 days. BGP held steady, so this reads as a single-source dip (BO-IND-4), not a confirmed outage. Access Now's STOP sheet lists no shutdown in this country in 2025; context only, not evidence about this outage.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-11-18T02:28:00Z",
+    "published_at": "2026-11-18T17:45:51Z",
+    "valid_until": "2026-11-19T05:45:51Z",
+    "change_from_prior": "new",
+    "countries": [
+     "NL"
+    ],
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_routing",
+     "operate_core_network"
+    ],
+    "requirement_ids": [
+     "BO-PIR-1",
+     "BO-EEI-1"
+    ],
+    "warning_problem_id": "BO-WP-1",
+    "indicator_id": "BO-IND-4",
+    "hypothesis_id": "BO-H-1C",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.1",
+    "coverage_fraction": 0.45,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#NL"
+    },
+    "sources": [
+     {
+      "id": "ioda-gatech",
+      "publisher": "Georgia Tech IODA",
+      "title": "Internet Outage Detection and Analysis (BGP & Active Probing)",
+      "url": "https://api.ioda.inetintel.cc.gatech.edu/v2/",
+      "licence": "No data licence stated by IODA (Georgia Tech); credited as the source, not relicensed",
+      "grade": "A2",
+      "independence_group": "ioda-gatech",
+      "source_type": "telemetry",
+      "descriptor": "BGP prefix visibility and Trinocular /24 active probing relative to 7-day rolling baseline.",
+      "accessed_at": "2026-11-18T17:45:51Z",
+      "lane": "ioda-gatech"
+     },
+     {
+      "id": "accessnow-stop",
+      "publisher": "Access Now (#KeepItOn)",
+      "title": "STOP: Shutdown Tracker Optimization Project dataset",
+      "url": "https://www.accessnow.org/keepiton-data-methodology",
+      "licence": "No licence stated by Access Now for the STOP dataset; credited as the source, counts only (its Creative Commons Attribution notice covers original media material on its website, not data)",
+      "grade": "B2",
+      "independence_group": "accessnow",
+      "source_type": "dataset",
+      "descriptor": "Shutdowns Access Now documented in the country in the last full year, as history. Context only: it does not bear on the cause of this outage.",
+      "accessed_at": "2026-11-18T17:45:51Z"
+     }
+    ],
+    "baseline_ref": {
+     "id": "ioda-7d-median",
+     "window": "the same hours of the 7 days before the event, per IODA datasource; a signal with a baseline median under 20 is left out",
+     "type": "rolling",
+     "version": "2"
+    },
+    "subject_id": "blackout:outage:nl",
+    "event_start": "2026-11-18T02:28:00Z",
+    "last_change": "new",
+    "last_change_at": "2026-11-18T02:28:00Z",
+    "place_basis": "location",
+    "sea_areas": []
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     54.931,
+     32.166
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "blackout:ooni:ir:2026-11-18",
+    "program": "blackout",
+    "title": "Iran: 36.0% OONI censorship anomaly rate",
+    "summary": "Iran (IR): OONI anomaly/blocking rate 36.0% (25780 confirmed blocks, 22137 anomalies in 133022 measurements, all tests, over the 7 days to 2026-11-18).",
+    "kind": "observation",
+    "tier": "routine",
+    "baseline_ref": {
+     "id": "bo-ind-3-threshold",
+     "window": "fixed: anomaly_rate >= 0.15 over >= 50 measurements (BO-IND-3)",
+     "type": "fixed",
+     "version": "1"
+    },
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-11-18T00:00:00Z",
+    "published_at": "2026-11-18T17:45:51Z",
+    "valid_until": "2026-11-19T05:45:51Z",
+    "countries": [
+     "IR"
+    ],
+    "pmesii_pt": [
+     "information",
+     "political"
+    ],
+    "ascope": [
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_content_services",
+     "provide_internet_routing"
+    ],
+    "requirement_ids": [
+     "BO-PIR-3"
+    ],
+    "indicator_id": "BO-IND-3",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "supports",
+    "indicator_state": "present",
+    "method_version": "blackout-1.1",
+    "coverage_fraction": 0.65,
+    "precision_class": "country",
+    "visual": {
+     "type": "map",
+     "url": "https://blackout.theintelligence.company/#IR"
+    },
+    "sources": [
+     {
+      "id": "ooni-api",
+      "publisher": "OONI (Open Observatory of Network Interference)",
+      "title": "OONI Probe Aggregation API",
+      "url": "https://api.ooni.io/api/v1/aggregation",
+      "licence": "CC BY-NC-SA 4.0 (OONI data licence: https://github.com/ooni/license/blob/master/data/LICENSE.md)",
+      "grade": "A2",
+      "independence_group": "ooni",
+      "source_type": "telemetry",
+      "descriptor": "Daily confirmed blocking and anomaly counts across Web Connectivity, Telegram, Signal, and Tor tests.",
+      "accessed_at": "2026-11-18T17:45:51Z",
+      "lane": "ooni-api"
+     }
+    ],
+    "subject_id": "blackout:ooni:ir",
+    "event_start": "2026-11-12T00:00:00Z",
+    "event_end": "2026-11-18T00:00:00Z",
+    "event_time_precision": "day",
+    "last_change": "none",
+    "place_basis": "location",
+    "signal": {
+     "name": "ooni_anomaly_rate",
+     "value": 0.36,
+     "unit": "share",
+     "tail": "high"
+    },
+    "sea_areas": []
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     113.837,
+     2.529
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "blackout",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-11-18T17:45:51Z",
+    "valid_until": "2026-11-19T05:45:51Z",
+    "pmesii_pt": [
+     "infrastructure",
+     "information"
+    ],
+    "ascope": [
+     "structures",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "provide_internet_routing",
+     "operate_core_network"
+    ],
+    "indicator_state": "present",
+    "method_version": "blackout-1.1",
+    "coverage_fraction": 1.0,
+    "visual": {
+     "type": "list",
+     "url": "https://blackout.theintelligence.company/#radar"
+    },
+    "id": "blackout:radar-anomaly:c595977b-aa94-4659-bb59-45d1884015f0",
+    "title": "Malaysia, AS10030 (CELCOMNET-AP): traffic anomaly verified by Cloudflare Radar",
+    "summary": "Cloudflare Radar's anomaly detection flagged this traffic since 2026-11-17T00:15:00Z, ongoing, seen in Radar's HTTP, NET data; Cloudflare marked it verified (TP). Radar gives no cause, so it doesn't tell a shutdown (BO-H-1A) from a fault. Reported by Cloudflare; Blackout does not assess the cause.",
+    "data_as_of": "2026-11-18T17:45:51Z",
+    "countries": [
+     "MY"
+    ],
+    "precision_class": "country",
+    "baseline_ref": {
+     "id": "radar-traffic-anomaly",
+     "window": "Cloudflare Radar's own anomaly detection on its traffic, verified by Cloudflare (BO-IND-10)",
+     "type": "rolling",
+     "version": "1"
+    },
+    "requirement_ids": [
+     "BO-PIR-1"
+    ],
+    "warning_problem_id": "BO-WP-1",
+    "indicator_id": "BO-IND-10",
+    "hypothesis_id": "BO-H-1A",
+    "direction": "neutral",
+    "sources": [
+     {
+      "id": "cloudflare-radar",
+      "publisher": "Cloudflare Radar",
+      "title": "Cloudflare Radar traffic anomalies (verified by Cloudflare)",
+      "url": "https://radar.cloudflare.com/as10030",
+      "licence": "CC BY-NC 4.0 (Cloudflare Radar data: https://developers.cloudflare.com/radar/)",
+      "grade": "B2",
+      "independence_group": "cloudflare-radar",
+      "source_type": "telemetry",
+      "descriptor": "Traffic anomalies Cloudflare's detection flagged in its own traffic and Cloudflare marked verified. Radar gives no cause for them.",
+      "accessed_at": "2026-11-18T17:45:51Z",
+      "lane": "cloudflare-radar"
+     }
+    ],
+    "subject_id": "blackout:radar-anomaly:c595977b-aa94-4659-bb59-45d1884015f0",
+    "event_start": "2026-11-17T00:15:00Z",
+    "last_change": "new",
+    "last_change_at": "2026-11-17T00:15:00Z",
+    "place_basis": "location",
+    "sea_areas": []
+   }
+  }
+ ]
+}
