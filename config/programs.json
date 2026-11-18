@@ -28,9 +28,11 @@
       "freshness": "data",
       "mark": "cells", "country_mark": "fill", "area_style": "solid",
       "strength": [
-        { "path": "measure.value", "label": "peak {v}% of aircraft with degraded GPS", "when": { "measure.name": "peak_degraded_aircraft" } },
-        { "path": "measure.value", "label": "at jamming scale on {v} of the last 7 days", "when": { "measure.name": "days_at_jamming_scale_last7" } }
+        { "path": "measure.value", "label": "peak {v}% of aircraft with severe GPS error", "when": { "measure.name": "peak_severe_share_pct" } },
+        { "path": "measure.value", "label": "at jamming scale on {v} of the last 7 days", "when": { "measure.name": "days_at_jamming_scale_last7" } },
+        { "path": "measure.value", "label": "{v} military aircraft-hours seen, a lower bound", "when": { "measure.name": "military_aircraft_hours" } }
       ],
+      "also_in": [{ "preset": "conflict", "match": "^Military aircraft seen over ", "label": "military aircraft seen on ADS-B by role, against their own usual level" }],
       "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
     },
     {
