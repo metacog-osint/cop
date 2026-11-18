@@ -141,7 +141,7 @@ def _in_area(feature, area, by_country=False):
     a country and is 1,700 km from the Strait. by_country is for country-level items (airspace bulletins)."""
     km = km_to_area(feature.get("geometry"), area)
     if by_country:
-        inside = bool(set(feature["properties"].get("countries") or []) & set(area["countries"]))
+        inside = bool(set(tri.place_countries(feature["properties"])) & set(area["countries"]))
         return inside, None if km is None else round(km)
     if km is None:
         return False, None
@@ -308,11 +308,21 @@ def ooni_history(snapshots):
         for f in snap.get("features", []):
             p = f.get("properties") or {}
             if p.get("cop_program") == "blackout" and tri._kind(p.get("id")) == "ooni":
-                rate = tri._rate(p.get("title"))
+                rate = tri.item_rate(p)
                 for cc in p.get("countries") or []:
                     if rate is not None:
                         out.setdefault(cc, []).append([snap.get("generated_at"), rate])
     return out
+
+
+def changed_at(p, dated):
+    """When a notice last became new (revision 2.1): its last_change_at when it states last_change new or raised,
+    None when it states any other last_change (an edit, a lowering, standing: not a fresh notice), else `dated`, the
+    old reading from data_as_of."""
+    lc, at = tri.stated_change(p)
+    if lc is None:
+        return dated
+    return (at or dated) if lc in ("new", "raised") else None
 
 
 def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None):
@@ -355,6 +365,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                     continue
                 words = _military(p)
                 row = tri._row(p, kind=kind, km_from_centre=km, military_words=words, at=p.get("data_as_of"))
+                dated = changed_at(p, dated)
                 if not dated or dated < lo:
                     context["notices_standing"].append(row)
                 elif words:
@@ -365,8 +376,9 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                 inside, km = _in_area(f, area, by_country=True)
                 if not inside:
                     continue
+                dated = changed_at(p, dated)
                 new_at = dated if dated and dated >= lo else None
-                if new_at is None and bulletins is not None:
+                if new_at is None and bulletins is not None and tri.stated_change(p)[0] is None:
                     first = tri.utc(bulletins.get(f"{p.get('id')} | {p.get('title')}"))
                     new_at = first if first and first >= lo else None
                 prev = renewal_of((seen or {}).get("versions"), p.get("id"), p.get("title"), new_at,
@@ -378,9 +390,12 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                     context["notices_renewal"].append(row)
                 else:
                     (found["notice"] if new_at else context["notices_standing"]).append(row)
-            elif kind == "alert" and set(p.get("countries") or []) & set(area["countries"]):
-                first = tri.utc(((seen or {}).get("alert_dates") or {}).get(p.get("id")))
-                since = min(d for d in (dated, first) if d) if (dated or first) else None
+            elif kind == "alert" and set(tri.place_countries(p)) & set(area["countries"]):
+                if tri.stated_change(p)[0] is not None:
+                    since = changed_at(p, dated)       # Cordon's own record (revision 2.1) before COP's archive
+                else:
+                    first = tri.utc(((seen or {}).get("alert_dates") or {}).get(p.get("id")))
+                    since = min(d for d in (dated, first) if d) if (dated or first) else None
                 if not since or since < lo:
                     continue
                 atype = tri.alert_type(p.get("title"))
@@ -389,7 +404,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                 (found["notice"] if us and atype == "security" else context["embassy_alerts"]).append(row)
         elif pid == "blackout":
             kind = tri._kind(p.get("id"))
-            ccs = sorted(set(p.get("countries") or []) & set(area["countries"]))
+            ccs = sorted(set(tri.place_countries(p)) & set(area["countries"]))
             if not ccs:
                 continue
             if kind in ("outage", "radar-anomaly") and dated and dated >= lo:
@@ -399,7 +414,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                 else:
                     found["connectivity"].append(row)
             elif kind == "ooni":
-                rate = tri._rate(p.get("title"))
+                rate = tri.item_rate(p)
                 for cc in ccs:
                     past = [r for t, r in (ooni or {}).get(cc, []) if tri.utc(t) and tri.utc(t) < at]
                     low = min(past) if past else None
@@ -409,7 +424,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None, rates=None, ukmto=None)
                                                     moved=bool(moved is not None and moved >= OONI_MOVE_POINTS)))
         elif pid == "watchfloor":
             parts = str(p.get("id")).split(":")
-            ccs = sorted(set(p.get("countries") or []) & set(area["countries"]))
+            ccs = sorted(set(tri.place_countries(p)) & set(area["countries"]))
             if len(parts) < 5 or parts[2] != "country" or not ccs:
                 continue
             day_end = tri.day_span(p)[1]

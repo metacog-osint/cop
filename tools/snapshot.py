@@ -275,27 +275,35 @@ def unsound(feature):
         return "id is not a string"
     if feature.get("geometry") is not None and not _geometry(feature["geometry"]):
         return "geometry is not a GeoJSON geometry with numeric positions"
-    for key, kind, word in (("countries", str, "strings"), ("sources", dict, "objects")):  # the lists COP walks
+    for key, kind, word in (("countries", str, "strings"), ("sources", dict, "objects"),
+                            ("sea_areas", str, "strings")):  # the lists COP walks
         v = props.get(key)
         if v is not None and not (isinstance(v, list) and all(isinstance(x, kind) for x in v)):
             return f"{key} is not a list of {word}"
+    # Contract revision 2.1 (kit 0.6.0): the suite ledger keeps an item under its subject_id and names its lane from
+    # its first source's `lane`; either as anything but text would raise there, so the item is left out instead.
+    if props.get("subject_id") is not None and not (isinstance(props["subject_id"], str) and props["subject_id"].strip()):
+        return "subject_id is not a string"
+    if any(s.get("lane") is not None and not isinstance(s["lane"], str) for s in props.get("sources") or []):
+        return "a source's lane is not a string"
     if not _finite(feature):
         return "it holds a number that is not finite (NaN or Infinity)"
     return None
 
 
-def sift(features, pid=None):
+def sift(features, pid=None, rev=None):
     """(the features COP can carry, their lint problems, one row for each it left out).
 
     A feature goes through when unsound() finds nothing and the kit's contract check can read it; the check's
     findings come back as (item id, problem) pairs for lint_feed. A row is {"id", "program", "index", "reason"}:
-    the id when it could be read (else None), and the feature's place in its feed, counted from 0."""
+    the id when it could be read (else None), and the feature's place in its feed, counted from 0. rev is the feed
+    header's contract_rev: a feed that states "2.1" is checked strictly, as its own linter checks it (kit 0.6.0)."""
     kept, problems, dropped = [], [], []
     for n, f in enumerate(features):
         why, found = unsound(f), []
         if why is None:
             try:
-                found = contract.check(f)
+                found = contract.check(f, rev=rev)
             except Exception as e:  # noqa: BLE001 - a shape the kit's check cannot read must not stop the build
                 why = f"the contract check could not read it ({type(e).__name__})"
         if why is None:
@@ -335,17 +343,38 @@ def load_previous(where):
 
 def lint_feed(feed, item_problems):
     """Lint counts for health.json: the kit's header check, plus what its contract check found in each item that
-    sift() let through (item_problems)."""
-    errors, warnings, examples = 0, 0, []
+    sift() let through (item_problems). Returns (lint, notes): notes counts kit 0.6.0's revision 2.1 notices (a new
+    field absent), kept out of `warnings` so a feed's count does not jump on the day COP vendors the kit; they are
+    the `revision` member beside `coverage`. A revision field of the wrong shape is an error and counts as one."""
+    errors, warnings, notes, examples = 0, 0, 0, []
     problems = [("feed", p) for p in kitlint.check_header({k: v for k, v in feed.items() if k != "features"})]
     for item_id, (std, sev, msg) in problems + item_problems:
         if sev == "error":
             errors += 1
             if len(examples) < 3:
                 examples.append(f"{item_id}: {msg}")
+        elif std == contract.REVISION:
+            notes += 1
         else:
             warnings += 1
-    return {"errors": errors, "warnings": warnings, "examples": examples}
+    return {"errors": errors, "warnings": warnings, "examples": examples}, notes
+
+
+def coverage(items) -> dict:
+    """{revision 2.1 field: items carrying it}, the kit lint report's `coverage`, for one program's items: the
+    migration's dashboard (feed-contract proposal, section 5) and decision D9's trigger."""
+    out = dict.fromkeys(contract.REVISION_FIELDS, 0)
+    for i in items:
+        p = i.get("properties") or {}
+        for k in out:
+            out[k] += p.get(k) is not None
+    return out
+
+
+def revision(feed, notes) -> dict:
+    """What a feed's header says of contract revision 2.1 (contract_rev, the kit it vendors) and how many 2.1 notices
+    its items drew. None of a header value that is not text."""
+    return {"contract_rev": header_text(feed.get("contract_rev")), "kit": header_text(feed.get("kit")), "notes": notes}
 
 
 def state_for(age_hours, prog, fetched):
@@ -412,8 +441,9 @@ def build(feeds, reports, previous, now):
         feed, rep = feeds.get(pid), reports[pid]
         from_previous = False
         if feed is not None:
-            items, problems, dropped = sift(features_of(feed), pid)
-            lint = lint_feed(feed, problems)
+            items, problems, dropped = sift(features_of(feed), pid, rev=header_text(feed.get("contract_rev")))
+            lint, notes = lint_feed(feed, problems)
+            rev = revision(feed, notes)
             attribution, licence = header_text(feed.get("attribution")), header_text(feed.get("licence"))
             lanes_by_program[pid] = source_lanes(feed)
             off, sources = unread_sources(feed, prog), source_summary(feed, prog)
@@ -423,7 +453,7 @@ def build(feeds, reports, previous, now):
             items = [f for f in previous_items if f["properties"].get("cop_program") == pid]
             dropped = [d for d in previous_dropped if d["program"] == pid]
             from_previous = bool(items)
-            lint = None
+            lint, rev = None, None
             prev_prog = (previous.get("cop_programs") or {}).get(pid) or {}
             attribution, licence = header_text(prev_prog.get("attribution")), header_text(prev_prog.get("licence"))
         all_dropped += dropped
@@ -476,6 +506,8 @@ def build(feeds, reports, previous, now):
             # Malformed items left out of the picture (sift): how many, and up to three with the reason.
             "dropped": {"count": len(dropped), "examples": [
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
+            # Contract revision 2.1 (kit 0.6.0): items carrying each new field, and what the feed's header states.
+            "coverage": coverage(items), "revision": rev,
         })
 
     # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks. Watchfloor and

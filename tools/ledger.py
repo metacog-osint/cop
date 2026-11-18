@@ -42,6 +42,13 @@ drawn from it for the page or the MCP server is a join and goes through tools/ga
 
 Without the last state, every item would be logged as new again. So a run with no state.json.gz stops unless --first
 says this is the first run.
+
+Keyed on subject_id (kit 0.6.0, feed contract revision 2.1, 18 Nov 2026). The kit's history keeps an item under its
+subject_id when it states one and under its id otherwise (history.key), so a daily reading of one subject under a new
+dated id is an update, not a new item and an end; on the first build after a feed adds subject_id, an open entry kept
+under the item's id moves to its subject and logs nothing. The state says so in `keyed_on`. The first build that
+reads a state without it copies that state, byte for byte, to state-before-subject-id.json.gz beside it, and never
+writes that copy again: the record of the ledger as it was before the re-keying.
 """
 
 import argparse
@@ -58,6 +65,8 @@ from tic_doctrine import history  # noqa: E402
 import gate  # noqa: E402
 
 READ_STATES = ("fresh", "late")
+KEYED_ON = "subject_id, else id"              # kit history.key(), from kit 0.6.0
+BEFORE_KEYING = "state-before-subject-id.json.gz"
 # COP's own marks on an item change with the rest of the picture, not with the item: no change at all.
 VOLATILE = ("published_at", "cop_pick", "cop_stale", "cop_strength", "cop_strength_text")
 
@@ -145,6 +154,7 @@ def step(state: dict, snapshot: dict, **extra) -> tuple[dict, list]:
         x.update(extra)
     new_state["programs_read"] = sorted(programs_read(snapshot))
     new_state["lanes_read"] = sorted(ok)
+    new_state["keyed_on"] = KEYED_ON
     return new_state, lines
 
 
@@ -230,9 +240,21 @@ def run(snapshot: dict, folder: Path, first: bool = False, **extra) -> tuple[dic
     if state is not None and (state.get("updated_at") or "") >= history._stamp(when(snapshot)):
         raise SystemExit(f"ledger: the state is from {state.get('updated_at')}, not older than this snapshot "
                          f"({history._stamp(when(snapshot))}); nothing written")
+    if state is not None and state.get("keyed_on") != KEYED_ON:
+        keep_before_keying(folder)
     state, lines = step(state or {}, snapshot, **extra)
     save(folder, state, lines)
     return state, lines
+
+
+def keep_before_keying(folder: Path) -> Path | None:
+    """Copy state.json.gz to BEFORE_KEYING, byte for byte, unless the copy is there already (it is never
+    overwritten). Returns the copy written, or None."""
+    src, dest = folder / "state.json.gz", folder / BEFORE_KEYING
+    if dest.exists() or not src.exists():
+        return None
+    dest.write_bytes(src.read_bytes())
+    return dest
 
 
 def replay(archive: Path, folder: Path) -> int:

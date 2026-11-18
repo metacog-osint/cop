@@ -299,8 +299,9 @@ def unreadable_parts(docs, reports):
 
 # --- events.json: the programs' own dated events, for upcoming_events beside Verdict's calendar ---------------------
 # Orbit's scheduled launches carry their time only in the title and summary ("..., 2026-11-14 17:32 UTC", "status Go
-# for Launch; NET precision Minute"); the feed contract has no field for an event's time (checked 14 Nov 2026). An
-# item's own `event` object, in Verdict's calendar shape, wins over the text if Orbit ever publishes one.
+# for Launch; NET precision Minute"); the feed contract had no field for an event's time until revision 2.1 (kit
+# 0.6.0, 18 Nov 2026). The item's own event_start and event_time_precision come first when it states them; then an
+# `event` object in Verdict's calendar shape; then the text.
 EVENT_PREFIXES = ("orbit:upcoming:",)
 WHEN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}) UTC")
 NET_PRECISION = re.compile(r"NET precision ([^;]+?)\)(?:\s|$|[.,;])")
@@ -322,7 +323,14 @@ def orbit_event(p):
     pm = NET_PRECISION.search(text)
     precision = pm.group(1).strip() if pm else None
     sm = LAUNCH_STATUS.search(text)
-    if isinstance(own.get("date"), str) and own["date"]:
+    start = snap.contract.parse_utc(p.get("event_start"))
+    if start is not None:
+        tp = p.get("event_time_precision")
+        if tp == "month":
+            return None, "event_time_precision month"
+        date = start.strftime("%Y-%m-%d")
+        at = None if tp == "day" else snap.iso(start)
+    elif isinstance(own.get("date"), str) and own["date"]:
         date, at = own["date"], own.get("at") if isinstance(own.get("at"), str) else None
     elif not m:
         return None, "no time in the title or summary"
