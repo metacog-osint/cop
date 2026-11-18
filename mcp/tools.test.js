@@ -302,7 +302,8 @@ test("outage triage gives each layer's answer, the wording, and the question onl
     for (const L of Object.values(r.layers)) assert.ok(L.showed.length > 10 && L.name, "each layer says what it showed");
     assert.ok(!("verdict_draft" in r), "the working draft, with its empty probability field, is not public");
     assert.equal(r.question_draft.status, "draft, not registered");
-    assert.match(r.question_draft.question, /^Will OONI confirm blocking/);
+    assert.match(r.question_draft.question, /^Will OONI measure blocking/);
+    assert.ok(r.question_draft.rule_draft.includes("aggregation API (api.ooni.io, probe_cc="));
     assert.ok(r.question_draft.rule_draft && r.question_draft.window_ends);
     assert.ok(r.reading in res.readings);
   }

@@ -52,20 +52,18 @@ class Register(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "not confirmed"):
             rq.build_item(self.doc, r, q, what, 0.2, "Tom Brummer", WHEN)
 
-    def test_a_closed_window_or_a_settled_question_is_refused(self):
+    def test_a_closed_window_is_refused_and_ooni_over_the_line_still_registers(self):
         r, q, what = rq.find(self.doc, self.tn["question_draft"]["verdict_id"])
         with self.assertRaisesRegex(SystemExit, "window has closed"):
             rq.build_item(self.doc, r, q, what, 0.2, "Tom Brummer", "2026-11-20T00:00:00Z")
+        # The OONI rule is relative to the 120 hours before, so a country already over 15% is not settled early.
         ooni = tt.item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3",
                        title="Iran: 37.0% OONI censorship anomaly rate")
         doc = published(tt.outage("IR"), ooni)
         r, q, what = rq.find(doc, doc["records"][0]["question_draft"]["verdict_id"])
-        with self.assertRaisesRegex(SystemExit, "settled before it is asked"):
-            rq.build_item(doc, r, q, what, 0.2, "Tom Brummer", WHEN)
-        rise = rq.build_item(doc, r, q, what, 0.2, "Tom Brummer", WHEN, rise=True)
-        self.assertTrue(rise["id"].endswith("-rise"))
-        self.assertIn("47.0%", rise["title"])
-        self.assertEqual(rq.problems(rise, NO_VERDICT), [])
+        item = rq.build_item(doc, r, q, what, 0.2, "Tom Brummer", WHEN)
+        self.assertIn("probe_cc=IR", item["resolution"]["rule"])
+        self.assertEqual(rq.problems(item, NO_VERDICT), [])
 
     def test_an_unknown_id_names_the_ones_there_are(self):
         with self.assertRaisesRegex(SystemExit, "cop-tn-outage-20261112t0025-cause"):
