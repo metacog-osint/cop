@@ -194,6 +194,16 @@
       <dt>Weather (Vis), context only</dt>
       <dd>Vis's 72-hour forecast at its points in the circle, worst stoplight shown. It never adds a signal and never
         removes one.</dd>
+      <dt>UKMTO reports (via Wake), context, and a notice only on a surge</dt>
+      <dd>Every report UKMTO (UK Maritime Trade Operations, Royal Navy) published inside the circle in the 96 hours is
+        listed beside the reading, in UKMTO's own type and dated by when UKMTO published it, not the incident time
+        (join 0.4, 18 Nov 2026). UKMTO's reports are not verified and name no one responsible. Its <em>Attack</em>
+        reports count toward the notice only when their number in the 96 hours is above its own <b>90th percentile of
+        UKMTO's daily counts over the last 30 days</b>, the same test as below, measured on UKMTO's reports alone and
+        never pooled with Cordon's notices. A steady rate never counts. Advisories, suspicious activity and the other
+        types are context only. COP reads the reports from its archived pictures (Wake keeps <b>30 days</b> of reports
+        in its feed) and Wake's list of reports it has dropped; until those reach back 30 days plus the 96 hours, the
+        reports are listed and not counted.</dd>
     </dl>
     <p><strong>Each signal against its own rate.</strong> In this war interference and attacks are reported on most
       days, so a signal that was present on more than half of the area's last <b>30 archived days</b> with every layer

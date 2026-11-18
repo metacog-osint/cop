@@ -354,7 +354,7 @@ export function outageTriage(index, triage, args, now) {
 
 // --- three_signal ---------------------------------------------------------------------------------------------------
 
-const THREE_SIGNAL_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis", "watchfloor"];
+const THREE_SIGNAL_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis", "watchfloor", "wake"]; // wake: UKMTO's reports, join 0.4
 
 export function threeSignal(index, doc, args, now) {
   if (!doc) {
@@ -377,7 +377,10 @@ export function threeSignal(index, doc, args, now) {
       " Report what each signal's items show in their own words (signals.*.items, with ids to cite), which signals " +
       "were present only at their usual rate (signals_at_usual_rate, not counted), the tightest " +
       "span, Vis's weather as context (weather.text; Vis's items are forecasts, not official forecasts) and the base " +
-      "rate. Do not state what the pattern means. The time windows are provisional. question_draft is a drafted " +
+      "rate. context.ukmto lists UKMTO's reports in the circle (via Wake; credit UKMTO, Royal Navy): they are not " +
+      "verified and name no one responsible, \"Attack\" is UKMTO's report type and not a finding, and the attacks " +
+      "count toward the notice only when context.ukmto.counts is true (above their own rate). " +
+      "Do not state what the pattern means. The time windows are provisional. question_draft is a drafted " +
       "question that could score the reading later: it is not a registered Verdict forecast and has no likelihood.",
     readings: doc.readings,
     windows: doc.windows,
