@@ -75,6 +75,24 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   build, about 6:45 PM CST 15 Nov: Hormuz read partial (interference near Doha, Abu Dhabi and Dubai; no new notice
   naming military activity; no confirmed outage), weather Green at worst; base rate over 4 archived days with every
   layer current: interference 4, notice 0, connectivity 0, all three 0.
+  **Join 0.3: four signals and base rates** (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of
+  `[local path]`; branch `three-signal/gulf-rules`). (1) *Notice:* a US embassy
+  security alert for an area country counts (`triage.alert_type` "security"; demonstration, weather, event and
+  routine alerts stay context), dated from the earliest date the archive saw on it (`first_seen` `alert_dates`).
+  An EASA revision first seen from `RENEWAL_BEFORE_D` (7) days before the previous version's expiry to
+  `RENEWAL_AFTER_H` (48) hours after it, with a later expiry, is a scheduled renewal: `context.notices_renewal`, not
+  counted (`renewal_of`, from `first_seen` `versions`). COP holds the bulletin's title and dates, not its text, so a
+  renewal that also changed the recommendation reads as a renewal; a caveat says so. (2) *Press*, a fourth signal:
+  a Watchfloor country item for an area country, violent-event articles, tier anomaly, z of `WATCHFLOOR_Z` (3) or
+  more; attention items and lower scores go to `context.press_other`. Watchfloor is a fifth layer (a dead one makes
+  the area incomplete). **Converged needs all four** (Tom's pick; three of four reads partial). The id stays
+  `three-signal`; the page heading reads "Four signals". (3) *Base rates:* `signal_rates` reads the replay rows' raw
+  counts over the `RATE_DAYS` (30) archived days before the snapshot's day that had every layer current; a signal
+  present on more than half of them counts only when today's item count is above its own 90th percentile
+  (`signals_at_usual_rate` lists the rest). Until `RATE_MIN_DAYS` (14) such days exist, every signal counts as it
+  fires, with a caveat. Measured on the 19 archived days (31 Oct-18 Nov): 6 had every layer current; interference 6,
+  notice 3 -> 4 (the 15 Nov Manama alert counts; the 16 Nov EASA renewals move to context), press 3 (Bahrain, data of
+  13, 15 and 17 Nov), converged 0 before and after. The rates take effect about 26 Nov 2026.
 - **Outage triage (`tools/triage.py`, `tools/triage_rates.py`; on the page and in the MCP server since step 5,
   13 Nov 2026; merged to `main` and deployed on Tom's yes, `df1e431`, 05:34 UTC 13 Nov 2026):** `JOIN["published"]` is on. The build
   downloads this month's and last month's archive copies to `out/rates-archive` (never `out/archive`, which it

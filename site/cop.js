@@ -710,17 +710,22 @@ function renderTriage() {
     `Not read: ${count(unplaced.length, "Cloudflare Radar entry", "Cloudflare Radar entries")} ${unplaced.length === 1 ? "names" : "name"} no place, so no country layer can sit under ${unplaced.length === 1 ? "it" : "them"}: `,
     ...unplaced.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
 }
-// The three-signal join: which of three signals fall in one area within the window, each layer's items in its own
-// words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never what it means.
+// The three-signal join (four signals since join 0.3): which signals fall in one area within the window, each layer's
+// items in its own words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never
+// what it means.
 const TS_SIGNALS = { interference: ["noisefloor", "Interference (Noisefloor)"],
-  notice: ["cordon", "New notice (Cordon)"], connectivity: ["blackout", "Connectivity (Blackout)"] };
-const TS_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis"];
+  notice: ["cordon", "New notice (Cordon)"], connectivity: ["blackout", "Connectivity (Blackout)"],
+  press: ["watchfloor", "Press reporting of violence (Watchfloor)"] };
+const TS_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis", "watchfloor"];
 function threeSignalRecord(r) {
   const nodata = r.no_current_data || [];
   const signals = Object.entries(TS_SIGNALS).map(([key, [pid, name]]) => {
     const dead = nodata.includes(pid) || (key === "notice" && nodata.includes("cordon:navwarn"));
-    const items = r.signals[key].items;
-    const said = r.signals[key].present ? `Present: ${count(items.length, "item")}.` : dead ? "No current data." : "Not present.";
+    const sig = r.signals[key] || { present: false, items: [] };
+    const items = sig.items;
+    const usual = sig.present && sig.counts === false;
+    const said = sig.present ? `Present: ${count(items.length, "item")}${usual ? ", at its usual rate here, so not counted" : ""}.`
+      : dead ? "No current data." : "Not present.";
     return h("div", { class: "tri-layer" + (dead ? " dead" : "") },
       h("dt", {}, dotFor(pid, { cop_stale: dead }), name),
       h("dd", {}, said, items.length ? h("span", { class: "tri-items" }, ...items.slice(0, 4).map(triageItem)) : null));
@@ -736,11 +741,13 @@ function threeSignalRecord(r) {
     h("p", { class: "tri-text", text: r.reading_text }),
     h("dl", { class: "tri-layers" }, ...signals),
     span ? h("p", { class: "tri-rate" }, h("strong", { text: "Tightest span. " }),
-      `All three within ${span.hours} hours, `, timeEl(span.from), " to ", timeEl(span.to), ".") : null,
+      `All four within ${span.hours} hours, `, timeEl(span.from), " to ", timeEl(span.to), ".") : null,
     h("p", { class: "tri-rate" }, h("strong", { text: "Weather (Vis, context only). " }), r.weather.text),
     h("p", { class: "tri-rate" }, h("strong", { text: "Also in the area. " }),
       `${count(c.notices_other.length, "other new warning")}, ${count(c.notices_standing.length, "standing notice")}, ` +
-      `${count(c.single_source_dips.length, "single-source dip")}, ${count(c.embassy_alerts.length, "embassy alert")}.`),
+      `${count((c.notices_renewal || []).length, "scheduled bulletin renewal")}, ` +
+      `${count(c.single_source_dips.length, "single-source dip")}, ${count(c.embassy_alerts.length, "other embassy alert")}, ` +
+      `${count((c.press_other || []).length, "other press item")}.`),
     r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), `${r.base_rate.text} ${r.base_rate.caution}`)
       : h("p", { class: "tri-caveat", text: "No archive was read for this picture, so there is no base rate." }),
     ...(r.caveats || []).map((t) => h("p", { class: "tri-caveat", text: t })),
