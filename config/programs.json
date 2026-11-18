@@ -30,6 +30,9 @@
       "strength": [
         { "path": "measure.value", "label": "peak {v}% of aircraft with severe GPS error", "when": { "measure.name": "peak_severe_share_pct" } },
         { "path": "measure.value", "label": "at jamming scale on {v} of the last 7 days", "when": { "measure.name": "days_at_jamming_scale_last7" } },
+        { "path": "measure.value", "label": "{v} aircraft shown at a new false position", "when": { "measure.name": "aircraft_shown_at_new_false_position" } },
+        { "path": "measure.value", "label": "{v} spoofed aircraft-hours in the region", "when": { "measure.name": "spoofed_active_aircraft_hours" } },
+        { "path": "measure.value", "label": "{v} aircraft shown at the false position", "when": { "measure.name": "aircraft_shown_at_false_position" } },
         { "path": "measure.value", "label": "{v} military aircraft-hours seen, a lower bound", "when": { "measure.name": "military_aircraft_hours" } }
       ],
       "also_in": [{ "preset": "conflict", "match": "^Military aircraft seen over ", "label": "military aircraft seen on ADS-B by role, against their own usual level" }],
