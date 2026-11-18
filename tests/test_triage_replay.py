@@ -96,8 +96,25 @@ class Replay(unittest.TestCase):
         self.assertEqual(x["country"]["ordinary_days"], 67)
         self.assertIn("tension context was the reading on 13.4% of shutdowns and on 8.8% of those countries' ordinary days", x["text"])
         self.assertIn("In India: 5 of 63 documented shutdowns read tension context, against 7.5% of its 67 ordinary days", x["text"])
-        self.assertEqual(x["caveats"], [])
+        self.assertEqual(x["caveats"], self.rep["three_layer"]["caveats"], "its own run's caveats, the three-layer one's")
+        self.assertNotIn(rp.NO_CORDON, x["caveats"])
         self.assertEqual(x["attribution"], "Access Now, #KeepItOn STOP")
+
+    def test_caveats_are_served_per_run_and_the_shared_list_does_not_contradict_itself(self):
+        r = self.rep
+        two = json.loads((rp.REPLAYS / r["runs"]["two_layer"] / "manifest.json").read_text(encoding="utf-8"))["caveats"]
+        three = json.loads((rp.REPLAYS / r["runs"]["three_layer"] / "manifest.json").read_text(encoding="utf-8"))["caveats"]
+        # Every caveat of each run reaches the reader exactly once, beside its own pool or in the shared list.
+        self.assertEqual(sorted(r["caveats"] + r["two_layer"]["caveats"]), sorted(two))
+        self.assertEqual(sorted(r["caveats"] + r["three_layer"]["caveats"]), sorted(three))
+        self.assertTrue(all(c in two and c in three for c in r["caveats"]))
+        self.assertFalse(any("not replayed yet" in c for c in r["caveats"]),
+                         "the two-layer run's 'not replayed yet' stays with the two-layer pool")
+        self.assertTrue(any("not replayed yet" in c for c in r["two_layer"]["caveats"]))
+        self.assertTrue(any(c.startswith("Cordon's history") for c in r["three_layer"]["caveats"]))
+        self.assertFalse(any(c.startswith("Cordon's history") for c in r["two_layer"]["caveats"]))
+        x = rp.record_rate(r, "TN", "open")
+        self.assertFalse(set(x["caveats"]) & set(r["three_layer"]["caveats"]), "a two-layer figure carries no three-layer caveat")
 
     def test_outside_cordons_countries_the_two_layer_figures_say_cordon_was_not_replayed(self):
         x = rp.record_rate(self.rep, "TN", "open", "Tunisia")

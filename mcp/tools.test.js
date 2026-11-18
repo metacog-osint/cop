@@ -298,6 +298,12 @@ test("outage triage gives each layer's answer, the wording, and the question onl
   assert.equal(res.replay.attribution, "Access Now, #KeepItOn STOP");
   assert.equal(res.replay.three_layer.matched_shutdowns, 157);
   assert.ok(res.replay.caveats.some((c) => /not a test of whether triage finds shutdowns/.test(c)));
+  // Caveats per run (18 Nov 2026): the shared list never says Cordon is not replayed while the three-layer run says
+  // how it was; each run's own caveats sit with its pool.
+  assert.ok(!res.replay.caveats.some((c) => /not replayed yet/.test(c)), "the shared caveats do not contradict the three-layer run");
+  assert.ok(res.replay.two_layer.caveats.some((c) => /not replayed yet/.test(c)));
+  assert.ok(res.replay.three_layer.caveats.some((c) => /Cordon's history/.test(c)));
+  assert.match(res.note, /replay_rate\.caveats/);
   assert.match(res.replay.caution, /does not show that a reading identifies a shutdown or its cause/);
   for (const r of res.records) {
     const x = r.replay_rate;
@@ -310,6 +316,8 @@ test("outage triage gives each layer's answer, the wording, and the question onl
     assert.ok(x.shutdown_share >= 0 && x.shutdown_share <= 1 && x.ordinary_day_share >= 0 && x.ordinary_day_share <= 1);
     assert.match(x.text, /of shutdowns and on [\d.]+% of those countries' ordinary days/);
     assert.doesNotMatch(x.text, /detect|predict|likely/i);
+    if (x.pool === "three_layer") assert.deepEqual(x.caveats, res.replay.three_layer.caveats, "its own run's caveats");
+    else assert.ok(!x.caveats.some((c) => /Cordon's history/.test(c)), "no three-layer caveat on a two-layer figure");
   }
   assert.ok(res.records.some((r) => r.replay_rate), "at least one record carries a replay figure");
   assert.ok(res.attribution.includes("Access Now, #KeepItOn STOP"));
