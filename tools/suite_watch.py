@@ -3,7 +3,7 @@
     python tools/suite_watch.py
 
 Exit 0 when everything is current, 1 when something is wrong (so a scheduled run fails and its owner is mailed).
-It checks four things the picture cannot say about itself:
+It checks five things the picture cannot say about itself:
   1. COP's own snapshot is older than --cop-hours (COP's build stopped).
   2. A program's state in the snapshot is not "fresh" (its feed stopped or failed).
   3. A program's data time is in the future by more than --future-minutes (Elements, 12 Nov 2026: a clock that runs
@@ -11,6 +11,10 @@ It checks four things the picture cannot say about itself:
   4. COP's health.json (beside the snapshot, or --health) counts a malformed item that the build left out of the
      picture (15 Nov 2026: the build no longer stops on one, so without this nothing would say a program is losing
      items). A health.json that cannot be read is a problem too, never a quiet pass.
+  5. The hub's site check (tic-sitecheck, a Worker that opens the hub and every program's page in headless Chrome at
+     05:10 and 17:10 UTC) failed a page, or has not finished a run in --sitecheck-hours (18 Nov 2026, Tom's yes). It is
+     read only when the snapshot is the live one, or when --sitecheck names a file or address, so tests stay offline.
+     A site check that cannot be read is a problem, never a quiet pass.
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
 pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
 --test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
@@ -26,6 +30,8 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 SNAPSHOT = "https://cop.theintelligence.company/data/today.geojson"
+SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
+SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
 
 
 def when(s):
@@ -73,6 +79,28 @@ def check_health(health):
     return problems
 
 
+def check_sitecheck(doc, now, max_hours=SITECHECK_HOURS):
+    """Problems from the hub's site check (contract tic-sitecheck/1): each page that failed, or a run too old."""
+    if not isinstance(doc, dict) or not str(doc.get("contract", "")).startswith("tic-sitecheck/"):
+        return ["Site check: the latest run is not a tic-sitecheck document, so pages were not checked"]
+    problems = []
+    done = when(doc.get("finished_at"))
+    if done is None:
+        problems.append("Site check: the latest run has no finish time")
+    elif now - done > timedelta(hours=max_hours):
+        problems.append(f"Site check: last run finished {(now - done).total_seconds() / 3600:.1f} h ago "
+                        f"(limit {max_hours:g} h)")
+    results = doc.get("results")
+    if not isinstance(results, list) or not results:
+        return problems + ["Site check: the latest run lists no pages"]
+    for r in results:
+        if isinstance(r, dict) and r.get("ok") is not True:
+            why = [p for p in (r.get("problems") or []) if isinstance(p, str)]
+            problems.append(f"Site check: {r.get('id') or r.get('url')} page failed"
+                            + (" (" + "; ".join(why[:3]) + ")" if why else "") + f", {r.get('url')}")
+    return problems
+
+
 def health_beside(snapshot):
     """health.json sits beside today.geojson, on the site and in a local build."""
     if snapshot.startswith("http"):
@@ -102,6 +130,9 @@ def main(argv=None):
     ap.add_argument("--cop-hours", type=float, default=6.0)
     ap.add_argument("--future-minutes", type=float, default=30.0)
     ap.add_argument("--health", help="COP's health.json (default: beside the snapshot)")
+    ap.add_argument("--sitecheck", help=f"the hub's site check, file or address (default {SITECHECK}, "
+                                        "read only when the snapshot is an address)")
+    ap.add_argument("--sitecheck-hours", type=float, default=SITECHECK_HOURS)
     ap.add_argument("--test-failure", action="store_true",
                     help="fail on purpose, to test that the alerts arrive")
     a = ap.parse_args(argv)
@@ -115,6 +146,13 @@ def main(argv=None):
     except Exception as e:
         problems.append(f"COP: health.json could not be read ({type(e).__name__}: {e}), "
                         "so malformed items were not checked")
+    sitecheck = a.sitecheck or (SITECHECK if a.snapshot.startswith("http") else None)
+    if sitecheck:
+        try:
+            problems += check_sitecheck(read_json(sitecheck), now, a.sitecheck_hours)
+        except Exception as e:
+            problems.append(f"Site check: the latest run could not be read ({type(e).__name__}: {e}), "
+                            "so pages were not checked")
     if a.test_failure:
         problems.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
     text = "\n".join(problems) if problems else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"

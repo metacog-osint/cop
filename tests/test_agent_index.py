@@ -133,6 +133,30 @@ class Programs(unittest.TestCase):
         self.assertTrue(planned)
         for p in planned:
             self.assertIsNone(p["cop"], p["id"])
+        self.assertIsNone(doc["page_check"], "no site check given, none invented")
+        self.assertTrue(all(p["page_check"] is None for p in doc["programs"]))
+
+    def test_the_hub_site_check_is_carried_per_program_and_pages_outside_the_registry_only_in_the_summary(self):
+        today, health = bus()
+        reg = snap.kittips.registry()
+        sc = {"contract": "tic-sitecheck/1", "finished_at": "2026-11-18T05:11:27.747Z", "results": [
+            {"id": "hub", "url": "https://theintelligence.company/", "ok": False, "problems": ["HTTP 502"]},
+            {"id": "cordon", "url": "https://cordon.theintelligence.company/", "ok": True, "problems": [],
+             "failed_requests": ["404 https://cordon.theintelligence.company/favicon.ico"]},
+            {"id": "elements", "url": "https://elements.theintelligence.company/", "ok": False,
+             "problems": ["map did not draw", 7]}]}
+        doc = ai.build_programs(reg, health, today, NOW, sc)
+        self.assertEqual(doc["page_check"], {"source": ai.SITECHECK, "finished_at": "2026-11-18T05:11:27.747Z",
+                                             "pages": 3, "passed": 1, "failed": ["hub", "elements"]})
+        by = {p["id"]: p for p in doc["programs"]}
+        self.assertEqual(by["cordon"]["page_check"], {"ok": True, "checked_at": "2026-11-18T05:11:27.747Z",
+                                                      "url": "https://cordon.theintelligence.company/",
+                                                      "problems": []})
+        self.assertEqual(by["elements"]["page_check"]["problems"], ["map did not draw"])
+        self.assertFalse(by["elements"]["page_check"]["ok"])
+        self.assertIsNone(by["vigil"]["page_check"], "a page the run did not open")
+        for bad in (None, {}, [], {"contract": "other/1", "results": sc["results"]}):
+            self.assertIsNone(ai.build_programs(reg, health, today, NOW, bad)["page_check"], bad)
         self.assertEqual(doc["bus_generated_at"], today["generated_at"])
 
 

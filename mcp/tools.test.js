@@ -205,6 +205,20 @@ test("suite status lists planned programs with no COP entry", () => {
   assert.ok(res.programs.some((p) => p.in_cop && p.in_cop.state));
 });
 
+test("suite status carries the hub's page check, null where there is none", () => {
+  const plain = T.suiteStatus(programs, NOW);
+  assert.equal(plain.page_check, null);
+  assert.ok(plain.programs.every((p) => p.page_check === null));
+  assert.match(plain.note, /page_check/);
+  const checked = structuredClone(programs);
+  checked.page_check = { finished_at: "2026-11-18T05:11:27Z", pages: 19, passed: 18, failed: ["cordon"] };
+  const cordon = checked.programs.find((p) => p.id === "cordon");
+  cordon.page_check = { ok: false, checked_at: "2026-11-18T05:11:27Z", problems: ["map did not draw"] };
+  const res = T.suiteStatus(checked, NOW);
+  assert.deepEqual(res.page_check.failed, ["cordon"]);
+  assert.equal(res.programs.find((p) => p.id === "cordon").page_check.ok, false);
+});
+
 test("forecasts filter by status and keep the settling rule", () => {
   const all = T.listForecasts(verdict, {}, NOW);
   assert.equal(all.count, 8);
