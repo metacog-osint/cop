@@ -1,0 +1,14 @@
+{
+  "note": "Scope of the Undertow election join (tools/undertow_elections.py). Verdict's calendar holds national votes (presidential rounds, elections to the lower or single chamber, national referendums) hand-entered from each electoral body's own page for these countries, the 40 that Undertow's items stated as targets on 18 Nov 2026 (Tom's choice that day: all 40), from calendar_from to calendar_to. A country here with no vote on the calendar held or scheduled none in that span. A target outside this list is counted under left_out and never matched: add it here only after its votes are entered in Verdict.",
+  "read_on": "2026-11-18",
+  "calendar_from": "2024-11-01",
+  "calendar_to": "2027-12-31",
+  "countries": ["AM", "AO", "AU", "AZ", "BA", "BE", "BF", "BG", "CD", "CI", "CM", "CO", "DE", "ES", "FR", "GA", "GB", "HU", "IL", "IN",
+                "IQ", "IR", "IT", "LV", "MD", "ML", "MT", "NL", "PK", "PL", "PS", "RO", "RU", "SN", "TD", "TG", "TR", "TW", "UA", "US"],
+  "names": {"AM": "Armenia", "AO": "Angola", "AU": "Australia", "AZ": "Azerbaijan", "BA": "Bosnia and Herzegovina", "BE": "Belgium",
+            "BF": "Burkina Faso", "BG": "Bulgaria", "CD": "DR Congo", "CI": "Côte d'Ivoire", "CM": "Cameroon", "CO": "Colombia",
+            "DE": "Germany", "ES": "Spain", "FR": "France", "GA": "Gabon", "GB": "the United Kingdom", "HU": "Hungary", "IL": "Israel",
+            "IN": "India", "IQ": "Iraq", "IR": "Iran", "IT": "Italy", "LV": "Latvia", "MD": "Moldova", "ML": "Mali", "MT": "Malta",
+            "NL": "the Netherlands", "PK": "Pakistan", "PL": "Poland", "PS": "Palestine", "RO": "Romania", "RU": "Russia",
+            "SN": "Senegal", "TD": "Chad", "TG": "Togo", "TR": "Türkiye", "TW": "Taiwan", "UA": "Ukraine", "US": "the United States"}
+}

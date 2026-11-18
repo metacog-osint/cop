@@ -388,7 +388,7 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   "halos", preset "Information" beside Context (its registry family), `routine_in_preset`, `freshness` "feed" (items
   carry disclosure dates, some months old). Its ids are `UT-<LANE>-<key>`, not `undertow:<kind>:...`, so the gate
   reads them through `ID_PREFIXES` in `tools/gate.py` (the lane is the kind; an unlisted upper-case prefix is held).
-  **On the gate's open list** (Tom, 14 Nov 2026). One join reads it, unpublished: the sanctions join (below). Colour: magenta `#CD00A0` (outlines
+  **On the gate's open list** (Tom, 14 Nov 2026). Two joins read it, both unpublished: the sanctions join and the election join (below). Colour: magenta `#CD00A0` (outlines
   `#670050`, `#F3BFE7`). A search over sRGB on a 5-step grid found 107 colours that pass the dataviz validator
   against all eleven others, every one a magenta or a dark brown; `#CD00A0`'s worst pairs are Vigil, colour-blind
   ΔE 9.0 (target 8), and Context, normal 16.9 (floor 15), with contrast 4.59 on the light land and 3.82 on the dark
@@ -437,6 +437,26 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   Inputs `undertow` and `headwind:sanctions`; **`published` is off** (Tom's call), so the build writes only
   `out/undertow-sanctions/`. No page or MCP view yet: they come with the switch. `config/undertow-names.json`
   `checked_by` is empty until Tom checks the table.
+  **The Undertow election join** (18 Nov 2026, join 0.1, branch `undertow/election-join`; step 3 of the joins plan,
+  fallback (a) because ElectionGuide's calendar is "for non-commercial use" with no data-use policy found; countries
+  Tom's choice of 18 Nov 2026, all 40 of Undertow's stated targets): `tools/undertow_elections.py` reads Verdict's
+  `calendar.geojson` (kind `election`, `ref` `election:<CC>:<vote>:<round>`; 48 national votes, 1 Nov 2024 to
+  31 Dec 2027, hand-entered in Verdict on 18 Nov 2026 from the electoral bodies' own pages, 9 marked unverified) and
+  matches an Undertow item whose stated target (`operation.targets`) votes, when the item's period overlaps the 90
+  days before the vote through election day (provisional). The period is a watch row's `activity.activity_period` or
+  a disclosure's `operation.period` (month, "a to b", H1/H2, Q, year) cut at its publication date; never a report
+  date, so reporter items with report dates only are left out and counted. Each match keeps `period_days` and `fit`
+  ("inside" or "overlaps"); nothing is dropped for being long. Voice: "<Country> voted on <date> in <a vote>;
+  <publisher> reported <operation> targeting <country> from <a> to <b> days before (<period>)." ("votes on" for one
+  to come); no intent, no claim it aimed at the vote (`NOT_A_FINDING`, a voice test). Base rate: share of
+  item-country pairs in a window, against the share of days in a window and the chance a period of the same length
+  placed at random overlaps one. `config/undertow-elections.json` is the scope (40 countries, names, span); a target
+  outside it is counted and never matched. Inputs `undertow` and `verdict:calendar`: Verdict is no layer, so
+  `gate.READ_NOT_DRAWN` lets a join declare it. **`published` is off** (Tom's call): the build writes only
+  `out/undertow-elections/`. Live run 18 Nov (Undertow feed 14:30 UTC, the new calendar): 35 matches at 19 votes,
+  the Armenia case among them (DFRLab's activity period 2026-01 to 2026-06, report 12 Oct); 28 of 100 pairs (28%) in
+  a window against 9% of days and 21% by random placement. Most matches are the EEAS's year-long periods (fit
+  "overlaps", 365 days). Tests: `test_undertow_elections.py` (16).
   `tests/fixtures/undertow.geojson`: 22 items of its live feed of 01:24 UTC 15 Nov (every lane, every geometry kind
   and confidence state), every timestamp moved back 14 days 5 h 18 min. **Size:** with all 425 items a local live
   build's bus grew from 2.9 MB (live COP) to 4.2 MB and the agent index from 519 KB to 608 KB (Undertow's rows

@@ -41,9 +41,19 @@ class Layers(unittest.TestCase):
     def test_every_program_cop_draws_is_usable_in_a_join(self):
         cfg = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
         ids = [p["id"] for p in cfg["programs"]]
-        self.assertEqual(gate.programs(), set(ids))
+        self.assertEqual(gate.programs(), set(ids) | {"verdict"})
         join = {"id": "t-all", "published": True, "inputs": ids}
         self.assertEqual(gate.review(join)["review_class"], "open")
+
+    def test_verdict_is_read_not_drawn(self):
+        # Verdict is no layer in config/programs.json, but its calendar is a declared input of the election join.
+        self.assertEqual(gate.READ_NOT_DRAWN, {"verdict"})
+        self.assertEqual(gate.layer_of("verdict:calendar:2026-06-07-am-legislative"), ("verdict", "calendar"))
+        join = {"id": "t-vd", "published": False, "inputs": ["undertow", "verdict:calendar"]}
+        ok = {"join": join, "m": [{"id": "UT-WATCH-c12152a686"}, {"id": "verdict:calendar:2026-06-07-am-legislative"}]}
+        self.assertEqual(gate.review(join, ok)["review_class"], "open")
+        bad = {"join": join, "m": [{"id": "verdict:2026-11-06:fao-ffpi-october-up"}]}
+        self.assertEqual(gate.review(join, bad)["review_class"], "refused")
 
     def test_layers_that_used_to_be_held_are_open(self):
         for item_id, inp in (("noisefloor-event-2026-11-11-1", "noisefloor"), ("vis:2026-11-13:hormuz", "vis"),
