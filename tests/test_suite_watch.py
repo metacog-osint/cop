@@ -132,5 +132,57 @@ class Watch(unittest.TestCase):
         self.assertNotIn("push:", text, "a push to main must not start the watchdog")
 
 
+def sitecheck(finished="2026-11-14T17:11:00Z", **bad):
+    """The hub's site check as tic-sitecheck/1 writes it: one result per page, ok or with its problems."""
+    results = [{"id": "hub", "url": "https://theintelligence.company/", "ok": True, "problems": [],
+                "failed_requests": ["404 https://theintelligence.company/favicon.ico"]}]
+    for pid, problems in bad.items():
+        results.append({"id": pid, "url": f"https://{pid}.theintelligence.company/", "ok": False,
+                        "problems": problems})
+    return {"contract": "tic-sitecheck/1", "finished_at": finished, "sites": len(results),
+            "ok": sum(r["ok"] for r in results), "results": results}
+
+
+class SiteCheck(unittest.TestCase):
+    def test_every_page_passing_has_no_problems_and_failed_requests_are_evidence_only(self):
+        self.assertEqual(watch.check_sitecheck(sitecheck(), NOW), [])
+
+    def test_a_failed_page_is_named_with_its_reasons_and_address(self):
+        problems = watch.check_sitecheck(sitecheck(cordon=["no house bar", "map did not draw"]), NOW)
+        self.assertEqual(problems, ["Site check: cordon page failed (no house bar; map did not draw), "
+                                    "https://cordon.theintelligence.company/"])
+
+    def test_an_old_run_means_the_site_check_stopped(self):
+        problems = watch.check_sitecheck(sitecheck(finished="2026-11-14T05:11:00Z"), NOW)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("last run finished 15.8 h ago (limit 14 h)", problems[0])
+        self.assertEqual(watch.check_sitecheck(sitecheck(finished="2026-11-14T08:00:00Z"), NOW), [])
+
+    def test_a_document_of_the_wrong_shape_is_a_problem_not_quiet(self):
+        for bad in ({}, [], "x", {"contract": "tic-sitecheck/1", "finished_at": "2026-11-14T17:11:00Z"},
+                    {"contract": "tic-sitecheck/1", "finished_at": "2026-11-14T17:11:00Z", "results": []}):
+            self.assertTrue(watch.check_sitecheck(bad, NOW), bad)
+
+    def test_a_failed_page_fails_the_run_when_a_site_check_is_given(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            sc = Path(d) / "sitecheck.json"
+            sc.write_text(json.dumps(sitecheck(finished=datetime.now(timezone.utc).isoformat(),
+                                               elements=["HTTP 503"])), encoding="utf-8")
+            code, out = run(Path(d), snap(), health(), ["--sitecheck", str(sc)])
+            self.assertEqual(code, 1)
+            self.assertIn("Site check: elements page failed (HTTP 503)", out)
+            code, out = run(Path(d), snap(), health(), ["--sitecheck", str(Path(d) / "missing.json")])
+            self.assertEqual(code, 1)
+            self.assertIn("pages were not checked", out)
+
+    def test_a_local_snapshot_reads_no_site_check_unless_asked(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(run(Path(d), snap(), health())[0], 0)
+        self.assertEqual(watch.SITECHECK, "https://tic-sitecheck.metacog.workers.dev/")
+
+
 if __name__ == "__main__":
     unittest.main()
