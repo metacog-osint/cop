@@ -755,7 +755,17 @@ Plan: `C:\Users\PSRA User 4\.claude\plans\compiled-toasting-treehouse.md`; the r
   (`--health` to point elsewhere) and exits 1 when a program has malformed items left out of the picture, naming
   the program, the count and up to three reasons. A `health.json` it cannot read is a problem too, never a quiet
   pass.
-- Tests: `python tests/test_suite_watch.py` (17).
+- **Page check** (18 Nov 2026, Tom's yes): it also reads the hub's site check
+  (`https://tic-sitecheck.metacog.workers.dev/`, contract `tic-sitecheck/1`; the hub Worker opens the hub and every
+  program's page in headless Chrome at 05:10 and 17:10 UTC) and exits 1 when a page failed (named with up to three
+  reasons and its address) or the last run finished more than 14 hours ago (`--sitecheck-hours`). Failed requests and
+  console errors stay evidence in the site check, never a problem here. Read only when the snapshot is the live one
+  or `--sitecheck` names a file, so the tests stay offline. The same run reaches agents: `agent_index.py` (default
+  fetch, or `--sitecheck`; skipped with `--verdict` unless given) puts the run's summary in `programs.json` as
+  `page_check` (`finished_at`, `pages`, `passed`, `failed` ids) and each program's own result as its `page_check`
+  (`ok`, `checked_at`, `url`, `problems`; null for a page the check does not open), and `suite_status` returns both.
+  A site check that cannot be read is a watchdog problem and, at build time, an Actions warning with null page_check.
+- Tests: `python tests/test_suite_watch.py` (23).
 
 ## Not in v0
 Lifeline layer (the general convergence glyph is dropped from the plan, Tom 15 Nov 2026, D3), likelihood and confidence display (the kit's `judgmentChips` is

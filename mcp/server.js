@@ -138,7 +138,8 @@ export function buildServer(data, clock = Date.now) {
     "suite_status",
     "Suite status",
     "Every program in The Intelligence Company's suite (live and planned): what it watches, its site and feed, its " +
-      "licence, and for live programs how fresh its data is in COP's snapshot. Start here.",
+      "licence, for live programs how fresh its data is in COP's snapshot, and whether its page passed the hub's " +
+      "last site check. Start here.",
     NoInput,
     async (_a, now) => T.suiteStatus(await data.programs(), now),
   );
