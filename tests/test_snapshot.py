@@ -105,7 +105,7 @@ class Build(unittest.TestCase):
     def test_noisefloor_events_outrank_new_areas(self):
         today, picks, _, _ = build()
         nf = [p for p in picks["picks"] if p["program"] == "noisefloor"]
-        self.assertTrue(nf and "% of aircraft with degraded GPS" in nf[0]["reason"], nf)
+        self.assertTrue(nf and "% of aircraft with severe GPS error" in nf[0]["reason"], nf)
 
     def test_headwind_items_from_a_source_it_did_not_read_go_grey(self):
         hw = json.loads((FIX / "headwind.geojson").read_text(encoding="utf-8"))
@@ -190,6 +190,31 @@ class Build(unittest.TestCase):
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
         self.assertIn('["coalesce", ["get", "cop_also"], ""]', js)
         self.assertRegex(js, r'const MAP_KEYS = \[[^\]]*"cop_also"', "the map's copy of each item keeps the tag")
+
+    def test_noisefloor_military_air_shows_under_conflict_with_its_strength(self):
+        """Noisefloor's military air items (18 Nov 2026): routine measurements, so they stay off the picks; they show
+        under Conflict as well as Spectrum, and their strength says the count is a lower bound."""
+        def add(f):
+            x = json.loads(json.dumps(f["noisefloor"]["features"][0]))
+            x["properties"].update({
+                "id": "noisefloor-milair-gulf-2026-11-17", "tier": "routine",
+                "title": "Military aircraft seen over the Persian Gulf and Strait of Hormuz: 70 on 17 Nov 2026, "
+                         "near its usual level (a lower bound)",
+                "summary": "Military aircraft seen over the Persian Gulf and Strait of Hormuz on 17 Nov 2026: 70 "
+                           "aircraft, 183 aircraft-hours, against a usual 191.5.",
+                "measure": {"name": "military_aircraft_hours", "value": 183, "unit": "aircraft-hours",
+                            "expected": 191.5}})
+            f["noisefloor"]["features"].append(x)
+        today, picks, health, _ = build(mutate=add)
+        p = next(f["properties"] for f in today["features"] if f["properties"]["id"].startswith("noisefloor-milair-"))
+        self.assertEqual(p["cop_also"], ",conflict,")
+        self.assertEqual(p["cop_strength_text"], "183 military aircraft-hours seen, a lower bound")
+        others = [f["properties"] for f in today["features"] if f["properties"].get("cop_program") == "noisefloor"
+                  and not f["properties"]["id"].startswith("noisefloor-milair-")]
+        self.assertTrue(others and not any(o.get("cop_also") for o in others), "only military air is tagged")
+        self.assertNotIn("noisefloor-milair-gulf-2026-11-17", [k["id"] for k in picks["picks"]], "routine: never a pick")
+        nf = next(q for q in health["config"]["programs"] if q["id"] == "noisefloor")
+        self.assertEqual([r["preset"] for r in nf["also_in"]], ["conflict"])
 
     def test_wake_kinds_are_drawn_and_tagged(self):
         """Wake's six kinds (17 Nov 2026): every kind shows under Maritime; UKMTO's attack, hijack and boarding reports
