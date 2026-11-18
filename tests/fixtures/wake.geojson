@@ -15,6 +15,42 @@
    "checked_at": "2026-10-31T20:29:19Z",
    "data_as_of": "2026-11-08",
    "detail": "read 0 rows (0 new) in 1 page(s); newest day 2026-11-08"
+  },
+  "imf-portwatch-ports": {
+   "state": "fresh",
+   "last_ok": "2026-10-29T22:54:29Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-29T22:54:29Z",
+   "data_as_of": "2026-10-20",
+   "detail": "read 13393 rows (13393 new) in 14 page(s); newest day 2026-10-20"
+  },
+  "ukmto-incidents": {
+   "state": "fresh",
+   "last_ok": "2026-10-31T20:38:54Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:38:54Z",
+   "data_as_of": "2026-10-31T09:52:09Z",
+   "detail": "read 67 reports; 33 in the last 30 days"
+  },
+  "digitraffic-ais": {
+   "state": "fresh",
+   "last_ok": "2026-10-31T20:29:19Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:29:19Z",
+   "data_as_of": "2026-10-31T20:28:21Z",
+   "detail": "read 879 vessel positions; Digitraffic's data updated 2026-10-31T20:28:21Z"
+  },
+  "headwind-vessels": {
+   "state": "fresh",
+   "last_ok": "2026-10-31T20:38:54Z",
+   "last_error": null,
+   "failures": 0,
+   "checked_at": "2026-10-31T20:38:54Z",
+   "data_as_of": "2026-10-31T17:30:05Z",
+   "detail": "1995 IMO numbers; lists read by Headwind 2026-10-31T17:30:05Z"
   }
  },
  "features": [
@@ -2735,6 +2771,850 @@
       "independence_group": "imf-portwatch",
       "source_type": "official or market data",
       "descriptor": "Daily counts of vessels crossing 28 maritime chokepoints, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     56.3333,
+     26.5
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ukmto:ukmto-209",
+    "program": "wake",
+    "title": "UKMTO report 209: Attack, Strait of Hormuz, 27 Oct 2026",
+    "summary": "UKMTO (UK Maritime Trade Operations, Royal Navy) report 209: type \"Attack\" (UKMTO alert level 1, Yellow pin) at Strait of Hormuz, 26.50, 56.33. UKMTO gives the incident time as 27 Oct 2026 18:41 UTC and published the report at 31 Oct 2026 11:11 UTC. Reported vessel type: Tanker. UKMTO does not report the vessel as under pirate control; crew held: 0. This is UKMTO's report as published: Wake has not verified it and does not say who was responsible, why it happened or what became of the vessel. Vessel names and UKMTO's free text are not carried; the report is on UKMTO's page.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-31T06:51:04Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-26T23:59:59Z",
+    "countries": [],
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "events",
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-5",
+     "WK-EEI-5"
+    ],
+    "method_version": "wake-2.4",
+    "precision_class": "point",
+    "measures": {
+     "ukmto_number": 209,
+     "report_type": "Attack",
+     "alert_level": 1,
+     "alert_colour": "Yellow",
+     "region": "IO",
+     "place": "Strait of Hormuz",
+     "incident_at": "2026-10-27T14:20:19Z",
+     "created_at": "2026-10-31T06:51:04Z",
+     "vessel_type": "Tanker",
+     "under_pirate_control": false,
+     "crew_held": 0
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#incidents"
+    },
+    "sources": [
+     {
+      "id": "ukmto-incidents",
+      "publisher": "UK Maritime Trade Operations (UKMTO), Royal Navy",
+      "title": "UKMTO recent incidents, warnings and advisories",
+      "url": "https://www.ukmto.org/recent-incidents",
+      "licence": "Open Government Licence: ukmto.org's terms and conditions (clause 20) say the site is published under the Open Government Licence. Wake carries UKMTO's fields, not its free text or vessel names",
+      "grade": "A2",
+      "independence_group": "uk-mod-ukmto",
+      "source_type": "official or market data",
+      "descriptor": "Incident reports as the Royal Navy's UKMTO publishes them (read from the list its own page loads); UKMTO's reports are not verified by Wake.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     60.05,
+     19.8833
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ukmto:ukmto-178",
+    "program": "wake",
+    "title": "UKMTO report 178: Advisory, Arabian Sea, 3 Oct 2026",
+    "summary": "UKMTO (UK Maritime Trade Operations, Royal Navy) report 178: type \"Advisory\" (UKMTO alert level 3, Yellow pin) at Arabian Sea, 19.88, 60.05. UKMTO gives the incident time as 3 Oct 2026 11:04 UTC and published the report at 3 Oct 2026 11:11 UTC. Reported vessel type: Tanker. UKMTO does not report the vessel as under pirate control; crew held: 0. This is UKMTO's report as published: Wake has not verified it and does not say who was responsible, why it happened or what became of the vessel. Vessel names and UKMTO's free text are not carried; the report is on UKMTO's page.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-03T06:50:28Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-02T23:59:59Z",
+    "countries": [],
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "events",
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-5",
+     "WK-EEI-5"
+    ],
+    "method_version": "wake-2.4",
+    "precision_class": "point",
+    "measures": {
+     "ukmto_number": 178,
+     "report_type": "Advisory",
+     "alert_level": 3,
+     "alert_colour": "Yellow",
+     "region": "IO",
+     "place": "Arabian Sea",
+     "incident_at": "2026-10-03T06:43:19Z",
+     "created_at": "2026-10-03T06:50:28Z",
+     "vessel_type": "Tanker",
+     "under_pirate_control": false,
+     "crew_held": 0
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#incidents"
+    },
+    "sources": [
+     {
+      "id": "ukmto-incidents",
+      "publisher": "UK Maritime Trade Operations (UKMTO), Royal Navy",
+      "title": "UKMTO recent incidents, warnings and advisories",
+      "url": "https://www.ukmto.org/recent-incidents",
+      "licence": "Open Government Licence: ukmto.org's terms and conditions (clause 20) say the site is published under the Open Government Licence. Wake carries UKMTO's fields, not its free text or vessel names",
+      "grade": "A2",
+      "independence_group": "uk-mod-ukmto",
+      "source_type": "official or market data",
+      "descriptor": "Incident reports as the Royal Navy's UKMTO publishes them (read from the list its own page loads); UKMTO's reports are not verified by Wake.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     28.7355,
+     40.97
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:port:istanbul:2026-11-06",
+    "program": "wake",
+    "title": "Istanbul: 12.7 port calls a day in the week to 20 Oct 2026, 44% below the same weeks a year earlier",
+    "summary": "IMF PortWatch counted a mean of 12.7 port calls a day at Istanbul from 14 Oct 2026 to 20 Oct 2026 (tankers 4.7, container ships 0.3, dry bulk 1.0). Against the 90 days before: median 15.14 a day, -16%, z -1.6. Against the same weeks a year earlier: median 22.57 a day, -44%, outside that window's 5th-95th percentile range (19.07 to 24.86). Tanker calls: 4.7 a day against a median of 6.14 in the same weeks a year earlier (-23%). PortWatch estimates 22,404 tonnes a day imported and 25,694 exported that week (IMF estimates from vessel draughts, not customs figures). In Wake's port set as one of PortWatch's 50 busiest ports by its yearly ship count. Calls are of AIS-visible ships; a ship calling with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-20T23:59:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-01T23:59:59Z",
+    "countries": [
+     "TR"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-4",
+     "WK-EEI-4"
+    ],
+    "method_version": "wake-2.3",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-ports-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.3"
+    },
+    "measures": {
+     "calls_7d": 12.71,
+     "tanker_7d": 4.71,
+     "container_7d": 0.29,
+     "dry_bulk_7d": 1.0,
+     "import_t_7d": 22404,
+     "export_t_7d": 25694,
+     "change_90d_pct": -16.0,
+     "z_90d": -1.64,
+     "flag_rate_90d": 0.022,
+     "baseline_90d_median": 15.14,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": -43.7,
+     "outside_year_ago_range": true,
+     "baseline_year_ago_median": 22.57,
+     "baseline_year_ago_p05": 19.07,
+     "baseline_year_ago_p95": 24.86,
+     "baseline_year_ago_n": 91,
+     "tanker_year_ago_median": 6.14,
+     "tripped": [
+      "year_ago"
+     ],
+     "port_set_rule": "global-top",
+     "portwatch_portid": "port504"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#port-istanbul"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch-ports",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily_Ports_Data: port calls at each port by vessel type, and estimated tonnes imported and exported",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of port calls at about 2,000 ports, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-29T22:54:29Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -5.4143,
+     36.1659
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:port:algeciras:2026-11-06",
+    "program": "wake",
+    "title": "Algeciras: 18.3 port calls a day in the week to 20 Oct 2026, +12% on the last 90 days, +8% on a year earlier",
+    "summary": "IMF PortWatch counted a mean of 18.3 port calls a day at Algeciras from 14 Oct 2026 to 20 Oct 2026 (tankers 8.3, container ships 7.0, dry bulk 1.3). Against the 90 days before: median 16.29 a day, +12%, z +1.6. Against the same weeks a year earlier: median 17 a day, +8%, inside that window's 5th-95th percentile range (14.64 to 19.14). Tanker calls: 8.3 a day against a median of 6.43 in the same weeks a year earlier (+29%). PortWatch estimates 176,904 tonnes a day imported and 79,028 exported that week (IMF estimates from vessel draughts, not customs figures). In Wake's port set as one of PortWatch's 50 busiest ports by its yearly ship count. Calls are of AIS-visible ships; a ship calling with its transponder off is not counted. Wake computes the 7-day means and baselines from PortWatch's daily counts.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-20T23:59:59Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-01T23:59:59Z",
+    "countries": [
+     "ES"
+    ],
+    "pmesii_pt": [
+     "economic",
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel",
+     "maintain_supply_chains"
+    ],
+    "requirement_ids": [
+     "WK-PIR-4",
+     "WK-EEI-4"
+    ],
+    "method_version": "wake-2.3",
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-portwatch-ports-90d-and-year-ago",
+     "window": "91 seven-day means before the latest week; seven-day means ending within 45 days of the date one year back",
+     "type": "rolling",
+     "version": "wake-2.3"
+    },
+    "measures": {
+     "calls_7d": 18.29,
+     "tanker_7d": 8.29,
+     "container_7d": 7.0,
+     "dry_bulk_7d": 1.29,
+     "import_t_7d": 176904,
+     "export_t_7d": 79028,
+     "change_90d_pct": 12.3,
+     "z_90d": 1.57,
+     "flag_rate_90d": 0.0,
+     "baseline_90d_median": 16.29,
+     "baseline_90d_n": 91,
+     "change_year_ago_pct": 7.6,
+     "outside_year_ago_range": false,
+     "baseline_year_ago_median": 17.0,
+     "baseline_year_ago_p05": 14.64,
+     "baseline_year_ago_p95": 19.14,
+     "baseline_year_ago_n": 91,
+     "tanker_year_ago_median": 6.43,
+     "tripped": [],
+     "port_set_rule": "global-top",
+     "portwatch_portid": "port31"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#port-algeciras"
+    },
+    "sources": [
+     {
+      "id": "imf-portwatch-ports",
+      "publisher": "IMF PortWatch (International Monetary Fund and University of Oxford)",
+      "title": "Daily_Ports_Data: port calls at each port by vessel type, and estimated tonnes imported and exported",
+      "url": "https://portwatch.imf.org/",
+      "licence": "IMF terms of use: reuse of IMF Data with attribution; the IMF does not endorse Wake's analysis",
+      "grade": "B2",
+      "independence_group": "imf-portwatch",
+      "source_type": "official or market data",
+      "descriptor": "Daily counts of port calls at about 2,000 ports, estimated by the IMF from AIS positions.",
+      "accessed_at": "2026-10-29T22:54:29Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     21.54677,
+     59.0223
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ais-listed:8414477:273350220",
+    "program": "wake",
+    "title": "FLANDRIA broadcasts an IMO number listed on Canada's consolidated autonomous sanctions list (Flandria, entry Russia|1.1|539, as of 31 Oct 2026)",
+    "summary": "Digitraffic's AIS record for FLANDRIA (IMO 8414477, MMSI 273350220; AIS type: tanker) broadcasts an IMO number listed on Canada's consolidated autonomous sanctions list (Flandria, entry Russia|1.1|539, as of 31 Oct 2026). The match is by IMO number alone, against Headwind's table of ships across sanctions lists. An IMO number in AIS is entered into the transponder by whoever operates it, and ships have broadcast other ships' numbers: a broadcast IMO number is a claim, not an identity. Wake does not say that this vessel is the listed ship, and says nothing about who owns or operates it or why it is where it is. Its latest report, at 31 Oct 2026 14:00 UTC, put it at 59.022 N 21.547 E, 11.2 kn, under way using engine, as broadcast. None of the 86 reports Wake read from it since 31 Oct 2026 00:00 UTC failed Wake's position checks (a jump between two reports of more than 2 km at over 50 kn, or a claimed speed of 50 kn or more from a vessel that is not a high-speed craft); those checks catch jumps and impossible speeds, not every false position.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-31T09:39:20Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-01T09:39:20Z",
+    "countries": [],
+    "pmesii_pt": [
+     "economic",
+     "political"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-3",
+     "WK-EEI-3"
+    ],
+    "method_version": "wake-2.2",
+    "precision_class": "point",
+    "measures": {
+     "mmsi": "273350220",
+     "imo": "8414477",
+     "name": "FLANDRIA",
+     "ship_type": 80,
+     "ship_class": "tanker",
+     "destination": "RUKGD",
+     "lists": [
+      {
+       "list": "canada-sema",
+       "entry_ids": [
+        "Russia|1.1|539"
+       ],
+       "entry_name": "Flandria",
+       "flag": null,
+       "as_of": "31 Oct 2026",
+       "name_differs": false
+      }
+     ],
+     "position_given": true,
+     "reports_in_window": 86,
+     "reports_failing_checks": 0,
+     "window_since": "2026-10-30T19:39:25Z",
+     "latest_report_at": "2026-10-31T09:39:20Z",
+     "latest_sog_kn": 11.2,
+     "latest_nav_status": 0,
+     "headwind_requirement": "HW-EEI-1",
+     "threshold": "a broadcast IMO number with a valid check digit that Headwind's table lists; position withheld when any report in the window failed a check (a jump between two reports of more than 2 km at over 50 kn, or a claimed speed of 50 kn or more from a vessel that is not a high-speed craft)"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#listed"
+    },
+    "sources": [
+     {
+      "id": "digitraffic-ais",
+      "publisher": "Fintraffic, Digitraffic Marine (Finland)",
+      "title": "AIS vessel locations and metadata (/api/ais/v1/locations and /vessels)",
+      "url": "https://meri.digitraffic.fi/api/ais/v1/locations",
+      "licence": "Source: Fintraffic / digitraffic.fi, license CC 4.0 BY (https://creativecommons.org/licenses/by/4.0/). Modified: Wake tracks positions across readings and derives gaps and slow spells",
+      "grade": "B2",
+      "independence_group": "fintraffic-ais",
+      "source_type": "official or market data",
+      "descriptor": "AIS positions received by Finland's shore stations; the content is what each ship's transponder broadcasts, and Wake keeps the track across readings.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     },
+     {
+      "id": "headwind-vessels",
+      "publisher": "Headwind, The Intelligence Company",
+      "title": "Ships across sanctions lists (vessels.json): the OFAC SDN list, the UK Sanctions List, France's asset-freeze register and Canada's consolidated list by IMO number",
+      "url": "https://headwind.theintelligence.company/data/vessels.json",
+      "licence": "Headwind's join, code MIT; each list's entries are under that list's own terms, credited as separate sources on this item",
+      "grade": "B2",
+      "independence_group": "headwind",
+      "source_type": "suite_program",
+      "descriptor": "Headwind's table of every IMO number on the OFAC SDN list, the UK Sanctions List, France's asset-freeze register or Canada's consolidated list, with each list's entry ids, name and flag as Headwind read them.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     },
+     {
+      "id": "gac-sema",
+      "publisher": "Global Affairs Canada",
+      "title": "Consolidated Canadian Autonomous Sanctions List",
+      "url": "https://www.international.gc.ca/world-monde/international_relations-relations_internationales/sanctions/consolidated-consolide.aspx?lang=eng",
+      "licence": "Canada.ca terms of use: reproduction in whole or in part for non-commercial purposes",
+      "grade": "A1",
+      "independence_group": "ca-gac-sanctions",
+      "source_type": "official or market data",
+      "descriptor": "Canada's consolidated autonomous sanctions list, as read by Headwind.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": null,
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ais-listed:9288746:273271850",
+    "program": "wake",
+    "title": "PLUTON broadcasts an IMO number listed on the UK Sanctions List (MARATHON, entry RUS2362, as of 31 Oct 2026) and on Canada's consolidated autonomous sanctions list (Udaya, entry Russia|1.1|110, as of 31 Oct 2026)",
+    "summary": "Digitraffic's AIS record for PLUTON (IMO 9288746, MMSI 273271850; AIS type: tanker) broadcasts an IMO number listed on the UK Sanctions List (MARATHON, entry RUS2362, as of 31 Oct 2026) and on Canada's consolidated autonomous sanctions list (Udaya, entry Russia|1.1|110, as of 31 Oct 2026). The name it broadcasts (PLUTON) differs from the list entry's name (MARATHON on the UK Sanctions List and Udaya on Canada's consolidated autonomous sanctions list). Ships on these lists are often renamed, so a different name says nothing either way. The match is by IMO number alone, against Headwind's table of ships across sanctions lists. An IMO number in AIS is entered into the transponder by whoever operates it, and ships have broadcast other ships' numbers: a broadcast IMO number is a claim, not an identity. Wake does not say that this vessel is the listed ship, and says nothing about who owns or operates it or why it is where it is. Wake gives no position for it: 4 of the 107 reports Wake read from it since 31 Oct 2026 00:09 UTC failed Wake's position checks (a jump between two reports of more than 2 km at over 50 kn, or a claimed speed of 50 kn or more from a vessel that is not a high-speed craft), so none of its reported positions in that window is repeated here. Its latest report was at 31 Oct 2026 19:58 UTC.",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-31T15:37:50Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-01T15:37:50Z",
+    "countries": [],
+    "pmesii_pt": [
+     "economic",
+     "political"
+    ],
+    "ascope": [
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical",
+     "informational"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-3",
+     "WK-EEI-3"
+    ],
+    "method_version": "wake-2.2",
+    "precision_class": "none",
+    "measures": {
+     "mmsi": "273271850",
+     "imo": "9288746",
+     "name": "PLUTON",
+     "ship_type": 80,
+     "ship_class": "tanker",
+     "destination": "RU ULU",
+     "lists": [
+      {
+       "list": "uk-sanctions",
+       "entry_ids": [
+        "RUS2362"
+       ],
+       "entry_name": "MARATHON",
+       "flag": "Gabon",
+       "as_of": "31 Oct 2026",
+       "name_differs": true
+      },
+      {
+       "list": "canada-sema",
+       "entry_ids": [
+        "Russia|1.1|110"
+       ],
+       "entry_name": "Udaya",
+       "flag": null,
+       "as_of": "31 Oct 2026",
+       "name_differs": true
+      }
+     ],
+     "position_given": false,
+     "reports_in_window": 107,
+     "reports_failing_checks": 4,
+     "window_since": "2026-10-30T19:48:59Z",
+     "latest_report_at": "2026-10-31T15:37:50Z",
+     "latest_sog_kn": null,
+     "latest_nav_status": null,
+     "headwind_requirement": "HW-EEI-1",
+     "threshold": "a broadcast IMO number with a valid check digit that Headwind's table lists; position withheld when any report in the window failed a check (a jump between two reports of more than 2 km at over 50 kn, or a claimed speed of 50 kn or more from a vessel that is not a high-speed craft)"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#listed"
+    },
+    "sources": [
+     {
+      "id": "digitraffic-ais",
+      "publisher": "Fintraffic, Digitraffic Marine (Finland)",
+      "title": "AIS vessel locations and metadata (/api/ais/v1/locations and /vessels)",
+      "url": "https://meri.digitraffic.fi/api/ais/v1/locations",
+      "licence": "Source: Fintraffic / digitraffic.fi, license CC 4.0 BY (https://creativecommons.org/licenses/by/4.0/). Modified: Wake tracks positions across readings and derives gaps and slow spells",
+      "grade": "B2",
+      "independence_group": "fintraffic-ais",
+      "source_type": "official or market data",
+      "descriptor": "AIS positions received by Finland's shore stations; the content is what each ship's transponder broadcasts, and Wake keeps the track across readings.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     },
+     {
+      "id": "headwind-vessels",
+      "publisher": "Headwind, The Intelligence Company",
+      "title": "Ships across sanctions lists (vessels.json): the OFAC SDN list, the UK Sanctions List, France's asset-freeze register and Canada's consolidated list by IMO number",
+      "url": "https://headwind.theintelligence.company/data/vessels.json",
+      "licence": "Headwind's join, code MIT; each list's entries are under that list's own terms, credited as separate sources on this item",
+      "grade": "B2",
+      "independence_group": "headwind",
+      "source_type": "suite_program",
+      "descriptor": "Headwind's table of every IMO number on the OFAC SDN list, the UK Sanctions List, France's asset-freeze register or Canada's consolidated list, with each list's entry ids, name and flag as Headwind read them.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     },
+     {
+      "id": "uk-sanctions-list",
+      "publisher": "UK Foreign, Commonwealth and Development Office",
+      "title": "The UK Sanctions List",
+      "url": "https://www.gov.uk/government/publications/the-uk-sanctions-list",
+      "licence": "Contains public sector information licensed under the Open Government Licence v3.0",
+      "grade": "A1",
+      "independence_group": "uk-fcdo-sanctions",
+      "source_type": "official or market data",
+      "descriptor": "The UK Sanctions List, as read by Headwind.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     },
+     {
+      "id": "gac-sema",
+      "publisher": "Global Affairs Canada",
+      "title": "Consolidated Canadian Autonomous Sanctions List",
+      "url": "https://www.international.gc.ca/world-monde/international_relations-relations_internationales/sanctions/consolidated-consolide.aspx?lang=eng",
+      "licence": "Canada.ca terms of use: reproduction in whole or in part for non-commercial purposes",
+      "grade": "A1",
+      "independence_group": "ca-gac-sanctions",
+      "source_type": "official or market data",
+      "descriptor": "Canada's consolidated autonomous sanctions list, as read by Headwind.",
+      "accessed_at": "2026-10-31T20:38:54Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      28.05367,
+      60.47633
+     ],
+     [
+      27.4395,
+      60.1205
+     ]
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ais-gap:538090682:1794863427",
+    "program": "wake",
+    "title": "AIS gap of 70-80 min: KAPTAN ARIFBAYRAKTAR (cargo), path 0.14 km from Nord Stream 1",
+    "summary": "Digitraffic's AIS record for KAPTAN ARIFBAYRAKTAR (IMO 9449560, MMSI 538090682; AIS type: cargo) has no position between 30 Oct 2026 21:10 UTC and 30 Oct 2026 22:30 UTC: a gap of at least 70 and at most 80 minutes (Wake reads the feed at intervals, so it knows the gap only between those bounds). Before it the vessel reported 102.2 kn at 60.476 N 28.054 E; after it, 10 kn at 60.120 N 27.439 E, 52.1 km away (21.1 kn if it went straight). Both ends lie where Wake measures Digitraffic's reception as steady. Subsea lines within 2 km of the straight path: Nord Stream 1 (gas pipeline) 0.14 km. A gap is what the record shows: a receiver outage, a transponder fault and a vessel switching off look the same, and Wake does not say which.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-30T18:09:46Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-10-31T18:09:46Z",
+    "countries": [
+     "DE",
+     "RU"
+    ],
+    "pmesii_pt": [
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures",
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-2",
+     "WK-EEI-2"
+    ],
+    "method_version": "wake-2.2",
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-digitraffic-coverage-cells",
+     "window": "every moving-to-moving report interval Wake has read in each 0.1 by 0.2 degree cell since the lane began; a cell counts as covered with at least 20 intervals and under 1% of them 30 min or longer",
+     "type": "cumulative",
+     "version": "wake-2.2"
+    },
+    "measures": {
+     "gap_min_minutes": 70,
+     "gap_max_minutes": 80,
+     "km": 52.1,
+     "implied_kn": 21.1,
+     "sog_before_kn": 102.2,
+     "sog_after_kn": 10.0,
+     "nav_status_before": 0,
+     "nav_status_after": 0,
+     "mmsi": "538090682",
+     "imo": 9449560,
+     "ship_type": 70,
+     "ship_class": "cargo",
+     "destination": "EGSUZ",
+     "nearest_line": "Nord Stream 1",
+     "nearest_line_km": 0.14,
+     "lines": [
+      {
+       "id": "osm-nord-stream-1-gas-pipeline",
+       "name": "Nord Stream 1",
+       "kind": "gas pipeline",
+       "km": 0.14
+      }
+     ],
+     "threshold": "no position for at least 30 min after a report under way (>= 2 kn, not moored or anchored), both ends in covered cells"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#ais"
+    },
+    "sources": [
+     {
+      "id": "digitraffic-ais",
+      "publisher": "Fintraffic, Digitraffic Marine (Finland)",
+      "title": "AIS vessel locations and metadata (/api/ais/v1/locations and /vessels)",
+      "url": "https://meri.digitraffic.fi/api/ais/v1/locations",
+      "licence": "Source: Fintraffic / digitraffic.fi, license CC 4.0 BY (https://creativecommons.org/licenses/by/4.0/). Modified: Wake tracks positions across readings and derives gaps and slow spells",
+      "grade": "B2",
+      "independence_group": "fintraffic-ais",
+      "source_type": "official or market data",
+      "descriptor": "AIS positions received by Finland's shore stations; the content is what each ship's transponder broadcasts, and Wake keeps the track across readings.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     },
+     {
+      "id": "osm-subsea-lines",
+      "publisher": "OpenStreetMap contributors",
+      "title": "Underwater power cables, telecom cables and gas pipelines (config/corridors.json)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "licence": "ODbL 1.0, (c) OpenStreetMap contributors",
+      "grade": "C3",
+      "independence_group": "openstreetmap",
+      "source_type": "community data",
+      "descriptor": "Cable and pipeline routes as mapped by OSM contributors; approximate, and some lines are missing.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     }
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     22.00973,
+     60.22358
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "id": "wake:ais-slow:230941810:1794911990",
+    "program": "wake",
+    "title": "KALA 6 (cargo) under 1 kn for 70 min, 0.36 km from BCS North",
+    "summary": "Digitraffic's AIS record shows KALA 6 (MMSI 230941810; AIS type: cargo) at under 1 kn, not reporting itself moored or anchored, from 31 Oct 2026 10:39 UTC to 31 Oct 2026 11:49 UTC: 70 minutes and 8 reports read, staying within 0 km of where the spell began (60.224 N 22.010 E). Every report in the spell was within 2 km of a subsea line and more than 3 km from the line's ends: BCS North (telecom cable) 0.36 km. Line routes are OpenStreetMap's and approximate. Ships wait at sea in the ordinary way (for a pilot, a berth, ice or orders); Wake does not say why this one did.",
+    "kind": "observation",
+    "tier": "anomaly",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "none",
+    "status_class": "reported",
+    "product_category": "current",
+    "data_as_of": "2026-10-31T07:28:49Z",
+    "published_at": "2026-10-31T20:29:19Z",
+    "valid_until": "2026-11-01T07:28:49Z",
+    "countries": [
+     "AX",
+     "FI"
+    ],
+    "pmesii_pt": [
+     "infrastructure"
+    ],
+    "ascope": [
+     "structures",
+     "areas"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "transport_by_vessel"
+    ],
+    "requirement_ids": [
+     "WK-PIR-2",
+     "WK-EEI-2"
+    ],
+    "method_version": "wake-2.2",
+    "precision_class": "point",
+    "baseline_ref": {
+     "id": "wake-digitraffic-coverage-cells",
+     "window": "every moving-to-moving report interval Wake has read in each 0.1 by 0.2 degree cell since the lane began; a cell counts as covered with at least 20 intervals and under 1% of them 30 min or longer",
+     "type": "cumulative",
+     "version": "wake-2.2"
+    },
+    "measures": {
+     "minutes": 70,
+     "reports": 8,
+     "drift_km": 0.0,
+     "ongoing": false,
+     "mmsi": "230941810",
+     "imo": null,
+     "ship_type": 70,
+     "ship_class": "cargo",
+     "destination": "UUSIKAUPUNKI",
+     "nearest_line": "BCS North",
+     "nearest_line_km": 0.36,
+     "lines": [
+      {
+       "id": "osm-bcs-north-telecom-cable",
+       "name": "BCS North",
+       "kind": "telecom cable",
+       "km": 0.36
+      }
+     ],
+     "threshold": "under 1 kn, not moored or anchored, for at least 60 min, every report within 2 km of a subsea line and over 3 km from its ends"
+    },
+    "visual": {
+     "type": "page",
+     "url": "https://wake.theintelligence.company/#ais"
+    },
+    "sources": [
+     {
+      "id": "digitraffic-ais",
+      "publisher": "Fintraffic, Digitraffic Marine (Finland)",
+      "title": "AIS vessel locations and metadata (/api/ais/v1/locations and /vessels)",
+      "url": "https://meri.digitraffic.fi/api/ais/v1/locations",
+      "licence": "Source: Fintraffic / digitraffic.fi, license CC 4.0 BY (https://creativecommons.org/licenses/by/4.0/). Modified: Wake tracks positions across readings and derives gaps and slow spells",
+      "grade": "B2",
+      "independence_group": "fintraffic-ais",
+      "source_type": "official or market data",
+      "descriptor": "AIS positions received by Finland's shore stations; the content is what each ship's transponder broadcasts, and Wake keeps the track across readings.",
+      "accessed_at": "2026-10-31T20:29:19Z"
+     },
+     {
+      "id": "osm-subsea-lines",
+      "publisher": "OpenStreetMap contributors",
+      "title": "Underwater power cables, telecom cables and gas pipelines (config/corridors.json)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "licence": "ODbL 1.0, (c) OpenStreetMap contributors",
+      "grade": "C3",
+      "independence_group": "openstreetmap",
+      "source_type": "community data",
+      "descriptor": "Cable and pipeline routes as mapped by OSM contributors; approximate, and some lines are missing.",
       "accessed_at": "2026-10-31T20:29:19Z"
      }
     ]
