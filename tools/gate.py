@@ -9,7 +9,7 @@ and a descriptive reading, and never states the inference (intent, a strike, the
 
 What this module still checks, so no join decides it for itself:
 
-  inputs     the join declares the layers it reads (JOIN["inputs"]), each one a COP program.
+  inputs     the join declares the layers it reads (JOIN["inputs"]), each one a COP program or Verdict.
   citations  every item id the join's document cites belongs to a declared input. A join that cites a layer it never
              declared is refused, so its stated inputs and its credits can be trusted.
   publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (Tom's call, per
@@ -38,10 +38,16 @@ ID_PREFIXES = {"UT": "undertow", "RL": "relief"}
 _PREFIXED_ID = re.compile(r"^([A-Z]+)-([A-Z0-9]+)-")
 
 
+# Suite programs COP reads but does not draw as a layer. Verdict's calendar and ledger reach COP through
+# agent_index.py (verdict.json) and, from 18 Nov 2026, the Undertow election join, which cites calendar events by
+# their feed ids ("verdict:calendar:<id>"). A join may declare one as an input like any layer.
+READ_NOT_DRAWN = {"verdict"}
+
+
 def programs():
-    """The program ids COP draws (config/programs.json)."""
+    """The program ids a join may declare: those COP draws (config/programs.json) and READ_NOT_DRAWN."""
     cfg = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
-    return {p["id"] for p in cfg.get("programs", [])}
+    return {p["id"] for p in cfg.get("programs", [])} | READ_NOT_DRAWN
 
 
 def layer_of(item_id):

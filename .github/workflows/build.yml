@@ -74,6 +74,7 @@ jobs:
           python tests/test_rebuild_ended.py
           python tests/test_three_signal.py
           python tests/test_undertow_sanctions.py
+          python tests/test_undertow_elections.py
           python tests/test_ledger.py
           python tests/test_stop_replay.py
           python tests/test_history_cordon.py
@@ -163,6 +164,15 @@ jobs:
             --list-changes https://headwind.theintelligence.company/data/list-changes.json \
             --out out/undertow-sanctions --publish site/data \
             || echo "::warning::Undertow sanctions join failed"
+      # The Undertow election join (join 0.1, published off until Tom turns it on): an Undertow item whose activity or
+      # disclosure period overlaps the 90 days before a national vote, on Verdict's calendar, in a country it states as
+      # a target. While off it writes out/undertow-elections/ only. A failure never fails the build.
+      - name: Undertow election join (out/undertow-elections/)
+        run: |
+          python tools/undertow_elections.py --snapshot site/data/today.geojson \
+            --calendar https://metacog-osint.github.io/verdict/data/calendar.geojson \
+            --out out/undertow-elections --publish site/data \
+            || echo "::warning::Undertow election join failed"
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
