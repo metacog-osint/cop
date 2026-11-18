@@ -308,7 +308,8 @@ export function outageTriage(index, triage, args, now) {
       "The readings: natural, tension context (a fresh security or demonstration notice, or press attention unusual " +
       "against the country's own last 28 days, with no active hazard: the context the outage sits in, never its cause), " +
       "open, unconfirmed (a single-source dip, no reading given), incomplete (a layer has no current data). " +
-      "\"Deliberate\" is Blackout's own word for its likely-shutdown judgment, never a triage reading. Each record's " +
+      "No reading says an outage was deliberate; Blackout's own outage item says whether OONI's blocking supports a " +
+      "shutdown, with no probability. Each record's " +
       "outage.source says which Blackout kind it is (IODA, a Cloudflare-verified anomaly or a Radar Outage Center " +
       "entry); started_at is when it began; network is set when Cloudflare saw it on one network; stated_cause is " +
       "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +

@@ -305,8 +305,10 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   site terms bar republishing its content without consent; Blackout carries only facts and a link). Blackout's own feed
   now states those licences itself (corrected 12 Nov 2026), and COP shows that text as Blackout sends it.
   `tests/fixtures/blackout.geojson`: Blackout's live feed of 23:11 UTC 12 Nov, every date moved back 12 days 4 hours.
-  Blackout also publishes judgments (kind `assessment`, tier `warning`): a likely shutdown only with OONI-confirmed
-  blocking in the same country (BO-H-1A), and a cable-corridor outage (BO-H-2A). They show in every view like Vis's
+  Blackout also publishes judgments (kind `assessment`, tier `warning`): a cable-corridor outage (BO-H-2A). Since
+  blackout-1.1 (16 Nov 2026) its likely-shutdown judgment is gone: a country outage is an observation whose
+  `direction` toward BO-H-1A says whether OONI's blocking in the outage's own hours supports a shutdown, with no
+  probability (MCP rules 2 and 7 and the `outage_triage` note say so since 18 Nov 2026). They show in every view like Vis's
   warnings; the card says "Judgment: a probability, not a measurement" and "Warning: Blackout's judgment", and the MCP
   instructions say the same. None was live on 12 Nov, so the fixture has none.
 - **Headwind** (13 Nov 2026, kit 0.4.6, which sets its registry entry live with its feed's own licence line):
