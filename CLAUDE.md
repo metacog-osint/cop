@@ -75,6 +75,33 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   build, about 6:45 PM CST 15 Nov: Hormuz read partial (interference near Doha, Abu Dhabi and Dubai; no new notice
   naming military activity; no confirmed outage), weather Green at worst; base rate over 4 archived days with every
   layer current: interference 4, notice 0, connectivity 0, all three 0.
+  **UKMTO's reports (join 0.4, Tom's option D, 18 Nov 2026; branch `ukmto/option-d`; measurement and decision in
+  `_ideas\drafts\2026-11-18-ukmto-three-signal-replay.md`).** Wake's `wake:ukmto:*` items inside the circle (as
+  `_in_area` judges Noisefloor's) are listed in each record's `context["ukmto"]` (rows with UKMTO's type, place,
+  `published_at` from `measures.created_at` and `incident_at`; the look-back's Attack count; the rate; `credit` and
+  Wake's `note` that the reports are not verified and name no one responsible), on the page (`ukmtoContext` in
+  `cop.js`) and in the MCP `three_signal` tool (Wake credited; server rule 10). A report is dated by when UKMTO
+  published it, never its incident time. **One rule, not two:** an Attack report counts toward the notice only when
+  the look-back's Attack count is above its own `RATE_PERCENTILE` (90th, nearest rank) of the same count taken on
+  each of the `RATE_DAYS` (30) days before, i.e. 0.3's usual-rate test, but measured on UKMTO's own series and never
+  pooled with Cordon's notices, and with no "more than half the days" gate (a series with attacks on few days has a
+  90th percentile of 0, so one attack counts there, as 0.3 would). Why not 0.3's rule on the pooled notice signal:
+  (a) until the archive holds 14 readable days it counts every signal as it fires, which is option B (attacks on
+  every day measured); (b) the archive's snapshots before 17 Nov carry no UKMTO items, so a pooled 90th percentile
+  would be built from days without them and read every later day as a surge; (c) once pooled, UKMTO's steady 4 or 5
+  a look-back would raise the notice's percentile and bury Cordon's military warnings (readable days' notice counts
+  were 0 to 2). The measurement's Poisson test (tail under 5% against 28 days) is not used. **History:** UKMTO's
+  reports come from COP's archived snapshots (Wake keeps 30 days from the incident in its feed, `UKMTO_KEEP_D`, so a
+  snapshot covers reports from 30 days before it) plus `<day>.wake-ended.json.gz` (reports Wake dropped; they cover
+  nothing by themselves), built day by day in the replay so each day reads only what COP had then. Until the history
+  reaches `RATE_DAYS` days plus the 96-hour look-back before the reading, the reports are context only, with a
+  caveat; the first archived snapshot with UKMTO (17 Nov, 22:20 UTC) covers from 18 Oct 22:20 UTC, so the first
+  reading that can count one is about 22:20 UTC 21 Nov 2026. COP never reads UKMTO's API. Replay rows keep notice
+  as Cordon's items only and add `ukmto_attacks` and `ukmto_counted` (None before the history is long enough);
+  `by_area.ukmto` counts days with history, days counted and days with an attack. Replay over the 19 archived days
+  (31 Oct to 18 Nov), before (0.3, `a79cb51`) and after: signal days interference 6, notice 4, connectivity 0, press
+  3; readings incomplete 13, partial 6, none 0, converged 0, unchanged; UKMTO attacks in the look-back on 2 days (17
+  and 18 Nov), counted on 0 (no day had the history). Tests: `test_three_signal.py` class `Ukmto` (7).
   **Join 0.3: four signals and base rates** (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of
   `[local path]`; branch `three-signal/gulf-rules`). (1) *Notice:* a US embassy
   security alert for an area country counts (`triage.alert_type` "security"; demonstration, weather, event and

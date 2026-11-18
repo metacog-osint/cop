@@ -388,6 +388,12 @@ test("three-signal gives the reading, the layers' items and the wording, and a m
   assert.match(res.note, /signals_at_usual_rate/);
   assert.ok(r.weather && typeof r.weather.text === "string");
   assert.match(res.note, /Do not state what the pattern means/);
+  // Join 0.4: UKMTO's reports are context, credited to UKMTO via Wake, counted only on a surge.
+  assert.ok(r.context.ukmto && Array.isArray(r.context.ukmto.reports), "context.ukmto");
+  assert.equal(typeof r.context.ukmto.counts, "boolean");
+  assert.match(r.context.ukmto.credit, /Royal Navy/);
+  assert.match(res.note, /context\.ukmto/);
+  assert.match(res.note, /not a finding/);
   assert.equal(r.verdict_draft, undefined, "the working draft with its empty probability is not published");
   assert.deepEqual(res.attribution, T.threeSignal(index, threeSignal, { area: "hormuz" }, NOW).attribution);
   assert.ok(res.attribution.length > 1, "COP's credit plus the programs it reads");
