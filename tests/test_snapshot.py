@@ -191,6 +191,28 @@ class Build(unittest.TestCase):
         self.assertIn('["coalesce", ["get", "cop_also"], ""]', js)
         self.assertRegex(js, r'const MAP_KEYS = \[[^\]]*"cop_also"', "the map's copy of each item keeps the tag")
 
+    def test_noisefloor_spoofing_anomalies_carry_their_strength(self):
+        """Noisefloor's spoofing items (18 Nov 2026): each of its three measures has a strength, and they rank
+        below the jamming rules, so a jamming event stays Noisefloor's pick."""
+        cases = [("noisefloor-spoof-new-2026-11-17-1", "aircraft_shown_at_new_false_position", 31,
+                  "31 aircraft shown at a new false position"),
+                 ("noisefloor-spoof-region-above-2026-11-17-1", "spoofed_active_aircraft_hours", 69,
+                  "69 spoofed aircraft-hours in the region"),
+                 ("noisefloor-spoof-above-2026-11-17-1", "aircraft_shown_at_false_position", 57,
+                  "57 aircraft shown at the false position")]
+
+        def add(f):
+            for i, name, v, _ in cases:
+                x = json.loads(json.dumps(f["noisefloor"]["features"][0]))
+                x["properties"].update({"id": i, "tier": "anomaly", "measure": {"name": name, "value": v}})
+                f["noisefloor"]["features"].append(x)
+        today, picks, _, _ = build(mutate=add)
+        got = {f["properties"]["id"]: f["properties"].get("cop_strength_text") for f in today["features"]}
+        for i, _, _, label in cases:
+            self.assertEqual(got[i], label)
+        nf = [p for p in picks["picks"] if p["program"] == "noisefloor"]
+        self.assertTrue(nf and "% of aircraft with severe GPS error" in nf[0]["reason"], nf)
+
     def test_noisefloor_military_air_shows_under_conflict_with_its_strength(self):
         """Noisefloor's military air items (18 Nov 2026): routine measurements, so they stay off the picks; they show
         under Conflict as well as Spectrum, and their strength says the count is a lower bound."""
