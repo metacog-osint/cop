@@ -354,7 +354,7 @@ export function outageTriage(index, triage, args, now) {
 
 // --- three_signal ---------------------------------------------------------------------------------------------------
 
-const THREE_SIGNAL_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis"];
+const THREE_SIGNAL_PROGRAMS = ["noisefloor", "cordon", "blackout", "vis", "watchfloor"];
 
 export function threeSignal(index, doc, args, now) {
   if (!doc) {
@@ -374,7 +374,8 @@ export function threeSignal(index, doc, args, now) {
     what: doc.what,
     note:
       doc.not_a_warning +
-      " Report what each signal's items show in their own words (signals.*.items, with ids to cite), the tightest " +
+      " Report what each signal's items show in their own words (signals.*.items, with ids to cite), which signals " +
+      "were present only at their usual rate (signals_at_usual_rate, not counted), the tightest " +
       "span, Vis's weather as context (weather.text; Vis's items are forecasts, not official forecasts) and the base " +
       "rate. Do not state what the pattern means. The time windows are provisional. question_draft is a drafted " +
       "question that could score the reading later: it is not a registered Verdict forecast and has no likelihood.",

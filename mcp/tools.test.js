@@ -383,7 +383,9 @@ test("three-signal gives the reading, the layers' items and the wording, and a m
   const r = res.records[0];
   assert.equal(r.area, "hormuz");
   assert.ok(["converged", "partial", "none", "incomplete"].includes(r.reading));
-  assert.deepEqual(Object.keys(r.signals), ["interference", "notice", "connectivity"]);
+  assert.deepEqual(Object.keys(r.signals), ["interference", "notice", "connectivity", "press"]);
+  assert.ok(Array.isArray(r.signals_at_usual_rate), "join 0.3: signals present only at their usual rate");
+  assert.match(res.note, /signals_at_usual_rate/);
   assert.ok(r.weather && typeof r.weather.text === "string");
   assert.match(res.note, /Do not state what the pattern means/);
   assert.equal(r.verdict_draft, undefined, "the working draft with its empty probability is not published");

@@ -591,10 +591,15 @@ class Design(unittest.TestCase):
                        f"more than {tri.POWER_LINE:,} meters", f"within {tri.STATE_NEAR_KM} km of an outage county",
                        f"within {ts.WINDOW_H} hours of each other", f"{hormuz['radius_km']} km around {hormuz['center_name']}",
                        f"in the {ts.LOOKBACK_H} hours before the reading", f"more than {ts.NAVWARN_BLIND_DAYS} days old",
-                       f"{ts.OONI_MOVE_POINTS} points or more", f"until there are {snap.CONFIG['max_picks']} picks"):
+                       f"{ts.OONI_MOVE_POINTS} points or more", f"until there are {snap.CONFIG['max_picks']} picks",
+                       f"z-score of {ts.WATCHFLOOR_Z:g} or more", f"{ts.RENEWAL_BEFORE_D} days before",
+                       f"{ts.RENEWAL_AFTER_H} hours after its", f"last {ts.RATE_DAYS} archived days",
+                       f"{round(ts.RATE_PERCENTILE * 100)}th percentile", f"{ts.RATE_MIN_DAYS} such days",
+                       f"all {len(ts.SIGNALS)} counted within {ts.WINDOW_H} hours".replace("all 4", "all four")):
             self.assertIn(phrase, text)
         self.assertEqual(tri.ATTENTION_BASELINE, "wf-28d")
         self.assertEqual(set(tri.ALERT_COUNTED), {"security", "demonstration"})
+        self.assertEqual(ts.RATE_SATURATED, 0.5, "the page says 'more than half'")
         for word in ts.MILITARY_WORDS:     # every word the join reads is named on the page, in plain English
             stem = {"HAZARDOUS OP": "hazardous operations", "UAV": "UAVs", "NAVAL EXERCISE": "exercise"}.get(word, word)
             self.assertIn(stem.lower().split()[0], text.lower(), word)

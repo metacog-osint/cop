@@ -1,15 +1,25 @@
-"""Three-signal join: interference, a new notice and a connectivity drop in one area inside 48 hours.
+"""Three-signal join (four signals since join 0.3): interference, a new notice, a connectivity drop and unusual
+press reporting of violence in one area inside 48 hours.
 
 Scenario 1 of D:/Projects/_ideas/convergence-scenarios.md, with Iran and the Strait of Hormuz as the live case. Each
-signal alone is routine and has an innocent explanation; the join asks only whether all three fall in one named area
-within WINDOW_H of each other, and what Vis forecasts for the weather there.
+signal alone is routine and has an innocent explanation; the join asks only whether all four fall in one named area
+within WINDOW_H of each other, and what Vis forecasts for the weather there. The id stays "three-signal" (the file
+name, the page section and the MCP tool use it).
 
   interference   a Noisefloor anomaly (new, rise or event; never "ended" or the daily summary) inside the area
-  notice         a new Cordon navigation warning inside the area whose text names military activity, or a new or
-                 revised EASA conflict-zone bulletin for one of the area's countries. Cordon marks every item
+  notice         a new Cordon navigation warning inside the area whose text names military activity; a new EASA
+                 conflict-zone bulletin, or a revision that is not a scheduled renewal, for one of the area's
+                 countries; or a US embassy security alert for one of them (from join 0.3). Cordon marks every item
                  "routine", so tier is not used here.
   connectivity   a confirmed Blackout outage (BO-IND-1) or a Cloudflare-verified traffic anomaly in one of the
                  area's countries. A single-source dip is listed and does not count.
+  press          a Watchfloor country item for one of the area's countries: violent-event articles raised at a
+                 z-score of WATCHFLOOR_Z or more (from join 0.3). Attention items and lower scores are listed only.
+                 Watchfloor lags about a day, so this signal confirms more than it tips.
+
+Base rates (join 0.3): a signal that fired on more than half of the area's last 30 archived days with every layer
+current counts only on a day its item count is above its own 90th percentile over those days. Until the archive
+holds RATE_MIN_DAYS such days, each signal counts as it fires and the record says so.
 
 Vis is context, not a signal: its 72-hour weather forecast for the area is listed beside the reading (the worst
 stoplight among its points there). It never adds to the count and never removes a signal.
@@ -36,11 +46,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402
 import triage as tri  # noqa: E402
 
-JOIN = {"id": "three-signal", "version": "0.2", "published": True,
+JOIN = {"id": "three-signal", "version": "0.3", "published": True,
         "inputs": ["noisefloor", "vis", "blackout", "cordon:navwarn", "cordon:czib", "cordon:alert",
-                   "cordon:advisory"]}
-LAYERS = ("noisefloor", "cordon", "blackout", "vis")
-SIGNALS = ("interference", "notice", "connectivity")
+                   "cordon:advisory", "watchfloor"]}
+LAYERS = ("noisefloor", "cordon", "blackout", "vis", "watchfloor")
+SIGNALS = ("interference", "notice", "connectivity", "press")
+SIGNAL_PROGRAM = {"interference": "noisefloor", "notice": "cordon", "connectivity": "blackout", "press": "watchfloor"}
 
 # PROVISIONAL, like triage.py's windows: first picks, to be looked at again with a deeper archive.
 WINDOW_H = 48        # the three signals must fall within this many hours of each other
@@ -49,6 +60,14 @@ QUESTION_DAYS = 7    # the Verdict question's window
 OONI_MOVE_POINTS = 5 # an OONI rate that moved this much against the archive is listed as context
 NAVWARN_BLIND_DAYS = 14  # Cordon's newest navigation warning anywhere older than this: that feed has stopped moving,
                          # so "no new warning" means nothing (found 12 Nov 2026: newest was dated 10 May 2024)
+# Join 0.3 (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of _ideas/case-bahrain-2026-11-15.md).
+WATCHFLOOR_Z = 3.0       # press: violent-event articles at or above this z-score (Watchfloor's own, robust since 17 Nov)
+RENEWAL_BEFORE_D = 7     # an EASA revision first seen this many days before the previous version's expiry ...
+RENEWAL_AFTER_H = 48     # ... or up to this many hours after it, with a later expiry, is a scheduled renewal
+RATE_DAYS = 30           # trailing archived days for each signal's base rate in the area
+RATE_MIN_DAYS = 14       # days with every layer current needed before a base rate changes what counts
+RATE_SATURATED = 0.5     # a signal present on more than this share of those days counts only when it rises ...
+RATE_PERCENTILE = 0.9    # ... above this percentile of its own daily item counts (nearest rank)
 
 # An area is a circle, because interference and warnings ignore borders, plus the countries whose country-level
 # items (outages, airspace bulletins, embassy alerts) are read with it.
@@ -64,11 +83,12 @@ INTERFERENCE_KINDS = {"new", "rise", "event"}
 
 READINGS = {
     "incomplete": "A layer has no current data, so this area cannot be read. Silence is not quiet.",
-    "none": "None of the three signals is present in this area.",
-    "partial": "Some of the three signals are present, not all within the window. Each has an innocent explanation "
-               "alone.",
-    "converged": "All three signals fall in this area within the window. That is the pattern this join looks for; "
-                 "it is not a warning, and the call is the analyst's.",
+    "none": "None of the four signals is present in this area.",
+    "partial": "Some of the four signals are present, not all counted within the window. Each has an innocent "
+               "explanation alone.",
+    "converged": "All four signals fall in this area within the window, each above its own usual rate where the "
+                 "archive gives one. That is the pattern this join looks for; it is not a warning, and the call is "
+                 "the analyst's.",
 }
 
 
@@ -129,17 +149,72 @@ def _military(p):
 
 
 def first_seen(snapshots):
-    """{id | title: generated_at of the first archived snapshot that carried it}, for airspace bulletins: a
-    bulletin keeps its id and original date through revisions, so a revision shows only as a changed title."""
-    seen, first = {}, None
+    """What the archive saw first. bulletins: {id | title: generated_at of the first archived snapshot that carried
+    it}, for airspace bulletins: a bulletin keeps its id and original date through revisions, so a revision shows
+    only as a changed title. versions: {id: [[first seen, title, valid_until], ...]} oldest first, so a revision can
+    be told from a renewal. alert_dates: {embassy alert id: the earliest data_as_of any snapshot carried}, so a
+    re-dated alert keeps its first date (as triage does)."""
+    seen, first, versions, alerts = {}, None, {}, {}
     for snap in sorted(snapshots, key=lambda s: s.get("generated_at") or ""):
         first = first or snap.get("generated_at")
         for f in snap.get("features", []):
             p = f.get("properties") or {}
-            if p.get("cop_program") == "cordon" and tri._kind(p.get("id")) == "czib":
-                seen.setdefault(f"{p.get('id')} | {p.get('title')}", snap.get("generated_at"))
+            if p.get("cop_program") != "cordon":
+                continue
+            kind = tri._kind(p.get("id"))
+            if kind == "czib":
+                key = f"{p.get('id')} | {p.get('title')}"
+                if key not in seen:
+                    seen[key] = snap.get("generated_at")
+                    versions.setdefault(str(p.get("id")), []).append(
+                        [snap.get("generated_at"), p.get("title"), p.get("valid_until")])
+            elif kind == "alert" and tri.utc(p.get("data_as_of")):
+                old = alerts.get(p.get("id"))
+                if old is None or tri.utc(p["data_as_of"]) < tri.utc(old):
+                    alerts[p.get("id")] = p.get("data_as_of")
     # Whatever the oldest snapshot carried was already there: it is not "new" on that day.
-    return {"archive_starts": first, "bulletins": {k: v for k, v in seen.items() if v != first}}
+    return {"archive_starts": first, "bulletins": {k: v for k, v in seen.items() if v != first},
+            "versions": versions, "alert_dates": alerts}
+
+
+def renewal_of(versions, item_id, title, new_at, valid_until):
+    """The previous version when this revision of an airspace bulletin is a scheduled renewal: first seen from
+    RENEWAL_BEFORE_D days before the previous version's expiry to RENEWAL_AFTER_H hours after it, with a later
+    expiry. None otherwise (a revision mid-term, or no earlier version in the archive)."""
+    hist = (versions or {}).get(str(item_id)) or []
+    titles = [v[1] for v in hist]
+    if title not in titles or titles.index(title) == 0:
+        return None
+    prev = hist[titles.index(title) - 1]
+    prev_until, until = tri.utc(prev[2]), tri.utc(valid_until)
+    if not (prev_until and until and new_at) or until <= prev_until:
+        return None
+    if prev_until - timedelta(days=RENEWAL_BEFORE_D) <= new_at <= prev_until + timedelta(hours=RENEWAL_AFTER_H):
+        return {"title": prev[1], "valid_until": prev[2]}
+    return None
+
+
+def _percentile(values, q):
+    """Nearest-rank percentile of a non-empty list."""
+    ordered = sorted(values)
+    return ordered[max(0, min(len(ordered) - 1, -(-int(q * 100) * len(ordered) // 100) - 1))]
+
+
+def signal_rates(rows, area, day):
+    """Each signal's base rate in the area over the RATE_DAYS archived days before `day` (YYYY-MM-DD) that had every
+    layer current, from replay rows (raw counts, before any rate was applied)."""
+    lo = (tri.utc(day + "T00:00:00Z") - timedelta(days=RATE_DAYS)).strftime("%Y-%m-%d")
+    mine = [r for r in rows or [] if r["area"] == area and lo <= r["day"] < day and r["reading"] != "incomplete"]
+    out = {"days": len(mine), "enough": len(mine) >= RATE_MIN_DAYS, "window_days": RATE_DAYS,
+           "min_days": RATE_MIN_DAYS, "signals": {}}
+    for s in SIGNALS:
+        counts = [int((r.get("counts") or {}).get(s, 0)) for r in mine]
+        present = sum(1 for c in counts if c)
+        share = round(present / len(counts), 3) if counts else None
+        out["signals"][s] = {"days_present": present, "share": share,
+                             "p90_count": _percentile(counts, RATE_PERCENTILE) if counts else None,
+                             "saturated": bool(out["enough"] and share is not None and share > RATE_SATURATED)}
+    return out
 
 
 def ooni_history(snapshots):
@@ -156,15 +231,15 @@ def ooni_history(snapshots):
     return out
 
 
-def read_area(snapshot, key, area, seen=None, ooni=None):
-    """One record for one area from one snapshot."""
+def read_area(snapshot, key, area, seen=None, ooni=None, rates=None):
+    """One record for one area from one snapshot. rates: signal_rates() for this area and day, or None."""
     at = tri.utc(snapshot.get("generated_at"))
     features = [f for f in snapshot.get("features", []) if isinstance(f.get("properties"), dict)]
     states = {pid: tri.layer_state(snapshot, features, pid) for pid in LAYERS}
     lo = at - timedelta(hours=LOOKBACK_H)
     found = {s: [] for s in SIGNALS}
-    context = {"interference_ended": [], "notices_other": [], "notices_standing": [], "single_source_dips": [],
-               "embassy_alerts": [], "ooni": []}
+    context = {"interference_ended": [], "notices_other": [], "notices_standing": [], "notices_renewal": [],
+               "single_source_dips": [], "embassy_alerts": [], "ooni": [], "press_other": []}
     weather = []
     bulletins = (seen or {}).get("bulletins")
     newest_navwarn = max((tri.utc(f["properties"].get("data_as_of")) for f in features
@@ -209,11 +284,24 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
                 if new_at is None and bulletins is not None:
                     first = tri.utc(bulletins.get(f"{p.get('id')} | {p.get('title')}"))
                     new_at = first if first and first >= lo else None
+                prev = renewal_of((seen or {}).get("versions"), p.get("id"), p.get("title"), new_at,
+                                  p.get("valid_until")) if new_at and not (dated and dated >= lo) else None
                 row = tri._row(p, kind=kind, km_from_centre=km, at=tri.iso(new_at) if new_at else None,
                                valid_until=p.get("valid_until"))
-                (found["notice"] if new_at else context["notices_standing"]).append(row)
-            elif kind == "alert" and set(p.get("countries") or []) & set(area["countries"]) and dated and dated >= lo:
-                context["embassy_alerts"].append(tri._row(p, kind=kind))
+                if prev:
+                    row["renews"] = prev
+                    context["notices_renewal"].append(row)
+                else:
+                    (found["notice"] if new_at else context["notices_standing"]).append(row)
+            elif kind == "alert" and set(p.get("countries") or []) & set(area["countries"]):
+                first = tri.utc(((seen or {}).get("alert_dates") or {}).get(p.get("id")))
+                since = min(d for d in (dated, first) if d) if (dated or first) else None
+                if not since or since < lo:
+                    continue
+                atype = tri.alert_type(p.get("title"))
+                row = tri._row(p, kind=kind, alert_type=atype, at=tri.iso(since))
+                us = str(p.get("title") or "").startswith("US embassy (")
+                (found["notice"] if us and atype == "security" else context["embassy_alerts"]).append(row)
         elif pid == "blackout":
             kind = tri._kind(p.get("id"))
             ccs = sorted(set(p.get("countries") or []) & set(area["countries"]))
@@ -234,6 +322,22 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
                     context["ooni"].append(tri._row(p, country=cc, rate=rate, lowest_in_archive=low,
                                                     points_above_lowest=moved,
                                                     moved=bool(moved is not None and moved >= OONI_MOVE_POINTS)))
+        elif pid == "watchfloor":
+            parts = str(p.get("id")).split(":")
+            ccs = sorted(set(p.get("countries") or []) & set(area["countries"]))
+            if len(parts) < 5 or parts[2] != "country" or not ccs:
+                continue
+            day_end = tri.day_span(p)[1]
+            if not day_end or day_end < lo:
+                continue
+            score = ((p.get("measures") or {}).get("score") or {}) if isinstance(p.get("measures"), dict) else {}
+            z = score.get("z") if isinstance(score.get("z"), (int, float)) else None
+            row = tri._row(p, kind=f"country-{parts[4]}", countries=ccs, z=z, ratio=score.get("ratio"),
+                           at=p.get("data_as_of"))
+            if parts[4] == "violence" and p.get("tier") == "anomaly" and z is not None and z >= WATCHFLOOR_Z:
+                found["press"].append(row)
+            else:
+                context["press_other"].append(row)
         elif pid == "vis":
             inside, km = _in_area(f, area)
             m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
@@ -242,9 +346,16 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
                                         dark_low_light_hours=None if m.get("dark_low_light_min") is None
                                         else round(m["dark_low_light_min"] / 60, 1),
                                         moon_lit=m.get("moon_lit"), km_from_centre=km, kind="forecast"))
-    # The tightest span that holds one item of every signal, if there is one.
+    # Base rates: a saturated signal counts only when today's count rises above its own 90th percentile.
+    sig_rates = (rates or {}).get("signals") or {}
+    counts = {}
+    for s in SIGNALS:
+        r = sig_rates.get(s) or {}
+        counts[s] = bool(found[s]) and not (r.get("saturated") and len(found[s]) <= (r.get("p90_count") or 0))
+    # The tightest span that holds one counted item of every signal, if there is one.
     span = None
-    times = {s: sorted(tri.utc(r["at"]) for r in found[s] if tri.utc(r.get("at"))) for s in SIGNALS}
+    times = {s: sorted(tri.utc(r["at"]) for r in found[s] if tri.utc(r.get("at"))) if counts[s] else []
+             for s in SIGNALS}
     if all(times.values()):
         for start in sorted(t for ts in times.values() for t in ts):
             picks = [next((t for t in times[s] if t >= start), None) for s in SIGNALS]
@@ -252,7 +363,8 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
                 hours = (max(picks) - start).total_seconds() / 3600
                 if span is None or hours < span["hours"]:
                     span = {"from": tri.iso(start), "to": tri.iso(max(picks)), "hours": round(hours, 1)}
-    present = [s for s in SIGNALS if found[s]]
+    present = [s for s in SIGNALS if counts[s]]
+    usual = [s for s in SIGNALS if found[s] and not counts[s]]
     dead = [pid for pid in LAYERS if states[pid] in ("stale", "missing")]
     if dead:
         reading = "incomplete"
@@ -260,7 +372,7 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
         reading = "converged"
     elif blind:
         reading = "incomplete"
-    elif present:
+    elif present or usual:
         reading = "partial"
     else:
         reading = "none"
@@ -283,6 +395,24 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
     if found["connectivity"] or context["single_source_dips"]:
         caveats.append("Blackout's outages are country-level: an outage anywhere in a listed country counts for "
                        "the whole area.")
+    if rates is None:
+        caveats.append("No archive replay was given, so no signal was measured against its own rate in the area.")
+    elif not rates["enough"]:
+        caveats.append(f"Base rates need {RATE_MIN_DAYS} archived days with every layer current in the last "
+                       f"{RATE_DAYS}; this area has {rates['days']}, so each signal counts as it fires.")
+    for s in usual:
+        r = sig_rates[s]
+        caveats.append(f"{s.capitalize()} was present on {r['days_present']} of the last {rates['days']} archived "
+                       f"days with every layer current, so it counts only above {r['p90_count']} "
+                       f"item{'s' if r['p90_count'] != 1 else ''} (its own 90th percentile); today it has "
+                       f"{len(found[s])}.")
+    if context["notices_renewal"]:
+        caveats.append("An airspace bulletin revised on or just before its previous expiry, with a later expiry, is "
+                       "read as a scheduled renewal and listed, not counted. COP holds the bulletin's title and "
+                       "dates, not its text: check EASA's page before reading a renewal as unchanged.")
+    if found["press"] or context["press_other"]:
+        caveats.append("Watchfloor's country items measure press reporting of a whole country for a whole day, a day "
+                       "behind; they say how much was written, not what happened.")
     if context["ooni"]:
         caveats.append("Blackout's OONI tier is a fixed threshold, so Iran is an anomaly there on any ordinary day. "
                        "The rate's movement against the archive is listed as context and is not a signal.")
@@ -291,8 +421,10 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
         "join": JOIN["id"], "area": key, "area_name": area["name"],
         "circle": {"center": area["center"], "center_name": area["center_name"], "radius_km": area["radius_km"]},
         "countries": area["countries"], "read_at": tri.iso(at), "layer_states": states, "no_current_data": dead + blind,
-        "signals": {s: {"present": bool(found[s]), "items": found[s]} for s in SIGNALS},
-        "signals_present": present, "tightest_span": span,
+        "signals": {s: {"present": bool(found[s]), "counts": counts[s], "items": found[s],
+                        "rate": sig_rates.get(s)} for s in SIGNALS},
+        "signals_present": present, "signals_at_usual_rate": usual, "tightest_span": span,
+        "base_rates": None if rates is None else {k: rates[k] for k in ("days", "enough", "window_days", "min_days")},
         "reading": reading, "reading_text": READINGS[reading],
         "weather": {"state": worst, "text": weather_text, "forecasts": weather},
         "context": context, "caveats": caveats,
@@ -308,12 +440,16 @@ def read_area(snapshot, key, area, seen=None, ooni=None):
     }
 
 
-def read(snapshot, seen=None, ooni=None):
+def read(snapshot, seen=None, ooni=None, rows=None):
+    """rows: replay rows (raw counts) for the base rates; None reads every signal as it fires."""
+    day = (snapshot.get("generated_at") or "")[:10]
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"),
             "windows": {"window_hours": WINDOW_H, "lookback_hours": LOOKBACK_H, "question_days": QUESTION_DAYS,
+                        "rate_days": RATE_DAYS, "rate_min_days": RATE_MIN_DAYS, "watchfloor_z": WATCHFLOOR_Z,
                         "provisional": True},
             "archive_given": seen is not None,
-            "records": [read_area(snapshot, k, a, seen, ooni) for k, a in sorted(AREAS.items())]}
+            "records": [read_area(snapshot, k, a, seen, ooni, None if rows is None else signal_rates(rows, k, day))
+                        for k, a in sorted(AREAS.items())]}
 
 
 def replay(snapshots):
@@ -325,6 +461,7 @@ def replay(snapshots):
         for r in read(snap, seen, ooni)["records"]:
             rows.append({"day": r["read_at"][:10], "area": r["area"], "reading": r["reading"],
                          "signals_present": r["signals_present"], "no_current_data": r["no_current_data"],
+                         "counts": {s: len(r["signals"][s]["items"]) for s in SIGNALS},
                          "weather": r["weather"]["state"]})
     by_area = {}
     for key in sorted(AREAS):
@@ -334,25 +471,29 @@ def replay(snapshots):
             "days": len(mine), "days_with_every_layer": len(full),
             "days_each_signal_present": {s: sum(s in r["signals_present"] for r in full) for s in SIGNALS},
             "days_by_reading": {k: sum(r["reading"] == k for r in mine) for k in READINGS},
-            "caution": "A day counts only when all four layers had current data. Blackout joined COP on 12 Nov 2026, "
-                       "so earlier days are incomplete and say nothing about how often the three converge."}
+            "caution": "A day counts only when all five layers had current data. Blackout joined COP on 12 Nov 2026, "
+                       "so earlier days are incomplete and say nothing about how often the four converge. The counts "
+                       "here are raw: they are what each day's base rate is measured from."}
     return {"by_area": by_area, "rows": rows}
 
 
 PUBLIC_NAME = "three-signal.json"
 WHAT = ("For the Strait of Hormuz and the Gulf (900 km around Bandar Abbas, with Iran, the UAE, Oman, Qatar, Bahrain "
-        "and Kuwait for country-level items): whether GPS interference (Noisefloor), a new navigation warning that "
-        "names military activity or a new airspace bulletin (Cordon), and a confirmed internet outage (Blackout) fall "
-        f"in the area within {WINDOW_H} hours of each other, with Vis's weather forecast for the area beside them.")
-NOT_A_WARNING = ("A reading says which of the three signals are present and how close together they fall. It is not "
+        "and Kuwait for country-level items): whether GPS interference (Noisefloor), a new notice (Cordon: a "
+        "navigation warning that names military activity, a new or revised airspace bulletin that is not a scheduled "
+        "renewal, or a US embassy security alert), a confirmed internet outage (Blackout) and unusual press reporting "
+        "of violence in one of those countries (Watchfloor) fall in the area within "
+        f"{WINDOW_H} hours of each other, each measured against how often it fires there anyway, with Vis's weather "
+        "forecast for the area beside them.")
+NOT_A_WARNING = ("A reading says which of the four signals are present and how close together they fall. It is not "
                  "a warning, a forecast or a finding of cause, and it carries no probability. Each signal has an "
                  "innocent explanation alone. \"None\" and \"incomplete\" (a layer with no current data) are "
                  "different answers.")
 DRAFT_NOTE = ("A drafted question that would let this reading be scored later. It is not a registered Verdict "
               "forecast and no likelihood is attached to it.")
 PUBLIC_KEYS = ("join", "area", "area_name", "circle", "countries", "read_at", "layer_states", "no_current_data",
-               "signals", "signals_present", "tightest_span", "reading", "reading_text", "weather", "context",
-               "caveats")
+               "signals", "signals_present", "signals_at_usual_rate", "base_rates", "tightest_span", "reading",
+               "reading_text", "weather", "context", "caveats")
 
 
 def base_rate(by_area):
@@ -365,9 +506,9 @@ def base_rate(by_area):
                 "yet.")
     else:
         text = (f"Over {n} archived day{'s' if n != 1 else ''} with every layer current, interference was present "
-                f"on {each['interference']}, a new notice on {each['notice']} and a connectivity signal on "
-                f"{each['connectivity']}; all three fell within the window on "
-                f"{by_area['days_by_reading']['converged']}.")
+                f"on {each['interference']}, a new notice on {each['notice']}, a connectivity signal on "
+                f"{each['connectivity']} and unusual press reporting on {each['press']}; all four fell within the "
+                f"window on {by_area['days_by_reading']['converged']}.")
     return {"text": text, "caution": by_area["caution"], **{k: by_area[k] for k in
             ("days", "days_with_every_layer", "days_each_signal_present", "days_by_reading")}}
 
@@ -428,7 +569,7 @@ def main(argv=None):
             raise SystemExit(f"no *.geojson.gz in {a.archive}")
         snaps = [tri.load(f) for f in files]
         seen, ooni, past = first_seen(snaps), ooni_history(snaps), replay(snaps)
-    doc = read(tri.load(a.snapshot), seen, ooni)
+    doc = read(tri.load(a.snapshot), seen, ooni, past["rows"] if past else None)
     doc["archive_replay"] = past
     stamp = (doc["snapshot_generated_at"] or "unknown").replace(":", "")
     out = safe_out(a.out)
@@ -438,16 +579,18 @@ def main(argv=None):
     print(f"snapshot {doc['snapshot_generated_at']}  gate: {verdict['review_class']}"
           f"{'  published ' + PUBLIC_NAME if a.publish else ''}")
     for r in doc["records"]:
-        print(f"{r['area_name']}: {r['reading']}; signals present: {', '.join(r['signals_present']) or 'none'}; "
+        print(f"{r['area_name']}: {r['reading']}; signals counted: {', '.join(r['signals_present']) or 'none'}; "
+              f"at their usual rate: {', '.join(r['signals_at_usual_rate']) or 'none'}; "
               f"weather {r['weather']['state']}; layers {r['layer_states']}")
         for s in SIGNALS:
             for it in r["signals"][s]["items"]:
                 print(f"    {s}: {it['id']}  {it.get('at')}  {str(it['title'])[:90]}")
         if r["tightest_span"]:
-            print(f"    tightest span holding all three: {r['tightest_span']['hours']} h")
+            print(f"    tightest span holding all four: {r['tightest_span']['hours']} h")
         c = r["context"]
         print(f"    context: {len(c['notices_other'])} other new warnings, {len(c['notices_standing'])} standing "
-              f"notices, {len(c['single_source_dips'])} single-source dips, {len(c['embassy_alerts'])} embassy alerts, "
+              f"notices, {len(c['notices_renewal'])} renewals, {len(c['single_source_dips'])} single-source dips, "
+              f"{len(c['embassy_alerts'])} other embassy alerts, {len(c['press_other'])} other press items, "
               f"{len(c['interference_ended'])} interference ended")
         for o in c["ooni"]:
             print(f"    OONI {o['country']}: {o['rate']}%  lowest in archive {o['lowest_in_archive']}  "

@@ -161,10 +161,11 @@
   </section>
 
   <section id="three" aria-labelledby="three-h">
-    <h2 id="three-h">Three signals: the Strait of Hormuz and the Gulf</h2>
-    <p>Whether three signals, each routine alone, fall in one area within <b>48 hours</b> of each other. The area is a
-      circle of <b>900 km</b> around Bandar Abbas, with Iran, the UAE, Oman, Qatar, Bahrain and Kuwait for country-level
-      items. A signal counts when it is dated in the <b>96 hours</b> before the reading.</p>
+    <h2 id="three-h">Four signals: the Strait of Hormuz and the Gulf</h2>
+    <p>Whether four signals, each routine alone, fall in one area within <b>48 hours</b> of each other (join 0.3,
+      18 Nov 2026; the file keeps the name three-signal.json). The area is a circle of <b>900 km</b> around Bandar
+      Abbas, with Iran, the UAE, Oman, Qatar, Bahrain and Kuwait for country-level items. A signal counts when it is
+      dated in the <b>96 hours</b> before the reading.</p>
     <dl class="doc-rules">
       <dt>Interference (Noisefloor)</dt>
       <dd>A Noisefloor anomaly or warning inside the circle that is new, rising or an event. An area that ended is
@@ -173,21 +174,34 @@
       <dd>A new navigation warning inside the circle whose text names military activity (firing, gunnery, missile,
         rocket, military, exercises including naval exercises, hazardous operations, mines, drones, UAVs or other unmanned
         craft, attack, GPS or GNSS interference,
-        jamming, spoofing, warships, submarines, space debris, launches), or a new or revised EASA conflict-zone
-        bulletin for one of the six countries. If Cordon's newest navigation warning anywhere is more than <b>14
-        days</b> old, that feed has stopped moving and the area reads incomplete unless all three converge without
-        it.</dd>
+        jamming, spoofing, warships, submarines, space debris, launches); a new EASA conflict-zone bulletin for one of
+        the six countries, or a revision of one that is not a scheduled renewal; or a US embassy security alert for one
+        of the six, counted from the earliest date COP saw on it. A revision first seen from <b>7 days before</b> the
+        previous version's expiry to <b>48 hours after its</b> expiry, with a later expiry, is a scheduled renewal:
+        listed, not counted. COP holds a bulletin's title and dates, not its text. Demonstration, weather, health and
+        routine embassy messages, and security alerts about holidays or scheduled events, are listed only. If
+        Cordon's newest navigation warning anywhere is more than <b>14 days</b> old, that feed has stopped moving and
+        the area reads incomplete unless all four converge without it.</dd>
       <dt>Connectivity (Blackout)</dt>
       <dd>A confirmed outage or a Cloudflare-verified anomaly in one of the six countries. A single-source dip is
         listed and does not count. An OONI censorship rate that rose <b>5 points</b> or more above its lowest in the
         archive is listed as context.</dd>
+      <dt>Press reporting of violence (Watchfloor)</dt>
+      <dd>A Watchfloor country item for one of the six countries: violent-event articles marked unusual at a z-score of
+        <b>3 or more</b>, Watchfloor's own score against that country's recent days. Attention items and lower scores
+        are listed only. Watchfloor measures a whole country for a whole day, a day behind: it says how much was
+        written, not what happened.</dd>
       <dt>Weather (Vis), context only</dt>
       <dd>Vis's 72-hour forecast at its points in the circle, worst stoplight shown. It never adds a signal and never
         removes one.</dd>
     </dl>
-    <p><strong>Readings:</strong> <em>converged</em> (all three within 48 hours), <em>partial</em> (some present),
-      <em>none</em>, or <em>incomplete</em> (a layer with no current data). Converged is the pattern the join looks
-      for; it is not a warning, and the call is the analyst's.</p>
+    <p><strong>Each signal against its own rate.</strong> In this war interference and attacks are reported on most
+      days, so a signal that was present on more than half of the area's last <b>30 archived days</b> with every layer
+      current counts only on a day its number of items is above its own <b>90th percentile</b> over those days. Until
+      the archive holds <b>14 such days</b>, every signal counts as it fires, and the reading says so.</p>
+    <p><strong>Readings:</strong> <em>converged</em> (all four counted within 48 hours), <em>partial</em> (some
+      present), <em>none</em>, or <em>incomplete</em> (a layer with no current data). Converged is the pattern the
+      join looks for; it is not a warning, and the call is the analyst's.</p>
     <h3>Base rate <span class="live-tag">live</span></h3>
     <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
   </section>
