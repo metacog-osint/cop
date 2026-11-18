@@ -323,7 +323,9 @@ export function outageTriage(index, triage, args, now) {
       "registered Verdict forecast and has no likelihood, so never quote one as a forecast (list_forecasts has the " +
       "registered ones). replay_rate (internet-outage records) and replay say how often Access Now's documented 2025 " +
       "shutdowns (the STOP dataset, replayed through triage) would have read the same way, beside how often those " +
-      "countries' ordinary days would have: quote both figures together with replay.caveats, credit Access Now, " +
+      "countries' ordinary days would have: quote both figures together with replay.caveats (what both runs say) " +
+      "and the record's replay_rate.caveats (what its own run adds; replay.two_layer.caveats and " +
+      "replay.three_layer.caveats give each run's), credit Access Now, " +
       "#KeepItOn STOP, and never say triage detects, finds or predicts shutdowns. A record with no replay_rate " +
       "(US power, unconfirmed) has no replay figure.",
     readings: triage.readings,

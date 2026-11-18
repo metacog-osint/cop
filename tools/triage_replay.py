@@ -89,10 +89,13 @@ def load(folder=REPLAYS):
                               "ordinary_day_shares": _shares({k: (row["control_shares"] or {}).get(k) for k in READINGS})}
     except (OSError, ValueError, KeyError, TypeError):
         return None
-    caveats = []
-    for c in list(two.get("caveats") or []) + list(three.get("caveats") or []):
-        if c not in caveats:
-            caveats.append(c)
+    # Caveats per run (fixed 18 Nov 2026): merging both runs' lists put the two-layer run's "Cordon's notices are not
+    # replayed yet" beside the three-layer run's caveats on Cordon's history. `caveats` keeps only what both runs say;
+    # each pool carries what its own run adds, and each record's replay_rate carries its own pool's.
+    two_c, three_c = list(two.get("caveats") or []), list(three.get("caveats") or [])
+    caveats = [c for c in two_c if c in three_c]
+    two_layer["caveats"] = [c for c in two_c if c not in caveats]
+    three_layer["caveats"] = [c for c in three_c if c not in caveats]
     rep = {
         "source": SOURCE, "attribution": ATTRIBUTION, "licence": LICENCE, "what": WHAT,
         "runs": {"two_layer": two["run_id"], "three_layer": three["run_id"]},
@@ -158,7 +161,9 @@ def record_rate(rep, country, reading, name=None):
                      "ordinary days to compare them with.")
     else:
         text += f" STOP documented no 2025 shutdown in {name}, so there is no country figure."
-    notes = [] if cordon else [NO_CORDON]
+    # The two-layer run's own caveat is about the run ("not replayed yet"); for a country outside Cordon's history
+    # NO_CORDON says the same of this country, so it stands in for it. Cordon's countries get the three-layer run's own.
+    notes = list(pool.get("caveats") or []) if cordon else [NO_CORDON]
     return {"reading": reading, "layers_replayed": pool["layers"], "pool": which,
             "matched_shutdowns": pool["matched_shutdowns"], "shutdown_share": s, "ordinary_day_share": o,
             "country": own, "text": text, "caveats": notes, "attribution": ATTRIBUTION}

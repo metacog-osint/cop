@@ -182,14 +182,17 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   `tools/triage_replay.py` reads the newest `history/replays/stop-2025-two-layer-*` and `...-three-layer-*` manifests
   (counts and rates only; credit "Access Now, #KeepItOn STOP"; `--replays` on `triage.py`, default `history/replays`,
   so the build needs no new flag) and `triage.py` `attach_replay` puts them in `triage.json` as `replay` (pooled
-  shares for shutdowns and ordinary days, both layer counts, a row per country, the caveats of both runs) and as
+  shares for shutdowns and ordinary days, both layer counts, a row per country; caveats per run since 18 Nov 2026:
+  `replay.caveats` holds only what both runs say, `two_layer.caveats` and `three_layer.caveats` what each run adds,
+  because the merged list put the two-layer run's "not replayed yet" beside the three-layer run's Cordon caveats) and as
   `replay_rate` on each internet-outage record whose reading is natural, tension context, open or incomplete: Cordon's
   25 countries get the three-layer figures (157 matched), every other country the two-layer ones (172) with a caveat
-  that Cordon was not replayed there. Unconfirmed dips and US power records carry none. The page prints it beside each
+  that Cordon was not replayed there (a Cordon country's record carries the three-layer run's own caveats instead,
+  folded under the line on the page). Unconfirmed dips and US power records carry none. The page prints it beside each
   record's Base rate and as a footer paragraph with the replay caveats folded; the MCP `outage_triage` returns `replay`
   and `replay_rate`, credits Access Now, and its note and rule 7 forbid saying triage detects, finds or predicts
   shutdowns. `HIT_RATE_CAUTION`'s replacement is built from the figures' directions (`triage_replay.caution`). Without
-  the manifests nothing changes (the old caution stays). Tests: `test_triage_replay.py` (13) and the MCP triage test.
+  the manifests nothing changes (the old caution stays). Tests: `test_triage_replay.py` (14) and the MCP triage test.
   **UK and Canadian travel advice (join 0.7; Tom, 14 Nov 2026, "Yes, as proposed"):** triage reads Cordon's `fcdo`
   and `canada` items as notices (`NOTICE_KINDS`, declared inputs `cordon:fcdo`, `cordon:canada`), but only as a
   change: an item counts only when Cordon marks it anomaly (it saw the level or the advice change;

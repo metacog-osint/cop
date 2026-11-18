@@ -607,14 +607,24 @@ function triageRecord(r) {
     h("p", { class: "tri-text", text: r.reading_text }),
     h("dl", { class: "tri-layers" }, ...layers),
     r.base_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Base rate. " }), r.base_rate.text) : null,
-    r.replay_rate ? h("p", { class: "tri-rate" }, h("strong", { text: "Documented shutdowns, 2025. " }), r.replay_rate.text,
-      ...(r.replay_rate.caveats || []).map((c) => ` ${c}`), ` Credit: ${r.replay_rate.attribution}.`) : null,
+    ...triageReplay(r.replay_rate),
     r.eaglei ? h("p", { class: "tri-rate" }, h("strong", { text: "How often this state goes over the line. " }),
       `${r.eaglei.text} ${r.eaglei.caveat}`) : null,
     r.ooni_now ? h("p", { class: "tri-rate" }, h("strong", { text: "OONI now. " }), r.ooni_now.title) : null,
     ...(r.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })),
     triageQuestion(r.question_draft),
     triageQuestion(r.cause_question_draft, "Second question, on cause (a draft, not registered)"));
+}
+// The STOP replay's line for one record, with its own pool's caveats: one inline (outside Cordon's countries, that
+// Cordon was not replayed there), several (the three-layer run's own, in Cordon's countries) folded under the line.
+function triageReplay(x) {
+  if (!x) return [];
+  const cs = x.caveats || [];
+  const one = cs.length === 1;
+  return [h("p", { class: "tri-rate" }, h("strong", { text: "Documented shutdowns, 2025. " }), x.text,
+    one ? ` ${cs[0]}` : null, ` Credit: ${x.attribution}.`),
+    cs.length > 1 ? h("details", { class: "tri-q" }, h("summary", { text: "Caveats on this figure" }),
+      ...cs.map((c) => h("p", { class: "tri-caveat", text: c }))) : null];
 }
 // The drafted Verdict question: how this reading could be scored later. A draft, never shown as a forecast.
 function triageQuestion(q, label) {
@@ -686,8 +696,14 @@ function renderTriage() {
       `Cordon's ${t.places.length} countries, all three layers (${t.matched_shutdowns} shutdowns): ${pair(t)}. ` +
       `Every country STOP covers, Elements and Watchfloor only (${w.matched_shutdowns} shutdowns, ${rp.countries_with_shutdowns} countries): ${pair(w)}. ` +
       "It does not say that triage detects shutdowns, and no reading is a finding of cause."),
+      // Per run (18 Nov 2026): what both runs say, then what each run adds, so the two-layer run's "not replayed yet"
+      // sits under its own run and never beside the three-layer run's Cordon caveats.
       h("details", { class: "tri-q" }, h("summary", { text: "Replay caveats" }),
-        ...(rp.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c }))));
+        ...(rp.caveats || []).map((c) => h("p", { class: "tri-caveat", text: c })),
+        ...[[t, `All three layers, Cordon's ${t.places.length} countries`], [w, "Elements and Watchfloor only, every country"]]
+          .filter(([pool]) => (pool.caveats || []).length)
+          .flatMap(([pool, label]) => [h("p", {}, h("strong", { text: `${label}. ` })),
+            ...pool.caveats.map((c) => h("p", { class: "tri-caveat", text: c }))])));
   }
   const unplaced = triage.unplaced || [];
   if (unplaced.length) foot.append(h("p", { class: "note" },
