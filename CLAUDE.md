@@ -491,6 +491,29 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   of 14:48 UTC 15 Nov (28 items, 7 anomalies), every timestamp moved back 14 days 18 h 19 min. The MCP tests used
   "wake" as their unknown program; they use "tempo" now. Checked offline 15 Nov in the browser pane: the Maritime
   chip draws 28 teal points, a card opens with "Measured, not a warning" and the signed size line.
+  **Six kinds (17 Nov 2026, Wake on a 6-hour schedule; COP's entry updated 18 Nov 2026, branch
+  `claude/wake-items-scoring-452805`).** Live on 18 Nov: 28 `chokepoint`, 59 `port` (PortWatch port calls, the same
+  signed `measures.change_year_ago_pct`, so the one strength rule ranks ports and chokepoints together), 61
+  `ais-listed` (a Digitraffic vessel that broadcasts an IMO number listed on a sanctions list, from Headwind's vessel
+  table; `geometry` null when a report failed Wake's position checks), 7 `ais-gap` (LineStrings) and 1 `ais-slow`
+  (AIS records near subsea lines in the Baltic; anomalies with no value on the strength rule, so they rank after any
+  port or chokepoint), and 33 `ukmto` (UKMTO's incident reports of the last 30 days, always routine, `countries: []`,
+  `link: null`). Every kind shows under Maritime (`routine_label` "weekly readings at every chokepoint and port, AIS
+  records and UKMTO's reports"). `also_in`: UKMTO reports whose title type is Attack, Hijack or (Attempted) Boarding
+  also under Conflict (advisories and suspicious activity stay in Maritime); `ais-listed` also under Economic stress,
+  beside Headwind's list changes. `source_health` is on: Wake's `health` block is keyed by the source id its items
+  carry (`imf-portwatch`, `imf-portwatch-ports`, `digitraffic-ais`, `ukmto-incidents`, `headwind-vessels`), no
+  `lane_map`. A card whose item has no `link` now shows its first source's own page ("Source page", any program), so
+  a UKMTO card links ukmto.org's recent-incidents page; "Open in Wake" stays. MCP rule 9 now covers all four groups:
+  listed items always "broadcasts an IMO number listed on", never "sanctioned vessel"; a gap is not a vessel going
+  dark on purpose; UKMTO's reports are UKMTO's, unverified, naming no one responsible. Seven sources added to
+  `config/sources.json` as Wake's feed states them. The fixture gained one item of each new kind (from Wake's feed of
+  00:50 UTC 18 Nov, moved back 17 days 4 h 21 min; date-only values and dates in text by 17 days). **Not changed:**
+  the registry's windows for Wake (240 h fresh, 408 h stale, set for weekly PortWatch) are the kit's; with AIS and
+  UKMTO every 6 hours, the program reads fresh while PortWatch alone could be weeks old, and the per-source health
+  is what catches a stalled lane. **UKMTO and the three-signal join:** not counted (Tom's call). Measured 18 Nov in
+  `D:\Projects\_ideas\drafts\2026-11-18-ukmto-three-signal-replay.md`: an Attack sits in the 96-hour lookback on 46
+  of 46 days from 3 Oct, so counting them makes the notice signal permanent.
 - **Relief** (16 Nov 2026, kit 0.5.9, which sets its registry entry live; branch `relief-layer`, not pushed): IFRC GO
   emergency appeals and DREF allocations, and WHO Disease Outbreak News notices (Relief `relief-0.1`; 203 items on the
   first read, all `routine`, kind `observation`). Points at the country's label point, precision `country` (WHO notices
@@ -523,6 +546,7 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   Notices, so those seven TFRs appear twice in Everything). The gate is unchanged: no join reads `cop_also`, and
   Cordon's `navwarn` kind stayed on the MILITARY list (retired 15 Nov 2026). Checked 14 Nov on a local live build: 19 tagged, drawn
   and clickable under Spectrum and space, no console errors.
+- **How COP scores (`site/scoring.html`, 18 Nov 2026, brief A of the 17 Nov competitor scan):** one public page of every rule behind the picks, strength, freshness and expiry, outage triage and the three-signal join, in plain words with every threshold, modelled on OSINT Swarm's `/scoring` page but under the voice rule (readings descriptive, probabilities only in Verdict, base rates beside every reading). `scoring.js` fills the strength table, the freshness table and the base rates from `data/health.json`, `data/triage.json` and `data/three-signal.json`, so they match the map. `test_scoring_page_states_the_thresholds_the_code_uses` checks every threshold the page writes against the constant in `triage.py`, `three_signal.py` and `config/programs.json`: change a window there and the test names the sentence to change. Linked from the top bar ("How it scores") and from "How COP reads".
 - **Page:** static `site/` (no build step). `cop.js` is an ES module using vendored MapLibre GL JS 6.14.0
   (`site/vendor/maplibre-gl/`, BSD-3; pinned to a release at least two weeks old, integrity checked against npm) and
   the kit's `tic-doctrine.js`. Base map: Natural Earth land from `data/world.geojson` below zoom 3.5 (OpenFreeMap's
@@ -774,3 +798,9 @@ counted; Headwind and Launch keep the same order (late 24 h, expired 48 h, stale
 600 KB warning line (601 KB at 15:13 UTC 15 Nov, 632 KB by 19:40 UTC); coding its repeated labels (15 Nov, above) brings
 it to 536 KB, about 260 bytes a row, so it passes 600 KB again near 2,370 items (2,123 on 15 Nov). The next lever is
 Cordon's routine notices, 45% of the index.
+**Measured 18 Nov 2026** (live build of 14:20 UTC, after Wake's six kinds): 748,140 bytes (731 KB), 2,881 rows, about
+260 bytes a row, 142 KB gzipped. By program: Cordon 950 rows (260 KB, 36%), Elements 465 (123 KB), Undertow 439
+(85 KB), Vigil 264 (62 KB), Relief 206 (35 KB), Wake 189 (53 KB: 61 ais-listed, 59 port, 33 ukmto, 28 chokepoint, 7
+ais-gap, 1 ais-slow), Headwind 149 (38 KB), Noisefloor 71, Watchfloor 42, Orbit 33, Vis 32, Context 21, Blackout 20.
+The 600 KB line is retired: `INDEX_WARN_BYTES` is 2 MB since the move to Workers Paid (`0745c9a`), so no slimming is
+needed; at 260 bytes a row the 2 MB line sits near 8,000 rows.

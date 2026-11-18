@@ -184,12 +184,37 @@ class Build(unittest.TestCase):
         self.assertEqual(tags["cordon:navwarn:4-1078-2026"], ",spectrum,", "the summary counts too")
         self.assertIsNone(tags["cordon:navwarn:12-800-2026"], "missile firings stay in Cordon's view")
         self.assertIsNone(tags["cordon:tfr:6-7113"], "TFRs are not listed: Launch draws the space-operations ones")
-        self.assertEqual(sum(1 for v in tags.values() if v), 2, "nothing else is tagged")
+        self.assertEqual(sum(1 for k, v in tags.items() if v and k.startswith("cordon:")), 2, "nothing else is tagged")
         cordon = next(p for p in health["config"]["programs"] if p["id"] == "cordon")
         self.assertEqual(cordon["also_in"], [{"preset": "spectrum", "label": "launch, space-debris and reentry warnings"}])
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
         self.assertIn('["coalesce", ["get", "cop_also"], ""]', js)
         self.assertRegex(js, r'const MAP_KEYS = \[[^\]]*"cop_also"', "the map's copy of each item keeps the tag")
+
+    def test_wake_kinds_are_drawn_and_tagged(self):
+        """Wake's six kinds (17 Nov 2026): every kind shows under Maritime; UKMTO's attack, hijack and boarding reports
+        also under Conflict, its advisories not; listed-IMO records also under Economic stress; ports rank on the
+        same signed change as chokepoints; AIS gap and slow anomalies have no value on it and rank after them."""
+        today, picks, health, _ = build()
+        wake = {f["properties"]["id"]: f for f in today["features"] if f["properties"]["cop_program"] == "wake"}
+        kinds = {i.split(":")[1] for i in wake}
+        self.assertEqual(kinds, {"chokepoint", "port", "ais-listed", "ais-gap", "ais-slow", "ukmto"})
+        tag = lambda i: wake[i]["properties"].get("cop_also")
+        self.assertEqual(tag("wake:ukmto:ukmto-209"), ",conflict,")
+        self.assertIsNone(tag("wake:ukmto:ukmto-178"), "an advisory stays in Wake's own view")
+        self.assertEqual(tag("wake:ais-listed:8414477:273350220"), ",economy,")
+        self.assertIsNone(wake["wake:ais-listed:9288746:273271850"]["geometry"], "no position: Off the map")
+        self.assertFalse(any(tag(i) for i in wake if i.split(":")[1] in ("chokepoint", "port", "ais-gap", "ais-slow")))
+        port = wake["wake:port:istanbul:2026-11-06"]["properties"]
+        self.assertEqual(port["cop_strength"], -43.7)
+        self.assertIn("against the same weeks a year earlier", port["cop_strength_text"])
+        self.assertIsNone(wake["wake:ais-slow:230941810:1794911990"]["properties"]["cop_strength"])
+        w = next(p for p in health["config"]["programs"] if p["id"] == "wake")
+        self.assertEqual([r["preset"] for r in w["also_in"]], ["conflict", "economy"])
+        self.assertEqual(health_of(health, "wake")["sources"]["not_read"], [], "Wake's health block keys its lanes")
+        for f in wake.values():
+            for s in f["properties"]["sources"]:
+                self.assertIn(s["id"], snap.SOURCES, s["id"])
 
     def test_country_shapes_only_for_country_level_items(self):
         today, _, _, countries = build()
@@ -545,9 +570,41 @@ class Design(unittest.TestCase):
         self.assertEqual(a, b, "copy doctrine/kit/js/tic-doctrine.js to site/vendor/ after a kit sync")
 
     def test_no_cdn_scripts(self):
-        html = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
-        self.assertNotIn("<script src=\"http", html)
-        self.assertNotIn("style=\"", html)
+        for page in ("index.html", "scoring.html"):
+            html = (ROOT / "site" / page).read_text(encoding="utf-8")
+            self.assertNotIn("<script src=\"http", html, page)
+            self.assertNotIn("style=\"", html, page)
+            self.assertNotRegex(html, r"<script(?![^>]* src=)[^>]*>", f"{page}: no inline script (CSP)")
+
+    def test_scoring_page_states_the_thresholds_the_code_uses(self):
+        """scoring.html writes every threshold in words; each must match the constant it describes (18 Nov 2026)."""
+        import re
+        sys.path.insert(0, str(ROOT / "tools"))
+        import three_signal as ts
+        import triage as tri
+        html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))
+        hormuz = ts.AREAS["hormuz"]
+        for phrase in (f"{tri.HAZARD_BEFORE_H} hours before the outage", f"up to {tri.HAZARD_AFTER_H} hours after",
+                       f"within {tri.HAZARD_NEAR_KM} km", f"last advisory plus {tri.EPISODIC_LAG_H} hours",
+                       f"dated in the {tri.NOTICE_RECENT_H} hours before", "28 complete days",
+                       f"more than {tri.POWER_LINE:,} meters", f"within {tri.STATE_NEAR_KM} km of an outage county",
+                       f"within {ts.WINDOW_H} hours of each other", f"{hormuz['radius_km']} km around {hormuz['center_name']}",
+                       f"in the {ts.LOOKBACK_H} hours before the reading", f"more than {ts.NAVWARN_BLIND_DAYS} days old",
+                       f"{ts.OONI_MOVE_POINTS} points or more", f"until there are {snap.CONFIG['max_picks']} picks"):
+            self.assertIn(phrase, text)
+        self.assertEqual(tri.ATTENTION_BASELINE, "wf-28d")
+        self.assertEqual(set(tri.ALERT_COUNTED), {"security", "demonstration"})
+        for word in ts.MILITARY_WORDS:     # every word the join reads is named on the page, in plain English
+            stem = {"HAZARDOUS OP": "hazardous operations", "UAV": "UAVs", "NAVAL EXERCISE": "exercise"}.get(word, word)
+            self.assertIn(stem.lower().split()[0], text.lower(), word)
+        for w in ("likely", "strike window", "attack likely"):
+            self.assertNotIn(w, text.lower(), "the voice rule: no inference in COP's voice")
+        index = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('href="scoring.html"', index, "the map links the page")
+        js = (ROOT / "site" / "scoring.js").read_text(encoding="utf-8")
+        for f in ("health.json", "triage.json", "three-signal.json"):
+            self.assertIn(f, js)
 
 
 def gdelt_only():

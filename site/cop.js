@@ -392,7 +392,12 @@ function renderCard(f) {
     // own for an observation: measured or reported, with no judgment about what it means.
     badges.append(h("span", { class: "badge measure",
       text: p.status_class === "assessed" ? "Measured, not a warning" : "Measured or reported, not a judgment" }));
-  } else if (p.tier === "routine") badges.append(h("span", { class: "badge", text: "Routine: inside its usual range" }));
+  } else if (p.tier === "routine") {
+    // Only an item measured against a baseline can be inside its usual range (18 Nov 2026): a notice, an appeal or a
+    // UKMTO report is routine because its program marks nothing as unusual, not because it was compared with a normal.
+    badges.append(h("span", { class: "badge", text: p.baseline_ref ? "Routine: inside its usual range"
+      : "Routine: a record, not measured against a baseline" }));
+  }
   if (p.tier === "warning") badges.append(h("span", { class: "badge", text: `Warning: ${prog.name}'s judgment` }));
   if (p.cop_expired) badges.append(h("span", { class: "badge stale", text: "Expired: past its valid-until time" }));
   if (p.status_class) badges.append(h("span", { class: "badge", text: STATUS[p.status_class] || p.status_class }));
@@ -421,6 +426,9 @@ function renderCard(f) {
   fact("Place", PRECISION[p.precision_class] || "Not stated");
   const pubs = [...new Set((p.sources || []).map((s) => s.publisher).filter(Boolean))];
   if (pubs.length) fact("Sources", pubs.slice(0, 3).join("; ") + (pubs.length > 3 ? ` and ${pubs.length - 3} more` : ""));
+  // An item with no link of its own (Wake's UKMTO reports, 18 Nov 2026): its first source's own page, when it has one.
+  const srcUrl = (p.sources || []).map((s) => s && s.url).find((u) => typeof u === "string" && /^https:\/\//.test(u));
+  if (!p.link && srcUrl) fact("Source page", h("a", { href: srcUrl, rel: "noopener" }, new URL(srcUrl).hostname));
   // Undertow's reported activity (16 Nov 2026): a reporter wrote about an operation it tracks. Not a takedown, no
   // origin, and "quiet" is a reporter falling silent, never an operation ending.
   const a = p.activity;
