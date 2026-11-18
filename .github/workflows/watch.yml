@@ -1,7 +1,8 @@
 name: watch
 # The suite watchdog. Reads COP's public snapshot and health.json and fails when COP's own build is more than 6 hours
 # old, when a program is not fresh, when a program's data time runs into the future, or when the build left a
-# malformed item out of the picture (tools/suite_watch.py). A failed run is
+# malformed item out of the picture, or when the hub's site check (tic-sitecheck) failed a page or has not run in
+# 14 hours (tools/suite_watch.py). A failed run is
 # the alert: GitHub mails the repository owner. It runs apart from build.yml because a build that has stopped
 # cannot report itself.
 #

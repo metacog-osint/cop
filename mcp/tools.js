@@ -106,7 +106,11 @@ export function suiteStatus(programs, now) {
     note:
       "COP merges every live program's feed into one snapshot. state: fresh, late or stale judges each program's " +
       "newest data against its own fresh_hours and stale_hours; a program with from_previous true failed to fetch " +
-      "and shows its last good copy. Planned programs publish nothing yet.",
+      "and shows its last good copy. Planned programs publish nothing yet. page_check is the hub's last site check " +
+      "of the program's page (opened in headless Chrome twice a day): ok false means the page failed to load, run " +
+      "its scripts or draw its map, whatever its data says; null means the check does not cover that page or was " +
+      "not readable at COP's last build.",
+    page_check: programs.page_check ?? null,
     programs: programs.programs.map((p) => ({
       id: p.id,
       name: p.name,
@@ -119,6 +123,7 @@ export function suiteStatus(programs, now) {
       fresh_hours: p.fresh_hours ?? null,
       stale_hours: p.stale_hours ?? null,
       in_cop: p.cop ?? null,
+      page_check: p.page_check ?? null,
     })),
   };
 }

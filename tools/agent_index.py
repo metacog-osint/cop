@@ -7,6 +7,7 @@ would still be slow, so this step, run right after snapshot.py, writes small fil
     index.json      one compact row per bus item, naming the shard that holds the full item
     items/NN.json   the full contract-v2 items, in SHARDS files, keyed by id
     programs.json   every program in the suite registry (live and planned), with COP's health for each live one
+                    and the hub's last site check of its page (page_check)
     verdict.json    Verdict's forecasts, scores and event calendar; a part that fails to fetch keeps its last
                     published copy, marked stale
     events.json     dated events from the programs' own feeds, beside Verdict's calendar: Orbit's scheduled launches
@@ -38,6 +39,9 @@ CONTRACT = "tic-agent/1"
 SHARDS = 32
 INDEX_WARN_BYTES = 2 * 1024 * 1024
 VERDICT = "https://metacog-osint.github.io/verdict/data/"
+# The hub's site check (Worker tic-sitecheck, 05:10 and 17:10 UTC): does each program's page load and draw in headless
+# Chrome. suite_status carries its last run per program as page_check (18 Nov 2026, Tom's yes).
+SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
 VERDICT_FILES = {"forecasts": "forecasts.json", "scores": "scores.json", "calendar": "calendar.geojson"}
 PREVIOUS = "https://cop.theintelligence.company/data/agent/verdict.json"
 BUS_URL = "https://cop.theintelligence.company/data/today.geojson"
@@ -181,8 +185,23 @@ def decoded(index):
     return [{k: (codes[k][v] if k in codes else v) for k, v in zip(index["fields"], r)} for r in index["rows"]]
 
 
-def build_programs(registry, health, today, now):
-    """Every program in the suite registry, in registry order, with COP's health for the ones COP carries."""
+def page_checks(doc):
+    """(summary, {program id: its page's result}) from a tic-sitecheck/1 run; (None, {}) when it is not one."""
+    if not isinstance(doc, dict) or not str(doc.get("contract", "")).startswith("tic-sitecheck/"):
+        return None, {}
+    results = [r for r in doc.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), str)]
+    summary = {"source": SITECHECK, "finished_at": doc.get("finished_at"), "pages": len(results),
+               "passed": sum(1 for r in results if r.get("ok") is True),
+               "failed": [r["id"] for r in results if r.get("ok") is not True]}
+    by_id = {r["id"]: {"ok": r.get("ok") is True, "checked_at": doc.get("finished_at"), "url": r.get("url"),
+                       "problems": [p for p in r.get("problems") or [] if isinstance(p, str)]} for r in results}
+    return summary, by_id
+
+
+def build_programs(registry, health, today, now, sitecheck=None):
+    """Every program in the suite registry, in registry order, with COP's health for the ones COP carries, and the
+    hub's last site check of its page (page_check, null when the check does not open that program's page)."""
+    checked, pages = page_checks(sitecheck)
     by_id = {h["id"]: h for h in (health or {}).get("programs") or []}
     keep = ("id", "name", "status", "status_note", "family", "site", "feed", "terms", "fresh_hours", "stale_hours",
             "owns")
@@ -193,6 +212,7 @@ def build_programs(registry, health, today, now):
         entry["cop"] = None if h is None else {
             k: h.get(k) for k in ("state", "data_as_of", "age_hours", "items", "anomalies", "placed", "from_previous",
                                   "attribution", "licence")}
+        entry["page_check"] = pages.get(p["id"])
         out.append(entry)
     return {
         "contract": CONTRACT,
@@ -200,6 +220,7 @@ def build_programs(registry, health, today, now):
         "bus_generated_at": (today or {}).get("generated_at"),
         "bus_url": BUS_URL,
         "bus_refresh_hours": (registry.get("bus") or {}).get("refresh_hours"),
+        "page_check": checked,
         "programs": out,
     }
 
@@ -367,6 +388,8 @@ def main(argv=None):
     ap.add_argument("--verdict", help="read Verdict's files from this folder instead of fetching")
     ap.add_argument("--previous", default=None, help=f"last published verdict.json, URL or file (default {PREVIOUS})")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
+    ap.add_argument("--sitecheck", help=f"the hub's site check, URL or file (default {SITECHECK}; "
+                                        "with --verdict, read only when given)")
     a = ap.parse_args(argv)
 
     now = snap.utc(a.now) if a.now else datetime.now(timezone.utc).replace(microsecond=0)
@@ -390,7 +413,13 @@ def main(argv=None):
     snap.write_json(out / "index.json", index)
     for s in shards:
         snap.write_json(out / "items" / f"{s['shard']:02d}.json", s)
-    snap.write_json(out / "programs.json", build_programs(registry, health, today, now))
+    where = a.sitecheck or (None if a.verdict else SITECHECK)
+    sitecheck = None
+    if where:
+        sitecheck, report = fetch_json(where) if where.startswith("http") else read_json(where)
+        if not report["ok"]:  # never fatal: suite_status then says the page check is unavailable
+            print(f"::warning::site check not read ({report.get('error')}); suite_status carries no page_check")
+    snap.write_json(out / "programs.json", build_programs(registry, health, today, now, sitecheck))
     verdict = build_verdict(docs, reports, previous, now)
     snap.write_json(out / "verdict.json", verdict)
     events = build_events(today, now)
