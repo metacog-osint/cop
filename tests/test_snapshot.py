@@ -595,7 +595,11 @@ class Design(unittest.TestCase):
                        f"z-score of {ts.WATCHFLOOR_Z:g} or more", f"{ts.RENEWAL_BEFORE_D} days before",
                        f"{ts.RENEWAL_AFTER_H} hours after its", f"last {ts.RATE_DAYS} archived days",
                        f"{round(ts.RATE_PERCENTILE * 100)}th percentile", f"{ts.RATE_MIN_DAYS} such days",
-                       f"all {len(ts.SIGNALS)} counted within {ts.WINDOW_H} hours".replace("all 4", "all four")):
+                       f"all {len(ts.SIGNALS)} counted within {ts.WINDOW_H} hours".replace("all 4", "all four"),
+                       # Join 0.4: UKMTO's attacks, measured on their own series by the same percentile test.
+                       f"{round(ts.RATE_PERCENTILE * 100)}th percentile of UKMTO's daily counts over the last "
+                       f"{ts.RATE_DAYS} days", f"Wake keeps {ts.UKMTO_KEEP_D} days",
+                       f"{ts.RATE_DAYS} days plus the {ts.LOOKBACK_H} hours"):
             self.assertIn(phrase, text)
         self.assertEqual(tri.ATTENTION_BASELINE, "wf-28d")
         self.assertEqual(set(tri.ALERT_COUNTED), {"security", "demonstration"})
