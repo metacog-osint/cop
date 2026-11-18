@@ -314,7 +314,10 @@ index, not the product, and agents get the same through the MCP server. Tom acce
   by country and on five watched ASNs; Cloudflare Radar's annotated outages and verified anomalies), OONI
   censorship rates and cloud, software and satellite providers' own status reports. Outage and OONI items are country-level
   points, so `country_mark` "fill" shades the country; provider items have `geometry: null` and list under Off the
-  map. Its items carry no `measures`, so it has no `strength` rules and its pick is its feed's first placed anomaly
+  map. Since 18 Nov 2026 (kit 0.5.12) it also carries outages the public and the press report (BO-WP-7: Bluesky post
+  counts, BO-IND-18, source `bluesky-search`; GDELT headline counts, BO-IND-19, source `gdelt-gkg`), ids
+  `blackout:public:...`, US, no map point: reported, not measured by Blackout and not confirmed by the company (MCP
+  rule 2 says so); triage doesn't read them (`INPUT_KINDS`). Its items carry no `measures`, so it has no `strength` rules and its pick is its feed's first placed anomaly
   (Blackout lists outages by drop, largest first, then OONI by anomaly rate); the pick's reason carries no value.
   `freshness` "feed": its items keep the event's or the OONI day's time, not the run's. Own preset "Internet
   connectivity". Colour: Paul Tol's indigo `#332288` (outlines `#1E1452`, `#CBC3F5`), because the seven non-black
