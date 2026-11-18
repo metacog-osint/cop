@@ -154,8 +154,11 @@ READINGS = {
     TENSION: "No active hazard, and a security or demonstration notice was issued or raised in the two days before "
              "the outage, or press attention was unusual for this country against its own last 28 days. That is the "
              "context the outage sits in, not its cause; the base rate below says how often it is there anyway.",
-    "open": "No active hazard, no fresh notice and no unusual attention. These layers show nothing that tells one "
-            "kind of outage from another.",
+    # Reworded on Tom's yes, 18 Nov 2026: the STOP replay found open less often on shutdown days (62%) than on
+    # ordinary days (84%), so "nothing that tells one kind of outage from another" said more than the layers know.
+    "open": "No active hazard, no fresh notice and no unusual attention. These layers show none of the context this "
+            "triage looks for. The replay rates below say how often that is so on shutdown days and on ordinary "
+            "days.",
 }
 # A US state power outage: Cordon and Watchfloor don't cover US states, so these three are the only readings.
 POWER_READINGS = {

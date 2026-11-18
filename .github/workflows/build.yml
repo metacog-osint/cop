@@ -76,6 +76,7 @@ jobs:
           python tests/test_undertow_sanctions.py
           python tests/test_undertow_elections.py
           python tests/test_ledger.py
+          python tests/test_triage_log.py
           python tests/test_stop_replay.py
           python tests/test_history_cordon.py
           npm test
@@ -147,6 +148,36 @@ jobs:
           python tools/triage_rates.py --archive out/rates-archive || echo "::warning::base rates failed; triage runs without them"
           python tools/triage.py --snapshot site/data/today.geojson --ended out/ended/elements.geojson --publish site/data \
             || { rm -f site/data/triage.json; echo "::warning::outage triage failed; the page and the MCP server say it is unavailable"; }
+      # The triage log (cop-purpose step 3, shape A): every reading triage has given, one item per outage and place with
+      # its history of readings, kept after the outage ends (tools/triage_log.py, the kit's tic-history/1). Assets of
+      # the release "triage-log", like the suite ledger, never in site/. The first build ever replays the archived
+      # days downloaded above (one reading a day, marked backfill) before logging this build. A failure never fails the
+      # build; that build is just not logged.
+      - name: Triage log (kept as release assets, not published)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { echo "::warning::triage log: $1; this build is not logged"; exit 0; }
+          [ -f site/data/triage.json ] || skip "no triage.json"
+          DAY=$(python tools/ledger.py --day site/data/today.geojson) || skip "the snapshot has no day"
+          mkdir -p out/triage-log
+          if gh release view triage-log >/dev/null 2>&1; then
+            ASSETS=$(gh release view triage-log --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+            echo "$ASSETS" | grep -qx "state.json.gz" || skip "the release has no state.json.gz; rebuild it by hand with --replay"
+            gh release download triage-log --dir out/triage-log --pattern state.json.gz --clobber || skip "the last state could not be downloaded"
+            if echo "$ASSETS" | grep -qx "$DAY.jsonl.gz"; then
+              gh release download triage-log --dir out/triage-log --pattern "$DAY.jsonl.gz" --clobber || skip "today's lines could not be downloaded"
+            fi
+            python tools/triage_log.py --triage site/data/triage.json --assets out/triage-log || skip "the tool failed"
+          else
+            # The archive copies include today's snapshot (out/archive), so the replay already holds this build's reading.
+            python tools/triage_log.py --replay out/rates-archive --assets out/triage-log || skip "the replay failed"
+            gh release create triage-log --title "COP triage log" \
+              --notes "Every reading COP's outage triage has given: one item per outage and place, with what each layer showed and its history of readings (tic-history/1), one file per UTC day, and the readings open now (state.json.gz). Days before the first build are backfilled from the daily archive. Not a warning, not a forecast, not a finding of cause." \
+              || skip "the release could not be created"
+          fi
+          gh release upload triage-log out/triage-log/*.gz --clobber \
+            || echo "::warning::triage log: upload failed; the next build logs these readings again from the last state"
       # The three-signal join (published since Tom retired the mosaic gate, 15 Nov 2026): interference, a new notice
       # and a connectivity drop in the Strait of Hormuz and the Gulf, with Vis's weather beside them. It replays the
       # archive copies the step above downloaded for how often each signal fires anyway. A failure never fails the

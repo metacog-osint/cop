@@ -106,6 +106,9 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   = program, or `<program>/<source id>` where the feed has a health block. An item ends only when its program and
   source were read; stale copies move nothing. Assets of release `ledger`; **never published** (refuses `site/`,
   `functions/`, `mcp/`). Needs the last state or `--first`; `--replay out/archive` rebuilds.
+- `tools/triage_log.py` (step 3): every triage reading, one item per outage and place; changes in `triage.history`,
+  and as kit `changed` lines from kit 0.6.0 (`reading_key`); ends only when Blackout was read; release
+  `triage-log`, the first build replays the archive. Not published.
 - `tools/suite_watch.py` (`watch.yml`, also dispatched every 3 h): exits 1 when COP's build is over 6 h old, a
   program is not fresh, a data time is 30+ min in the future, a program has malformed items, or the hub's site check
   (`tic-sitecheck/1`) failed a page or is 14+ h old. A failed run is the alert (GitHub mail); optional secret
@@ -118,9 +121,8 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`.
 - Tests: each `tests/test_*.py` is a plain script (`python tests/test_snapshot.py`). `npm ci --ignore-scripts`,
   then `npm test` (needs Python on the path).
-- **Known quirk:** on this laptop `npm test`'s 5 ms CPU timing check fails even on untouched `main`; report it as
-  such and compare against an untouched copy before blaming a change. In the browser pane the map needs 10-20 s
-  (`window.copReadyMs`) and reads zero width while hidden (memory `cop-local-test-quirks`).
+- **Known quirks** (memory `cop-local-test-quirks`): `npm test`'s 5 ms CPU check fails on this laptop even on
+  untouched `main`; the browser pane's map needs 10-20 s and reads zero width while hidden.
 - Local Cloudflare runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date
   2026-10-26`; check with `npx --yes @modelcontextprotocol/inspector@2.12.0 --cli http://127.0.0.1:8788/mcp
   --transport http --method tools/list`; then stop node/esbuild/workerd by PID and delete `.wrangler/`.
