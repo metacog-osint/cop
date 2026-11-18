@@ -132,18 +132,18 @@ class Triage(unittest.TestCase):
         self.assertIsNone(v["probability"])
         self.assertIsNone(v["approved_by"])
         self.assertFalse(v["registered"])
-        self.assertEqual(v["window_ends"], "2026-11-15T00:25:00Z")
-        self.assertIsNone(v["caution"])
+        self.assertEqual(v["window_ends"], "2026-11-15T00:00:00Z")   # 72 whole hours from the start hour
         c = r["cause_draft"]
         self.assertEqual((c["probability"], c["approved_by"], c["registered"]), (None, None, False))
         self.assertNotIn("probability", json.dumps({k: x for k, x in r.items()
                                                     if k not in ("verdict_draft", "cause_draft")}))
 
-    def test_ooni_already_over_the_threshold_is_called_out(self):
+    def test_ooni_now_is_shown_but_the_question_does_not_settle_on_it(self):
         ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3")
         r = one(tri.triage(snapshot(outage("IR"), ooni)))
-        self.assertIn("already", r["verdict_draft"]["caution"])
         self.assertEqual(r["ooni_now"]["id"], "blackout:ooni:ir:2026-11-12")
+        self.assertNotIn("BO-IND-3", r["verdict_draft"]["rule_draft"])
+        self.assertNotIn("already", r["verdict_draft"]["caution"])
 
     def test_stale_outages_and_other_blackout_items_are_not_triaged(self):
         stale = outage("TN")
@@ -342,14 +342,22 @@ class Triage(unittest.TestCase):
         r = one(tri.triage(snapshot(outage()), {"advisory_levels": {}, "attention_share": {}}))
         self.assertFalse(any("No archive baseline" in c for c in r["caveats"]))
 
-    def test_ooni_over_the_threshold_gets_a_rise_question(self):
-        ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3",
-                    title="Iran: 37.0% OONI censorship anomaly rate")
-        v = one(tri.triage(snapshot(outage("IR"), ooni)))["verdict_draft"]
-        self.assertIn("47.0%", v["rise_form"]["question"])
-        self.assertIn("37.0%", v["rise_form"]["rule_draft"])
+    def test_the_ooni_question_settles_on_oonis_own_counts_in_every_country(self):
+        # Blackout reads OONI's rate for six countries only; a rule settled on that reading could only resolve No
+        # in Tunisia. The rule reads OONI's hourly counts instead, in the words Verdict's resolver parses.
+        v = one(tri.triage(snapshot(outage())))["verdict_draft"]
         self.assertIsNone(v["probability"])
-        self.assertIsNone(one(tri.triage(snapshot(outage())))["verdict_draft"]["rise_form"])
+        self.assertNotIn("rise_form", v)
+        self.assertEqual(v["rule_draft"],
+                         "Yes if OONI's aggregation API (api.ooni.io, probe_cc=TN, all tests, hourly) counts at "
+                         "least 50 measurements from 2026-11-12T00:00:00Z to 2026-11-15T00:00:00Z UTC, at least "
+                         "15% of them confirmed or anomalous, and that share at least 2 times the share over the "
+                         "120 hours before 2026-11-12T00:00:00Z UTC (a baseline with no measurements counts as "
+                         "zero); read on a check after 00:00 UTC on 16 Nov 2026. No otherwise.")
+        self.assertEqual(v["window_ends"], "2026-11-15T00:00:00Z")
+        self.assertEqual(v["resolution"]["known_at"], "2026-11-16T00:00:00Z")
+        self.assertIn("aggregation API", v["resolution"]["source"])
+        self.assertIn("probes cannot report", v["caution"])
 
     def test_history_keeps_each_advisory_level_and_each_alerts_dates(self):
         a = snapshot(item("cordon", "cordon:advisory:TN", ["TN"], "routine", "2026-05-01T00:00:00Z",
@@ -403,8 +411,8 @@ class Triage(unittest.TestCase):
             q = r["question_draft"]
             self.assertEqual(q["status"], "draft, not registered")
             self.assertIn("not a registered Verdict forecast", q["note"])
-            self.assertEqual(set(q), {"status", "note", "verdict_id", "question", "window_ends", "rule_draft", "caution", "resolution",
-                                      "rise_form"})
+            self.assertEqual(set(q), {"status", "note", "verdict_id", "question", "window_ends", "rule_draft", "caution",
+                                      "resolution"})
             c = r["cause_question_draft"]
             self.assertEqual(c["status"], "draft, not registered")
             self.assertIn("government order", c["question"])
@@ -423,14 +431,11 @@ class Triage(unittest.TestCase):
         self.assertTrue(by["SC"]["layers"]["elements"]["showed"].startswith("Nothing found"))
         self.assertEqual(gate.review(tri.JOIN, pub)["may_publish"], True)
 
-    def test_the_public_question_keeps_the_rise_form_and_its_caution(self):
-        ooni = item("blackout", "blackout:ooni:ir:2026-11-12", ["IR"], "anomaly", indicator_id="BO-IND-3",
-                    title="Iran: 37.0% OONI censorship anomaly rate")
-        pub = tri.public(tri.attach_rates(tri.triage(snapshot(outage("IR"), ooni)), None))
+    def test_the_public_question_keeps_its_caution(self):
+        pub = tri.public(tri.attach_rates(tri.triage(snapshot(outage("IR"))), None))
         q = pub["records"][0]["question_draft"]
-        self.assertIn("already", q["caution"])
-        self.assertIn("47.0%", q["rise_form"]["question"])
-        self.assertEqual(set(q["rise_form"]), {"question", "rule_draft", "notes"})
+        self.assertIn("probe_cc=IR", q["rule_draft"])
+        self.assertIn("probes cannot report", q["caution"])
 
     def test_nothing_found_and_no_current_data_are_different_answers(self):
         quiet = one(tri.triage(snapshot(outage())))
@@ -471,7 +476,7 @@ class Triage(unittest.TestCase):
         self.assertEqual([p.name for p in (work / "pub").iterdir()], [tri.PUBLIC_NAME])
         pub = json.loads((work / "pub" / tri.PUBLIC_NAME).read_text(encoding="utf-8"))
         self.assertNotIn("verdict_draft", pub["records"][0])
-        self.assertIn("Will OONI confirm blocking in TN", pub["records"][0]["question_draft"]["question"])
+        self.assertIn("Will OONI measure blocking in TN rising", pub["records"][0]["question_draft"]["question"])
         self.assertEqual(pub["gate"]["may_publish"], True)
         full = json.loads((work / "full" / "latest.json").read_text(encoding="utf-8"))
         self.assertIn("approved_by", full["records"][0]["verdict_draft"], "the working draft stays in out/")
@@ -722,8 +727,8 @@ class TriageFixes(unittest.TestCase):
         for who in ("Cloudflare Radar", "Access Now", "Reuters"):
             self.assertIn(who, c["rule_draft"])
         v = one(tri.triage(snapshot(outage())))["verdict_draft"]
-        self.assertIn("check after 00:25 UTC on 16 Nov 2026", v["rule_draft"])
-        self.assertEqual(v["resolution"]["known_at"], "2026-11-16T00:25:00Z")
+        self.assertIn("check after 00:00 UTC on 16 Nov 2026", v["rule_draft"])
+        self.assertEqual(v["resolution"]["known_at"], "2026-11-16T00:00:00Z")
 
 
 if __name__ == "__main__":

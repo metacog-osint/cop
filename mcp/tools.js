@@ -323,7 +323,9 @@ export function outageTriage(index, triage, args, now) {
       "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
       "history. A hazard row with ended_at had ended before the snapshot: it comes from Elements' list of items that " +
       "ended in the last 7 days (ended_items gives that list's state; when it is missing the caveats say so). " +
-      "The time windows are provisional. question_draft (OONI) and cause_question_draft (whether an outside " +
+      "The time windows are provisional. question_draft (whether OONI's own hourly counts show blocking rising in " +
+      "the country, settled on OONI's API; a full shutdown silences the probes, so it can read No) and " +
+      "cause_question_draft (whether an outside " +
       "source names a government order) are drafted questions that could score the reading later: a draft is not a " +
       "registered Verdict forecast and has no likelihood, so never quote one as a forecast (list_forecasts has the " +
       "registered ones). replay_rate (internet-outage records) and replay say how often Access Now's documented 2025 " +

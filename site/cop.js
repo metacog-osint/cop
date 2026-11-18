@@ -629,7 +629,6 @@ function triageReplay(x) {
 // The drafted Verdict question: how this reading could be scored later. A draft, never shown as a forecast.
 function triageQuestion(q, label) {
   if (!q) return null;
-  const rise = q.rise_form;
   return h("details", { class: "tri-q" },
     h("summary", { text: label || "Question to score it by (a draft, not registered)" }),
     h("p", { text: q.note }),
@@ -639,10 +638,7 @@ function triageQuestion(q, label) {
     q.verdict_id ? h("p", { class: "row-meta", text: `Verdict id if registered: ${q.verdict_id}` }) : null,
     q.reference ? h("p", {}, h("strong", { text: "Reference. " }), q.reference) : null,
     ...(q.notes || []).map((n) => h("p", { class: "tri-caveat", text: n })),
-    q.caution ? h("p", { class: "tri-caveat", text: q.caution }) : null,
-    rise ? h("p", {}, h("strong", { text: "Rise form. " }), rise.question) : null,
-    rise ? h("p", {}, h("strong", { text: "Settled by. " }), rise.rule_draft) : null,
-    ...(rise ? rise.notes.map((n) => h("p", { class: "tri-caveat", text: n })) : []));
+    q.caution ? h("p", { class: "tri-caveat", text: q.caution }) : null);
 }
 function renderTriage() {
   const sec = $("triage-sec");

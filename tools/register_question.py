@@ -12,9 +12,8 @@ It reads the published triage.json (or --triage <file>), builds a tic-feed/2 for
 the command line, its ICD 203 term and the kit's rule-based confidence, checks it with Verdict's own rules, adds it
 to <verdict>/drafts/cop-triage.json approved by --approved-by, and runs Verdict's register on that file. Verdict's CI
 holds a new line's published_at to within an hour of the commit that adds it, so commit and push soon after; the
-command prints both. It refuses a question that is not from a confirmed outage, one whose window has closed, one
-whose caution says it is settled before it is asked (use --rise for the OONI rise form instead), and a Verdict
-checkout that is behind origin/main or not on main.
+command prints both. It refuses a question that is not from a confirmed outage, one whose window has closed, and a
+Verdict checkout that is behind origin/main or not on main.
 
 Nothing here sets a probability: the number is the person's who runs it. COP's build never runs this.
 Standard-library Python only.
@@ -37,7 +36,6 @@ from tic_doctrine import confidence, contract, likelihood  # noqa: E402
 PUBLISHED = "https://cop.theintelligence.company/data/triage.json"
 VERDICT = Path(r"D:\Projects\verdict")
 DRAFTS = Path("drafts") / "cop-triage.json"
-SETTLED = "settled before it is asked"
 DRAFTS_NOTE = ("Questions drafted by COP's outage triage (D6). Each was added by tools/register_question.py in COP, "
                "with the probability and approval of the person who ran it, then registered.")
 ALTERNATIVES = {
@@ -51,7 +49,7 @@ ALTERNATIVES = {
         {"hypothesis": "A network cut without new content blocking: OONI's probes go dark and the rate need not rise",
          "tell_apart": "OONI's measurement counts for the country falling in the window"},
         {"hypothesis": "Blocking that was already in place before the outage",
-         "tell_apart": "Blackout's OONI reading at the outage (the record's ooni_now)"},
+         "tell_apart": "OONI's share over the 120 hours before the window, which the rule compares against"},
     ],
 }
 
@@ -78,7 +76,7 @@ def find(doc, verdict_id):
                      f"Blackout's feed). Ids there now: {', '.join(ids) or 'none'}")
 
 
-def build_item(doc, record, q, what, probability, approved_by, when, rise=False):
+def build_item(doc, record, q, what, probability, approved_by, when):
     """The tic-feed/2 forecast for one drafted question, with the given probability. Raises SystemExit on a question
     that should not be registered."""
     if not isinstance(probability, (int, float)) or not 0 < probability < 1:
@@ -86,13 +84,7 @@ def build_item(doc, record, q, what, probability, approved_by, when, rise=False)
     if not record.get("registerable"):
         raise SystemExit(f"{q['verdict_id']}: its outage is not confirmed ({record.get('reading')}); D6 registers a "
                          "question on confirmed outages only")
-    if q.get("caution") and SETTLED in q["caution"] and not rise:
-        raise SystemExit(f"{q['verdict_id']}: {q['caution']}")
     question, rule = q["question"], q["rule_draft"]
-    if rise:
-        if not q.get("rise_form"):
-            raise SystemExit(f"{q['verdict_id']}: this question has no rise form")
-        question, rule = q["rise_form"]["question"], q["rise_form"]["rule_draft"]
     res = q.get("resolution") or {}
     known = res.get("known_at")
     if not known or tri.utc(when) >= tri.utc(known):
@@ -104,7 +96,7 @@ def build_item(doc, record, q, what, probability, approved_by, when, rise=False)
     conf = confidence.fields(confidence.Evidence(
         independent_lines=1, contradicted=False, alternatives_rejected=0, method_scored=False,
         ease_of_faking="low", horizon_days=round(horizon, 1)))
-    vid = q["verdict_id"] + ("-rise" if rise else "")
+    vid = q["verdict_id"]
     item = {
         "contract": "tic-feed/2", "program": "verdict", "kind": "forecast", "tier": "routine", "status": "draft",
         "msg_type": "new", "human_review": "full", "us_person_data": "none", "status_class": "assessed",
@@ -185,14 +177,13 @@ def main(argv=None):
     ap.add_argument("--approved-by", default="Tom Brummer", help="who set the probability (Verdict's approved_by)")
     ap.add_argument("--triage", default=PUBLISHED, help="triage.json: the published one (default) or a file")
     ap.add_argument("--verdict", default=str(VERDICT), help="your Verdict checkout")
-    ap.add_argument("--rise", action="store_true", help="register the OONI question's rise form instead")
     ap.add_argument("--dry-run", action="store_true", help="show the forecast and its checks; register nothing")
     ap.add_argument("--commit", action="store_true", help="also commit the new ledger line in Verdict (never pushes)")
     a = ap.parse_args(argv)
     when = now_utc()
     doc = load_triage(a.triage)
     record, q, what = find(doc, a.verdict_id)
-    item = build_item(doc, record, q, what, a.probability, a.approved_by, when, rise=a.rise)
+    item = build_item(doc, record, q, what, a.probability, a.approved_by, when)
     errs = problems(item, a.verdict)
     print(json.dumps(item, indent=2, ensure_ascii=False))
     if errs:

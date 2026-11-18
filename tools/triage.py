@@ -106,8 +106,17 @@ EVENT_WORDS = ("holiday", "independence day", "national day", "summit", "anniver
 # measures (its baseline wf-28d), which never includes that day. Watchfloor's 90-day "elevated" items are standing
 # attention: listed, not counted.
 ATTENTION_BASELINE = "wf-28d"
-OONI_WINDOW_H = 72       # the Verdict question's window
-OONI_RISE_POINTS = 10    # where OONI is already over its threshold, the question asks about a rise this large
+OONI_WINDOW_H = 72       # the Verdict question's window, in whole UTC hours from the outage's start hour
+# The OONI question settles on OONI's own hourly counts for the country (since 18 Nov 2026; Tom chose option (b)),
+# not on Blackout's BO-IND-3 reading, which exists only for the six countries Blackout reads OONI for, so a question
+# settled on it could only resolve No anywhere else. The lines are Blackout's own outage-window lines
+# (blackout/ooni.py outage_window), so both programs mean the same thing by rising blocking; the baseline is the
+# 120 hours before the window, since the same hours of the 5 days before would overlap a 72-hour window.
+OONI_MIN_MEASUREMENTS = 50
+OONI_MIN_SHARE = 0.15
+OONI_RISE = 2               # the window's share at least this many times the baseline's
+OONI_BASE_H = 120
+OONI_LATE_H = 24            # OONI takes late uploads: read the counts no earlier than this after the window
 # Elements items that are standing background, not an event that takes a network down.
 BACKGROUND = {"firms", "usdm", "nifc", "spc"}
 CONFIRMED_OUTAGE = "BO-IND-1"   # Blackout: a drop seen by more than one signal
@@ -880,7 +889,7 @@ def power_question(st, name, at, br):
                     f"ODIN's reading of {iso(at)}?",
         "window_ends": iso(end),
         "rule_draft": eaglei_rule(st, name, start, end),
-        "caution": None, "rise_form": None,
+        "caution": None,
         "reference": ref,
         "known_at": f"{year + 1}-04-30T00:00:00Z",
         "notes": [
@@ -998,7 +1007,7 @@ CAUSE_RESOLVERS = ("Cloudflare Radar's Outage Center lists it with the cause \"g
                    "names it a shutdown (a #KeepItOn statement or its STOP data); or two of Reuters, the Associated "
                    "Press and AFP report that authorities ordered it")
 CAUSE_SOURCE = "Cloudflare Radar Outage Center; Access Now (#KeepItOn, STOP); Reuters, Associated Press, AFP"
-OONI_SOURCE = "Blackout's OONI readings (OONI data, CC BY-NC-SA 4.0), as published in Blackout's feed"
+OONI_SOURCE = "OONI's aggregation API (api.ooni.io; OONI data, CC BY-NC-SA 4.0), read directly"
 RESOLVE_GRACE_D = 7      # resolve_by: this long after the check time
 
 
@@ -1066,42 +1075,41 @@ def cause_question(cc, inp, at):
                        "resolve_by": iso(check + timedelta(days=RESOLVE_GRACE_D)),
                        "void_if": "an attribution of this outage to a government order was published before this "
                                   "forecast's published_at"},
-        "caution": caution, "rise_form": None,
+        "caution": caution,
     }
 
 
-def ooni_question(cc, inp, at, ooni_row):
-    """The OONI question drafted since 13 Nov 2026 (scenario 2's scoring line), with its rise form where OONI is
-    already over the line."""
-    until = at + timedelta(hours=OONI_WINDOW_H)
-    blocked_now = ooni_row is not None
-    now_rate = _rate(ooni_row["title"]) if blocked_now else None
-    rise = None
-    if blocked_now and now_rate is not None:
-        target = round(now_rate + OONI_RISE_POINTS, 1)
-        rise = {
-            "question": f"Will Blackout's OONI rate for {cc} reach {target}% or more within "
-                        f"{OONI_WINDOW_H} hours of the outage of {iso(at)}?",
-            "rule_draft": f"Yes if a Blackout OONI reading for {cc} dated inside the window ending "
-                          f"{iso(until)} is {target}% or more, a rise of {OONI_RISE_POINTS} points over the "
-                          f"{now_rate}% reading at the outage. No otherwise.",
-            "notes": ["The baseline is the reading at the outage, not a 30-day rate: COP's archive holds "
-                      "Blackout only since 12 Nov 2026.",
-                      "Blackout's OONI rate covers the past 7 days, so a one-day rise shows up damped.",
-                      f"The {OONI_RISE_POINTS}-point rise is provisional."]}
-    check = until + timedelta(days=1)     # Blackout's OONI reading for the window's last day comes out the day after
+def ooni_rule(cc, start, until, check):
+    """The OONI rule in the words Verdict's resolver reads (verdict/tools/auto_resolve.py, OONI_RE)."""
+    return (f"Yes if OONI's aggregation API (api.ooni.io, probe_cc={cc}, all tests, hourly) counts at least "
+            f"{OONI_MIN_MEASUREMENTS} measurements from {iso(start)} to {iso(until)} UTC, at least "
+            f"{OONI_MIN_SHARE:.0%} of them confirmed or anomalous, and that share at least {OONI_RISE} times the "
+            f"share over the {OONI_BASE_H} hours before {iso(start)} UTC (a baseline with no measurements counts "
+            f"as zero); read on a {_check_phrase(check)}. No otherwise.")
+
+
+def ooni_question(cc, inp, at):
+    """The OONI question (scenario 2's scoring line): whether OONI's blocking share in the outage's country rises
+    in the 72 whole hours from the outage's start hour against the 120 hours before. Settled on OONI's own counts,
+    so it can resolve either way in every country; the share is relative, so a country already over 15% (Iran)
+    needs a real rise, not a standing level."""
+    start = at.replace(minute=0, second=0, microsecond=0)
+    until = start + timedelta(hours=OONI_WINDOW_H)
+    check = until + timedelta(hours=OONI_LATE_H)
     return {
         "registered": False, "probability": None, "approved_by": None, "what": "ooni",
         "id_slug": _qid(cc, inp, at, "ooni"),
-        "question": f"Will OONI confirm blocking in {cc} within {OONI_WINDOW_H} hours of the outage of {iso(at)}?",
+        "question": f"Will OONI measure blocking in {cc} rising in the {OONI_WINDOW_H} hours from the outage of "
+                    f"{iso(at)}?",
         "window_ends": iso(until),
-        "rule_draft": f"Yes if Blackout's OONI reading for {cc} is at or above its {OONI_BLOCKING} threshold for a "
-                      f"day inside the window ending {iso(until)} ({_check_phrase(check)}). No otherwise.",
+        "rule_draft": ooni_rule(cc, start, until, check),
         "resolution": {"source": OONI_SOURCE, "known_at": iso(check),
                        "resolve_by": iso(check + timedelta(days=RESOLVE_GRACE_D)), "void_if": None},
-        "caution": ("OONI is already at or above the threshold here, so this question is settled before it is "
-                    "asked. Use the rise form instead, or skip it.") if blocked_now else None,
-        "rise_form": rise,
+        "caution": ("OONI measures blocking on networks that are up. In a full shutdown the probes cannot report, "
+                    "so the count falls and this question can resolve No even when the outage is a shutdown.")
+                   if inp.get("network") is None else
+                   ("The outage is on one network, but OONI is counted for the whole country: a probe on the "
+                    "affected network cannot report while it is down."),
     }
 
 
@@ -1217,7 +1225,7 @@ def triage(snapshot, history=None, ended=None):
                 "reading": reading, "reading_text": READINGS[reading],
                 "caveats": caveats,
                 "eaglei": None,
-                "verdict_draft": ooni_question(cc, inp, at, ooni.get(cc)),
+                "verdict_draft": ooni_question(cc, inp, at),
                 "cause_draft": cause_question(cc, inp, at),
                 "registerable": bool(confirmed),
             })
@@ -1229,7 +1237,9 @@ def triage(snapshot, history=None, ended=None):
                         "episodic_kinds": sorted(EPISODIC_GDACS.values()), "state_near_km": STATE_NEAR_KM,
                         "power_still_out_hours": POWER_STILL_OUT_H, "notice_recent_hours": NOTICE_RECENT_H,
                         "alert_types_counted": list(ALERT_COUNTED), "attention_baseline": ATTENTION_BASELINE,
-                        "ooni_window_hours": OONI_WINDOW_H, "ooni_rise_points": OONI_RISE_POINTS,
+                        "ooni_window_hours": OONI_WINDOW_H, "ooni_baseline_hours": OONI_BASE_H,
+                        "ooni_min_measurements": OONI_MIN_MEASUREMENTS, "ooni_min_share": OONI_MIN_SHARE,
+                        "ooni_rise": OONI_RISE,
                         "cause_window_days": CAUSE_WINDOW_D, "provisional": True},
             "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced,
             "baseline_given": history is not None, "ended_items": ended_info,
@@ -1475,12 +1485,9 @@ def verdict_id(v):
 def question_draft(v, note=DRAFT_NOTE):
     """The drafted Verdict question as the public sees it: the question, its window and rule, and that it is a
     draft. The empty probability and approval fields stay in out/: published, they would read as a forecast."""
-    rise = v.get("rise_form")
     out = {"status": "draft, not registered", "note": note, "verdict_id": verdict_id(v), "question": v["question"],
            "window_ends": v["window_ends"], "rule_draft": v["rule_draft"], "caution": v["caution"],
-           "resolution": v.get("resolution"),
-           "rise_form": None if not rise else {"question": rise["question"], "rule_draft": rise["rule_draft"],
-                                               "notes": rise["notes"]}}
+           "resolution": v.get("resolution")}
     if v.get("reference"):            # a state power outage: the EAGLE-I reference and the question's own notes
         out["reference"] = v["reference"]
         out["notes"] = v.get("notes") or []
