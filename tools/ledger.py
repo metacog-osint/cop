@@ -36,6 +36,9 @@ Files, in --assets (the build keeps them as release assets, not in the repositor
     state.json.gz           the items open after the last build
     YYYY-MM-DD.jsonl.gz     that UTC day's lines; today's file is rewritten by each build of the day
 
+The workflow keeps state.json.gz in the release `ledger` for good; the day files stay there through 2026 and from 2027 go
+to one release a year, `ledger-YYYY`. tools/dropped.py keeps the malformed items beside each day file.
+
 Not published. The ledger holds every layer side by side, the military-context ones included, so it stays out of
 site/, functions/ and mcp/ (this tool refuses those folders), like the daily snapshot copies it sits beside. Anything
 drawn from it for the page or the MCP server is a join and goes through tools/gate.py.

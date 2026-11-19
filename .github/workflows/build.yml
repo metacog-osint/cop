@@ -1,13 +1,16 @@
 name: build
 # Rebuilds COP every two hours and on every push to main: the tests, a fresh snapshot of the program feeds, a daily
-# archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day), the suite ledger (release ledger: what is
-# new, changed or ended since the last build), outage triage (COP's own reading of each
+# archive copy (release snapshots-YYYY-MM, last snapshot of each UTC day, plus the first build of each 6-hour slot),
+# outage triage (COP's own reading of each
 # Blackout outage, with base rates from the archived days), the three-signal join (the Strait of Hormuz and the
 # Gulf), then a deploy of site/ to Cloudflare Pages
 # (project cop). Needs repo secrets CLOUDFLARE_PAGES_TOKEN (Cloudflare Pages: Edit) and CLOUDFLARE_ACCOUNT_ID; without
 # them everything runs except the deploy. A program feed that fails never fails the build (snapshot.py keeps its last
 # good copy, drawn grey). The deploy also carries functions/mcp.js, COP's MCP server at /mcp, which reads the
 # small files tools/agent_index.py writes to site/data/agent/ (wrangler.toml; packages pinned in package-lock.json).
+# After the deploy, three archive steps that fail loudly but never hold the site back: the 6-hourly snapshots, the suite
+# ledger (release ledger, then ledger-YYYY from 2027: what is new, changed or ended since the last build) and the
+# dropped-items log (what sift() left out as malformed, with reasons).
 #
 # The clock: GitHub fired the "every two hours" schedule only every 7 to 14 hours (5-6 Nov 2026), so the hub's
 # tic-dispatch Worker starts this workflow at :20 past every even UTC hour (workflow_dispatch). The schedule stays as a
@@ -80,13 +83,14 @@ jobs:
           python tests/test_stop_replay.py
           python tests/test_history_cordon.py
           python tests/test_rev21.py
+          python tests/test_dropped.py
           npm test
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
       # The snapshot also fetches each program's list of recently ended items (config "ended": Elements'
       # data/ended.geojson) to out/ended/, not published and not drawn, and keeps a daily copy beside the archive.
       - name: Snapshot of the program feeds
-        run: python tools/snapshot.py --archive out/archive
+        run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl
       - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
         run: python tools/agent_index.py
       - name: Share card (link-preview image; falls back to site/card-fallback.png, never fails the build)
@@ -99,43 +103,6 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP snapshots $(date -u +%Y-%m)" \
             --notes "One COP snapshot per UTC day (the last run of the day wins), kept for the 14-day timeline."
           gh release upload "$TAG" out/archive/*.geojson.gz $(ls out/archive/*-ended.json.gz 2>/dev/null) --clobber
-      # The suite ledger: what is new, changed or ended in the picture since the last build, with each full item
-      # (tools/ledger.py, the kit's tic-history/1). Kept as assets of the release "ledger" (state.json.gz and one
-      # YYYY-MM-DD.jsonl.gz per UTC day), never in site/. The step reads the release's asset list first: an asset
-      # that is listed but cannot be downloaded stops the step, so a failed download never starts the ledger over
-      # or overwrites a day's earlier lines. A failure here never fails the build; that build is just not logged.
-      - name: Suite ledger (kept as release assets, not published)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          skip() { echo "::warning::suite ledger: $1; this build is not logged"; exit 0; }
-          DAY=$(python tools/ledger.py --day site/data/today.geojson) || skip "the snapshot has no day"
-          mkdir -p out/ledger
-          FIRST=""
-          if gh release view ledger >/dev/null 2>&1; then
-            ASSETS=$(gh release view ledger --json assets --jq '.assets[].name') || skip "the asset list could not be read"
-            if echo "$ASSETS" | grep -qx "state.json.gz"; then
-              gh release download ledger --dir out/ledger --pattern state.json.gz --clobber || skip "the last state could not be downloaded"
-            else
-              FIRST="--first"
-            fi
-            if echo "$ASSETS" | grep -qx "$DAY.jsonl.gz"; then
-              gh release download ledger --dir out/ledger --pattern "$DAY.jsonl.gz" --clobber || skip "today's lines could not be downloaded"
-            fi
-          else
-            gh release create ledger --title "COP suite ledger" \
-              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Not published." \
-              || skip "the release could not be created"
-            FIRST="--first"
-          fi
-          python tools/ledger.py --snapshot site/data/today.geojson --assets out/ledger $FIRST || skip "the tool failed"
-          # The state as it was before the ledger was keyed on subject_id (kit 0.6.0): kept once, never replaced, and
-          # uploaded before the new state so the old one cannot be lost.
-          if [ -f out/ledger/state-before-subject-id.json.gz ] && ! echo "${ASSETS:-}" | grep -qx "state-before-subject-id.json.gz"; then
-            gh release upload ledger out/ledger/state-before-subject-id.json.gz || skip "the state before re-keying could not be kept"
-          fi
-          gh release upload ledger out/ledger/state.json.gz $(ls "out/ledger/$DAY.jsonl.gz" 2>/dev/null) --clobber \
-            || echo "::warning::suite ledger: upload failed; the next build logs these changes again from the last state"
       # Outage triage reads the snapshot just built and writes site/data/triage.json for the page and the MCP server.
       # Base rates come from the archived days: this month's and last month's release copies, downloaded to their own
       # folder (out/archive is what the step above uploads from), plus today's. A failure here never fails the build:
@@ -213,6 +180,7 @@ jobs:
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
+        id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -222,3 +190,119 @@ jobs:
           fi
           npx --yes wrangler@4.151.3 pages deploy site --project-name cop --branch main \
             --commit-hash "$GITHUB_SHA" --commit-message "build $GITHUB_SHA" --commit-dirty=true
+      # Archives kept after the deploy (retention, 18 Nov 2026). They run after the site is out so that a failure here
+      # never holds the live view back, and each one FAILS THE STEP (red run, GitHub's mail) instead of logging a
+      # warning: a ledger or archive upload that did not happen is data not kept. Each runs even when another of them
+      # failed (the `if:`), but only after the deploy step itself succeeded.
+      #
+      # One snapshot per 6-hour slot of the UTC day (00, 06, 12, 18), besides the daily copy above: the first build in
+      # each slot, named <day>T<HH>Z.snap.json.gz in the month's snapshots release. A slot's file is never replaced:
+      # it is uploaded only when the release does not hold it yet (no --clobber), so the first build of the slot wins.
+      - name: Keep the 6-hourly snapshots (first build of each slot)
+        id: slots
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          TAG="snapshots-$(date -u +%Y-%m)"
+          ASSETS=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+          for f in out/archive/*.snap.json.gz; do
+            [ -e "$f" ] || { echo "::error::no 6-hourly snapshot file was written"; exit 1; }
+            name=$(basename "$f")
+            if echo "$ASSETS" | grep -qx "$name"; then
+              echo "$name is already kept"
+              continue
+            fi
+            ok=""
+            for i in 1 2 3; do
+              if gh release upload "$TAG" "$f"; then ok=1; break; fi
+              sleep $((i * 10))
+            done
+            [ -n "$ok" ] || { echo "::error::6-hourly snapshot $name could not be uploaded to $TAG"; exit 1; }
+          done
+      # The suite ledger (tools/ledger.py, the kit's tic-history/1): what is new, changed or ended since the last
+      # build, with each full item. The open state (state.json.gz, and state-before-subject-id.json.gz) stays in the
+      # release "ledger" for good. The day files (YYYY-MM-DD.jsonl.gz) stay in "ledger" through 2026 and, from 2027, go
+      # to one release per year, "ledger-YYYY" (the 1,000-asset limit: about 2.7 years of one file a day), created
+      # when missing; the readers of the existing release lose nothing. Never in site/. The step reads the release's
+      # asset list first: an asset that is listed but cannot be downloaded stops the step, so a failed download never
+      # starts the ledger over or overwrites a day's earlier lines. A failed UPLOAD fails the step (three tries, the day
+      # file first, then the state), since a build that is not logged and not retried is a gap.
+      - name: Suite ledger (kept as release assets, not published)
+        id: ledger
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { echo "::warning::suite ledger: $1; this build is not logged"; exit 0; }
+          fail() { echo "::error::suite ledger: $1"; exit 1; }
+          up() { for i in 1 2 3; do gh release upload "$@" && return 0; sleep $((i * 10)); done; return 1; }
+          DAY=$(python tools/ledger.py --day site/data/today.geojson) || skip "the snapshot has no day"
+          if [ "${DAY%%-*}" -le 2026 ]; then DAYTAG=ledger; else DAYTAG="ledger-${DAY%%-*}"; fi
+          mkdir -p out/ledger
+          FIRST=""
+          if gh release view ledger >/dev/null 2>&1; then
+            ASSETS=$(gh release view ledger --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+            if echo "$ASSETS" | grep -qx "state.json.gz"; then
+              gh release download ledger --dir out/ledger --pattern state.json.gz --clobber || skip "the last state could not be downloaded"
+            else
+              FIRST="--first"
+            fi
+          else
+            gh release create ledger --title "COP suite ledger" \
+              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Day files for 2027 on are in the releases ledger-YYYY; the state stays here. Not published." \
+              || skip "the release could not be created"
+            ASSETS=""
+            FIRST="--first"
+          fi
+          if [ "$DAYTAG" != ledger ]; then
+            gh release view "$DAYTAG" >/dev/null 2>&1 || gh release create "$DAYTAG" --title "COP suite ledger $DAY" \
+              --notes "COP suite ledger day files for ${DAY%%-*}: one YYYY-MM-DD.jsonl.gz per UTC day (tic-history/1). The open state, state.json.gz, is in the release ledger. Not published." \
+              || skip "the release $DAYTAG could not be created"
+            ASSETS_DAY=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name') || skip "the asset list of $DAYTAG could not be read"
+          else
+            ASSETS_DAY="$ASSETS"
+          fi
+          if echo "$ASSETS_DAY" | grep -qx "$DAY.jsonl.gz"; then
+            gh release download "$DAYTAG" --dir out/ledger --pattern "$DAY.jsonl.gz" --clobber || skip "today's lines could not be downloaded"
+          fi
+          python tools/ledger.py --snapshot site/data/today.geojson --assets out/ledger $FIRST || skip "the tool failed"
+          # The state as it was before the ledger was keyed on subject_id (kit 0.6.0): kept once, never replaced, and
+          # uploaded before the new state so the old one cannot be lost.
+          if [ -f out/ledger/state-before-subject-id.json.gz ] && ! echo "$ASSETS" | grep -qx "state-before-subject-id.json.gz"; then
+            up ledger out/ledger/state-before-subject-id.json.gz || fail "the state before re-keying could not be kept"
+          fi
+          # The day's lines first (a superset of the file already there, so --clobber loses nothing), then the state.
+          if [ -f "out/ledger/$DAY.jsonl.gz" ]; then
+            up "$DAYTAG" "out/ledger/$DAY.jsonl.gz" --clobber || fail "the lines for $DAY could not be uploaded to $DAYTAG; this build is not logged and the changes will be logged again from the last state"
+          fi
+          up ledger out/ledger/state.json.gz --clobber || fail "the new state could not be uploaded; the next build logs these changes again from the last state (the day file already holds them once)"
+      # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
+      # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
+      # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.
+      - name: Dropped items (kept beside the ledger, not published)
+        id: dropped
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f out/dropped.jsonl ] || { echo "nothing was left out as malformed this build"; exit 0; }
+          up() { for i in 1 2 3; do gh release upload "$@" && return 0; sleep $((i * 10)); done; return 1; }
+          DAY=$(python tools/ledger.py --day site/data/today.geojson)
+          if [ "${DAY%%-*}" -le 2026 ]; then DAYTAG=ledger; else DAYTAG="ledger-${DAY%%-*}"; fi
+          mkdir -p out/ledger-dropped
+          if gh release view "$DAYTAG" >/dev/null 2>&1; then
+            ASSETS=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name')
+          else
+            gh release create "$DAYTAG" --title "COP suite ledger ${DAY%%-*}" \
+              --notes "COP suite ledger day files (tic-history/1) and the dropped-items logs for ${DAY%%-*}. Not published."
+            ASSETS=""
+          fi
+          if echo "$ASSETS" | grep -qx "$DAY.dropped.jsonl.gz"; then
+            gh release download "$DAYTAG" --dir out/ledger-dropped --pattern "$DAY.dropped.jsonl.gz" --clobber
+          fi
+          python tools/dropped.py --rows out/dropped.jsonl --assets out/ledger-dropped --day "$DAY"
+          [ -f "out/ledger-dropped/$DAY.dropped.jsonl.gz" ] || exit 0
+          up "$DAYTAG" "out/ledger-dropped/$DAY.dropped.jsonl.gz" --clobber \
+            || { echo "::error::the dropped-items log for $DAY could not be uploaded to $DAYTAG"; exit 1; }

@@ -49,7 +49,7 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   read. `data_as_of_precision` "day"/"month": shown as a date or month in UTC, never moved to the viewer's zone; a day
   item counts to the end of its day for freshness. `valid_until` is read: expired items stop standing out.
 - Build: `build.yml` (cron `17 */2`, fallback); the hub's `tic-dispatch` Worker starts it at :20 past every even UTC
-  hour; the `gate` job skips a scheduled run within 45 min of a success. Archive copies of each day go to releases.
+  hour; the `gate` job skips a scheduled run within 45 min of a success. Archive copies go to releases (daily, plus one per 6-hour slot).
 - Page: static `site/`, `cop.js` ES module, vendored MapLibre GL JS 6.14.0, kit `tic-doctrine.js`, hub
   `shared/tic-time.js` (copy, keep its version line). Natural Earth land below zoom 3.5, OpenFreeMap above. CSP in
   `site/_headers`: self plus `tiles.openfreemap.org`; no inline styles or scripts. `site/scoring.html` states every
@@ -104,7 +104,7 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
 ## Ledger and watchdog
 - `tools/ledger.py`: kit history log `tic-history/1`; one line per item new, changed (tier or stage) or ended; lane
   = program, or `<program>/<source id>` where the feed has a health block. An item ends only when its program and
-  source were read; stale copies move nothing. Assets of release `ledger`; **never published** (refuses `site/`,
+  source were read; stale copies move nothing. Assets of release `ledger` (day files from 2027 in `ledger-YYYY`; malformed items in `DAY.dropped.jsonl.gz`, `tools/dropped.py`); **never published** (refuses `site/`,
   `functions/`, `mcp/`). Needs the last state or `--first`; `--replay out/archive` rebuilds.
 - `tools/triage_log.py` (step 3): every triage reading, one item per outage and place; changes in `triage.history`,
   and as kit `changed` lines from kit 0.6.0 (`reading_key`); ends only when Blackout was read; release
