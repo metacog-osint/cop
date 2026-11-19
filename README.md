@@ -3,8 +3,9 @@
 The Intelligence Company's common operational picture: every program's latest findings on one map, at
 https://cop.theintelligence.company.
 
-Private repository. Copyright © 2026 Thomas Brummer, The Intelligence Company. All rights reserved, except the
-third-party files listed in `NOTICE`, which keep their own licences.
+Copyright © 2026 Thomas Brummer, The Intelligence Company. COP's code is licensed under the GNU Affero General
+Public License v3.0 (`LICENSE`). Third-party files keep their own licences, and the data shown on the site keeps its
+sources' terms; both are listed in `NOTICE`.
 
 **For AI agents:** COP's MCP server is at https://cop.theintelligence.company/mcp (read-only, public, no sign-in;
 MCP protocol 2026-07-28 and 2025-era clients). In Claude Code:
