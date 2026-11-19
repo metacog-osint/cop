@@ -10,7 +10,9 @@ under `dropped` in the snapshot, while the rest of its program's feed goes throu
 
     python tools/snapshot.py                                  # fetch live, write site/data/
     python tools/snapshot.py --fixtures tests/fixtures        # build from saved feeds (tests, offline)
-    python tools/snapshot.py --archive out/archive            # also keep a gzip copy named by the UTC day
+    python tools/snapshot.py --archive out/archive            # also keep a gzip copy named by the UTC day, and one
+                                                              # per 6-hour slot (<day>T00Z.snap.json.gz and so on)
+    python tools/snapshot.py --dropped-out out/dropped.jsonl  # also write the malformed items left out, with reasons
 
 Standard-library Python only.
 """
@@ -28,6 +30,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
+sys.path.insert(0, str(ROOT / "tools"))
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
@@ -46,6 +49,7 @@ COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PREVIOUS = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 LANGUAGE_KEY = "https://github.com/metacog-osint/noise-floor/blob/main/doctrine/kit/docs/language-key.md"
+SLOT_HOURS = 6  # the archive also keeps one snapshot per 6-hour slot of the UTC day (00, 06, 12, 18), not only the day's last
 DROP = {"headlines", "machine_summary"}  # large text the map never shows; the program's own page has it
 
 
@@ -614,7 +618,28 @@ def write_json(path, obj, compact=True):
     tmp.replace(path)
 
 
-def fetch_ended(now, out, fixtures=None, archive=None):
+def slot_name(now):
+    """The archive name of the 6-hour slot `now` falls in: <day>T<00|06|12|18>Z.snap.json.gz. Not .geojson.gz, so the
+    readers that glob the daily copies (<day>.geojson.gz) never see it."""
+    return f"{now:%Y-%m-%d}T{now.hour // SLOT_HOURS * SLOT_HOURS:02d}Z.snap.json.gz"
+
+
+def dropped_rows(today, feeds, now, ended_dropped=()):
+    """Rows for tools/dropped.py: each feature sift() left out of this build's feeds (and ended lists), with its reason
+    and the item as published. today["dropped"] gives program and place in the feed; a program read from its last good
+    copy is not in `feeds` (that copy's drops were logged when it was fresh)."""
+    import dropped as droplog
+    rows, at = [], iso(now)
+    for d in today.get("dropped") or []:
+        feed = feeds.get(d.get("program"))
+        feats = features_of(feed) if feed is not None else []
+        if isinstance(d.get("index"), int) and 0 <= d["index"] < len(feats):
+            rows.append(droplog.row_for(d, feats[d["index"]], at))
+    rows += [droplog.row_for(d, item, at, source="ended") for d, item in ended_dropped]
+    return rows
+
+
+def fetch_ended(now, out, fixtures=None, archive=None, dropped=None):
     """Each program's list of items that ended recently (config "ended": Elements' data/ended.geojson, its last 7
     days), written to out/<program>.geojson for joins that ask what happened in a window. Not drawn and not
     published: the map shows what is active. With an archive folder, a gzip copy per UTC day,
@@ -632,7 +657,10 @@ def fetch_ended(now, out, fixtures=None, archive=None):
             dest.unlink(missing_ok=True)
             lines.append(f"{pid} ended items: fetch failed ({rep.get('error')}); readers will say it is missing")
             continue
-        data["features"], _, left_out = sift(data["features"], pid)  # the joins that read this list need sound items too
+        original = data["features"]
+        data["features"], _, left_out = sift(original, pid)  # the joins that read this list need sound items too
+        if dropped is not None:  # kept for the dropped-items log (tools/dropped.py): the item and why
+            dropped += [(d, original[d["index"]]) for d in left_out]
         data["cop_fetched_at"] = iso(now)
         write_json(dest, data)
         if archive:
@@ -652,6 +680,8 @@ def main(argv=None):
     ap.add_argument("--archive", help="also write a gzip copy of today's snapshot here, named by its UTC day")
     ap.add_argument("--ended-out", default=str(ROOT / "out" / "ended"),
                     help="where each program's ended-items file goes (<program>.geojson; not published, not drawn)")
+    ap.add_argument("--dropped-out", help="write the malformed items this build left out, with reasons, as JSON lines "
+                                          "(tools/dropped.py keeps them with the ledger); removed when there are none")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
     ap.add_argument("--dead", action="append", default=[], help="treat this program's feed as failed (tests)")
     a = ap.parse_args(argv)
@@ -681,8 +711,20 @@ def main(argv=None):
         arch.mkdir(parents=True, exist_ok=True)
         with gzip.open(arch / f"{now:%Y-%m-%d}.geojson.gz", "wt", encoding="utf-8") as fh:
             json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
-    for line in fetch_ended(now, Path(a.ended_out), a.fixtures, Path(a.archive) if a.archive else None):
+        with gzip.open(arch / slot_name(now), "wt", encoding="utf-8") as fh:  # first run of each slot is kept by the workflow
+            json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
+    ended_dropped = []
+    for line in fetch_ended(now, Path(a.ended_out), a.fixtures, Path(a.archive) if a.archive else None, ended_dropped):
         print(line)
+    if a.dropped_out:
+        dest = Path(a.dropped_out)
+        rows = dropped_rows(today, feeds, now, ended_dropped)
+        if rows:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text("".join(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n" for r in rows),
+                            encoding="utf-8", newline="\n")
+        else:
+            dest.unlink(missing_ok=True)
     for h in health["programs"]:
         lint = h["lint"] or {}
         print(f"{h['name']:<11} {h['state']:<6} items={h['items']:<4} anomalies={h['anomalies']:<3} "
