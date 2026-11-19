@@ -70,6 +70,7 @@
     },
     {
       "id": "blackout", "preset": "connectivity",
+      "ended": "https://blackout.theintelligence.company/data/ended.geojson",
       "freshness": "feed",
       "mark": "zones", "country_mark": "fill", "area_style": "solid",
       "strength": [],
