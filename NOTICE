@@ -3,7 +3,9 @@ Third-party files in this repository keep their own licences:
 - site/vendor/maplibre-gl/  MapLibre GL JS 6.14.0, BSD 3-Clause (site/vendor/maplibre-gl/LICENSE.txt)
 - site/fonts/               IBM Plex Sans and Mono, SIL Open Font License 1.1 (site/fonts/OFL-ibm-plex.txt)
 - doctrine/kit/, site/vendor/tic-doctrine.js   The Intelligence Company doctrine kit, MIT (doctrine/kit/LICENSE)
-- site/shared/tic-time.*    The Intelligence Company shared time display (Tom's own code)
+- tic-*.js, tic-*.css in site/shared/
+  The Intelligence Company's shared site scripts (tic-nav, tic-time), MIT.
+  Canonical copies: site/shared/ in github.com/metacog-osint/theintelligence-company.
 
 Bundled into the MCP server at /mcp at deploy time (installed from npm, pinned in package-lock.json, not stored here):
 
