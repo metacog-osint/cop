@@ -83,7 +83,7 @@ class BothShapesBuildAlike(unittest.TestCase):
         self.assertEqual(sum(h0["coverage"].values()), 0)
         self.assertEqual(h1["coverage"], {"last_change": 3, "last_change_at": 2, "event_start": 3, "event_end": 1,
                                           "event_time_precision": 1, "subject_id": 3, "signal": 1, "sea_areas": 3,
-                                          "place_basis": 3})
+                                          "place_basis": 3, "corroboration": 0})   # corroboration: kit 0.6.2 (D11)
         self.assertEqual(h0["revision"]["contract_rev"], None)
         self.assertEqual(h1["revision"], {"contract_rev": "2.1", "kit": "0.6.0", "notes": 1})
         self.assertGreater(h0["revision"]["notes"], 0)
