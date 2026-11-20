@@ -1,6 +1,6 @@
 {
   "kit": "tic-doctrine",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "files": {
     "tic.py": "ccfaea62931c88063d8bc32d6f3600ab86c7094b58956a7b43b8832a7870b7f5",
     "vocab/actors.json": "edfb7317b5313e9a3f329c7dc2a39ec20cc631e459cf588f3218fa21fd3e80ea",
@@ -11,13 +11,13 @@
     "vocab/icd203.json": "9f85ffe9632e8f413e8c937af15d870c6882a4b87b94604296e80e3d2f063af7",
     "vocab/infrastructure.json": "da63be252f65e21e5041f33e97913f3fd93935d44a9610f13256c35b123fd193",
     "vocab/likelihood.json": "4d47a87701a20adbee0ee910eae6581f74ac46f9bd6bf3f26671660b2cabfd9b",
-    "vocab/programs.json": "2f46d46c844868b3eeb80ba673a40311be045127fa46348717f21a65c1283180",
+    "vocab/programs.json": "1ce97496aea2280b6fa02b617cc13a5a65224391839d26c52c3098b895744bd4",
     "vocab/zones.json": "be46ecd8f11bcca38bf34776439e162d5a83a6015315194b85520bb7ff08cf2e",
     "geo/countries.json": "0d1f348855871ac26c98f64d01c0fc342f8b917cb16ece80fb7d9e3add236396",
     "geo/points.json": "369b66ee628c6753d43b114770875cb27a2008da200b58bf76932a50b3cff994",
     "geo/seas.json": "c4c7befdf0d997428f79a30a92cd3e1570c626a9cd6476f59439d3bf8d3eaad3",
     "geo/subdivisions.json": "f2bf0186fdbf45563427e2163190f13c85476377e891c09c55d9f56864dc1ecf",
-    "python/tic_doctrine/__init__.py": "de902f82f7b6638150c2007129e48ffb38caad0877304251634fff97b6a75bf5",
+    "python/tic_doctrine/__init__.py": "829e084eb07300bfc6c6b0979cd37a7097b9e24c38b359e9450a0a11126d8d3f",
     "python/tic_doctrine/confidence.py": "b207b867af218123a2251f6ca5d185cfe54638cf379bd71bfb8cf53740e286f4",
     "python/tic_doctrine/contract.py": "981c1bea1a6ad6fe752dafc46738242b7003114853ae6bdf5c7e17bcbf08fd40",
     "python/tic_doctrine/geo.py": "be1aab9bf4b16a69c881073886bc7a6520b03d346076ef007bea48415d03c163",
@@ -37,6 +37,6 @@
     "docs/language-key.md": "8dafebd7a7bfc0013fc5025fb071e1317afa0ebdeff4385a1d88d83cbf7979ac",
     "docs/sources-and-withholding.md": "a496c66b68700450facf9d65008b35d5b5a3e72f495b8c9fa886c325fdb767cf",
     "LICENSE": "e2fcdaa349fa37ea67fca3787f04878a0579a8fcdcc7f5db615fe15d3f5cf6d7",
-    "README.md": "c9f4af3735d0c8f89dd900f6bf8154c57050c221883e0c55e82b828329efdd7d"
+    "README.md": "35e71a9b60b77681162dbabfc67bcd4ba9f3e0a658c861c3c27c54c10e175679"
   }
 }
