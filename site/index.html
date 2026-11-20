@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
 <link rel="stylesheet" href="shared/tic-time.css">
 <link rel="stylesheet" href="shared/tic-nav.css">
+<link rel="stylesheet" href="shared/tic-fold.css">
 <link rel="stylesheet" href="cop.css">
 </head>
 <body>
@@ -61,7 +62,7 @@
           <h2 id="warnings-h">Warnings</h2>
           <p class="note">Each is the judgment of the program that issued it: a forecast or an assessment, with a
             likelihood and a separate confidence. Not a measurement, and never one of the picks.</p>
-          <ul class="list" id="warnings" aria-labelledby="warnings-h"></ul>
+          <ul class="list" id="warnings" aria-labelledby="warnings-h" data-tic-fold="6 10"></ul>
           <h2 id="picks-h">Today's picks</h2>
         </div>
         <p class="lede">The strongest findings with a place, at most five, one program at a time. Each is a
@@ -73,32 +74,32 @@
       <section id="triage-sec" aria-labelledby="triage-h">
         <h2 id="triage-h">Outage triage</h2>
         <p class="note" id="triage-note"></p>
-        <ul class="list" id="triage"></ul>
+        <ul class="list" id="triage" data-tic-fold="6 10"></ul>
         <div id="triage-foot"></div>
       </section>
 
       <section id="three-signal-sec" aria-labelledby="three-signal-h">
         <h2 id="three-signal-h">Four signals: the Strait of Hormuz and the Gulf</h2>
         <p class="note" id="three-signal-note"></p>
-        <ul class="list" id="three-signal"></ul>
+        <ul class="list" id="three-signal" data-tic-fold="6 10"></ul>
       </section>
 
       <section aria-labelledby="also-h">
         <h2 id="also-h">Also watching</h2>
-        <ul class="list" id="also"></ul>
+        <ul class="list" id="also" data-tic-fold="6 10"></ul>
       </section>
 
       <section aria-labelledby="offmap-h">
         <h2 id="offmap-h">Off the map</h2>
         <p class="note">Findings with no place, such as a ransomware group's activity or a story told worldwide.</p>
-        <ul class="list" id="offmap"></ul>
+        <ul class="list" id="offmap" data-tic-fold="6 10"></ul>
       </section>
 
       <section id="sources" aria-labelledby="sources-h">
         <h2 id="sources-h">Sources</h2>
         <p class="note">Each program's feed, checked every two hours. Grey means no current data: a silent feed is
           never shown as quiet.</p>
-        <div class="health" id="health"></div>
+        <div class="health" id="health" data-tic-fold="6 10"></div>
       </section>
 
       <section class="howto" aria-labelledby="howto-h">
@@ -146,6 +147,7 @@
 </main>
 <script src="shared/tic-time.js"></script>
 <script src="shared/tic-nav.js"></script>
+<script src="shared/tic-fold.js"></script>
 <script type="module" src="cop.js"></script>
 </body>
 </html>
