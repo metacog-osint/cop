@@ -15,7 +15,7 @@ leaves triage, and a `changed` line only when tier or response stage moves, whic
 change is kept in the item's own `triage.history` (one entry when the reading or a layer's `found` changes, not on
 every build) and stated as `last_change: changed` with `last_change_at`, in the feed contract's revision 2.1 words
 (the reading is COP's own level, `doctrine/kit/docs/feed-contract-v2.md`). `cop_last_read_at` moves on every build
-and is no change at all. Kit 0.6.0 added `reading_key` to `history.update()`: where the vendored kit has it, the log
+and is no change at all. Kit 0.5.13 added `reading_key` to `history.update()`: where the vendored kit has it, the log
 passes `cop_reading`, so a reading change is also its own `changed` line with the reading before in `was` (shape B,
 with no kit release of its own). Both kits give the same items.
 
@@ -53,7 +53,7 @@ import triage as tri  # noqa: E402
 
 FORMAT_NOTE = "cop-triage-log/1"
 LANE = "cop/triage"
-READING_KEY = "cop_reading"     # the reading at top level, for the kit's reading_key (kit 0.6.0 and later)
+READING_KEY = "cop_reading"     # the reading at top level, for the kit's reading_key (kit 0.5.13 and later)
 READ_STATES = ("fresh", "late")
 VOLATILE = history.VOLATILE + ("cop_last_read_at",)
 # What a layer counted toward the reading; every other list of items it holds was listed, not counted.
@@ -150,8 +150,8 @@ def review(doc):
 
 
 def kit_tracks_readings():
-    """Kit 0.6.0 added history.update(reading_key=...): a move in that property writes its own "changed" line, with
-    the reading before in `was`. COP vendored 0.5.12 when this was written; with 0.6.0 the log uses it, and every
+    """Kit 0.5.13 added history.update(reading_key=...): a move in that property writes its own "changed" line, with
+    the reading before in `was`. COP vendored 0.5.12 when this was written; from 0.5.13 the log uses it, and every
     reading change is also a kit line (shape B at no extra cost), while triage.history stays as it is."""
     return "reading_key" in inspect.signature(history.update).parameters
 
