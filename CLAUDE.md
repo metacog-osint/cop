@@ -107,7 +107,7 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   source were read; stale copies move nothing. Assets of release `ledger` (day files from 2027 in `ledger-YYYY`; malformed items in `DAY.dropped.jsonl.gz`, `tools/dropped.py`); **never published** (refuses `site/`,
   `functions/`, `mcp/`). Needs the last state or `--first`; `--replay out/archive` rebuilds.
 - `tools/triage_log.py` (step 3): every triage reading, one item per outage and place; changes in `triage.history`,
-  and as kit `changed` lines from kit 0.6.0 (`reading_key`); ends only when Blackout was read; release
+  and as kit `changed` lines from kit 0.5.13 (`reading_key`); ends only when Blackout was read; release
   `triage-log`, the first build replays the archive. Not published.
 - `tools/suite_watch.py` (`watch.yml`, also dispatched every 3 h): exits 1 when COP's build is over 6 h old, a
   program is not fresh, a data time is 30+ min in the future, a program has malformed items, or the hub's site check

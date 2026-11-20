@@ -125,7 +125,7 @@ class History(unittest.TestCase):
     def test_a_reading_change_is_kept_in_the_items_history_not_as_a_kit_line(self):
         s1, _ = tl.step({}, doc(A, record()))
         s2, lines = tl.step(s1, doc(B, record("tension context", watchfloor=True)))
-        if tl.kit_tracks_readings():              # kit 0.6.0 and later: the reading's move is its own kit line too
+        if tl.kit_tracks_readings():              # kit 0.5.13 and later: the reading's move is its own kit line too
             self.assertEqual([x["change"] for x in lines], ["changed"])
             self.assertEqual(lines[0]["was"][tl.READING_KEY], "open")
         else:                                     # kit 0.5.x: the kit writes changed only for tier or stage
