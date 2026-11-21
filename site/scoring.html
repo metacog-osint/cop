@@ -61,7 +61,7 @@
   </section>
 
   <nav class="doc-toc" aria-label="On this page">
-    <a href="#picks">Picks</a> · <a href="#strength">Strength rules</a> · <a href="#freshness">Freshness and expiry</a>
+    <a href="#picks">Picks</a> · <a href="#direction">Direction of concern</a> · <a href="#strength">Strength rules</a> · <a href="#freshness">Freshness and expiry</a>
     · <a href="#triage">Outage triage</a> · <a href="#three">Three signals</a> · <a href="#sources">Where the rules live</a>
   </nav>
 
@@ -78,9 +78,33 @@
         until there are <strong id="max-picks">5</strong> picks or no candidates are left.</li>
       <li>Watchfloor and Context both read GDELT, so they are one voice: they share one turn, alternating their own
         queues, and one zone gives at most one pick, which names the other program's reading of that zone.</li>
+      <li>An item its own program says has ended is never a candidate. Within a program, what changed on the latest
+        reading comes before what is merely still there.</li>
       <li>Picks are chosen when the picture is built. A pick that passes its valid-until time afterwards is named under
         the picks and no longer listed.</li>
     </ol>
+  </section>
+
+  <section id="direction" aria-labelledby="direction-h">
+    <h2 id="direction-h">Direction of concern</h2>
+    <p>For each warning problem and each Watchfloor zone, COP compares every layer's last 7 days with the 14 days
+      before, in that place. Items that have left the picture still count: COP keeps a memory of every subject after it
+      drops off, and each new item is compared with it.</p>
+    <ul>
+      <li><strong>Counts</strong> (attack reports, GPS interference events, security notices, confirmed outages) move
+        when the daily rate changes by a factor of 1.5 or more and a change that size would turn up less than 10% of
+        the time if the rate had not changed (a one-sided exact binomial test). A layer needs at least 4 events across
+        both windows to move at all.</li>
+      <li><strong>Press</strong> moves when the daily median changes by a factor of 1.25 or more and leaves the middle
+        half of the 14 days before.</li>
+      <li><strong>Ship transits</strong> are a condition, listed and not counted, since PortWatch lags by up to 16 days.</li>
+      <li>A layer needs 5 of the last 7 days and 7 of the 14 before it. With less it says it is building a baseline.</li>
+      <li><strong>The word</strong> counts layers, and never adds their measurements. Rising: two or more up and more up
+        than down. Easing: two or more down and more down than up. Mixed: moving both ways. Edging up or down: one
+        layer. Steady: none.</li>
+      <li>A direction says which measurements moved against their own recent normal. It is not a warning, a forecast or
+        a finding of cause, and it carries no probability.</li>
+    </ul>
   </section>
 
   <section id="strength" aria-labelledby="strength-h">

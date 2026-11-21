@@ -29,6 +29,8 @@ SCRIPTS = [
     "test_history_cordon.py",
     "test_rev21.py",
     "test_dropped.py",
+    "test_memory.py",
+    "test_direction.py",
 ]
 
 
