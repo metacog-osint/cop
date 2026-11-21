@@ -344,7 +344,8 @@ class RatesAndPublic(unittest.TestCase):
 
     def test_the_build_runs_these_tests(self):
         build = (ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
-        self.assertTrue("python tests/test_triage_us_power.py" in build, "build.yml must run this file")
+        self.assertIn("python tests/run_all.py", build)
+        self.assertIn('"test_triage_us_power.py"', (ROOT / "tests" / "run_all.py").read_text(encoding="utf-8"))
 
 
 def county_items():
