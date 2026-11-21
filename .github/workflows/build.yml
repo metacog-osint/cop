@@ -139,6 +139,29 @@ jobs:
         run: |
           python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data \
             || { rm -f site/data/three-signal.json; echo "::warning::three-signal join failed; the page and the MCP server say it is unavailable"; }
+      # COP's memory and the direction of concern (Tom, 21 Nov 2026): one record per subject, kept after it leaves the
+      # picture (tools/memory.py, release "memory"), and each place's layers read against their own last two weeks
+      # (tools/direction.py, site/data/direction.json). The first build rebuilds the memory from the archive copies
+      # downloaded above. A memory that is listed but cannot be downloaded is never started over. A failure here never
+      # fails the build: without direction.json the page leaves the section out.
+      - name: Memory and direction of concern (site/data/direction.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { rm -f site/data/direction.json; rm -rf out/memory; echo "::warning::memory: $1; direction is not updated on this build"; exit 0; }
+          mkdir -p out/memory
+          ASSETS=""
+          if gh release view memory >/dev/null 2>&1; then
+            ASSETS=$(gh release view memory --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+          fi
+          if echo "$ASSETS" | grep -qx "memory.json.gz"; then
+            gh release download memory --dir out/memory --pattern memory.json.gz --clobber || skip "the memory could not be downloaded"
+            python tools/memory.py --snapshot site/data/today.geojson --assets out/memory || skip "the memory tool failed"
+          else
+            python tools/memory.py --replay out/rates-archive --snapshot site/data/today.geojson --assets out/memory || skip "the first replay failed"
+          fi
+          python tools/direction.py --memory out/memory --archive out/rates-archive --snapshot site/data/today.geojson \
+            --verdict site/data/agent/verdict.json --publish site/data || skip "the direction join failed"
       # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
       # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
       # writes out/undertow-sanctions/ only. A failure never fails the build.
@@ -258,6 +281,24 @@ jobs:
             up "$DAYTAG" "out/ledger/$DAY.jsonl.gz" --clobber || fail "the lines for $DAY could not be uploaded to $DAYTAG; this build is not logged and the changes will be logged again from the last state"
           fi
           up ledger out/ledger/state.json.gz --clobber || fail "the new state could not be uploaded; the next build logs these changes again from the last state (the day file already holds them once)"
+      # COP's memory: the current file, plus one copy per month that is never replaced. A failed upload fails the step,
+      # as for the ledger: the next build folds this one in again from the last copy kept.
+      - name: Keep COP's memory (release memory, not published)
+        id: memory
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f out/memory/memory.json.gz ] || { echo "no memory from this build"; exit 0; }
+          up() { for i in 1 2 3; do gh release upload "$@" && return 0; sleep $((i * 10)); done; return 1; }
+          gh release view memory >/dev/null 2>&1 || gh release create memory --title "COP memory" \
+            --notes "One record per subject COP's picture has carried, kept after it leaves, and each place's daily direction word (tools/memory.py, tools/direction.py). Not published on the site."
+          MONTH="memory-$(date -u +%Y-%m).json.gz"
+          if ! gh release view memory --json assets --jq '.assets[].name' | grep -qx "$MONTH"; then
+            cp out/memory/memory.json.gz "out/memory/$MONTH"
+            up memory "out/memory/$MONTH" || { echo "::error::the month's copy of the memory could not be kept"; exit 1; }
+          fi
+          up memory out/memory/memory.json.gz --clobber || { echo "::error::the memory could not be uploaded"; exit 1; }
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
       # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.

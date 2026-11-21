@@ -1,0 +1,27 @@
+{
+  "note": "Where COP reads direction (tools/direction.py). Problems are the named warning problems (cop-purpose D2): Tom writes each charter. Areas are Watchfloor's conflict zones, with its country lists. press_zone is the Watchfloor zone whose press counts are read; chokepoint is the Wake chokepoint read as traffic.",
+  "problems": [
+    {"area": "gulf", "name": "Strait of Hormuz and the Gulf", "center": [56.378, 27.218], "radius_km": 900,
+     "countries": ["IR", "AE", "OM", "QA", "BH", "KW", "SA", "IQ"], "press_zone": "11_Iran_Red_Sea", "press_label": "Iran and Yemen",
+     "chokepoint": "strait-of-hormuz", "layers": ["attacks", "interference", "notices", "outages", "press", "traffic"]},
+    {"area": "shutdowns", "name": "Internet shutdowns", "worldwide": true, "layers": ["outages"]}
+  ],
+  "areas": [
+    {"area": "ukraine", "name": "Ukraine", "countries": ["UA"], "press_zone": "01_Ukraine_Conflict", "chokepoint": "kerch-strait"},
+    {"area": "russia-nato", "name": "Russia-NATO border", "countries": ["BY", "DK", "EE", "FI", "LT", "LV", "NO", "PL", "RU", "SE"], "press_zone": "07_Russia_NATO"},
+    {"area": "taiwan", "name": "Taiwan Strait", "countries": ["TW"], "press_zone": "02_Taiwan_Strait", "chokepoint": "taiwan-strait"},
+    {"area": "south-china-sea", "name": "South China Sea", "countries": ["PH", "VN"], "press_zone": "08_South_China_Sea"},
+    {"area": "korea", "name": "Korean Peninsula", "countries": ["KP", "KR"], "press_zone": "03_Korea_Peninsula", "chokepoint": "korea-strait"},
+    {"area": "israel-gaza-lebanon", "name": "Israel, Gaza and Lebanon", "countries": ["IL", "LB", "PS"], "press_zone": "10_Israel_Gaza_Lebanon"},
+    {"area": "iran-red-sea", "name": "Iran and the Red Sea", "countries": ["IR", "YE"], "press_zone": "11_Iran_Red_Sea", "chokepoint": "bab-el-mandeb-strait"},
+    {"area": "india-pakistan", "name": "India and Pakistan", "countries": ["IN", "PK"], "press_zone": "06_India_Pakistan"},
+    {"area": "sudan", "name": "Sudan", "countries": ["SD"], "press_zone": "13_Sudan"},
+    {"area": "ethiopia-eritrea", "name": "Ethiopia and Eritrea", "countries": ["ER", "ET"], "press_zone": "18_Ethiopia_Eritrea"},
+    {"area": "somalia", "name": "Somalia and Djibouti", "countries": ["DJ", "SO"], "press_zone": "19_Somalia"},
+    {"area": "sahel", "name": "Sahel and West Africa", "countries": ["BF", "ML", "NE"], "press_zone": "12_Sahel_West_Africa"},
+    {"area": "drc-rwanda", "name": "DRC and Rwanda", "countries": ["CD", "RW"], "press_zone": "14_DRC_Rwanda"},
+    {"area": "myanmar", "name": "Myanmar", "countries": ["MM"], "press_zone": "16_Myanmar"},
+    {"area": "venezuela", "name": "Venezuela", "countries": ["VE"], "press_zone": "05_Venezuela"},
+    {"area": "cuba", "name": "Cuba", "countries": ["CU"], "press_zone": "15_Cuba"}
+  ]
+}
