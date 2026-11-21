@@ -299,6 +299,41 @@ jobs:
             up memory "out/memory/$MONTH" || { echo "::error::the month's copy of the memory could not be kept"; exit 1; }
           fi
           up memory out/memory/memory.json.gz --clobber || { echo "::error::the memory could not be uploaded"; exit 1; }
+      # The direction log (tools/direction_log.py, ideas#126): each Monday's word per place and, ten days later, the
+      # numbers for the week that followed, appended to direction-log.jsonl on the branch direction-log. Each line
+      # carries the hash of the one before and the push is never forced, so a word cannot be changed once its week has
+      # begun. The branch does not deploy. Verdict reads it and does the scoring. A failure here is red and holds nothing.
+      - name: Lock the direction words (branch direction-log)
+        id: direction_log
+        if: ${{ !cancelled() }}
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -eu
+          if [ ! -f site/data/direction.json ] || [ ! -f out/memory/memory.json.gz ]; then
+            echo "no direction reading from this build"; exit 0
+          fi
+          LOG=out/direction-log.jsonl; PARENT=""; rc=0
+          git ls-remote --exit-code --heads origin direction-log >/dev/null || rc=$?
+          if [ "$rc" = 0 ]; then
+            git fetch --quiet origin +refs/heads/direction-log:refs/remotes/origin/direction-log
+            PARENT=$(git rev-parse refs/remotes/origin/direction-log)
+            git show "$PARENT:direction-log.jsonl" > "$LOG"
+          elif [ "$rc" = 2 ]; then
+            : > "$LOG"
+          else
+            echo "::error::could not tell whether the direction log exists"; exit 1
+          fi
+          BEFORE=$(git hash-object "$LOG")
+          python tools/direction_log.py --log "$LOG" --direction site/data/direction.json --memory out/memory
+          if [ "$(git hash-object "$LOG")" = "$BEFORE" ]; then echo "nothing new to lock"; exit 0; fi
+          BLOB=$(git hash-object -w "$LOG")
+          TREE=$(printf '100644 blob %s\tdirection-log.jsonl\n' "$BLOB" | git mktree)
+          COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Direction log: build $GITHUB_SHA")
+          git push origin "$COMMIT:refs/heads/direction-log"
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
       # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.
