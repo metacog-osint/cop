@@ -259,6 +259,7 @@ def read_interference(mem, area, today, index, detail, shapes):
     b = sum(1 for d in got_p for x in held[d] if point_in_area(x[0], x[1], area, shapes))
     usual = b / len(got_p) * RECENT_DAYS
     out = base | {"state": count_move(a, b, len(got_r), len(got_p)), "recent": a, "usual_per_week": round(usual, 1),
+                  "test": {"kind": "count", "a": a, "b": b, "ra": len(got_r), "rb": len(got_p), "through": days[-1]},
                   "text": f"{a} Major or Notable in the last 7 days, against about {usual:.1f} a week in the 14 days "
                           "before."}
     if a == 0 and b == 0:
@@ -268,6 +269,16 @@ def read_interference(mem, area, today, index, detail, shapes):
         if listed:
             out["items"] = listed
     return out
+
+
+def dated_events(mem, area, layer, wanted):
+    """One (report, day) pair per report on each wanted day, so one report under two ids counts once."""
+    program, dated = LAYER_PROGRAM[layer], set()
+    for k, r in mem["subjects"].items():
+        if r["p"] != program or not in_family(k, r, layer) or not in_area(k, r, area, layer):
+            continue
+        dated |= {(_same(k, r), d) for d in r["at"] if d in wanted}
+    return dated
 
 
 def read_count(mem, area, layer, today, through, index, detail):
@@ -283,17 +294,14 @@ def read_count(mem, area, layer, today, through, index, detail):
         return {"layer": layer, "name": LAYER_NAMES[layer], "program": program, "state": "thin",
                 "text": f"Not enough history yet: read on {rb} of the {PRIOR_DAYS} days before this week."}
     want_r, want_p = set(recent), set(prior)
-    dated = set()
-    for k, r in mem["subjects"].items():
-        if r["p"] != program or not in_family(k, r, layer) or not in_area(k, r, area, layer):
-            continue
-        dated |= {(_same(k, r), d) for d in r["at"] if d in want_r or d in want_p}
+    dated = dated_events(mem, area, layer, want_r | want_p)
     a = sum(1 for _, d in dated if d in want_r)
     b = sum(1 for _, d in dated if d in want_p)
     state = count_move(a, b, ra, rb)
     usual = b / rb * RECENT_DAYS
     out = {"layer": layer, "name": LAYER_NAMES[layer], "program": program, "state": state, "recent": a,
            "usual_per_week": round(usual, 1),
+           "test": {"kind": "count", "a": a, "b": b, "ra": ra, "rb": rb, "through": through.isoformat()},
            "text": f"{a} in the last 7 days, against about {usual:.1f} a week in the 14 days before."}
     if a == 0 and b == 0:
         out |= {"state": "quiet", "text": "None in the last 21 days."}
@@ -316,7 +324,10 @@ def read_press(mem, area, today, through):
     if len(recent) < MIN_RECENT or len(prior) < MIN_PRIOR:
         return base | {"state": "thin", "text": f"Not enough history yet: {len(prior)} of the {PRIOR_DAYS} days before."}
     a, b = statistics.median(recent), statistics.median(prior)
+    q = statistics.quantiles(prior, n=4, method="inclusive")
     return base | {"state": level_move(recent, prior), "recent": a, "usual": b, "id": r["id"],
+                   "test": {"kind": "level", "recent_median": a, "prior_median": b, "prior_q1": q[0], "prior_q3": q[2],
+                            "ra": len(recent), "rb": len(prior), "through": through.isoformat()},
                    "text": f"A median of {a:g} articles a day, against {b:g} in the 14 days before."}
 
 
