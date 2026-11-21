@@ -185,3 +185,23 @@ button.tri-item { cursor: pointer; }
    there, so the page is unchanged if the script fails. */
 body:has(> .tic-house) .bar { top: var(--tic-house-h, 34px); }
 body:has(> .tic-house) .app { top: calc(var(--tic-house-h, 34px) + 56px); }
+
+/* Where concern is moving (21 Nov 2026). Each word has its own mark, so colour never carries it alone. */
+#direction-sec { margin-bottom: 14px; }
+.dir-sub { margin: 12px 0 6px; font-size: 13px; color: var(--ink); }
+.dir-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dir-head .tri-outage { width: auto; flex: 1; }
+.dir-word { flex: none; font: 600 12px/1.2 var(--mono); padding: 3px 8px; border-radius: 10px; border: 1px solid currentColor; color: var(--mut); white-space: nowrap; }
+.dir-rising, .dir-edging_up { color: var(--late); }
+.dir-easing, .dir-edging_down { color: var(--fresh); }
+.dir-mixed { color: var(--ink); }
+.dir-name { flex: 1; }
+.dir-state { flex: none; font: 500 11.5px/1.2 var(--mono); color: var(--mut); }
+.dir-s-up { color: var(--late); } .dir-s-down { color: var(--fresh); }
+.dir-items { margin-top: 3px; font-size: 12px; }
+.dir-items summary { cursor: pointer; color: var(--mut); }
+.dir-item { display: grid; gap: 1px; margin-top: 5px; }
+.dir-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 8px; }
+.dir-area { color: var(--ink); font-size: 13px; font-weight: 500; }
+.dir-why { grid-column: 1 / -1; }
+.dir-record { margin-top: 10px; }

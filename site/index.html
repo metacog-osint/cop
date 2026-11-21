@@ -57,13 +57,21 @@
 
       <section class="today" aria-labelledby="today-h">
         <h1 id="today-h">Today</h1>
+        <div id="direction-sec" hidden>
+          <h2 id="direction-h">Where concern is moving</h2>
+          <p class="note" id="direction-note"></p>
+          <ul class="list" id="direction-problems" aria-labelledby="direction-h"></ul>
+          <h3 class="dir-sub" id="direction-areas-h">Every area</h3>
+          <ul class="list" id="direction-areas" aria-labelledby="direction-areas-h"></ul>
+          <p class="note dir-record" id="direction-record"></p>
+        </div>
         <div id="warnings-sec" hidden>
           <h2 id="warnings-h">Warnings</h2>
           <p class="note">Each is the judgment of the program that issued it: a forecast or an assessment, with a
             likelihood and a separate confidence. Not a measurement, and never one of the picks.</p>
           <ul class="list" id="warnings" aria-labelledby="warnings-h"></ul>
-          <h2 id="picks-h">Today's picks</h2>
         </div>
+        <h2 id="picks-h">Today's picks</h2>
         <p class="lede">The strongest findings with a place, at most five, one program at a time. Each is a
           <strong>measurement or a report</strong>, not a warning: it says something stands out against its own program's
           usual run, not what it means.</p>

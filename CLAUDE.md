@@ -4,10 +4,8 @@ COP, the common operational picture of The Intelligence Company: every program's
 the joins that read them together and an MCP server for agents (cop.theintelligence.company, public repo
 `metacog-osint/cop`).
 
-**Slimmed 18 Nov 2026** from 97 KB to the durable rules. Full earlier text (per-program build notes, measurements,
-shas, review-fix narrative): `D:\Projects\_ideas\archive\cop-CLAUDE-2026-11-18.md` (private repo). **Current state
-and open items: `D:\Projects\cop\.claude\HANDOFF.md`** (gitignored, in the main checkout), read it before starting.
-Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative go in the handoff or git, not here.
+Older detail: `D:\Projects\_ideas\archive\cop-CLAUDE-2026-11-18.md`. **Current state and open items:
+`D:\Projects\cop\.claude\HANDOFF.md`** (gitignored, main checkout), read it first. Keep this file under 12 KB.
 
 ## Purpose and Tom's standing decisions
 - **Purpose (Tom, 15 Nov 2026):** a warning analyst's first stop for a few named warning problems: per area, what
@@ -32,8 +30,11 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   carries the rule in its own words and a test checks them. `out/held/` is Tom's to delete.
 - **Every item is kept** (Tom, 13 Nov): inactive items are not drawn, but ended lists and the ledger keep them.
 - **Picks:** placed anomalies only, each program's strongest by its own `strength` rules, one program at a time in
-  config order, at most `max_picks` (5); never compared across programs; labelled measurements, never warnings.
-- Commit, push and deploy each need Tom's yes. **Pushing `main` builds and deploys.**
+  config order, at most `max_picks` (5); never compared across programs; labelled measurements, never warnings. An
+  item its program says has ended is never a pick; what changed ranks before what is still there (Tom, 21 Nov).
+- **Direction of concern is the brag (Tom, 21 Nov 2026):** which places are getting more or less concerning, from
+  each layer's change. The word counts layers moving and never adds measurements (D3 stands for scores).
+- Shipping follows the standing yes in the global `CLAUDE.md`. **Pushing `main` builds and deploys.**
 
 ## How it works
 - `tools/snapshot.py` (stdlib) reads each program's contract-v2 feed. Name, family, feed, site and freshness windows
@@ -64,7 +65,7 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
 | Watchfloor, Context | conflict attention, press framing; Information preset | feeds mark measurements `reported` |
 | Vigil, Noisefloor, Elements, Cordon | as their feeds; Cordon notices dashed | Cordon space-related `navwarn` also under Spectrum and space (`cop_also`, keep in `MAP_KEYS`) |
 | Vis | `kind: forecast`, never picks; Amber/Red are tier `warning`, shown in every view | Open-Meteo non-commercial |
-| Blackout | outages, OONI, provider status, public-report counts (`blackout:public:*`, reported, not measured) | no `measures`: pick is its feed's first placed anomaly; outages are observations, no probability; `valid_until` run +12 h |
+| Blackout | outages, OONI, provider status, public-report counts (`blackout:public:*`, reported, not measured) | no `measures`: picks rank by the scope in the title; outages are observations, no probability; `valid_until` run +12 h |
 | Headwind | halos; Economic stress preset; signed z (`abs`) | `source_health` on; `ended` |
 | Orbit, Launch | routine only, Spectrum and space; Launch areas dashed | event times read from titles for `events.json` |
 | Undertow | halos at stated targets only; ids `UT-<LANE>-*` via `ID_PREFIXES` | origin is never a finding; reported activity kept apart |
@@ -89,6 +90,11 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   notice only above the 90th percentile of UKMTO's own series (option D, Tom 18 Nov). Vis is weather context only.
   Wake can only be a condition (PortWatch lags 7-16 days).
 - **Undertow sanctions and election joins:** built, `published` off (Tom's call); write only to `out/`.
+- **Direction** (`tools/direction.py`, `config/areas.json`, published as `direction.json`): each layer's last 7 days
+  against the 14 before, per warning problem and Watchfloor zone; thresholds on `site/scoring.html`. Reads
+  **`tools/memory.py`** (release `memory`, never published): one record per subject, kept after it leaves, compared with
+  each new item. Noisefloor counts come from its full daily files because its feed was capped at 6 events a day until
+  15 Nov; one alert under two ids counts once; PortWatch transits are a condition, never counted.
 
 ## MCP server (`/mcp`)
 - `https://cop.theintelligence.company/mcp`: read-only, public, no sign-in, no AI model called. `tools/agent_index.py`
@@ -97,32 +103,25 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   `@modelcontextprotocol/server` 2.3.1, `zod` 4.6.7, pinned) -> `mcp/tools.js`, `mcp/data.js`.
 - Nine tools, fixed order, all `readOnlyHint`: `suite_status`, `search_items`, `get_item`, `top_picks`,
   `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`, `three_signal`. Results carry `as_of`,
-  `age_hours`, stale flags and attribution. Server instructions hold numbered rules per program (cite ids and
-  publishers, never call a measurement a warning, quote ICD 203 terms as given, date-only items by date).
-- Workers Paid since 17 Nov 2026 (30 s CPU, 10 M requests a month); `INDEX_WARN_BYTES` 2 MB annotates, never fails.
+  `age_hours`, stale flags and attribution; server instructions hold the rules per program.
 
 ## Ledger and watchdog
 - `tools/ledger.py`: kit history log `tic-history/1`; one line per item new, changed (tier or stage) or ended; lane
   = program, or `<program>/<source id>` where the feed has a health block. An item ends only when its program and
-  source were read; stale copies move nothing. Assets of release `ledger` (day files from 2027 in `ledger-YYYY`; malformed items in `DAY.dropped.jsonl.gz`, `tools/dropped.py`); **never published** (refuses `site/`,
+  source were read; stale copies move nothing. Assets of release `ledger`; **never published** (refuses `site/`,
   `functions/`, `mcp/`). Needs the last state or `--first`; `--replay out/archive` rebuilds.
-- `tools/triage_log.py` (step 3): every triage reading, one item per outage and place; changes in `triage.history`,
-  and as kit `changed` lines from kit 0.5.13 (`reading_key`); ends only when Blackout was read; release
-  `triage-log`, the first build replays the archive. Not published.
+- `tools/triage_log.py`: every triage reading, per outage and place; release `triage-log`. Not published.
 - `tools/suite_watch.py` (`watch.yml`, also dispatched every 3 h): exits 1 when COP's build is over 6 h old, a
   program is not fresh, a data time is 30+ min in the future, a program has malformed items, or the hub's site check
   (`tic-sitecheck/1`) failed a page or is 14+ h old. A failed run is the alert (GitHub mail); optional secret
-  `HC_PING_URL` pings Healthchecks.io. Test: `gh workflow run watch.yml --repo metacog-osint/cop -f test_failure=true`.
+  `HC_PING_URL` pings Healthchecks.io.
 
 ## Commands
 - `python tools/snapshot.py` (live) or `--fixtures tests/fixtures --now 2026-10-31T20:30:00Z`; `--dead <program>`.
   Then `python tools/agent_index.py` (offline: `--verdict tests/fixtures/verdict`).
-- Triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py --snapshot
-  site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`.
 - Tests: `npm ci --ignore-scripts`, then `python tests/run_all.py` (the list `build.yml` and PR check `tests.yml` share).
 - **Known quirks** (memory `cop-local-test-quirks`): `npm test`'s 5 ms CPU check fails on this laptop even on
   untouched `main`; the browser pane's map needs 10-20 s and reads zero width while hidden.
 - Local Cloudflare runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date
-  2026-10-26`; check with `npx --yes @modelcontextprotocol/inspector@2.12.0 --cli http://127.0.0.1:8788/mcp
-  --transport http --method tools/list`; then stop node/esbuild/workerd by PID and delete `.wrangler/`.
+  2026-10-26`; afterwards stop node/esbuild/workerd by PID and delete `.wrangler/`.
 - `python tools/serve.py` serves `site/` on 5071 with `site/_headers`.
