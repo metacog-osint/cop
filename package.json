@@ -1,6 +1,7 @@
 {
   "name": "cop",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "description": "COP's MCP server (functions/mcp.js, mcp/). The site itself has no build step and no Node dependencies.",
   "scripts": {
