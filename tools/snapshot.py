@@ -609,6 +609,50 @@ def world_shapes(step=0.1):
             "features": feats}
 
 
+def place_points(geometry):
+    """One (lon, lat) per separate place in a geometry: each part of a Multi- shape stands alone, so two places far
+    apart never average to a spot between them. A part's point is the mean of its vertices, with longitude averaged
+    around the circle so a shape across the antimeridian stays there."""
+    kind, c = geometry["type"], geometry["coordinates"]
+    if kind == "Point":
+        parts = [[c]]
+    elif kind == "MultiPoint":
+        parts = [[p] for p in c]
+    elif kind == "LineString":
+        parts = [c]
+    elif kind == "MultiLineString":
+        parts = c
+    elif kind == "Polygon":
+        parts = c[:1]
+    elif kind == "MultiPolygon":
+        parts = [poly[0] for poly in c if poly]
+    else:
+        return []
+    points = []
+    for part in parts:
+        ring = part[:-1] if len(part) > 1 and part[0] == part[-1] else part
+        if not ring:
+            continue
+        east = sum(math.cos(math.radians(p[0])) for p in ring)
+        north = sum(math.sin(math.radians(p[0])) for p in ring)
+        points.append((math.degrees(math.atan2(north, east)), sum(p[1] for p in ring) / len(ring)))
+    return points
+
+
+def home_points(today, now):
+    """site/data/home-points.json: where today's unusual findings are, for the small world map on the hub's home page,
+    which must not fetch the whole snapshot. Places only, to 0.1 degree, with no id, title or program. The same items
+    COP's picks may draw from (placed anomalies whose program and source were read), less any past its valid_until."""
+    places = set()
+    for f in today["features"]:
+        p = f["properties"]
+        until = utc(p.get("valid_until"))
+        if p.get("tier") != "anomaly" or not f.get("geometry") or p.get("cop_stale") or (until and until < now):
+            continue
+        places |= {(round(lon, 1) + 0.0, round(lat, 1) + 0.0) for lon, lat in place_points(f["geometry"])}
+    return {"generated_at": iso(now), "points": [list(place) for place in sorted(places)]}
+
+
 def write_json(path, obj, compact=True):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -706,6 +750,7 @@ def main(argv=None):
     write_json(out / "health.json", health, compact=False)
     write_json(out / "countries-today.geojson", countries)
     write_json(out / "world.geojson", world_shapes())
+    write_json(out / "home-points.json", home_points(today, now))
     if a.archive:
         arch = Path(a.archive)
         arch.mkdir(parents=True, exist_ok=True)
