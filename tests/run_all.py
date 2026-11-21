@@ -31,6 +31,7 @@ SCRIPTS = [
     "test_dropped.py",
     "test_memory.py",
     "test_direction.py",
+    "test_direction_log.py",
 ]
 
 
