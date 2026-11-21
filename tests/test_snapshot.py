@@ -782,5 +782,41 @@ class GdeltVoice(unittest.TestCase):
         self.assertIn("READING_OF", js, "a reading on a shown pick is not listed again under Also watching")
 
 
+    def test_home_points_are_placed_current_anomalies_and_nothing_else(self):
+        def item(geometry, **props):
+            return {"type": "Feature", "geometry": geometry,
+                    "properties": {"id": "secret-id", "title": "secret title", "tier": "anomaly"} | props}
+        point = lambda lon, lat: {"type": "Point", "coordinates": [lon, lat]}
+        today = {"features": [
+            item(point(10.04, 20.06)),
+            item(point(10.01, 20.09)),                                     # the same place to 0.1 degree: one point
+            item(point(1, 1), tier="routine"),
+            item(point(2, 2), cop_stale=True),
+            item(point(3, 3), valid_until="2026-10-31T20:00:00Z"),
+            item(point(4, 4), valid_until="2026-10-31T21:00:00Z"),
+            item(None),
+            item({"type": "MultiPoint", "coordinates": [[-70, 40], [100, -30]]}),   # two places stay two
+            item({"type": "Polygon", "coordinates": [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]]}),
+        ]}
+        doc = snap.home_points(today, NOW)
+        self.assertEqual(set(doc), {"generated_at", "points"})
+        self.assertEqual(doc["generated_at"], "2026-10-31T20:30:00Z")
+        across = [p for p in doc["points"] if abs(p[0]) == 180]
+        self.assertEqual(len(across), 1, "a shape across the antimeridian stays there")
+        self.assertEqual(across[0][1], 1.0)
+        self.assertEqual([p for p in doc["points"] if p not in across],
+                         [[-70.0, 40.0], [4.0, 4.0], [10.0, 20.1], [100.0, -30.0]])
+        self.assertNotIn("secret", json.dumps(doc), "places only: no id or title")
+
+    def test_build_writes_a_small_home_points_file(self):
+        with tempfile.TemporaryDirectory() as d, redirect_stdout(io.StringIO()):
+            snap.main(["--fixtures", str(FIX), "--now", "2026-10-31T20:30:00Z", "--out", d,
+                       "--ended-out", str(Path(d) / "ended")])
+            path = Path(d) / "home-points.json"
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertTrue(doc["points"], "the fixtures hold placed anomalies")
+            self.assertLess(path.stat().st_size, 20000)
+
+
 if __name__ == "__main__":
     unittest.main()
