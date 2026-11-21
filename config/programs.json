@@ -156,7 +156,7 @@
       "mark": "halos",
       "country_mark": "halo",
       "routine_in_preset": true,
-      "routine_label": "IFRC appeals and WHO outbreak notices, ringed on their countries",
+      "routine_label": "IFRC appeals, WHO outbreak notices, HAPI plan funding and needs, and ReliefWeb disaster report counts, ringed on their countries",
       "strength": [],
       "color": {
         "fill": "#8C510A",
