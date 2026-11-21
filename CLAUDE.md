@@ -119,8 +119,7 @@ Keep this file under 12 KB (global CLAUDE.md rule): state, numbers and narrative
   Then `python tools/agent_index.py` (offline: `--verdict tests/fixtures/verdict`).
 - Triage by hand: `python tools/triage_rates.py --archive out/archive`, then `python tools/triage.py --snapshot
   site/data/today.geojson --ended out/ended/elements.geojson --publish site/data`.
-- Tests: each `tests/test_*.py` is a plain script (`python tests/test_snapshot.py`). `npm ci --ignore-scripts`,
-  then `npm test` (needs Python on the path).
+- Tests: `npm ci --ignore-scripts`, then `python tests/run_all.py` (the list `build.yml` and PR check `tests.yml` share).
 - **Known quirks** (memory `cop-local-test-quirks`): `npm test`'s 5 ms CPU check fails on this laptop even on
   untouched `main`; the browser pane's map needs 10-20 s and reads zero width while hidden.
 - Local Cloudflare runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date
