@@ -1,0 +1,31 @@
+name: tests
+# Runs COP's tests on every pull request to main, so a PR has a check to read at its head sha. The list lives in
+# tests/run_all.py, shared with build.yml. No secrets, no deploy, no release writes, and a read-only token.
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Packages for the MCP server (exact versions from package-lock.json)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Tests
+        run: python tests/run_all.py
+      - name: Kit copy is intact
+        run: python doctrine/kit/tic.py kitcheck
