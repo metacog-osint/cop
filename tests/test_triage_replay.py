@@ -202,7 +202,8 @@ class Attached(unittest.TestCase):
 
     def test_the_build_command_needs_no_new_flag_and_its_tests_run(self):
         build = (ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
-        self.assertIn("python tests/test_triage_replay.py", build)
+        self.assertIn("python tests/run_all.py", build)
+        self.assertIn('"test_triage_replay.py"', (ROOT / "tests" / "run_all.py").read_text(encoding="utf-8"))
         self.assertTrue((ROOT / "history" / "replays").is_dir(), "triage.py reads history/replays by default")
 
 

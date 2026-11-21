@@ -186,7 +186,8 @@ class WorkflowLedger(unittest.TestCase):
 
     def test_the_snapshot_step_writes_the_dropped_rows_and_this_file_runs_in_the_build(self):
         self.assertIn("python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl", WF)
-        self.assertIn("python tests/test_dropped.py", WF)
+        self.assertIn("python tests/run_all.py", WF)
+        self.assertIn('"test_dropped.py"', (ROOT / "tests" / "run_all.py").read_text(encoding="utf-8"))
 
     def test_slot_files_are_kept_without_clobber(self):
         s = self.step("Keep the 6-hourly snapshots (first build of each slot)")

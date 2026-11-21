@@ -144,7 +144,8 @@ class Archive(unittest.TestCase):
 class Build(unittest.TestCase):
     def test_build_fetches_archives_and_passes_the_list(self):
         wf = (ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
-        self.assertIn("python tests/test_triage_ended.py", wf)
+        self.assertIn("python tests/run_all.py", wf)
+        self.assertIn('"test_triage_ended.py"', (ROOT / "tests" / "run_all.py").read_text(encoding="utf-8"))
         self.assertIn('gh release upload "$TAG" out/archive/*.geojson.gz $(ls out/archive/*-ended.json.gz 2>/dev/null)', wf)
         self.assertIn('--pattern "*-ended.json.gz"', wf)
         self.assertIn("cp out/archive/*-ended.json.gz out/rates-archive/ 2>/dev/null || true", wf)
