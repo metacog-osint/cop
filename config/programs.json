@@ -73,7 +73,12 @@
       "ended": "https://blackout.theintelligence.company/data/ended.geojson",
       "freshness": "feed",
       "mark": "zones", "country_mark": "fill", "area_style": "solid",
-      "strength": [],
+      "strength": [
+        { "title_has": "nationwide", "value": 3, "label": "a nationwide outage" },
+        { "title_has": "(Confirmed)", "value": 2, "label": "an outage NetBlocks reports as confirmed" },
+        { "title_has": "verified by Cloudflare", "value": 2, "label": "an anomaly verified by Cloudflare Radar" },
+        { "title_has": "network", "value": 1, "label": "an outage on one network" }
+      ],
       "color": { "fill": "#332288", "outline_light": "#1E1452", "outline_dark": "#CBC3F5" }
     },
     {

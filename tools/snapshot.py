@@ -99,6 +99,10 @@ def strength(props, rules):
     for i, rule in enumerate(rules):
         if any(dig(props, k) != v for k, v in (rule.get("when") or {}).items()):
             continue
+        if "title_has" in rule:     # a feed with no measure for its scope (Blackout): the scope its title states
+            if rule["title_has"].lower() in str(props.get("title") or "").lower():
+                return rule["value"], rule["label"], i, rule["value"]
+            continue
         v = dig(props, rule["path"])
         if isinstance(v, (int, float)) and not isinstance(v, bool):
             return v, rule["label"], i, abs(v) if rule.get("abs") else v
@@ -150,6 +154,16 @@ def reading(props):
     return {"id": props["id"], "program": props.get("cop_program"), "tier": props.get("tier"),
             "warning_problem_id": props.get("warning_problem_id"), "strength": props.get("cop_strength_text"),
             "stale": bool(props.get("cop_stale"))}
+
+
+def no_longer_current(props):
+    """The program itself says this has ended (Elements' GDACS items, measures.current false): never a pick."""
+    return dig(props, "measures.current") is False
+
+
+def standing(props):
+    """The feed says this did not change on its last reading (contract 2.1, last_change "none")."""
+    return props.get("last_change") == "none"
 
 
 def pick(candidates, max_picks, programs):
@@ -493,9 +507,11 @@ def build(feeds, reports, previous, now):
                 p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
-            if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off:
-                ranked.append((99 if rule is None else rule, -(rank or 0), order, feature))
-        candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:3])]
+            if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
+                    and not no_longer_current(p):
+                # What changed comes before what is merely still there (Tom, 21 Nov 2026).
+                ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
+        candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
         if attribution:
             attributions.append(attribution)
         health.append({

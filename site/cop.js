@@ -67,6 +67,9 @@ try { triage = await getJSON("data/triage.json"); } catch { triage = null; }
 // The three-signal join (published since 15 Nov 2026), built after triage. The picture stands without it too.
 let threeSignal = null;
 try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSignal = null; }
+// Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
+let direction = null;
+try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
@@ -564,6 +567,7 @@ function renderPanel() {
       h("a", { href: p.site, rel: "noopener" }, `Open ${p.name}`))),
     ...(!offAnom.length && !routineCounts.length ? [h("li", { class: "empty", text: "None for this view." })] : []));
 
+  renderDirection();
   renderTriage();
   renderThreeSignal();
   renderHealth();
@@ -585,6 +589,59 @@ function triageItem(row) {
   return BY_ID.has(row.id)
     ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title, ended)
     : h("span", { class: "tri-item" }, row.title, ended);
+}
+// Where concern is moving: never colour alone, so each word carries its own mark.
+const DIR_MARK = { rising: "▲", edging_up: "△", mixed: "◆", easing: "▼", edging_down: "▽", steady: "–", building: "…" };
+const DIR_ORDER = ["rising", "edging_up", "mixed", "easing", "edging_down", "steady", "building"];
+const DIR_LAYER = { up: "▲ Up", down: "▼ Down", steady: "– Steady", quiet: "– None", thin: "… Building" };
+const dirDay = (day) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const dirBadge = (x) => h("span", { class: `dir-word dir-${x.direction}`, text: `${DIR_MARK[x.direction]} ${x.word}` });
+function dirSince(x) {
+  if (!x.since || !x.was) return "";
+  return ` Since ${dirDay(x.since)}, was ${x.was.toLowerCase()}.`;
+}
+function dirMoved(x) {
+  if (x.direction === "building") return "Not enough history yet to read a direction.";
+  const bits = [];
+  if (x.up.length) bits.push(`Up: ${x.up.join(", ")}.`);
+  if (x.down.length) bits.push(`Down: ${x.down.join(", ")}.`);
+  return bits.join(" ") || "No layer has moved against its own last two weeks.";
+}
+function directionLayer(l) {
+  const items = l.items || [];
+  const said = l.condition ? "Condition" : DIR_LAYER[l.state];
+  return h("div", { class: "tri-layer" + (l.state === "thin" ? " dead" : "") },
+    h("dt", {}, dotFor(l.program, {}), h("span", { class: "dir-name", text: l.name }), h("span", { class: `dir-state dir-s-${l.condition ? "cond" : l.state}`, text: said })),
+    h("dd", {}, l.text, items.length ? h("details", { class: "dir-items" }, h("summary", {}, `Latest ${items.length === 1 ? "item" : `${items.length} items`}`),
+      ...items.map((x) => h("div", { class: "dir-item" }, triageItem(x), h("span", { class: "row-meta", text: `${dirDay(x.day)}. ${x.memory}` })))) : null));
+}
+function renderDirection() {
+  const sec = $("direction-sec");
+  sec.hidden = !direction || state.preset !== "all";
+  if (sec.hidden) return;
+  $("direction-note").textContent = `${direction.what} ${direction.not_a_warning}`;
+  $("direction-problems").replaceChildren(...direction.problems.map((x) => h("li", { class: "tri dir-card" },
+    h("div", { class: "dir-head" }, h("span", { class: "tri-outage", text: x.name }), dirBadge(x)),
+    h("p", { class: "tri-text", text: dirMoved(x) + dirSince(x) }),
+    h("dl", { class: "tri-layers" }, ...x.layers.map(directionLayer)))));
+  const areas = [...direction.areas].sort((a, b) => DIR_ORDER.indexOf(a.direction) - DIR_ORDER.indexOf(b.direction));
+  const moving = areas.filter((x) => !["steady", "building"].includes(x.direction));
+  const shown = state.showAllAreas ? areas : moving;
+  const rest = areas.length - moving.length;
+  $("direction-areas").replaceChildren(...shown.map((x) => h("li", { class: "dir-row" },
+    h("span", { class: "dir-area", text: x.name }), dirBadge(x),
+    h("span", { class: "row-meta dir-why", text: dirMoved(x) + dirSince(x) }))),
+    ...(rest && !state.showAllAreas ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllAreas = true; renderDirection(); } },
+      `Show ${rest} steady or building`))] : []));
+  const r = direction.record;
+  $("direction-record").textContent = r ? recordLine(r) : "";
+}
+function recordLine(r) {
+  const parts = [`Forecast record: ${r.registered} registered, ${r.resolved} resolved, ${r.on_called_side} of ${r.called} on the side called`
+    + (r.independent ? ` (${r.independent} independent questions; skill is held until 30).` : ".")];
+  if (r.last) parts.push(`Last scored: ${r.last.title}. Said ${Math.round(r.last.probability * 100)}%, and it ${r.last.outcome === 1 ? "happened" : "did not happen"}.`);
+  if (r.next) parts.push(`Next to score: ${r.next.title}, from ${dirDay(r.next.check_after.slice(0, 10))}.`);
+  return parts.join(" ");
 }
 function triageRecord(r) {
   const down = r.reading === "incomplete";
