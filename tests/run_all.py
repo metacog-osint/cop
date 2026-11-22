@@ -21,6 +21,7 @@ SCRIPTS = [
     "test_register_question.py",
     "test_rebuild_ended.py",
     "test_three_signal.py",
+    "test_hormuz_stream.py",
     "test_undertow_sanctions.py",
     "test_undertow_elections.py",
     "test_ledger.py",
