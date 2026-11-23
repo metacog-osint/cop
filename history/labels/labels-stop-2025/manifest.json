@@ -99,7 +99,7 @@
  },
  "files": [
   {
-   "path_or_url": "[local path]",
+   "path_or_url": "../blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv",
    "sha256": "8c53686df2c17eba873504445243061c414d20c369b5c169d91a911ad6c28326",
    "bytes": 414901
   }

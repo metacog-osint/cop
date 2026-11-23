@@ -73,5 +73,5 @@ numbers, word for word as the page will print them.
   is `aggregates`: counts and rates, never its rows.
 - No probabilities and no cause in COP's voice. A replay says how often a documented outage would have read each
   way, and how often any day would have.
-- Large raw downloads (GDELT's event files) stay outside git, on C: (`[local path]`), because
+- Large raw downloads (GDELT's event files) stay outside git, on C: (`~/cop-history\`), because
   the D: drive drops on sleep. The manifest says so and names the derived rows that are kept.

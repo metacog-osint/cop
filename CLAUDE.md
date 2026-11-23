@@ -4,14 +4,14 @@ COP, the common operational picture of The Intelligence Company: every program's
 the joins that read them together and an MCP server for agents (cop.theintelligence.company, public repo
 `metacog-osint/cop`).
 
-Older detail: `[local path]`. **Current state and open items:
-`[local path]`** (gitignored, main checkout), read it first. Keep this file under 12 KB.
+Older detail: the private planning notes. **Current state and open items:
+`.claude\HANDOFF.md`** (gitignored, main checkout), read it first. Keep this file under 12 KB.
 
 ## Purpose and Tom's standing decisions
 - **Purpose (Tom, 15 Nov 2026):** a warning analyst's first stop for a few named warning problems: per area, what
   changed this week across the layers against that place's own normal, read through named joins whose hit rates are
   published, ending each week in a signed, dated call that Verdict scores. The map is the index, not the product.
-  Tom accepted D1-D14 of `[local path]`: first problems the Gulf/Hormuz, then internet
+  Tom accepted D1-D14 of the private planning notes: first problems the Gulf/Hormuz, then internet
   shutdowns, Tom writes each charter (D2); no general convergence glyph, per-layer "how unusual here" plus named
   joins, the 15-day co-occurrence stays a diagnostic (D3); first analyst brief (D4); weekly signed call from the week
   of 23 Nov, Gulf first (D5); a Verdict question on every confirmed outage, with a second resolver (D6); picks per
@@ -38,7 +38,7 @@ Older detail: `[local path]`. **Current state and open items:
 
 ## How it works
 - `tools/snapshot.py` (stdlib) reads each program's contract-v2 feed. Name, family, feed, site and freshness windows
-  come from the kit's suite registry (`doctrine/kit/vocab/programs.json`, edited in `[local path]`); a
+  come from the kit's suite registry (`doctrine/kit/vocab/programs.json`, edited in `../tic-doctrine`); a
   new program goes in the registry first. `config/programs.json` says only how COP draws it: `mark`, `country_mark`
   (fill/halo), `area_style`, `freshness` ("feed" or "data"), `routine_in_preset`, `routine_label`, `strength` rules
   (`abs` for signed values), `also_in`, `source_health`, `lane_map`, `ended`.
@@ -56,7 +56,7 @@ Older detail: `[local path]`. **Current state and open items:
   `site/_headers`: self plus `tiles.openfreemap.org`; no inline styles or scripts. `site/scoring.html` states every
   threshold; a test checks it against the code. Share card: `tools/card.py` (headless Chrome/Edge, falls back to
   `site/card-fallback.png`, never fails the build).
-- Kit: vendored in `doctrine/kit/` with `python [local path] [local path]`, then copy
+- Kit: vendored in `doctrine/kit/` with `python ../tic-doctrine/tools/sync.py .`, then copy
   `doctrine/kit/js/tic-doctrine.js` to `site/vendor/` (a test checks they match).
 
 ## Layers (one line each; history and measurements in the archive)

@@ -1,6 +1,6 @@
 """Outage triage: what the other layers show under each Blackout outage.
 
-A named join (scenario 2 of [local path]), not a count of programs. For every
+A named join (scenario 2 of the private planning notes), not a count of programs. For every
 Blackout outage in a COP snapshot it records what Elements, Cordon and Watchfloor show for that country around
 that hour, including "nothing found" and "no current data", which are different answers. It states a reading of
 the pattern and drafts the Verdict question. It never states a probability: that is the analyst's.
