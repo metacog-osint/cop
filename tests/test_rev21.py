@@ -1,6 +1,6 @@
 """COP reads feed contract revision 2.1 (kit 0.6.0) and the old shape alike: python tests/test_rev21.py
 
-Step 3 of the feed-contract migration ([local path] section 5): the new field
+Step 3 of the feed-contract migration (the private planning notes section 5): the new field
 first, the old reading as fallback. Fixtures: tests/fixtures/rev21/old/blackout.geojson is three items of Blackout's
 live feed of 18 Nov 2026 as Blackout sent them; rev21/new/ is the same items with the 2.1 fields Blackout would state,
 set to what COP reads from the old shape, and a 2.1 header (tests/make_rev21_fixtures.py writes both). So a build

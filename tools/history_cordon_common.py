@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CACHE = Path(r"[local path]")
+CACHE = Path.home() / "cop-history" / "cordon"
 UA = "history-rebuild/1 (python urllib)"
 MIN_GAP_S = float(os.environ.get("COP_HISTORY_GAP", "1.5"))   # seconds between requests
 WAYBACK = "https://web.archive.org"
