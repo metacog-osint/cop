@@ -26,7 +26,7 @@
  ],
  "labels": {
   "source": "Access Now #KeepItOn STOP dataset (public sheet, first tab, the 2025 dataset)",
-  "file": "D:/Projects/blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv",
+  "file": "../blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv",
   "sha256": "8c53686df2c17eba873504445243061c414d20c369b5c169d91a911ad6c28326",
   "licence": "No data licence stated; counts only",
   "attribution": "Access Now, #KeepItOn STOP",

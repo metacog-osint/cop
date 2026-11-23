@@ -12,7 +12,7 @@ country's control days (the matched rate), because shutdowns cluster in a few co
 
 STOP has no data licence: the run publishes counts and rates only, never STOP's rows.
 
-    python tools/stop_replay.py --stop D:/Projects/blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv \
+    python tools/stop_replay.py --stop ../blackout/tests/fixtures/stop/stop_sheet_2026-11-13.csv \
         --elements history/elements/elements-hazards-2024-11-28-2025-12-31 \
         --watchfloor history/watchfloor/watchfloor-country-attention-2024-12-01-2025-12-31 --year 2025
 """
