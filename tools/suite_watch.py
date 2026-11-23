@@ -15,8 +15,15 @@ It checks five things the picture cannot say about itself:
      05:10 and 17:10 UTC) failed a page, or has not finished a run in --sitecheck-hours (18 Nov 2026, Tom's yes). It is
      read only when the snapshot is the live one, or when --sitecheck names a file or address, so tests stay offline.
      A site check that cannot be read is a problem, never a quiet pass.
+A problem fails the run only on its second sighting in a row (--state, 23 Nov 2026). One Vigil read caught between
+two ThreatFox runs, or one late Noisefloor day file, failed a run and mailed an alert about something that had cleared
+by the next look. With --state, a problem seen for the first time is printed as a warning and remembered; the next
+run fails if it is still there. Problems are matched with their numbers taken out, so "snapshot is 6.4 h old" and
+"6.9 h old" are the same problem. A state file that cannot be read counts as no earlier sighting, and without
+--state every problem fails at once, as before. --test-failure always fails.
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
-pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
+pings that address on success and its /fail address on a confirmed problem (a first sighting pings success, with
+the warning in the body). Without it, nothing is sent anywhere.
 --test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
 (GitHub's failed-run mail and Healthchecks.io's /fail mail) without anything being wrong.
 Standard library only. Run by .github/workflows/watch.yml, apart from the build, because a build that has
@@ -25,6 +32,7 @@ stopped cannot report itself. Tests: python tests/test_suite_watch.py
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -115,6 +123,34 @@ def read_json(where):
     return json.loads(open(where, encoding="utf-8").read())
 
 
+def problem_key(text):
+    """The problem without its numbers and times, so the same problem matches across runs."""
+    return re.sub(r"\d+(?:[.:]\d+)*", "#", text)
+
+
+def read_state(path):
+    """Problem keys the last run saw. Missing or unreadable state is no earlier sighting."""
+    try:
+        doc = json.loads(open(path, encoding="utf-8").read())
+        return set(k for k in doc.get("seen", []) if isinstance(k, str))
+    except Exception:
+        return set()
+
+
+def write_state(path, problems, now):
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"at": f"{now:%Y-%m-%dT%H:%M:%SZ}", "seen": sorted({problem_key(p) for p in problems})}, f)
+    except OSError as e:
+        print(f"state not written: {e}", file=sys.stderr)
+
+
+def confirm(problems, seen):
+    """Split problems into (confirmed: seen last run too, first: seen now for the first time)."""
+    confirmed = [p for p in problems if problem_key(p) in seen]
+    return confirmed, [p for p in problems if problem_key(p) not in seen]
+
+
 def ping(url, body):
     try:
         req = urllib.request.Request(url, data=body.encode("utf-8")[:9000], method="POST",
@@ -133,6 +169,7 @@ def main(argv=None):
     ap.add_argument("--sitecheck", help=f"the hub's site check, file or address (default {SITECHECK}, "
                                         "read only when the snapshot is an address)")
     ap.add_argument("--sitecheck-hours", type=float, default=SITECHECK_HOURS)
+    ap.add_argument("--state", help="a JSON file kept between runs; with it a problem fails on its second run in a row")
     ap.add_argument("--test-failure", action="store_true",
                     help="fail on purpose, to test that the alerts arrive")
     a = ap.parse_args(argv)
@@ -153,14 +190,22 @@ def main(argv=None):
         except Exception as e:
             problems.append(f"Site check: the latest run could not be read ({type(e).__name__}: {e}), "
                             "so pages were not checked")
+    if a.state:
+        confirmed, first = confirm(problems, read_state(a.state))
+        write_state(a.state, problems, now)
+    else:
+        confirmed, first = problems, []
     if a.test_failure:
-        problems.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
-    text = "\n".join(problems) if problems else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"
+        confirmed.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
+    lines = confirmed + [f"first sighting, fails if still there next run: {p}" for p in first]
+    text = "\n".join(lines) if lines else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"
     print(text)
+    for p in first:
+        print(f"::warning::first sighting (fails if still there next run): {p}")
     url = os.environ.get("HC_PING_URL", "").rstrip("/")
     if url:
-        ping(url + ("/fail" if problems else ""), text)
-    return 1 if problems else 0
+        ping(url + ("/fail" if confirmed else ""), text)
+    return 1 if confirmed else 0
 
 
 if __name__ == "__main__":

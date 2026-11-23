@@ -184,5 +184,58 @@ class SiteCheck(unittest.TestCase):
         self.assertEqual(watch.SITECHECK, "https://tic-sitecheck.metacog.workers.dev/")
 
 
+class TwoInARow(unittest.TestCase):
+    """With --state, a problem fails the run only when the run before saw it too (23 Nov 2026)."""
+
+    def test_the_same_problem_with_other_numbers_matches(self):
+        self.assertEqual(watch.problem_key("COP: snapshot is 6.4 h old (limit 6 h)"),
+                         watch.problem_key("COP: snapshot is 9.1 h old (limit 6 h)"))
+        self.assertNotEqual(watch.problem_key('Vigil: state is "stale", data of 2026-11-22T12:15:40Z'),
+                            watch.problem_key('Noisefloor: state is "stale", data of 2026-11-22T12:15:40Z'))
+
+    def test_first_sighting_warns_second_fails_and_a_clear_run_forgets(self):
+        import tempfile
+        stale = snap(vigil={"name": "Vigil", "state": "stale", "data_as_of": "2026-11-14T12:00:00Z"})
+        with tempfile.TemporaryDirectory() as d:
+            state = ["--state", str(Path(d) / "state.json")]
+            code, out = run(Path(d), stale, health(), state)
+            self.assertEqual(code, 0)
+            self.assertIn("first sighting", out)
+            self.assertIn("::warning::", out)
+            code, out = run(Path(d), stale, health(), state)
+            self.assertEqual(code, 1)
+            self.assertIn('Vigil: state is "stale"', out)
+            self.assertEqual(run(Path(d), snap(), health(), state)[0], 0)
+            self.assertEqual(run(Path(d), stale, health(), state)[0], 0)  # cleared in between: first again
+
+    def test_a_blip_between_good_runs_never_fails(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            state = ["--state", str(Path(d) / "state.json")]
+            for doc in (snap(), snap(noisefloor={"name": "Noisefloor", "state": "late",
+                                                 "data_as_of": "2026-11-13T00:00:00Z"}), snap()):
+                self.assertEqual(run(Path(d), doc, health(), state)[0], 0)
+
+    def test_unreadable_state_is_no_earlier_sighting(self):
+        import tempfile
+        stale = snap(vigil={"name": "Vigil", "state": "stale", "data_as_of": "2026-11-14T12:00:00Z"})
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "state.json").write_text("not json", encoding="utf-8")
+            self.assertEqual(run(Path(d), stale, health(), ["--state", str(Path(d) / "state.json")])[0], 0)
+
+    def test_without_state_a_problem_fails_at_once(self):
+        import tempfile
+        stale = snap(vigil={"name": "Vigil", "state": "stale", "data_as_of": "2026-11-14T12:00:00Z"})
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(run(Path(d), stale, health())[0], 1)
+
+    def test_a_test_failure_fails_on_its_first_run(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            code, out = run(Path(d), snap(), health(), ["--state", str(Path(d) / "s.json"), "--test-failure"])
+            self.assertEqual(code, 1)
+            self.assertIn("TEST:", out)
+
+
 if __name__ == "__main__":
     unittest.main()
