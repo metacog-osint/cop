@@ -3,7 +3,7 @@ the build.
 
     gh release download snapshots-2026-11 --repo metacog-osint/cop --dir <archive> --pattern "*.geojson.gz"
     gh release download snapshots-2026-10 --repo metacog-osint/cop --dir <archive> --pattern "*.geojson.gz"
-    python tests/make_us_power_fixtures.py --blackout D:/Projects/blackout --archive <archive>
+    python tests/make_us_power_fixtures.py --blackout ../blackout --archive <archive>
 
 Two real sources, nothing invented and no field edited:
 
@@ -104,7 +104,7 @@ def archive_parts(folder):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--blackout", default="D:/Projects/blackout")
+    ap.add_argument("--blackout", default=str(Path(__file__).resolve().parents[2] / "blackout"))
     ap.add_argument("--archive", required=True)
     a = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)

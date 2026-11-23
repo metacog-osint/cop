@@ -19,7 +19,7 @@ and is no change at all. Kit 0.5.13 added `reading_key` to `history.update()`: w
 passes `cop_reading`, so a reading change is also its own `changed` line with the reading before in `was` (shape B,
 with no kit release of its own). Both kits give the same items.
 
-Rules for the record (`D:\\Projects\\_ideas\\drafts\\2026-11-18-cop-triage-log-shape.md`):
+Rules for the record (the private planning notes):
 - No probability and no cause: what each layer showed, the base rate, the replay figure. Tier stays routine; a
   reading is not a warning, not a forecast and not a finding of cause.
 - `labels` stays empty until forward labels (option C): Cloudflare's stated cause, or STOP's next release counted.
