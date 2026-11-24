@@ -81,9 +81,17 @@ function attributionFor(index, programIds) {
   return out;
 }
 
-function publicRow(r) {
+// An item past its own valid_until is expired (ideas#164, 24 Nov 2026): its program still lists it, but what it
+// reports no longer holds. Every row says so, judged at the time of the call, since the snapshot is up to 2 h old.
+export function isExpired(validUntil, now) {
+  const t = Date.parse(validUntil || "");
+  return Number.isFinite(t) && t < now;
+}
+
+function publicRow(r, now) {
   const { shard, ...rest } = r; // shard is the server's business
   if (rest.data_as_of_precision == null) delete rest.data_as_of_precision; // said only for a date-only item
+  if (now !== undefined) rest.expired = isExpired(rest.valid_until, now);
   return rest;
 }
 
@@ -168,6 +176,7 @@ export function searchItems(index, args, now) {
   const near = a.near || null;
   const limit = Math.min(Math.max(1, a.limit ?? LIMIT_DEFAULT), LIMIT_MAX);
   const offset = Math.max(0, Math.floor(a.offset ?? 0));
+  const includeExpired = Boolean(a.include_expired);
 
   const C = cols(index);
   const wantPrograms = programs && programs.map((p) => stored(index, "program", p));
@@ -176,6 +185,7 @@ export function searchItems(index, args, now) {
   const tiers = decoders(index)[C.tier];
   const rank = (t) => TIER_RANK[tiers ? tiers[t] : t] ?? 9;
   const hits = []; // [rank, distance or 0, data_as_of, id, raw row]
+  let expiredOut = 0;
   for (const r of index.rows) {
     if (wantPrograms && !wantPrograms.includes(r[C.program])) continue;
     if (wantKind !== null && r[C.kind] !== wantKind) continue;
@@ -194,6 +204,10 @@ export function searchItems(index, args, now) {
       km = distanceKm({ point: r[C.point], bbox: r[C.bbox] }, near.lat, near.lon);
       if (km === null || km > near.km) continue;
     }
+    if (!includeExpired && C.valid_until !== undefined && isExpired(r[C.valid_until], now)) {
+      expiredOut++;
+      continue;
+    }
     hits.push([rank(r[C.tier]), km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
   }
   hits.sort((x, y) => x[0] - y[0] || x[1] - y[1] || (y[2] < x[2] ? -1 : y[2] > x[2] ? 1 : 0) || (x[3] < y[3] ? -1 : 1));
@@ -206,6 +220,9 @@ export function searchItems(index, args, now) {
     ...busEnvelope(index, now),
     matched: hits.length,
     returned: page.length,
+    ...(expiredOut
+      ? { expired_left_out: expiredOut, expired_note: `${expiredOut} matching items are past their valid_until and are left out; pass include_expired true to list them (each row says expired).` }
+      : {}),
     ...(offset ? { offset } : {}),
     ...(hits.length > offset + page.length
       ? {
@@ -215,7 +232,7 @@ export function searchItems(index, args, now) {
       : {}),
     order: near ? "warnings, then anomalies, then routine; nearest first within each" : "warnings, then anomalies, then routine; newest first within each",
     note: MEASURED_NOTE,
-    items: page.map(publicRow),
+    items: page.map((r) => publicRow(r, now)),
     attribution: attributionFor(index, page.map((r) => r.program)),
   };
 }
@@ -254,11 +271,11 @@ export function getItem(index, shardDoc, id, now) {
 
 // Watchfloor and Context both read GDELT (15 Nov 2026): COP counts them as one voice per zone, so a pick of that voice
 // carries each program's reading of the zone under `readings`, each its own item with its own id, link and licence.
-function readingOf(index, r) {
+function readingOf(index, r, now) {
   const row = findRow(index, r.id);
   const prog = index.programs[r.program] || {};
   return {
-    ...(row ? publicRow(row) : { id: r.id, program: r.program, missing: true }),
+    ...(row ? publicRow(row, now) : { id: r.id, program: r.program, missing: true }),
     warning_problem_id: r.warning_problem_id ?? null,
     strength: r.strength ?? null,
     licence: prog.licence ?? null,
@@ -269,8 +286,8 @@ export function topPicks(index, picks, now) {
   const items = [];
   for (const p of picks.picks || []) {
     const r = findRow(index, p.id);
-    const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r) : { id: p.id, program: p.program, missing: true }) };
-    if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x)) });
+    const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r, now) : { id: p.id, program: p.program, missing: true }) };
+    if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x, now)) });
     items.push(item);
   }
   return {
@@ -280,7 +297,9 @@ export function topPicks(index, picks, now) {
       "measurements, not warnings, and strength is never compared across programs. Watchfloor and Context both " +
       "read GDELT, so they count as one voice: they share one place in each round, a zone gives at most one pick, " +
       "and that pick lists both programs' readings of the zone under readings (its own first). Their agreement is " +
-      "one source read twice, never two independent confirmations; cite each reading by its own id.",
+      "one source read twice, never two independent confirmations; cite each reading by its own id. Picks are " +
+      "chosen when the snapshot is built and never include an item already past its valid_until; a pick marked " +
+      "expired true has passed it since, so treat it as no longer current.",
     picks: items,
     attribution: attributionFor(index, items.flatMap((i) => [i.program, ...(i.readings || []).map((x) => x.program)])),
   };

@@ -71,6 +71,11 @@ const SearchInput = z.object({
     })
     .optional()
     .describe("Only items within km of this point (items with an area count when the point is inside or near it)."),
+  include_expired: z
+    .boolean()
+    .optional()
+    .describe("Also list items past their own valid_until (default false: they are left out and counted). Every " +
+      "row says expired true or false."),
   limit: z.number().int().min(1).max(T.LIMIT_MAX).optional().describe(`Items to return, default ${T.LIMIT_DEFAULT}.`),
   offset: z
     .number()
