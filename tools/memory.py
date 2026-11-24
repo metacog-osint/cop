@@ -10,6 +10,10 @@ compact, readable form: one record per subject (a subject_id where the feed stat
 its date taken out), holding when it was on the picture, the days its events fell on, and its daily value where the
 subject is a series. A record is never removed.
 
+A series can change what it counts (Watchfloor's Iran zone went from two countries to nine on 18 Nov 2026). config/
+series_scopes.json names the day each new scope starts. Every value of such a series is stamped with its scope in `vs`
+and kept; current_series() hands readers only the newest scope, so a change of scope starts a new series.
+
 An absence counts only when the program was read. A day a program's feed failed is not a gap in its subjects' runs.
 
 Noisefloor's event counts come from its own full daily files (data/events/<day>.json), not from its feed: until 15 Nov
@@ -39,6 +43,8 @@ import gate  # noqa: E402
 FORMAT = "cop-memory/1"
 READ_STATES = ("fresh", "late")
 NAME = "memory.json.gz"
+SCOPES = ROOT / "config" / "series_scopes.json"
+FIRST_SCOPE = "original"                     # a value from before a series' first listed change
 
 # Ids that carry the day of the reading and state no subject_id: the same subject under a new id each day.
 DATED_ID = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T_]\d{2,4}Z?)?:?")
@@ -99,6 +105,39 @@ def series_value(p: dict):
             if isinstance(v, (int, float)) and not isinstance(v, bool):
                 return v
     return None
+
+
+def load_scopes() -> dict:
+    """subject -> its scope changes, oldest first."""
+    series = json.loads(SCOPES.read_text(encoding="utf-8"))["series"]
+    return {k: sorted(v, key=lambda x: x["from"]) for k, v in series.items()}
+
+
+def scope_of(changes: list, day: str) -> str:
+    scope = FIRST_SCOPE
+    for change in changes:
+        if day >= change["from"]:
+            scope = change["scope"]
+    return scope
+
+
+def stamp_scopes(mem: dict, scopes: dict | None = None) -> dict:
+    """Stamp each value of a listed series with its scope. Adds `vs`; never changes or removes a value."""
+    scopes = load_scopes() if scopes is None else scopes
+    for k, changes in scopes.items():
+        r = mem["subjects"].get(k)
+        if r and r.get("v"):
+            r["vs"] = {day: scope_of(changes, day) for day in r["v"]}
+    return mem
+
+
+def current_series(r: dict) -> dict:
+    """day -> value, for the newest scope only. A series with no stamps is one scope."""
+    values, stamps = r.get("v") or {}, r.get("vs")
+    if not values or not stamps:
+        return values
+    newest = stamps[max(stamps)]
+    return {d: v for d, v in values.items() if stamps.get(d) == newest}
 
 
 def _coords(geometry) -> list:
@@ -186,7 +225,7 @@ def fold(mem: dict, snapshot: dict) -> dict:
         if value is not None and data_day:
             r.setdefault("v", {})[data_day] = value
     mem["updated_at"] = at
-    return mem
+    return stamp_scopes(mem)
 
 
 def event_rows(doc: dict) -> list:
@@ -295,7 +334,7 @@ def compare(mem: dict, p: dict, today: str, index: dict | None = None) -> dict:
         days = (_d(today) - _d(r["spans"][-1][0])).days + 1
         text = f"On the picture {days} day{'s' if days != 1 else ''} running"
         out = {"state": "running", "days": days}
-        values = sorted((r.get("v") or {}).items())
+        values = sorted(current_series(r).items())
         if len(values) >= 2 and values[-2][1] != values[-1][1]:
             before, now = values[-2][1], values[-1][1]
             text += f", {'up' if now > before else 'down'} from {before:g} to {now:g}"
@@ -324,7 +363,7 @@ def load(folder) -> dict | None:
         mem = json.load(fh)
     if mem.get("format") != FORMAT:
         raise SystemExit(f"memory: {path} is {mem.get('format')!r}, not {FORMAT}")
-    return mem
+    return stamp_scopes(mem)
 
 
 def save(folder, mem: dict) -> Path:
