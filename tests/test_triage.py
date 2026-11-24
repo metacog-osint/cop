@@ -719,6 +719,17 @@ class TriageFixes(unittest.TestCase):
         self.assertEqual([u["id"] for u in doc["unplaced"]], ["blackout:radar-outage:1749"])
         self.assertIn("Cloudflare Radar", tri.public(tri.attach_rates(doc, None))["what"])
 
+    def test_a_netblocks_report_is_listed_as_not_read_never_triaged(self):
+        # ideas#164: Iceland had a NetBlocks report while triage said no outage there.
+        nb = item("blackout", "blackout:netblocks:3n2totkhmic2i", ["IS"], "anomaly", "2026-11-12T01:45:32Z",
+                  title="Iceland: NetBlocks report (Confirmed)")
+        doc = tri.triage(snapshot(nb))
+        self.assertEqual(doc["records"], [])
+        self.assertEqual([(u["id"], u["countries"]) for u in doc["not_read"]],
+                         [("blackout:netblocks:3n2totkhmic2i", ["IS"])])
+        self.assertIn("NetBlocks", doc["not_read"][0]["source"])
+        self.assertEqual(tri.public(tri.attach_rates(doc, None))["not_read"], doc["not_read"])
+
     def test_the_cause_question_is_written_the_way_verdict_reads_it(self):
         c = one(tri.triage(snapshot(outage())))["cause_draft"]
         self.assertIn("check after 00:25 UTC on 19 Nov 2026", c["rule_draft"])
