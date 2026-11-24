@@ -96,6 +96,18 @@ class Watch(unittest.TestCase):
         self.assertEqual(problems, ["Vigil: 1 malformed item left out of the picture",
                                     "Orbit: 3 malformed items left out of the picture (orbit:y: NaN)"])
 
+    def test_a_listed_source_not_read_twice_is_named_and_once_is_left_to_the_next_run(self):
+        h = health()
+        h["programs"].append({"id": "context", "name": "Context", "sources": {"total": 4, "not_read": [
+            {"id": "google-news", "state": "failing", "detail": "none answered", "failures": 1},
+            {"id": "gdelt-gkg", "state": "failing", "detail": "timeout", "failures": 3},
+            {"id": "cop-bus", "state": None, "detail": None, "failures": None}]}})
+        self.assertEqual(watch.check_health(h), [
+            "Context: source gdelt-gkg is listed but was not read (failing, 3 runs in a row, timeout)",
+            "Context: source cop-bus is listed but was not read"])
+        h["programs"][-1]["sources"] = {"total": 4, "not_read": []}
+        self.assertEqual(watch.check_health(h), [])
+
     def test_a_health_file_of_the_wrong_shape_is_a_problem_not_quiet(self):
         for bad in ({}, {"programs": []}, {"programs": {"vis": {}}}, [], "x"):
             self.assertEqual(len(watch.check_health(bad)), 1, bad)
