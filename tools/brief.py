@@ -52,7 +52,10 @@ def _short(text, limit=TITLE_MAX):
     text = " ".join(str(text or "").split()).rstrip(" .")
     if len(text) <= limit:
         return text
-    cut = text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:(")
+    cut = text[:limit].rsplit(" ", 1)[0]
+    while cut.count("(") > cut.count(")"):   # never leave a bracket open when the cut falls inside one
+        cut = cut[:cut.rindex("(")]
+    cut = cut.rstrip(" ,;:(–-")
     return cut + "…"
 
 
