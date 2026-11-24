@@ -143,6 +143,21 @@ def sitecheck(finished="2026-11-14T17:11:00Z", **bad):
             "ok": sum(r["ok"] for r in results), "results": results}
 
 
+class VerdictAge(unittest.TestCase):
+    def test_a_recent_scorecard_has_no_problems(self):
+        self.assertEqual(watch.check_verdict({"generated_at": "2026-11-13T21:00:00Z"}, NOW), [])
+
+    def test_a_scorecard_over_48_hours_old_is_named(self):
+        out = watch.check_verdict({"generated_at": "2026-11-12T20:00:00Z"}, NOW)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Verdict", out[0])
+        self.assertIn("49.0 h", out[0])
+
+    def test_no_build_time_or_a_wrong_shape_is_a_problem_not_quiet(self):
+        self.assertEqual(len(watch.check_verdict({}, NOW)), 1)
+        self.assertEqual(len(watch.check_verdict([], NOW)), 1)
+
+
 class SiteCheck(unittest.TestCase):
     def test_every_page_passing_has_no_problems_and_failed_requests_are_evidence_only(self):
         self.assertEqual(watch.check_sitecheck(sitecheck(), NOW), [])
