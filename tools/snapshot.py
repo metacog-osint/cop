@@ -449,7 +449,7 @@ def source_lanes(feed) -> dict | None:
 
 def unread_sources(feed, prog) -> dict:
     """{lane: health entry} for the sources a feed's own health block says were not read well on its last run, for a
-    program whose config sets "source_health" (Headwind, 15 Nov 2026). Such a program keeps a failed source's last
+    program whose config sets "source_health" (Headwind from 15 Nov 2026; every program with a health block from 24 Nov). Such a program keeps a failed source's last
     good items in its feed; COP draws those items grey and never picks them, as it does a dead feed's copies. Read is
     the kit's lanes_ok (last success is the last check, and the state, if any, is fresh, late or up)."""
     h = feed.get("health") if isinstance(feed, dict) else None
