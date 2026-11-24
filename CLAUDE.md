@@ -4,7 +4,7 @@ COP, the common operational picture of The Intelligence Company: every program's
 the joins that read them together and an MCP server for agents (cop.theintelligence.company, public repo
 `metacog-osint/cop`).
 
-Older detail: the private planning notes. **Current state and open items:
+**Current state and open items:
 `.claude\HANDOFF.md`** (gitignored, main checkout), read it first. Keep this file under 12 KB.
 
 ## Purpose and Tom's standing decisions
@@ -51,6 +51,8 @@ Older detail: the private planning notes. **Current state and open items:
   item counts to the end of its day for freshness. `valid_until` is read: expired items stop standing out.
 - Build: `build.yml` (cron `17 */2`, fallback); the hub's `tic-dispatch` Worker starts it at :20 past every even UTC
   hour; the `gate` job skips a scheduled run within 45 min of a success. Archive copies go to releases (daily, plus one per 6-hour slot).
+- **Daily brief:** `tools/brief.py` -> `site/brief/` (page, Atom feed), once a UTC day after 12:00 UTC; kept in
+  releases `briefs-YYYY`, never replaced.
 - Page: static `site/`, `cop.js` ES module, vendored MapLibre GL JS 6.14.0, kit `tic-doctrine.js`, hub
   `shared/tic-time.js` (copy, keep its version line). Natural Earth land below zoom 3.5, OpenFreeMap above. CSP in
   `site/_headers`: self plus `tiles.openfreemap.org`; no inline styles or scripts. `site/scoring.html` states every
@@ -121,8 +123,7 @@ Older detail: the private planning notes. **Current state and open items:
 - `python tools/snapshot.py` (live) or `--fixtures tests/fixtures --now 2026-10-31T20:30:00Z`; `--dead <program>`.
   Then `python tools/agent_index.py` (offline: `--verdict tests/fixtures/verdict`).
 - Tests: `npm ci --ignore-scripts`, then `python tests/run_all.py` (the list `build.yml` and PR check `tests.yml` share).
-- **Known quirks** (memory `cop-local-test-quirks`): `npm test`'s 5 ms CPU check fails on this laptop even on
-  untouched `main`; the browser pane's map needs 10-20 s and reads zero width while hidden.
+- **Known quirks:** memory `cop-local-test-quirks` (CPU timing check, slow map in the pane).
 - Local Cloudflare runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date
   2026-10-26`; afterwards stop node/esbuild/workerd by PID and delete `.wrangler/`.
 - `python tools/serve.py` serves `site/` on 5071 with `site/_headers`.

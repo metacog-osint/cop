@@ -28,3 +28,9 @@ body.doc { height: auto; min-height: 100%; }
   .doc-main { padding-top: 72px; }
   .doc-table tbody th { white-space: normal; }
 }
+/* Daily brief pages (site/brief/, written by tools/brief.py) */
+.brief-list { padding-left: 1.4em; }
+.brief-list li { margin: 10px 0; line-height: 1.5; }
+.brief-src, .brief-note { color: var(--mut); }
+.brief-past li { margin: 4px 0; }
+.brief-nav { margin: 18px 0; font-size: 14px; }
