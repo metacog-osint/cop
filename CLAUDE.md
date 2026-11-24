@@ -103,9 +103,9 @@ the joins that read them together and an MCP server for agents (cop.theintellige
   writes `site/data/agent/` (`index.json` columnar with coded labels, `items/00-31.json` shards, `programs.json` with
   page checks, `verdict.json`, `events.json`). `functions/mcp.js` -> `mcp/server.js` (MCP TS SDK v2,
   `@modelcontextprotocol/server` 2.3.1, `zod` 4.6.7, pinned) -> `mcp/tools.js`, `mcp/data.js`.
-- Nine tools, fixed order, all `readOnlyHint`: `suite_status`, `search_items`, `get_item`, `top_picks`,
-  `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`, `three_signal`. Results carry `as_of`,
-  `age_hours`, stale flags and attribution; server instructions hold the rules per program.
+- Ten tools, fixed order, all `readOnlyHint`: `suite_status`, `search_items`, `get_item`, `top_picks`,
+  `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`, `three_signal`, `direction`
+  (a pick in a Rising place lists first). Results carry `as_of`, `age_hours`, stale flags and attribution; server instructions hold the rules per program.
 
 ## Ledger and watchdog
 - `tools/ledger.py`: kit history log `tic-history/1`; one line per item new, changed (tier or stage) or ended; lane
