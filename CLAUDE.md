@@ -111,6 +111,7 @@ Older detail: the private planning notes. **Current state and open items:
   source were read; stale copies move nothing. Assets of release `ledger`; **never published** (refuses `site/`,
   `functions/`, `mcp/`). Needs the last state or `--first`; `--replay out/archive` rebuilds.
 - `tools/triage_log.py`: every triage reading, per outage and place; release `triage-log`. Not published.
+- `tools/data_quality.py` (`watch.yml` job `data-quality`): review rules on the bus; report only, never fails.
 - `tools/suite_watch.py` (`watch.yml`, also dispatched every 3 h): exits 1 when COP's build is over 6 h old, a
   program is not fresh, a data time is 30+ min in the future, a program has malformed items, or the hub's site check
   (`tic-sitecheck/1`) failed a page or is 14+ h old. A failed run is the alert (GitHub mail); optional secret
