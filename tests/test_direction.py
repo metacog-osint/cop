@@ -45,6 +45,18 @@ class Direction(unittest.TestCase):
         r = {"t": "US embassy (UA): Security Alert: Holiday Travel, November 13, 2026"}
         self.assertFalse(d.in_family("cordon:alert:UA:1", r, "notices"))
 
+    def test_press_does_not_compare_across_a_change_of_scope(self):
+        days = [f"2026-11-{n:02d}" for n in range(2, 23)]
+        v = {x: (100 if x < "2026-11-18" else 200) for x in days}
+        vs = {x: ("original" if x < "2026-11-18" else "wide") for x in days}
+        area = {"press_zone": "z"}
+        mem = {"subjects": {"watchfloor:zone:z": {"id": "x", "v": v}}}
+        self.assertEqual(d.read_press(mem, area, "2026-11-23", d._d("2026-11-22"))["state"], "up")
+        mem["subjects"]["watchfloor:zone:z"]["vs"] = vs
+        out = d.read_press(mem, area, "2026-11-23", d._d("2026-11-22"))
+        self.assertEqual(out["state"], "thin")
+        self.assertIn("changed on 18 Nov", out["text"])
+
     def test_the_voice_rule(self):
         text = (d.WHAT + d.NOT_A_WARNING).lower()
         self.assertIn("not a warning", text)
