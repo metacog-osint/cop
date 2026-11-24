@@ -205,3 +205,9 @@ body:has(> .tic-house) .app { top: calc(var(--tic-house-h, 34px) + 56px); }
 .dir-area { color: var(--ink); font-size: 13px; font-weight: 500; }
 .dir-why { grid-column: 1 / -1; }
 .dir-record { margin-top: 10px; }
+
+.terms { margin: .5rem 0; font-size: .85rem; }
+.terms summary { cursor: pointer; padding: .35rem 0; }
+.terms dt { font-weight: 600; margin-top: .4rem; }
+.terms dd { margin: 0; }
+.caveat { font-size: .8rem; opacity: .8; margin: .5rem 0; }
