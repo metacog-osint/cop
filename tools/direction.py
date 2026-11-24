@@ -353,7 +353,9 @@ def read_traffic(snapshot, area):
     side = f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above"
     return base | {"state": state, "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
                    "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}, {side} its 90-day median of "
-                           f"{m.get('baseline_90d_median'):g}.",
+                           f"{m.get('baseline_90d_median'):g}. A condition, not counted: PortWatch's counts lag by up to "
+                           "16 days.",
+                   "label": {"up": "Condition: fewer ships", "down": "Condition: more ships"}.get(state, "Condition: steady"),
                    "condition": True}
 
 
@@ -399,6 +401,9 @@ def read_area(mem, snapshot, area, names, today, index, shapes, detail=False):
             layers.append(read_press(mem, area, today, through))
         else:
             layers.append(read_count(mem, area, layer, today, through, index, detail))
+    for x in layers:
+        if x["layer"] == "outages":      # the same measure sits on two cards, so each says what it covers
+            x["name"] += " (worldwide)" if area.get("worldwide") else f" ({area['name']})"
     word = word_for(layers)
     return {"area": area["area"], "name": area["name"], "direction": word, "word": WORDS[word],
             "up": [x["name"] for x in layers if x["state"] == "up" and x["layer"] not in CONDITIONS],
