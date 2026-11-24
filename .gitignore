@@ -4,3 +4,4 @@ out/
 site/data/
 .wrangler/
 node_modules/
+site/brief/
