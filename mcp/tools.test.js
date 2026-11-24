@@ -416,6 +416,20 @@ test("outage triage: a country with no outage, a dead Blackout feed and a missin
   assert.throws(() => T.outageTriage(index, null, {}, NOW), /was not built for this snapshot/);
 });
 
+test("outage triage names a NetBlocks report it does not read, so a country with one never reads as no outage", () => {
+  const nb = { id: "blackout:netblocks:3n2totkhmic2i", title: "Iceland: NetBlocks report (Confirmed)", countries: ["IS"],
+    source: "NetBlocks (its public posts, via Blackout)" };
+  const withNb = { ...triage, not_read: [nb] };
+  const is = T.outageTriage(index, withNb, { country: "is" }, NOW);
+  assert.equal(is.count, 0);
+  assert.deepEqual(is.not_read.map((r) => r.id), [nb.id]);
+  assert.match(is.none, /does not read/);
+  assert.match(is.none, /blackout:netblocks:3n2totkhmic2i/);
+  const fr = T.outageTriage(index, withNb, { country: "fr" }, NOW);
+  assert.deepEqual(fr.not_read, []);
+  assert.doesNotMatch(fr.none, /does not read/);
+});
+
 test("a layer with no current data reads incomplete and says so, never quiet", () => {
   const r = structuredClone(triage.records[0]);
   // What tools/triage.py writes when Elements is stale (tests/test_triage.py covers the Python side).

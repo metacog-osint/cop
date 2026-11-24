@@ -1083,6 +1083,10 @@ def power_record(f, features, states, history=None, ended_info=None):
 # country. A Radar entry that names no place (a platform outage) cannot be placed, so it is listed, not triaged.
 INPUT_KINDS = {"outage": "IODA", "radar-anomaly": "Cloudflare Radar (verified anomaly)",
                "radar-outage": "Cloudflare Radar Outage Center"}
+# Blackout kinds that report an outage but that triage does not read (ideas#164, 24 Nov 2026): NetBlocks' reports,
+# which Blackout parses from its public posts. They are listed per country so a reader asking about a country is told
+# a report exists there, never that there is no outage.
+NOT_READ_KINDS = {"netblocks": "NetBlocks (its public posts, via Blackout)"}
 _ISO = r"(\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?Z)"
 _SPAN_RE = re.compile(rf"(?:since {_ISO}, ongoing|from {_ISO} to {_ISO})")
 _CAUSE_RE = re.compile(r"Cause as Cloudflare states it: ([^.]+)\.")
@@ -1222,10 +1226,16 @@ def triage(snapshot, history=None, ended=None):
         if p.get("cop_program") == "blackout" and p.get("indicator_id") == OONI_BLOCKING and not p.get("cop_stale"):
             for cc in p.get("countries") or []:
                 ooni[cc] = _row(p)
-    records, unplaced = [], []
+    records, unplaced, not_read = [], [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "blackout" or p.get("cop_stale"):
+            continue
+        if _kind(p.get("id")) in NOT_READ_KINDS:
+            gone = utc(p.get("valid_until"))
+            if not (gone and snap_at and gone <= snap_at):
+                not_read.append(_row(p, source=NOT_READ_KINDS[_kind(p.get("id"))],
+                                     countries=list(p.get("countries") or [])))
             continue
         if p.get("indicator_id") == POWER_OUTAGE:
             rec = power_record(f, features, states, history, ended_info)
@@ -1332,7 +1342,7 @@ def triage(snapshot, history=None, ended=None):
                         "ooni_min_measurements": OONI_MIN_MEASUREMENTS, "ooni_min_share": OONI_MIN_SHARE,
                         "ooni_rise": OONI_RISE,
                         "cause_window_days": CAUSE_WINDOW_D, "provisional": True},
-            "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced,
+            "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced, "not_read": not_read,
             "baseline_given": history is not None, "ended_items": ended_info,
             "records": records}
 
@@ -1606,7 +1616,7 @@ def public(doc):
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
             "replay": doc.get("replay"), "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
-            "records": records}
+            "not_read": doc.get("not_read") or [], "records": records}
 
 
 def publish_folder(path):
