@@ -182,7 +182,7 @@ class Build(unittest.TestCase):
         h = health_of(health, "headwind")
         self.assertEqual(h["state"], "fresh")                  # the feed itself is current
         self.assertEqual(h["sources"], {"total": len(lanes), "not_read": [
-            {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies"}]})
+            {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies", "failures": None}]})
         self.assertEqual(today["cop_programs"]["headwind"]["sources"]["total"], len(lanes))
         # A program whose feed has no health block (Launch) has no sources summary.
         self.assertNotIn("sources", health_of(health, "launch"))
