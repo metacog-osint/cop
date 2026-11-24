@@ -791,6 +791,10 @@ function renderTriage() {
   if (unplaced.length) foot.append(h("p", { class: "note" },
     `Not read: ${count(unplaced.length, "Cloudflare Radar entry", "Cloudflare Radar entries")} ${unplaced.length === 1 ? "names" : "name"} no place, so no country layer can sit under ${unplaced.length === 1 ? "it" : "them"}: `,
     ...unplaced.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
+  const notRead = triage.not_read || [];
+  if (notRead.length) foot.append(h("p", { class: "note" },
+    `Not read: ${count(notRead.length, "NetBlocks report", "NetBlocks reports")} that Blackout carries, of a kind triage does not read, so no triage line sits under ${notRead.length === 1 ? "it" : "them"}: `,
+    ...notRead.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
 }
 // The three-signal join (four signals since join 0.3): which signals fall in one area within the window, each layer's
 // items in its own words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never

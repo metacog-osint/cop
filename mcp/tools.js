@@ -339,6 +339,11 @@ export function outageTriage(index, triage, args, now) {
   const records = (triage.records || []).filter((r) => !country || r.country === country);
   const blackout = (triage.layer_states || {}).blackout;
   const dead = blackout === "stale" || blackout === "missing";
+  const notRead = (triage.not_read || []).filter((r) => !country || (r.countries || []).includes(country));
+  const notReadText = notRead.length
+    ? ` Blackout carries ${notRead.length === 1 ? "a report" : `${notRead.length} reports`} that triage does not read ` +
+      `(not_read): ${notRead.map((r) => `${r.id} (${r.source})`).join("; ")}. Use get_item on ${notRead.length === 1 ? "it" : "each"}.`
+    : "";
   return {
     as_of: triage.snapshot_generated_at,
     age_hours: ageHours(triage.snapshot_generated_at, now),
@@ -355,7 +360,7 @@ export function outageTriage(index, triage, args, now) {
       "shutdown, with no probability. Each record's " +
       "outage.source says which Blackout kind it is (IODA, a Cloudflare-verified anomaly or a Radar Outage Center " +
       "entry); started_at is when it began; network is set when Cloudflare saw it on one network; stated_cause is " +
-      "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
+      "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. not_read lists Blackout's outage reports of a kind triage does not read (NetBlocks' reports): a country there has a report, so never say it has no outage. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
       "ODIN's reporting utilities, us_state names the state): they are read against hazards in or near that state, " +
       "Cordon and Watchfloor answer \"Not covered\" there (neither nothing found nor no data), so they read natural, " +
       "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
@@ -389,9 +394,10 @@ export function outageTriage(index, triage, args, now) {
           none: dead
             ? "Blackout has no current data, so there is nothing to triage. That is not the same as no outages."
             : country
-              ? `No outage for ${country} in Blackout's current data.`
-              : "No outages in Blackout's current data.",
+              ? `No outage for ${country} in the kinds triage reads (${(triage.inputs || []).join(", ")}).${notReadText}`
+              : `No outages in the kinds triage reads (${(triage.inputs || []).join(", ")}).${notReadText}`,
         }),
+    not_read: notRead,
     records,
     attribution: [...attributionFor(index, TRIAGE_PROGRAMS), ...(triage.replay ? [triage.replay.attribution] : [])],
   };
