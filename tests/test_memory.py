@@ -1,4 +1,5 @@
 """COP's memory: a subject is kept after it leaves, and a new item is compared with what came before."""
+import json
 import sys
 import tempfile
 import unittest
@@ -65,6 +66,65 @@ class Memory(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             m.save(d, mem)
             self.assertEqual(m.load(d)["subjects"], mem["subjects"])
+
+
+def ctx(day, entity="01_Ukraine_Conflict", stated=True, countries=("UA",)):
+    """A Context zone item as its feed sent it before (dated id only) and after contract 2.1 (subject_id too)."""
+    p = {"id": f"context:{day}_1200Z:{entity}", "program": "context", "cop_program": "context", "title": entity,
+         "countries": list(countries), "data_as_of": f"{day}T12:00:00Z"}
+    if stated:
+        p["subject_id"] = f"context:zone:{entity}"
+    return {"type": "Feature", "geometry": None, "properties": p}
+
+
+class SubjectIdArrives(unittest.TestCase):
+    """ideas#205: Context began stating subject_id on 24 Nov 2026; its zones keep their history."""
+
+    def build(self, gap_day=None):
+        mem = m.empty()
+        for day in ("2026-11-20", "2026-11-21", "2026-11-22"):
+            m.fold(mem, snap(day, [ctx(day, stated=False)], read=("context",)))
+        if gap_day:
+            m.fold(mem, snap(gap_day, [], read=("context",)))
+        m.fold(mem, snap("2026-11-24", [ctx("2026-11-24")], read=("context",)))
+        return mem
+
+    def test_the_new_key_continues_the_old_record(self):
+        mem = self.build()
+        self.assertEqual(m.continues(mem, "context:zone:01_Ukraine_Conflict"), "context:01_Ukraine_Conflict")
+        r = m.subject(mem, "context:zone:01_Ukraine_Conflict")
+        self.assertEqual((r["first"], r["spans"]), ("2026-11-20", [["2026-11-20", "2026-11-24"]]))
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertEqual((said["state"], said["days"]), ("running", 5))
+
+    def test_a_day_read_without_the_subject_is_still_a_gap(self):
+        mem = self.build(gap_day="2026-11-23")
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertEqual((said["state"], said["gap_days"]), ("back", 2))
+
+    def test_no_stored_record_is_changed_or_lost(self):
+        mem = self.build()
+        before = json.dumps(mem, sort_keys=True)
+        m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        m.similar_index(mem)
+        self.assertEqual(json.dumps(mem, sort_keys=True), before)
+        self.assertEqual(set(mem["subjects"]), {"context:01_Ukraine_Conflict", "context:zone:01_Ukraine_Conflict"})
+
+    def test_the_subject_is_listed_once_and_is_not_its_own_last_like_it(self):
+        mem = self.build()
+        joined = m.joined_subjects(mem)
+        self.assertNotIn("context:01_Ukraine_Conflict", joined)
+        self.assertEqual(joined["context:zone:01_Ukraine_Conflict"]["was"], "context:01_Ukraine_Conflict")
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertNotIn("last_similar", said)
+
+    def test_another_program_or_a_stated_old_subject_is_not_joined(self):
+        mem = self.build()
+        mem["subjects"]["context:01_Ukraine_Conflict"]["p"] = "watchfloor"
+        self.assertIsNone(m.continues(mem, "context:zone:01_Ukraine_Conflict"))
+        mem = m.empty()
+        m.fold(mem, snap("2026-11-01", [item("wake:ukmto:a", "2026-11-01")]))
+        self.assertIsNone(m.continues(mem, "wake:ukmto:a"))
 
 
 class SeriesScope(unittest.TestCase):
