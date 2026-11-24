@@ -10,21 +10,21 @@
       "color": { "fill": "#D55E00", "outline_light": "#6B2F00", "outline_dark": "#FFC9A3" }
     },
     {
-      "id": "context", "preset": "information",
+      "id": "context", "source_health": true, "preset": "information",
       "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [{ "path": "measures.volume_12h", "label": "{v} articles in the last 12 hours" }],
       "color": { "fill": "#CC79A7", "outline_light": "#5E2A4A", "outline_dark": "#F5CCE3" }
     },
     {
-      "id": "vigil", "preset": "cyber",
+      "id": "vigil", "source_health": true, "preset": "cyber",
       "freshness": "data",
       "mark": "halos", "country_mark": "halo", "area_style": "solid",
       "strength": [{ "path": "measures.victims_7d", "label": "{v} victims claimed in 7 days" }],
       "color": { "fill": "#0072B2", "outline_light": "#003A5C", "outline_dark": "#A9D8F5" }
     },
     {
-      "id": "noisefloor", "preset": "spectrum",
+      "id": "noisefloor", "source_health": true, "preset": "spectrum",
       "freshness": "data",
       "mark": "cells", "country_mark": "fill", "area_style": "solid",
       "strength": [
@@ -39,7 +39,7 @@
       "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
     },
     {
-      "id": "elements", "ended": "https://elements.theintelligence.company/data/ended.geojson", "preset": "hazards",
+      "id": "elements", "source_health": true, "ended": "https://elements.theintelligence.company/data/ended.geojson", "preset": "hazards",
       "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [
@@ -50,7 +50,7 @@
       "color": { "fill": "#009E73", "outline_light": "#004534", "outline_dark": "#A8EBD3" }
     },
     {
-      "id": "cordon",
+      "id": "cordon", "source_health": true,
       "lane_map": {"usembassy-*": "us-embassy-alerts"}, "preset": "notices",
       "freshness": "feed",
       "mark": "areas", "country_mark": "halo", "area_style": "dashed", "routine_in_preset": true,
@@ -72,7 +72,7 @@
       "color": { "fill": "#56B4E9", "outline_light": "#174A68", "outline_dark": "#C6E7FA" }
     },
     {
-      "id": "vis", "preset": "weather",
+      "id": "vis", "source_health": true, "preset": "weather",
       "freshness": "data",
       "mark": "markers", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
       "routine_label": "forecast for every point",
@@ -80,7 +80,7 @@
       "color": { "fill": "#F0E442", "outline_light": "#5C5500", "outline_dark": "#FFF8B8" }
     },
     {
-      "id": "blackout", "preset": "connectivity",
+      "id": "blackout", "source_health": true, "preset": "connectivity",
       "ended": "https://blackout.theintelligence.company/data/ended.geojson",
       "freshness": "feed",
       "mark": "zones", "country_mark": "fill", "area_style": "solid",
@@ -102,7 +102,7 @@
       "color": { "fill": "#882255", "outline_light": "#4A0F2C", "outline_dark": "#F2BFD6" }
     },
     {
-      "id": "orbit", "preset": "spectrum",
+      "id": "orbit", "source_health": true, "preset": "spectrum",
       "freshness": "feed",
       "mark": "markers", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
       "routine_label": "launches, scheduled launches, reentries, catalog changes and orbit changes in watched satellites",
