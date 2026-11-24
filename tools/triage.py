@@ -238,13 +238,28 @@ def _rings(cc):
     return _RINGS.get(cc) or []
 
 
+# Territories the kit's country list leaves out but feeds use as codes.
+EXTRA_NAMES = {"GF": "French Guiana", "GP": "Guadeloupe", "MQ": "Martinique", "RE": "Réunion", "YT": "Mayotte",
+               "PF": "French Polynesia", "NC": "New Caledonia", "PR": "Puerto Rico", "GU": "Guam",
+               "HK": "Hong Kong", "MO": "Macao", "FO": "Faroe Islands", "GL": "Greenland"}
+
+
 def country_name(cc):
-    """The kit's name for an ISO alpha-2 code, or the code itself."""
+    """The kit's name for an ISO alpha-2 code, else a territory name, or the code itself."""
     global _NAMES
     if _NAMES is None:
         data = json.loads(COUNTRIES.read_text(encoding="utf-8"))
         _NAMES = {c["cc"]: c.get("name") or c["cc"] for c in data["countries"]}
-    return _NAMES.get(cc) or cc
+    return _NAMES.get(cc) or EXTRA_NAMES.get(cc) or cc
+
+
+def named_title(title, cc):
+    """A feed title that opens with the bare code ("GF: power outage, regional") opens with the name instead."""
+    t = str(title or "")
+    name = country_name(cc) if cc else None
+    if name and name != cc and t.startswith(f"{cc}: "):
+        return f"{name}: {t[len(cc) + 2:]}"
+    return title
 
 
 def _km(lat1, lon1, lat2, lon2):
@@ -1288,7 +1303,7 @@ def triage(snapshot, history=None, ended=None):
                 "join": JOIN["id"], "country": cc, "outage_kind": "internet", "us_state": None,
                 "us_state_name": None,
                 "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary"),
-                               source=inp["source"], started_at=iso(at), ended_at=inp["ended"],
+                               title=named_title(p.get("title"), cc), source=inp["source"], started_at=iso(at), ended_at=inp["ended"],
                                network=inp["network"], stated_cause=inp["stated_cause"]),
                 "layers": {
                     "elements": {"state": states["elements"], **haz,

@@ -609,7 +609,7 @@ function dirMoved(x) {
 }
 function directionLayer(l) {
   const items = l.items || [];
-  const said = l.condition ? "Condition" : DIR_LAYER[l.state];
+  const said = l.condition ? (l.label || "Condition") : DIR_LAYER[l.state];
   return h("div", { class: "tri-layer" + (l.state === "thin" ? " dead" : "") },
     h("dt", {}, dotFor(l.program, {}), h("span", { class: "dir-name", text: l.name }), h("span", { class: `dir-state dir-s-${l.condition ? "cond" : l.state}`, text: said })),
     h("dd", {}, l.text, items.length ? h("details", { class: "dir-items" }, h("summary", {}, `Latest ${items.length === 1 ? "item" : `${items.length} items`}`),
