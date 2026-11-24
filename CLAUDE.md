@@ -47,7 +47,7 @@ the joins that read them together and an MCP server for agents (cop.theintellige
   marked stale (grey); it never fails the build. `sift()` drops malformed shapes (counted in `health.json` and
   `dropped`); a wrong value stays as a lint error.
 - `source_health`: the feed's own per-source `health` block (kit `lanes_ok`) greys and unpicks items of a source not
-  read. `data_as_of_precision` "day"/"month": shown as a date or month in UTC, never moved to the viewer's zone; a day
+  read; on for every program whose feed has one (all but Watchfloor and Launch, 24 Nov). `data_as_of_precision` "day"/"month": shown as a date or month in UTC, never moved to the viewer's zone; a day
   item counts to the end of its day for freshness. `valid_until` is read: expired items stop standing out.
 - Build: `build.yml` (cron `17 */2`, fallback); the hub's `tic-dispatch` Worker starts it at :20 past every even UTC
   hour; the `gate` job skips a scheduled run within 45 min of a success. Archive copies go to releases (daily, plus one per 6-hour slot).
@@ -68,7 +68,7 @@ the joins that read them together and an MCP server for agents (cop.theintellige
 | Vigil, Noisefloor, Elements, Cordon | as their feeds; Cordon notices dashed | Cordon space-related `navwarn` also under Spectrum and space (`cop_also`, keep in `MAP_KEYS`) |
 | Vis | `kind: forecast`, never picks; Amber/Red are tier `warning`, shown in every view | Open-Meteo non-commercial |
 | Blackout | outages, OONI, provider status, public-report counts (`blackout:public:*`, reported, not measured) | no `measures`: picks rank by the scope in the title; outages are observations, no probability; `valid_until` run +12 h |
-| Headwind | halos; Economic stress preset; signed z (`abs`) | `source_health` on; `ended` |
+| Headwind | halos; Economic stress preset; signed z (`abs`) | `ended` |
 | Orbit, Launch | routine only, Spectrum and space; Launch areas dashed | event times read from titles for `events.json` |
 | Undertow | halos at stated targets only; ids `UT-<LANE>-*` via `ID_PREFIXES` | origin is never a finding; reported activity kept apart |
 | Wake | Maritime preset: chokepoints, ports, `ais-listed`, `ais-gap`, `ais-slow`, `ukmto` | "broadcasts an IMO number listed on", never "sanctioned vessel"; UKMTO reports unverified, name no one |
