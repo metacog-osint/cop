@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,6 +101,26 @@ class Build(unittest.TestCase):
         first_round = [p["program"] for p in ps][:len({p["program"] for p in ps})]
         self.assertEqual(len(first_round), len(set(first_round)))
         self.assertEqual([p["n"] for p in ps], list(range(1, len(ps) + 1)))
+
+    def test_an_item_past_its_valid_until_is_never_a_pick(self):
+        today, picks, _, _ = build()
+        first = picks["picks"][0]["id"]
+
+        def mutate(f):
+            for feed in f.values():
+                for x in feed.get("features", []) if isinstance(feed, dict) else []:
+                    if x["properties"].get("id") == first:
+                        x["properties"]["valid_until"] = snap.iso(NOW - timedelta(minutes=1))
+        today2, picks2, _, _ = build(mutate=mutate)
+        self.assertNotIn(first, [p["id"] for p in picks2["picks"]])
+        self.assertIn(first, [f["properties"]["id"] for f in today2["features"]], "still stored and shown")
+
+    def test_valid_until_ahead_or_absent_still_picks(self):
+        later = {"valid_until": snap.iso(NOW + timedelta(hours=1))}
+        self.assertFalse(snap.no_longer_current(later, NOW))
+        self.assertFalse(snap.no_longer_current({}, NOW))
+        self.assertTrue(snap.no_longer_current({"valid_until": snap.iso(NOW - timedelta(seconds=1))}, NOW))
+        self.assertTrue(snap.no_longer_current({"measures": {"current": False}}, NOW))
 
     def test_noisefloor_events_outrank_new_areas(self):
         today, picks, _, _ = build()
