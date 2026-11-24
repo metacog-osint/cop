@@ -14,6 +14,7 @@ const events = readJson(dir, "agent/events.json");
 const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const threeSignal = readJson(dir, "three-signal.json");
+const direction = readJson(dir, "direction.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -191,6 +192,34 @@ test("top picks keep COP's order and reasons", () => {
     assert.equal(p.reason, picks.picks[i].reason);
   });
   assert.match(res.note, /not warnings/);
+});
+
+test("a pick in a Rising place comes first and says so; the rest keep their order (ideas#164)", () => {
+  assert.ok(picks.picks.length > 1, "the fixtures make more than one pick");
+  const last = picks.picks[picks.picks.length - 1];
+  const res = T.topPicks(index, picks, NOW, direction);
+  assert.equal(res.picks[0].id, last.id);
+  assert.equal(res.picks[0].rank, 1);
+  assert.equal(res.picks[0].picked_rank, last.n);
+  assert.ok(res.picks[0].in_rising_place);
+  assert.match(res.picks[0].reason, /Listed first: it falls in a place COP reads as Rising: Strait of Hormuz/);
+  assert.deepEqual(res.picks.slice(1).map((p) => p.id), picks.picks.slice(0, -1).map((p) => p.id));
+  assert.deepEqual(res.picks.map((p) => p.rank), res.picks.map((_p, i) => i + 1));
+  assert.equal(res.direction_as_of, direction.generated_at);
+  assert.deepEqual(T.topPicks(index, picks, NOW, null).picks.map((p) => p.id), picks.picks.map((p) => p.id));
+});
+
+test("direction returns the board, one place on request, and refuses when it was not built", () => {
+  const res = T.direction(index, direction, {}, NOW);
+  assert.equal(res.join, "direction");
+  assert.deepEqual(res.rising, ["Strait of Hormuz and the Gulf"]);
+  assert.equal(res.problems.length + res.areas.length, 2);
+  assert.ok(!("press_zone" in res.problems[0]));
+  assert.match(res.note, /not a warning/);
+  assert.ok(res.attribution.length > 0);
+  assert.deepEqual(T.direction(index, direction, { area: "gulf" }, NOW).problems.map((x) => x.area), ["gulf"]);
+  assert.throws(() => T.direction(index, direction, { area: "atlantis" }, NOW), T.ToolError);
+  assert.throws(() => T.direction(index, null, {}, NOW), T.ToolError);
 });
 
 // Watchfloor and Context both read GDELT: one voice, joined on zone number (suite review, 15 Nov 2026).
