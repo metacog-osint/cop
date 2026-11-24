@@ -184,8 +184,14 @@ class Build(unittest.TestCase):
         self.assertEqual(h["sources"], {"total": len(lanes), "not_read": [
             {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies"}]})
         self.assertEqual(today["cop_programs"]["headwind"]["sources"]["total"], len(lanes))
-        # Another program with a health block but without source_health keeps its items as they were.
-        self.assertNotIn("sources", health_of(health, "cordon"))
+        # A program whose feed has no health block (Launch) has no sources summary.
+        self.assertNotIn("sources", health_of(health, "launch"))
+
+    def test_source_health_on_for_every_program_but_those_without_a_health_block(self):
+        # ideas#164: every program whose feed carries a per-source health block reads it. Watchfloor and Launch
+        # publish none today; turn it on for them when they do.
+        off = {p["id"] for p in snap.CONFIG["programs"] if not p.get("source_health")}
+        self.assertEqual(off, {"watchfloor", "launch"})
 
     def test_dead_feed_keeps_last_good_copy_and_goes_grey(self):
         prev, _, _, _ = build()
