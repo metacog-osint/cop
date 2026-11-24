@@ -187,6 +187,12 @@ class Build(unittest.TestCase):
         # A program whose feed has no health block (Launch) has no sources summary.
         self.assertNotIn("sources", health_of(health, "launch"))
 
+    def test_a_prefix_key_registers_every_source_id_that_starts_with_it(self):
+        self.assertTrue(snap.registered("usembassy-ye"))
+        self.assertTrue(snap.registered("watchfloor:watchfloor:2026-11-23:zone:19_Somalia"))
+        self.assertFalse(snap.registered("usembassy"))
+        self.assertFalse(snap.registered("no-such-source"))
+
     def test_source_health_on_for_every_program_but_those_without_a_health_block(self):
         # ideas#164: every program whose feed carries a per-source health block reads it. Watchfloor and Launch
         # publish none today; turn it on for them when they do.

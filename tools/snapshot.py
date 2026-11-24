@@ -45,6 +45,12 @@ REGISTRY = {p["id"]: p for p in kittips.registry()["programs"]}
 for _prog in CONFIG["programs"]:
     _prog.update({k: REGISTRY[_prog["id"]][k] for k in REGISTRY_FIELDS})
 SOURCES = json.loads((ROOT / "config" / "sources.json").read_text(encoding="utf-8"))["sources"]
+# A register key ending in * covers every source id that starts with the rest (usembassy-*: one id per embassy post).
+SOURCE_PREFIXES = tuple(k[:-1] for k in SOURCES if k.endswith("*"))
+
+
+def registered(key) -> bool:
+    return key in SOURCES or key.startswith(SOURCE_PREFIXES)
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PREVIOUS = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
@@ -512,7 +518,7 @@ def build(feeds, reports, previous, now):
         # A source's register key is its id, else its publisher; one that gives neither as text is the linter's.
         keys = {s.get("id") or s.get("publisher") for i in items for s in (i["properties"].get("sources") or [])
                 if isinstance(s.get("id") or s.get("publisher"), str)}
-        unregistered = sorted(keys - set(SOURCES))
+        unregistered = sorted(k for k in keys if not registered(k))
         ranked = []
         lane_of = history.mapped_lane(prog.get("lane_map") or {})
         for order, item in enumerate(items):
