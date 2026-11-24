@@ -3,7 +3,7 @@
     python tools/suite_watch.py
 
 Exit 0 when everything is current, 1 when something is wrong (so a scheduled run fails and its owner is mailed).
-It checks five things the picture cannot say about itself:
+It checks six things the picture cannot say about itself:
   1. COP's own snapshot is older than --cop-hours (COP's build stopped).
   2. A program's state in the snapshot is not "fresh" (its feed stopped or failed).
   3. A program's data time is in the future by more than --future-minutes (Elements, 12 Nov 2026: a clock that runs
@@ -15,6 +15,9 @@ It checks five things the picture cannot say about itself:
      05:10 and 17:10 UTC) failed a page, or has not finished a run in --sitecheck-hours (18 Nov 2026, Tom's yes). It is
      read only when the snapshot is the live one, or when --sitecheck names a file or address, so tests stay offline.
      A site check that cannot be read is a problem, never a quiet pass.
+  6. Verdict's scores.json (the public forecast ledger's scorecard) has a generated_at older than --verdict-hours, 48 h
+     (ideas#161, 23 Nov 2026). Read only when the snapshot is the live one, or when --verdict names a file or address.
+     A scorecard that cannot be read is a problem, never a quiet pass.
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
 pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
 --test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
@@ -31,6 +34,8 @@ from datetime import datetime, timedelta, timezone
 
 SNAPSHOT = "https://cop.theintelligence.company/data/today.geojson"
 SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
+VERDICT = "https://metacog-osint.github.io/verdict/data/scores.json"  # until verdict.theintelligence.company has DNS
+VERDICT_HOURS = 48.0
 SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
 
 
@@ -101,6 +106,16 @@ def check_sitecheck(doc, now, max_hours=SITECHECK_HOURS):
     return problems
 
 
+def check_verdict(doc, now, max_hours=VERDICT_HOURS):
+    """Problems from Verdict's scores.json: no build time, or one older than max_hours."""
+    gen = when(doc.get("generated_at")) if isinstance(doc, dict) else None
+    if gen is None:
+        return ["Verdict: scores.json has no build time"]
+    if now - gen > timedelta(hours=max_hours):
+        return [f"Verdict: scores.json is {(now - gen).total_seconds() / 3600:.1f} h old (limit {max_hours:g} h)"]
+    return []
+
+
 def health_beside(snapshot):
     """health.json sits beside today.geojson, on the site and in a local build."""
     if snapshot.startswith("http"):
@@ -133,6 +148,9 @@ def main(argv=None):
     ap.add_argument("--sitecheck", help=f"the hub's site check, file or address (default {SITECHECK}, "
                                         "read only when the snapshot is an address)")
     ap.add_argument("--sitecheck-hours", type=float, default=SITECHECK_HOURS)
+    ap.add_argument("--verdict", help=f"Verdict's scores.json, file or address (default {VERDICT}, "
+                                      "read only when the snapshot is an address)")
+    ap.add_argument("--verdict-hours", type=float, default=VERDICT_HOURS)
     ap.add_argument("--test-failure", action="store_true",
                     help="fail on purpose, to test that the alerts arrive")
     a = ap.parse_args(argv)
@@ -153,6 +171,13 @@ def main(argv=None):
         except Exception as e:
             problems.append(f"Site check: the latest run could not be read ({type(e).__name__}: {e}), "
                             "so pages were not checked")
+    verdict = a.verdict or (VERDICT if a.snapshot.startswith("http") else None)
+    if verdict:
+        try:
+            problems += check_verdict(read_json(verdict), now, a.verdict_hours)
+        except Exception as e:
+            problems.append(f"Verdict: scores.json could not be read ({type(e).__name__}: {e}), "
+                            "so its age was not checked")
     if a.test_failure:
         problems.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
     text = "\n".join(problems) if problems else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"
