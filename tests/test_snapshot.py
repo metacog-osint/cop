@@ -79,6 +79,38 @@ class Build(unittest.TestCase):
         self.assertLess(snap.strength(fall, plain)[3], snap.strength(rise, plain)[3], "without abs a fall ranks low")
         self.assertEqual(snap.strength({}, rules), (None, None, None, None))
 
+    def test_cordon_compares_like_with_like(self):
+        """ideas#164: each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
+        cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
+        item = lambda name, v: {"signal": {"name": name, "value": v}, "measures": {"level": v}}
+        state = snap.strength(item("State Dept advisory level 1-4", 2), cd["strength"])
+        cdc = snap.strength(item("CDC travel notice level 1-4", 3), cd["strength"])
+        canada = snap.strength(item("Canada risk level 0-3", 1), cd["strength"])
+        self.assertEqual(state[1].replace("{v}", "2"), "State Department travel advisory level 2 of 4")
+        self.assertEqual(canada[1].replace("{v}", "1"), "Canada risk level 1 (0 to 3)")
+        self.assertLess(state[2], cdc[2], "a travel advisory outranks a health notice at any level")
+        self.assertEqual(snap.strength({"measures": {"level": 4}}, cd["strength"]), (None, None, None, None),
+                         "a level on no named scale has no strength")
+
+    def test_cordon_pick_admits(self):
+        """ideas#164: Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours (Tom, 23 Nov)."""
+        from datetime import datetime, timezone
+        cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
+        now = datetime(2026, 11, 24, 12, tzinfo=timezone.utc)
+        text_only = {"id": "cordon:canada:CN", "last_change": "changed"}
+        self.assertTrue(snap.not_admitted(text_only, cd, now))
+        self.assertIsNone(snap.not_admitted({"id": "cordon:canada:CN", "last_change": "raised"}, cd, now))
+        self.assertTrue(snap.not_admitted({"id": "cordon:fcdo:mali", "last_change": "new"}, cd, now))
+        self.assertIsNone(snap.not_admitted({"id": "cordon:advisory:ML", "last_change": "changed"}, cd, now))
+        old = {"id": "cordon:cdc:malaria-panama", "data_as_of": "2026-11-18T05:00:00Z"}
+        fresh = {"id": "cordon:cdc:measles-x", "data_as_of": "2026-11-22T05:00:00Z"}
+        self.assertTrue(snap.not_admitted(old, cd, now))
+        self.assertIsNone(snap.not_admitted(fresh, cd, now))
+        self.assertTrue(snap.not_admitted({"id": "cordon:cdc:undated"}, cd, now), "an undated notice is not current")
+        html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
+        hours = next(r["within_hours"] for r in cd["pick_admits"] if "within_hours" in r)
+        self.assertIn(f"<b>{hours} hours</b>", html)
+
     def test_headwind_ranks_its_anomalies_by_the_size_of_z(self):
         hw = next(p for p in snap.CONFIG["programs"] if p["id"] == "headwind")
         self.assertEqual([(r["path"], r.get("abs")) for r in hw["strength"]], [("measures.z", True)])
