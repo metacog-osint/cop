@@ -166,6 +166,25 @@ def no_longer_current(props, now=None):
     return bool(until and until < now)
 
 
+def not_admitted(props, prog, now=None):
+    """Why this program's own pick rules leave the item out, or None (ideas#164: like with like). Each rule in the
+    program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
+    FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
+    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
+    as before; only the picks skip it."""
+    pid = str(props.get("id") or "")
+    for rule in prog.get("pick_admits") or []:
+        if not pid.startswith(tuple(rule["id_prefix"])):
+            continue
+        if "last_change" in rule and props.get("last_change") not in rule["last_change"]:
+            return rule["why"]
+        if "within_hours" in rule and now is not None:
+            at = utc(props.get("last_change_at")) or utc(props.get("data_as_of"))
+            if not at or (now - at).total_seconds() > rule["within_hours"] * 3600:
+                return rule["why"]
+    return None
+
+
 def standing(props):
     """The feed says this did not change on its last reading (contract 2.1, last_change "none")."""
     return props.get("last_change") == "none"
@@ -513,7 +532,7 @@ def build(feeds, reports, previous, now):
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
-                    and not no_longer_current(p, now):
+                    and not no_longer_current(p, now) and not not_admitted(p, prog, now):
                 # What changed comes before what is merely still there (Tom, 21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
@@ -583,7 +602,8 @@ def build(feeds, reports, previous, now):
                "routine_in_preset": bool(p.get("routine_in_preset")),
                "routine_label": p.get("routine_label", "standing notices"),
                "also_in": [{"preset": r["preset"], "label": r["label"]} for r in p.get("also_in") or []]} |
-              {"strength_labels": [r["label"] for r in p["strength"]]} for p in CONFIG["programs"]]
+              {"strength_labels": [r["label"] for r in p["strength"]],
+               "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
         "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]}}
