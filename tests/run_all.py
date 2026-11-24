@@ -14,6 +14,7 @@ SCRIPTS = [
     "test_agent_index.py",
     "test_gate.py",
     "test_suite_watch.py",
+    "test_data_quality.py",
     "test_triage.py",
     "test_triage_replay.py",
     "test_triage_us_power.py",
