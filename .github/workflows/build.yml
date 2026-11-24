@@ -161,7 +161,7 @@ jobs:
             python tools/memory.py --replay out/rates-archive --snapshot site/data/today.geojson --assets out/memory || skip "the first replay failed"
           fi
           python tools/direction.py --memory out/memory --archive out/rates-archive --snapshot site/data/today.geojson \
-            --verdict site/data/agent/verdict.json --publish site/data || skip "the direction join failed"
+            --verdict site/data/agent/verdict.json --picks site/data/picks.json --publish site/data || skip "the direction join failed"
       # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
       # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
       # writes out/undertow-sanctions/ only. A failure never fails the build.

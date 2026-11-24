@@ -9,8 +9,8 @@ sources' terms; both are listed in `NOTICE`.
 
 **For AI agents:** COP's MCP server is at https://cop.theintelligence.company/mcp (read-only, public, no sign-in;
 MCP protocol 2026-07-28 and 2025-era clients). In Claude Code:
-`claude mcp add --transport http cop https://cop.theintelligence.company/mcp`. Nine tools: `suite_status`,
+`claude mcp add --transport http cop https://cop.theintelligence.company/mcp`. Ten tools: `suite_status`,
 `search_items`, `get_item`, `top_picks`, `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`,
-`three_signal`.
+`three_signal`, `direction`.
 
 See `CLAUDE.md` for how it works and the commands.
