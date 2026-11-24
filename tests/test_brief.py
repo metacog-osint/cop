@@ -49,6 +49,18 @@ def run(argv):
     return out.getvalue()
 
 
+class Shortening(unittest.TestCase):
+    def test_cut_never_leaves_a_bracket_open(self):
+        t = ("Canada, Saudi Arabia: Avoid non-essential travel (with regional advisories) "
+             "(updated: Risk level section – Avoid all travel to King Abdullah Financial District and beyond)")
+        got = brief._short(t)
+        self.assertEqual(got.count("("), got.count(")"))
+        self.assertTrue(got.endswith("(with regional advisories)…"))
+
+    def test_short_titles_untouched(self):
+        self.assertEqual(brief._short("Libya: news attention 6.7x normal (z 4.1)."), "Libya: news attention 6.7x normal (z 4.1)")
+
+
 class Choosing(unittest.TestCase):
     def test_one_per_program_at_most_four_in_config_order(self):
         feats = [item(pid, n) for pid in DRAWN for n in (1, 2)]
