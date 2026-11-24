@@ -50,7 +50,9 @@ test("distance: to a point, to a box, and zero inside a box", () => {
 
 test("search: every filter narrows, warnings and anomalies come first, newest first", () => {
   const all = T.searchItems(index, { limit: 50 }, NOW);
-  assert.equal(all.matched, rows.length);
+  const expired = rows.filter((r) => T.isExpired(r.valid_until, NOW)).length;
+  assert.equal(all.matched + (all.expired_left_out || 0), rows.length);
+  assert.equal(all.expired_left_out || 0, expired);
   assert.equal(all.returned, 50);
   assert.match(all.more, /pass offset 50/);
   assert.equal(all.next_offset, 50);
@@ -78,6 +80,38 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   const byText = T.searchItems(index, { text: word }, NOW);
   assert.ok(byText.items.every((r) => (r.title + r.id).toLowerCase().includes(word.toLowerCase())));
   assert.ok(byText.items.every((r) => !("shard" in r)), "shard numbers stay internal");
+});
+
+test("search leaves out items past their valid_until unless asked, and every row says expired (ideas#164)", () => {
+  const vi = index.fields.indexOf("valid_until");
+  assert.ok(vi >= 0, "the index carries valid_until");
+  const all = T.searchItems(index, { limit: 50, include_expired: true }, NOW);
+  assert.ok(all.items.every((r) => typeof r.expired === "boolean"));
+  // Expire one row by copying the index with its valid_until an hour before NOW.
+  const target = index.rows[0];
+  const id = target[index.fields.indexOf("id")];
+  const past = new Date(Number(NOW) - 3600 * 1000).toISOString();
+  const copy = { ...index, rows: index.rows.map((r) => (r === target ? Object.assign([...r], { [vi]: past }) : r)) };
+  const shown = T.searchItems(copy, { text: id, limit: 50 }, NOW);
+  assert.ok(!shown.items.some((r) => r.id === id), "left out by default");
+  assert.ok(shown.expired_left_out >= 1 && /include_expired/.test(shown.expired_note));
+  const asked = T.searchItems(copy, { text: id, limit: 50, include_expired: true }, NOW);
+  const row = asked.items.find((r) => r.id === id);
+  assert.ok(row && row.expired === true, "listed and marked when asked");
+  assert.equal(T.isExpired(null, NOW), false);
+  assert.equal(T.isExpired(new Date(Number(NOW) + 1000).toISOString(), NOW), false);
+});
+
+test("a pick that passed its valid_until after the build says expired", () => {
+  const first = picks.picks[0];
+  const vi = index.fields.indexOf("valid_until");
+  const ii = index.fields.indexOf("id");
+  const past = new Date(Number(NOW) - 60 * 1000).toISOString();
+  const copy = { ...index, rows: index.rows.map((r) => (r[ii] === first.id ? Object.assign([...r], { [vi]: past }) : r)) };
+  const out = T.topPicks(copy, picks, NOW);
+  assert.equal(out.picks[0].expired, true);
+  assert.ok(out.picks.slice(1).every((p) => p.missing || p.expired === false || p.expired === true));
+  assert.match(out.note, /valid_until/);
 });
 
 test("search by state matches only items placed in that state", () => {

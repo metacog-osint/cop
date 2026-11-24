@@ -156,9 +156,14 @@ def reading(props):
             "stale": bool(props.get("cop_stale"))}
 
 
-def no_longer_current(props):
-    """The program itself says this has ended (Elements' GDACS items, measures.current false): never a pick."""
-    return dig(props, "measures.current") is False
+def no_longer_current(props, now=None):
+    """The program itself says this has ended (Elements' GDACS items, measures.current false), or the item is past its
+    own valid_until (ideas#164: 21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
+    as before; only the picks skip it."""
+    if dig(props, "measures.current") is False:
+        return True
+    until = utc(props.get("valid_until")) if now is not None else None
+    return bool(until and until < now)
 
 
 def standing(props):
@@ -508,7 +513,7 @@ def build(feeds, reports, previous, now):
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
-                    and not no_longer_current(p):
+                    and not no_longer_current(p, now):
                 # What changed comes before what is merely still there (Tom, 21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
