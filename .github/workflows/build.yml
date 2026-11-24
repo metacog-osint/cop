@@ -180,6 +180,44 @@ jobs:
             --calendar https://metacog-osint.github.io/verdict/data/calendar.geojson \
             --out out/undertow-elections --publish site/data \
             || echo "::warning::Undertow election join failed"
+      # The daily brief (tools/brief.py, site/brief/): five sentences on what changed, written once a UTC day at the
+      # first build after 12:00 UTC and never replaced. Every brief is kept in the releases briefs-YYYY, one
+      # <day>.json each; this step downloads them all, writes today's when it is due, and uploads it without
+      # --clobber before the page is drawn, so the page only ever shows briefs that are kept. When the releases cannot
+      # be read the page is drawn from the live briefs.json and nothing new is written; a failed upload drops the new
+      # brief and the next build tries again. Never fails the build.
+      - name: Daily brief (site/brief/; kept in the releases briefs-YYYY)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out/briefs
+          NEW=""
+          fallback() {
+            echo "::warning::daily brief: $1"
+            [ -n "$NEW" ] && rm -f "$NEW"
+            curl -sf -o out/briefs-live.json https://cop.theintelligence.company/brief/briefs.json || echo '{}' > out/briefs-live.json
+            python tools/brief.py --store out/briefs --publish site/brief --render-only --seed out/briefs-live.json \
+              || echo "::warning::daily brief: the page could not be drawn"
+            exit 0
+          }
+          TAGS=$(gh release list --limit 200 --json tagName --jq '.[].tagName | select(startswith("briefs-"))') \
+            || fallback "the release list could not be read"
+          for TAG in $TAGS; do
+            gh release download "$TAG" --dir out/briefs --pattern "*.json" --clobber || fallback "$TAG could not be downloaded"
+          done
+          python tools/brief.py --snapshot site/data/today.geojson --events site/data/agent/events.json \
+            --verdict site/data/agent/verdict.json --store out/briefs --publish site/brief --new-out out/brief-new.txt \
+            || fallback "the tool failed"
+          NEW=$(cat out/brief-new.txt)
+          if [ -n "$NEW" ]; then
+            YEAR=$(basename "$NEW" | cut -c1-4)
+            TAG="briefs-$YEAR"
+            gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP daily briefs $YEAR" \
+              --notes "COP's daily brief, one <day>.json per UTC day (cop-brief/1), written once and never replaced. Published at https://cop.theintelligence.company/brief/. Measurements and scheduled events, never warnings." \
+              || fallback "the release $TAG could not be created; today's brief waits for the next build"
+            gh release upload "$TAG" "$NEW" || fallback "the upload failed; today's brief waits for the next build"
+            echo "daily brief: kept $(basename "$NEW") in $TAG"
+          fi
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
