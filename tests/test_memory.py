@@ -67,5 +67,32 @@ class Memory(unittest.TestCase):
             self.assertEqual(m.load(d)["subjects"], mem["subjects"])
 
 
+class SeriesScope(unittest.TestCase):
+    SCOPES = {"watchfloor:zone:z": [{"from": "2026-11-18", "scope": "wide"}]}
+
+    def mem(self):
+        days = {"2026-11-16": 100, "2026-11-17": 110, "2026-11-18": 200, "2026-11-19": 210}
+        return {"subjects": {"watchfloor:zone:z": {"v": dict(days)}, "watchfloor:zone:other": {"v": dict(days)}}}
+
+    def test_a_scope_change_starts_a_new_series_and_keeps_the_old(self):
+        mem = m.stamp_scopes(self.mem(), self.SCOPES)
+        r = mem["subjects"]["watchfloor:zone:z"]
+        self.assertEqual(len(r["v"]), 4)
+        self.assertEqual(r["vs"]["2026-11-17"], m.FIRST_SCOPE)
+        self.assertEqual(r["vs"]["2026-11-18"], "wide")
+        self.assertEqual(m.current_series(r), {"2026-11-18": 200, "2026-11-19": 210})
+
+    def test_a_series_with_no_scope_change_is_untouched(self):
+        r = m.stamp_scopes(self.mem(), self.SCOPES)["subjects"]["watchfloor:zone:other"]
+        self.assertNotIn("vs", r)
+        self.assertEqual(len(m.current_series(r)), 4)
+
+    def test_the_listed_scopes_are_well_formed(self):
+        for changes in m.load_scopes().values():
+            for change in changes:
+                self.assertEqual(m.day_of(change["from"]), change["from"])
+                self.assertTrue(change["scope"] and change["scope"] != m.FIRST_SCOPE and change["source"])
+
+
 if __name__ == "__main__":
     unittest.main()
