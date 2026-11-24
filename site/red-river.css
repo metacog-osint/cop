@@ -1,0 +1,10 @@
+/* The Red River Valley view (red-river.html). Builds on cop.css and scoring.css. */
+.rr-state { margin-top: 28px; }
+.rr-layer { margin: 14px 0; padding: 10px 16px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; }
+.doc-main .rr-layer h3 { margin: 0 0 2px; font: 600 16px/1.35 var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink); }
+.rr-meta { margin: 0 0 8px; font-size: 13px; color: var(--mut); }
+.rr-items { margin: 0; padding: 0; list-style: none; }
+.rr-items li { padding: 8px 0; border-top: 1px solid var(--rule); overflow-wrap: anywhere; }
+.rr-item-meta { display: block; margin-top: 2px; font-size: 13px; color: var(--mut); }
+.rr-item-meta a { margin-right: 10px; }
+.rr-empty { margin: 0; }
