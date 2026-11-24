@@ -1,7 +1,7 @@
 // Test helpers (not a test file): build the server's data files from COP's fixtures with the real Python builders,
 // serve them like Cloudflare's asset binding, and talk to the handler with no network.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +27,19 @@ export function fixtureData() {
   // The three-signal join, as the build runs it (no archive beside the fixtures, so no base rate).
   run(["tools/three_signal.py", "--snapshot", path.join(dir, "today.geojson"), "--out", path.join(dir, "ts-work"),
     "--publish", dir]);
+  // A small direction.json (the real one needs COP's memory): the last pick falls in a Rising place.
+  const picks = JSON.parse(readFileSync(path.join(dir, "picks.json"), "utf8")).picks;
+  const place = { area: "gulf", name: "Strait of Hormuz and the Gulf", direction: "rising", word: "Rising",
+    up: ["GPS interference events", "Security notices"], down: [] };
+  writeFileSync(path.join(dir, "direction.json"), JSON.stringify({
+    join: { id: "direction", version: "0.1", published: true }, generated_at: NOW_ISO,
+    what: "Which places are getting more or less concerning.", not_a_warning: "It is not a warning.",
+    windows: { recent_days: 7, prior_days: 14 },
+    problems: [{ ...place, press_zone: "11_Iran_Red_Sea", layers: [] }],
+    areas: [{ area: "ukraine", name: "Ukraine", direction: "steady", word: "Steady", up: [], down: [], layers: [] }],
+    rising: [place.name], easing: [], summary: "Rising: Strait of Hormuz and the Gulf.", record: null,
+    picks: picks.length ? [{ pick: picks[picks.length - 1].id, places: [place], rising: true }] : [],
+  }));
   built = dir;
   return dir;
 }

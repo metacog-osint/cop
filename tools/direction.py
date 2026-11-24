@@ -506,12 +506,43 @@ def build(mem, snapshot, config, verdict=None):
             "record": record(verdict)}
 
 
+RISING = ("rising",)   # the words that move a pick to the front (ideas#164); Edging up is named, never reordered
+
+
+def pick_places(doc, snapshot, picks, config):
+    """For each of today's picks, the places on the board it falls in and their word. A pick in a Rising place is
+    listed first by top_picks and says so. Pick ids sit under "pick", not "id": this join cites none of them."""
+    by_id = {(f.get("properties") or {}).get("id"): f for f in snapshot.get("features") or []}
+    areas = {a["area"]: a for a in config["problems"] + config["areas"]}
+    out = []
+    for p in (picks or {}).get("picks") or []:
+        f = by_id.get(p.get("id"))
+        if f is None:
+            continue
+        props = f.get("properties") or {}
+        r = {"c": props.get("countries") or [], "xy": mem_tool.place_point(f.get("geometry"))}
+        places = []
+        for x in doc["problems"] + doc["areas"]:
+            area = areas.get(x["area"])
+            if area is None or area.get("worldwide") or not in_area(str(p["id"]), r, area, None):
+                continue
+            if x["direction"] in ("building", "steady"):
+                continue
+            places.append({"area": x["area"], "name": x["name"], "direction": x["direction"], "word": x["word"],
+                           "up": x["up"], "down": x["down"]})
+        if places:
+            out.append({"pick": p["id"], "places": places,
+                        "rising": any(pl["direction"] in RISING for pl in places)})
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--memory", required=True, help="folder holding memory.json.gz")
     ap.add_argument("--snapshot", required=True)
     ap.add_argument("--verdict", help="COP's copy of Verdict's files (site/data/agent/verdict.json)")
     ap.add_argument("--publish", required=True, help="folder to write direction.json in")
+    ap.add_argument("--picks", help="today's picks (site/data/picks.json), to say which fall in a moving place")
     ap.add_argument("--archive", help="archived daily snapshots, read once to backfill the log of words")
     a = ap.parse_args(argv)
     mem = mem_tool.load(a.memory)
@@ -525,6 +556,8 @@ def main(argv=None) -> int:
     if a.archive and "directions" not in mem:
         backfill(mem, a.archive, config)
     doc = build(mem, snapshot, config, verdict)
+    if a.picks and Path(a.picks).exists():
+        doc["picks"] = pick_places(doc, snapshot, json.loads(Path(a.picks).read_text(encoding="utf-8")), config)
     log_directions(mem, doc)
     mem_tool.save(a.memory, mem)
     gate.write(JOIN, doc, a.publish, [PUBLIC_NAME])
