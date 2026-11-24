@@ -466,7 +466,8 @@ def source_summary(feed, prog) -> dict | None:
         return None
     off = unread_sources(feed, prog)
     return {"total": len(h), "not_read": [{"id": k, "state": (v or {}).get("state") if isinstance(v, dict) else None,
-                                           "detail": (v or {}).get("detail") if isinstance(v, dict) else None}
+                                           "detail": (v or {}).get("detail") if isinstance(v, dict) else None,
+                                           "failures": (v or {}).get("failures") if isinstance(v, dict) else None}
                                           for k, v in sorted(off.items())]}
 
 

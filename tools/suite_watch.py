@@ -18,6 +18,9 @@ It checks six things the picture cannot say about itself:
   6. Verdict's scores.json (the public forecast ledger's scorecard) has a generated_at older than --verdict-hours, 48 h
      (ideas#161, 23 Nov 2026). Read only when the snapshot is the live one, or when --verdict names a file or address.
      A scorecard that cannot be read is a problem, never a quiet pass.
+  7. A source a program's feed lists in its own health block was not read (health.json's sources.not_read), on
+     UNREAD_RUNS runs in a row by the feed's own failure count, or with no count given (ideas#164, 24 Nov 2026). One
+     failed run is left to the next, so a passing timeout does not mail anyone.
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
 pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
 --test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
@@ -37,6 +40,7 @@ SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
 VERDICT = "https://metacog-osint.github.io/verdict/data/scores.json"  # until verdict.theintelligence.company has DNS
 VERDICT_HOURS = 48.0
 SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
+UNREAD_RUNS = 2         # a listed source not read this many runs in a row (the feed's own count) is a problem
 
 
 def when(s):
@@ -81,6 +85,17 @@ def check_health(health):
             examples = [e for e in (dropped.get("examples") or []) if isinstance(e, str)]
             problems.append(f"{prog.get('name') or prog.get('id')}: {count} malformed item{'' if count == 1 else 's'} "
                             "left out of the picture" + (" (" + "; ".join(examples) + ")" if examples else ""))
+        sources = prog.get("sources")
+        for s in (sources.get("not_read") or []) if isinstance(sources, dict) else []:
+            if not isinstance(s, dict):
+                continue
+            runs = s.get("failures")
+            if isinstance(runs, int) and not isinstance(runs, bool) and runs < UNREAD_RUNS:
+                continue
+            how = ", ".join(str(x) for x in (s.get("state"), f"{runs} runs in a row" if isinstance(runs, int) else None,
+                                              s.get("detail")) if x)
+            problems.append(f"{prog.get('name') or prog.get('id')}: source {s.get('id')} is listed but was not read"
+                            + (f" ({how})" if how else ""))
     return problems
 
 
