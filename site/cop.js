@@ -371,6 +371,31 @@ function closeCard() {
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.removeAttribute("aria-current"));
   writeHash();
 }
+// Terms explained where they appear (Tom, 23 Nov 2026, ideas#264): programs write their own item text, so the card
+// looks for the terms it uses and explains each in a <details>, which a phone can open (no hover). The numbers stay.
+const TERMS = [
+  { re: /\bz\s?[-−]?\d/, term: "z", text: "A z-score says how far a value sits from its own usual level, in units of that measure's usual day-to-day spread. 0 is usual; above +2 or below −2 is unusual." },
+  { re: /\b[A-Z]{2}-IND-\d+\b/, term: "Indicator code (for example BO-IND-4)", text: "The program's own label for one kind of measurement. The sentence beside it says what is counted." },
+  { re: /\bGLIDE\b/, term: "GLIDE number", text: "An international disaster identifier: hazard type, year, serial number and country code." },
+  { re: /\b(NAVAREA|HYDROLANT|HYDROPAC)\b/, term: "NAVAREA, HYDROLANT, HYDROPAC", text: "Navigational warnings to mariners. NAVAREA numbers the world's sea areas; the number after it is that warning's serial and year." },
+  { re: /\bIMO number\b/, term: "IMO number", text: "A ship's permanent identifier, which stays with the hull when its name or flag changes." },
+  { re: /\bTFR\b/, term: "TFR", text: "Temporary flight restriction: airspace the FAA closes or limits for a set time." },
+  { re: /\bAIS\b/, term: "AIS", text: "Automatic Identification System: the position signal most ships broadcast." },
+  { re: /\bADS-B\b/, term: "ADS-B", text: "The position signal most aircraft broadcast, received by volunteer and public receivers." },
+  { re: /\bGDELT\b/, term: "GDELT", text: "A public database that counts news articles about events worldwide." },
+  { re: /\bBGP\b/, term: "BGP", text: "The routing system networks use to announce their addresses; a drop in announced routes can mean a network is cut off." },
+];
+function termsFor(p) {
+  const text = [p.title, p.summary, p.indicator_id, p.cop_strength_text, p.measure].filter((v) => typeof v === "string").join(" ");
+  return TERMS.filter((t) => t.re.test(text));
+}
+function termsBlock(p) {
+  const found = termsFor(p);
+  if (p.likelihood_term) found.push({ term: p.likelihood_term, text: "A likelihood term from intelligence community standard ICD 203, each tied to a probability range. Confidence is stated separately." });
+  if (!found.length) return null;
+  return h("details", { class: "terms" }, h("summary", { text: "Terms in this item" }),
+    h("dl", {}, ...found.flatMap((t) => [h("dt", { text: t.term === "z" ? "z (z-score)" : t.term }), h("dd", { text: t.text })])));
+}
 function renderCard(f) {
   const p = f.properties, prog = PROGS[p.cop_program], pick = PICK_OF.get(p.id);
   const card = $("card");
@@ -449,6 +474,10 @@ function renderCard(f) {
     }
   }
   card.append(facts);
+  const tb = termsBlock(p);
+  if (tb) card.append(tb);
+  card.append(h("p", { class: "caveat" }, "Measured or reported by the program named above, not judged by COP. ",
+    h("a", { href: "scoring.html" }, "How COP reads it")));
   // What else is drawn under the click that opened this card, top first: the card of each is one press away.
   const here = (state.here || []).filter((id) => id !== p.id && BY_ID.has(id));
   if (here.length) {
