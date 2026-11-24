@@ -33,6 +33,15 @@ class Direction(unittest.TestCase):
         self.assertEqual(d.word_for([l("steady"), l("quiet")]), "steady")
         self.assertEqual(d.word_for([l("thin"), l("thin")]), "building")
 
+    def test_a_measure_on_two_cards_says_what_each_covers(self):
+        areas = [{"area": "gulf", "name": "Gulf"}, {"area": "shutdowns", "name": "Shutdowns", "worldwide": True}]
+        names = []
+        for a in areas:
+            out = d.read_area({"subjects": {}, "days": {}}, {"features": []}, a, ["outages"], "2026-11-23", {}, {})
+            names.append(out["layers"][0]["name"])
+        self.assertEqual(len(set(names)), 2)
+        self.assertIn("worldwide", names[1])
+
     def test_ship_transits_are_a_condition_and_never_count(self):
         self.assertEqual(d.word_for([l("up", "traffic"), l("steady"), l("steady")]), "steady")
 

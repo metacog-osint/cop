@@ -731,5 +731,17 @@ class TriageFixes(unittest.TestCase):
         self.assertEqual(v["resolution"]["known_at"], "2026-11-16T00:00:00Z")
 
 
+class BareCodesTest(unittest.TestCase):
+    def test_a_title_that_opens_with_a_bare_code_opens_with_the_name(self):
+        self.assertEqual(tri.named_title("GF: power outage, regional (Cloudflare Radar)", "GF"),
+                         "French Guiana: power outage, regional (Cloudflare Radar)")
+        self.assertTrue(tri.named_title("CI: outage", "CI").startswith("C"))
+        self.assertNotEqual(tri.named_title("CI: outage", "CI"), "CI: outage")
+
+    def test_other_titles_and_unknown_codes_are_left_alone(self):
+        self.assertEqual(tri.named_title("Iran outage", "IR"), "Iran outage")
+        self.assertEqual(tri.named_title("ZZ: outage", "ZZ"), "ZZ: outage")
+
+
 if __name__ == "__main__":
     unittest.main()
