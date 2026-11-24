@@ -242,6 +242,25 @@
     <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
   </section>
 
+  <section class="doc-box" id="brief" aria-labelledby="brief-h">
+    <h2 id="brief-h">The daily brief</h2>
+    <p>The <a href="brief/">daily brief</a> is written once a UTC day, at the first build at or after 12:00 UTC, and
+      is never rewritten; every past brief stays on its page and in the <a href="brief/feed.xml">Atom feed</a>.</p>
+    <ul>
+      <li><strong>What changed</strong>: up to 4 sentences, one program each. A program offers its strongest
+        anomaly with a place, by its own strength rule, that is new or changed (not "unchanged since the last
+        reading"), whose data reaches into the last 48 hours, and whose program and source were read; nothing
+        stale, expired, ended or forecast (Vis never). Programs take turns in the order the map lists them, except
+        that those heard in the last brief go last; strength is never compared across programs. An item already in
+        the last brief with the same title is left out.</li>
+      <li><strong>Why it matters</strong> is each item's own baseline, in its program's words: what it was measured
+        against. Never a cause, an intent or a likelihood.</li>
+      <li><strong>What to watch</strong>: one dated event ahead, from Verdict's calendar within 7 days, else an
+        Orbit scheduled launch within 48 hours; one in a country the brief names first, and one not named in the last
+        brief before one that was. A launch time is the provider's, as Launch Library 2 lists it, and often moves.</li>
+    </ul>
+  </section>
+
   <section id="sources" aria-labelledby="sources-h">
     <h2 id="sources-h">Where the rules live</h2>
     <p>COP's code is public at <a href="https://github.com/metacog-osint/cop">github.com/metacog-osint/cop</a>. The
