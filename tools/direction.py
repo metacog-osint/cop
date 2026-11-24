@@ -319,10 +319,14 @@ def read_press(mem, area, today, through):
     base = {"layer": "press", "name": LAYER_NAMES["press"] + label, "program": "watchfloor"}
     if not r or not r.get("v"):
         return base | {"state": "thin", "text": "No press series for this area yet."}
-    recent = [r["v"][d] for d in _days(through, RECENT_DAYS) if d in r["v"]]
-    prior = [r["v"][d] for d in _days(through - timedelta(days=RECENT_DAYS), PRIOR_DAYS) if d in r["v"]]
+    values = mem_tool.current_series(r)           # a change in what the series counts starts a new series
+    recent = [values[d] for d in _days(through, RECENT_DAYS) if d in values]
+    prior = [values[d] for d in _days(through - timedelta(days=RECENT_DAYS), PRIOR_DAYS) if d in values]
     if len(recent) < MIN_RECENT or len(prior) < MIN_PRIOR:
-        return base | {"state": "thin", "text": f"Not enough history yet: {len(prior)} of the {PRIOR_DAYS} days before."}
+        restart = (f" What this series counts changed on {_when(min(values))}, so it starts again there."
+                   if values and len(values) < len(r["v"]) else "")
+        return base | {"state": "thin",
+                       "text": f"Not enough history yet: {len(prior)} of the {PRIOR_DAYS} days before.{restart}"}
     a, b = statistics.median(recent), statistics.median(prior)
     q = statistics.quantiles(prior, n=4, method="inclusive")
     return base | {"state": level_move(recent, prior), "recent": a, "usual": b, "id": r["id"],
