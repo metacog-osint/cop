@@ -1,7 +1,7 @@
 """Three-signal join (four signals since join 0.3): interference, a new notice, a connectivity drop and unusual
 press reporting of violence in one area inside 48 hours.
 
-Scenario 1 of D:/Projects/_ideas/convergence-scenarios.md, with Iran and the Strait of Hormuz as the live case. Each
+Scenario 1 of the private planning notes, with Iran and the Strait of Hormuz as the live case. Each
 signal alone is routine and has an innocent explanation; the join asks only whether all four fall in one named area
 within WINDOW_H of each other, and what Vis forecasts for the weather there. The id stays "three-signal" (the file
 name, the page section and the MCP tool use it).
@@ -60,7 +60,7 @@ QUESTION_DAYS = 7    # the Verdict question's window
 OONI_MOVE_POINTS = 5 # an OONI rate that moved this much against the archive is listed as context
 NAVWARN_BLIND_DAYS = 14  # Cordon's newest navigation warning anywhere older than this: that feed has stopped moving,
                          # so "no new warning" means nothing (found 12 Nov 2026: newest was dated 10 May 2024)
-# Join 0.3 (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of _ideas/case-bahrain-2026-11-15.md).
+# Join 0.3 (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of the private planning notes).
 WATCHFLOOR_Z = 3.0       # press: violent-event articles at or above this z-score (Watchfloor's own, robust since 17 Nov)
 RENEWAL_BEFORE_D = 7     # an EASA revision first seen this many days before the previous version's expiry ...
 RENEWAL_AFTER_H = 48     # ... or up to this many hours after it, with a later expiry, is a scheduled renewal
@@ -68,7 +68,7 @@ RATE_DAYS = 30           # trailing archived days for each signal's base rate in
 RATE_MIN_DAYS = 14       # days with every layer current needed before a base rate changes what counts
 RATE_SATURATED = 0.5     # a signal present on more than this share of those days counts only when it rises ...
 RATE_PERCENTILE = 0.9    # ... above this percentile of its own daily item counts (nearest rank)
-# Join 0.4 (Tom's option D, 18 Nov 2026, _ideas/drafts/2026-11-18-ukmto-three-signal-replay.md): UKMTO's reports in
+# Join 0.4 (Tom's option D, 18 Nov 2026, the private planning notes): UKMTO's reports in
 # the circle, read from Wake's items, are context; its Attack reports count toward the notice only when their number
 # in the look-back is above its own RATE_PERCENTILE over the RATE_DAYS days before (the test 0.3 applies to a
 # saturated signal), measured on UKMTO's own series, never pooled with Cordon's notices.

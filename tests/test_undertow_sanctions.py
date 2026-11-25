@@ -49,10 +49,20 @@ LC = {"generated_at": "2026-11-20T15:00:00Z", "changes": [
         {"list_id": "99998", "name": "Social Design Agency", "type": "entity", "programs": ["RUSSIA-EO14024"]}]),
     change("uk-sanctions", "20261120T1400", named_changed=[
         {"list_id": "RUS2294", "name": "ANO DIALOG", "type": "entity", "programs": ["Russia", "Cyber"],
+         "gained": ["Cyber"], "lost": []},
+        {"list_id": "RUS2292", "name": "Another Name", "type": "entity", "programs": ["Russia"],
          "gained": ["Cyber"], "lost": []}]),
     change("eu-fsf", "20261120T1400", named_changed=[
         {"list_id": "155817", "name": "Social Design Agency", "type": "entity", "programs": ["UKR", "RUSDA"],
-         "gained": ["RUSDA"], "lost": []}]),
+         "gained": ["RUSDA"], "lost": []},
+        # the EU reordered its aliases: the printed name moved and nothing else did
+        {"list_id": "155821", "name": "ООО \"ГК СТРУКТУРА\"", "type": "entity", "programs": ["UKR"],
+         "gained": [], "lost": [], "name_before": "“Struktura”"},
+        # the table's EU name on another entry, and a person on a table entry id, never match
+        {"list_id": "999001", "name": "Agencja Projektów Społecznych", "type": "entity", "programs": ["UKR"],
+         "gained": ["UKR"], "lost": []},
+        {"list_id": "155828", "name": "A Person", "type": "individual", "programs": ["UKR"],
+         "gained": ["UKR"], "lost": []}]),
     {"kind": "screening", "id": "trade-gov:x", "list": "ofac-sdn", "named_added": [
         {"list_id": "45230", "name": "SOCIAL DESIGN AGENCY", "type": "entity", "programs": []}]}]}
 
@@ -70,13 +80,20 @@ class Join(unittest.TestCase):
     def test_exact_entity_names_only(self):
         m = self.doc["matches"]
         self.assertEqual(sorted((x["list"], x["organisation"], x["action"]) for x in m),
-                         [("ofac-sdn", "Social Design Agency", "added to"), ("uk-sanctions", "ANO Dialog", "changed on")])
+                         [("eu-fsf", "Social Design Agency", "changed on"),
+                          ("ofac-sdn", "Social Design Agency", "added to"), ("uk-sanctions", "ANO Dialog", "changed on")])
         # the individual with the same name, the differently-cased entity and the screening record never match
         self.assertEqual(sum(1 for x in m if x["list"] == "ofac-sdn"), 1)
 
     def test_stale_row_is_reported_not_matched(self):
         self.assertEqual([(s["list"], s["entry_id"], s["headwind_name"]) for s in self.doc["stale_rows"]],
-                         [("eu-fsf", "155817", "Social Design Agency")])
+                         [("uk-sanctions", "RUS2292", "Another Name")])
+
+    def test_eu_matches_on_entry_id_and_ignores_a_name_only_change(self):
+        eu = [x for x in self.doc["matches"] if x["list"] == "eu-fsf"]
+        self.assertEqual([(x["organisation"], x["name_as_printed"]) for x in eu],
+                         [("Social Design Agency", "Social Design Agency")])    # not the name in the table
+        self.assertFalse([s for s in self.doc["stale_rows"] if s["list"] == "eu-fsf"])
 
     def test_sentences_say_what_headwind_saw_and_what_the_publisher_names(self):
         sda = next(x for x in self.doc["matches"] if x["organisation"] == "Social Design Agency")
@@ -98,7 +115,7 @@ class Join(unittest.TestCase):
         b = self.doc["base_rate"]
         self.assertEqual((b["listing_actions"], b["months"], b["first"], b["last"]), (5, 41, "2023-07-28", "2025-02-21"))
         self.assertEqual(b["per_month"], 0.12)
-        self.assertEqual(b["headwind_changes_naming_any"], 2)
+        self.assertEqual(b["headwind_changes_naming_any"], 3)
         empty = us.run({"features": []}, {"changes": []}, today=date(2026, 11, 20))["base_rate"]
         self.assertIsNone(empty["per_month"])
 
