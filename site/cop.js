@@ -962,7 +962,17 @@ function readHash() {
   state.view = m ? { zoom: +m[1], center: [+m[3], +m[2]] } : null;
 }
 let hashTimer;
+// Browser title per view (ideas#300): the selected item's title, else the active preset, else the home title.
+const HOME_TITLE = document.title;
+function updateTitle() {
+  const f = state.selected && BY_ID.get(state.selected);
+  const t = f ? String(f.properties.title || "").trim() : "";
+  const label = state.preset !== "all" ? CFG.presets[state.preset] : "";
+  const short = t.length > 70 ? t.slice(0, 69).trimEnd() + "…" : t;
+  document.title = short ? `${short} · COP` : label ? `${label} · COP` : HOME_TITLE;
+}
 function writeHash() {
+  updateTitle();
   clearTimeout(hashTimer);
   hashTimer = setTimeout(() => {
     const c = map.getCenter();
@@ -975,6 +985,17 @@ function writeHash() {
   }, 250);
 }
 map.on("moveend", writeHash);
+// Back, forward or an edited address: apply the hash again. (The page's own writes use replaceState, which does not fire this.)
+window.addEventListener("hashchange", () => {
+  const prev = state.selected;
+  state.preset = "all"; state.selected = null;
+  readHash();
+  refreshLayers(); renderPanel();
+  if (state.selected && BY_ID.has(state.selected)) select(state.selected, { fly: true });
+  else { if (prev) closeCard(); state.selected = null; }
+  if (state.view) map.jumpTo(state.view);
+  updateTitle();
+});
 
 // ---------------------------------------------------------------- phone sheet, keys, time
 const SHEETS = ["sheet-peek", "sheet-half", "sheet-full"];
@@ -994,6 +1015,7 @@ if (T) { T.mountSettings($("time-settings")); T.onChange(() => renderTimes(docum
 // ---------------------------------------------------------------- start
 renderLegend();
 renderPanel();
+updateTitle();
 if (state.view) map.jumpTo(state.view);
 else map.once("load", fitPicks);
 if (state.selected && BY_ID.has(state.selected)) map.once("load", () => select(state.selected, { fly: !state.view }));
