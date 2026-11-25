@@ -11,15 +11,11 @@ the joins that read them together and an MCP server for agents (cop.theintellige
 - **Purpose (Tom, 15 Nov 2026):** a warning analyst's first stop for a few named warning problems: per area, what
   changed this week across the layers against that place's own normal, read through named joins whose hit rates are
   published, ending each week in a signed, dated call that Verdict scores. The map is the index, not the product.
-  Tom accepted D1-D14 of the private planning notes: first problems the Gulf/Hormuz, then internet
-  shutdowns, Tom writes each charter (D2); no general convergence glyph, per-layer "how unusual here" plus named
-  joins, the 15-day co-occurrence stays a diagnostic (D3); first analyst brief (D4); weekly signed call from the week
-  of 23 Nov, Gulf first (D5); a Verdict question on every confirmed outage, with a second resolver (D6); picks per
-  warning problem (D7, not built); triage rules M1-M3 (D8, built); gate retired (D9); repo public (D10); 12 Dec test
-  date, rerun to 12 Jan if it misses (D11); Vis forecasts never picks (D12); public, non-commercial, PAI only (D13);
-  Red River Valley view later, same bus (D14).
-- **Name and address** (31 Oct): COP; Cloudflare Pages project `cop` (`cop-4gw.pages.dev`), Squarespace
-  `CNAME cop`. Open to search engines; canonical `https://cop.theintelligence.company/`.
+  Tom accepted D1-D14 of the private planning notes: Gulf/Hormuz then shutdowns, Tom writes each
+  charter; no convergence glyph, per-layer "how unusual here" plus named joins (D3); weekly signed call (D5); a
+  second resolver for outages (D6); 12 Dec test date (D11); Vis never picks (D12); public, PAI only (D13).
+- **Address:** Pages project `cop` (`cop-4gw.pages.dev`), Squarespace `CNAME cop`; canonical
+  `https://cop.theintelligence.company/`, open to search engines.
 - **Public and non-commercial.** `config/sources.json` keeps `commercial_ok` (true/false/unknown with basis) for every
   source so a paid version could scrub from a list; `snapshot.py` names any feed source missing from it. Repo went
   public 15 Nov 2026 (D10). Nothing private in tracked files.
@@ -103,9 +99,14 @@ the joins that read them together and an MCP server for agents (cop.theintellige
   writes `site/data/agent/` (`index.json` columnar with coded labels, `items/00-31.json` shards, `programs.json` with
   page checks, `verdict.json`, `events.json`). `functions/mcp.js` -> `mcp/server.js` (MCP TS SDK v2,
   `@modelcontextprotocol/server` 2.3.1, `zod` 4.6.7, pinned) -> `mcp/tools.js`, `mcp/data.js`.
-- Ten tools, fixed order, all `readOnlyHint`: `suite_status`, `search_items`, `get_item`, `top_picks`,
-  `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`, `three_signal`, `direction`
-  (a pick in a Rising place lists first). Results carry `as_of`, `age_hours`, stale flags and attribution; server instructions hold the rules per program.
+- Eleven tools, fixed order, all `readOnlyHint` (the list is `ORDER` in `mcp/server.test.js`). Results carry
+  `as_of`, `age_hours`, stale flags and attribution; server instructions hold the rules per program.
+
+## Lanes (ideas#88, #330)
+- `config/lanes.json`: one lane per kind of item (match, horizon, second source, tests). `tools/lane_log.py` logs each
+  triage outage and four-signal flag once, before its outcome, to branch `lane-log` (chained, never forced), then
+  writes `site/data/lanes.json` (counts only; no rate before 30 scored) for the page and MCP. Pick order unchanged;
+  Verdict scores (ideas#331).
 
 ## Ledger and watchdog
 - `tools/ledger.py`: kit history log `tic-history/1`; one line per item new, changed (tier or stage) or ended; lane
@@ -124,6 +125,6 @@ the joins that read them together and an MCP server for agents (cop.theintellige
   Then `python tools/agent_index.py` (offline: `--verdict tests/fixtures/verdict`).
 - Tests: `npm ci --ignore-scripts`, then `python tests/run_all.py` (the list `build.yml` and PR check `tests.yml` share).
 - **Known quirks:** memory `cop-local-test-quirks` (CPU timing check, slow map in the pane).
-- Local Cloudflare runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date
-  2026-10-26`; afterwards stop node/esbuild/workerd by PID and delete `.wrangler/`.
+- Local runtime: `npx --yes wrangler@4.151.3 pages dev --port 8788 --ip 127.0.0.1 --compatibility-date 2026-10-26`;
+  then stop node/esbuild/workerd by PID, delete `.wrangler/`.
 - `python tools/serve.py` serves `site/` on 5071 with `site/_headers`.

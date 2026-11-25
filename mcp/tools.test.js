@@ -15,6 +15,7 @@ const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const threeSignal = readJson(dir, "three-signal.json");
 const direction = readJson(dir, "direction.json");
+const lanes = readJson(dir, "lanes.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -181,6 +182,34 @@ test("get_item returns the full item with its sources, or a clear miss", () => {
   assert.ok(res.item.properties.sources.every((s) => s.licence));
   assert.equal(res.program.id, r.program);
   assert.throws(() => T.getItem(index, null, "nope:1", NOW), /No item "nope:1"/);
+});
+
+test("an item carries its own lane's record line, a prefix lane before its program's catch-all (ideas#330)", () => {
+  const out = rows.find((x) => x.program === "blackout" && /^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  assert.ok(out, "the fixtures hold a Blackout outage");
+  const res = T.getItem(index, shard(out.shard), out.id, NOW, lanes);
+  assert.equal(res.lane_record.lane, "blackout-outage-triage");
+  assert.match(res.lane_record.text, /^This lane: \d+ flagged since 2026-10-31/);
+  assert.match(res.lane_record.replay, /^Replay, not live/);
+  const other = rows.find((x) => x.program === "blackout" && !/^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  if (other) assert.equal(T.getItem(index, shard(other.shard), other.id, NOW, lanes).lane_record.lane, "blackout-other");
+  const v = rows.find((x) => x.program === "vigil");
+  const line = T.getItem(index, shard(v.shard), v.id, NOW, lanes).lane_record;
+  assert.equal(line.lane, "vigil");
+  assert.equal(line.flagged, null);
+  assert.match(line.text, /No outside check yet/);
+  assert.equal(T.getItem(index, shard(v.shard), v.id, NOW).lane_record, null, "no lanes.json, no line");
+});
+
+test("lane records never change the pick order, and a missing file is a tool error", () => {
+  const plain = T.topPicks(index, picks, NOW, direction);
+  const withLanes = T.topPicks(index, picks, NOW, direction, lanes);
+  assert.deepEqual(withLanes.picks.map((p) => p.id), plain.picks.map((p) => p.id));
+  assert.ok(withLanes.picks.every((p) => p.lane_record));
+  assert.throws(() => T.laneRecord(null, {}, NOW), /lane records were not built/);
+  const rec = T.laneRecord(lanes, {}, NOW);
+  assert.equal(rec.lanes.length, lanes.lanes.length);
+  assert.ok(rec.lanes.every((x) => x.rate_shown === false && x.scored === 0));
 });
 
 test("top picks keep COP's order and reasons", () => {
