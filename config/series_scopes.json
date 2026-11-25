@@ -1,0 +1,14 @@
+{
+  "note": "When a program changes what a daily series counts, its values before and after are not comparable. Each entry names the day a new scope starts. COP's memory stamps every value with its scope and keeps them all; direction.py compares only the values of the newest scope. Since 24 Nov 2026 Watchfloor's feed states each zone's scope (measures.zone_scope; catalog 2026-11-24.1, ideas#241) and a change of it starts a new series by itself. Add an entry only for a series whose feed does not state its scope; zone_scope on an entry names the stated scope that continues it.",
+  "series": {
+    "watchfloor:zone:11_Iran_Red_Sea": [
+      {
+        "from": "2026-11-18",
+        "scope": "nine-countries",
+        "zone_scope": "2bc2156e602d",
+        "countries": ["IR", "YE", "BH", "QA", "AE", "KW", "OM", "SA", "IQ"],
+        "source": "Watchfloor catalog commit fcef756, 18 Nov 2026: violence count widened from Iran and Yemen to nine countries"
+      }
+    ]
+  }
+}

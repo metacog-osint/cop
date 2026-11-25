@@ -96,6 +96,18 @@ class Watch(unittest.TestCase):
         self.assertEqual(problems, ["Vigil: 1 malformed item left out of the picture",
                                     "Orbit: 3 malformed items left out of the picture (orbit:y: NaN)"])
 
+    def test_a_listed_source_not_read_twice_is_named_and_once_is_left_to_the_next_run(self):
+        h = health()
+        h["programs"].append({"id": "context", "name": "Context", "sources": {"total": 4, "not_read": [
+            {"id": "google-news", "state": "failing", "detail": "none answered", "failures": 1},
+            {"id": "gdelt-gkg", "state": "failing", "detail": "timeout", "failures": 3},
+            {"id": "cop-bus", "state": None, "detail": None, "failures": None}]}})
+        self.assertEqual(watch.check_health(h), [
+            "Context: source gdelt-gkg is listed but was not read (failing, 3 runs in a row, timeout)",
+            "Context: source cop-bus is listed but was not read"])
+        h["programs"][-1]["sources"] = {"total": 4, "not_read": []}
+        self.assertEqual(watch.check_health(h), [])
+
     def test_a_health_file_of_the_wrong_shape_is_a_problem_not_quiet(self):
         for bad in ({}, {"programs": []}, {"programs": {"vis": {}}}, [], "x"):
             self.assertEqual(len(watch.check_health(bad)), 1, bad)
@@ -141,6 +153,21 @@ def sitecheck(finished="2026-11-14T17:11:00Z", **bad):
                         "problems": problems})
     return {"contract": "tic-sitecheck/1", "finished_at": finished, "sites": len(results),
             "ok": sum(r["ok"] for r in results), "results": results}
+
+
+class VerdictAge(unittest.TestCase):
+    def test_a_recent_scorecard_has_no_problems(self):
+        self.assertEqual(watch.check_verdict({"generated_at": "2026-11-13T21:00:00Z"}, NOW), [])
+
+    def test_a_scorecard_over_48_hours_old_is_named(self):
+        out = watch.check_verdict({"generated_at": "2026-11-12T20:00:00Z"}, NOW)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Verdict", out[0])
+        self.assertIn("49.0 h", out[0])
+
+    def test_no_build_time_or_a_wrong_shape_is_a_problem_not_quiet(self):
+        self.assertEqual(len(watch.check_verdict({}, NOW)), 1)
+        self.assertEqual(len(watch.check_verdict([], NOW)), 1)
 
 
 class SiteCheck(unittest.TestCase):

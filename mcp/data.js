@@ -12,6 +12,7 @@ export const PATHS = {
   picks: "/data/picks.json",
   triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
   threeSignal: "/data/three-signal.json", // tools/three_signal.py --publish; absent when that step failed
+  direction: "/data/direction.json", // tools/direction.py --publish; absent when that step failed
 };
 
 export function shardPath(n) {
@@ -40,6 +41,7 @@ export function makeData(fetchAsset) {
     picks: () => get(PATHS.picks),
     triage: () => get(PATHS.triage).catch(() => null), // the picture stands without it
     threeSignal: () => get(PATHS.threeSignal).catch(() => null), // so does the three-signal join
+    direction: () => get(PATHS.direction).catch(() => null), // and the direction of concern
     shard: (n) => get(shardPath(n)),
   };
 }

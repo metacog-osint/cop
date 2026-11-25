@@ -45,6 +45,12 @@ REGISTRY = {p["id"]: p for p in kittips.registry()["programs"]}
 for _prog in CONFIG["programs"]:
     _prog.update({k: REGISTRY[_prog["id"]][k] for k in REGISTRY_FIELDS})
 SOURCES = json.loads((ROOT / "config" / "sources.json").read_text(encoding="utf-8"))["sources"]
+# A register key ending in * covers every source id that starts with the rest (usembassy-*: one id per embassy post).
+SOURCE_PREFIXES = tuple(k[:-1] for k in SOURCES if k.endswith("*"))
+
+
+def registered(key) -> bool:
+    return key in SOURCES or key.startswith(SOURCE_PREFIXES)
 COUNTRIES = ROOT / "doctrine" / "kit" / "geo" / "countries.json"
 PREVIOUS = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
@@ -156,9 +162,33 @@ def reading(props):
             "stale": bool(props.get("cop_stale"))}
 
 
-def no_longer_current(props):
-    """The program itself says this has ended (Elements' GDACS items, measures.current false): never a pick."""
-    return dig(props, "measures.current") is False
+def no_longer_current(props, now=None):
+    """The program itself says this has ended (Elements' GDACS items, measures.current false), or the item is past its
+    own valid_until (ideas#164: 21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
+    as before; only the picks skip it."""
+    if dig(props, "measures.current") is False:
+        return True
+    until = utc(props.get("valid_until")) if now is not None else None
+    return bool(until and until < now)
+
+
+def not_admitted(props, prog, now=None):
+    """Why this program's own pick rules leave the item out, or None (ideas#164: like with like). Each rule in the
+    program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
+    FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
+    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
+    as before; only the picks skip it."""
+    pid = str(props.get("id") or "")
+    for rule in prog.get("pick_admits") or []:
+        if not pid.startswith(tuple(rule["id_prefix"])):
+            continue
+        if "last_change" in rule and props.get("last_change") not in rule["last_change"]:
+            return rule["why"]
+        if "within_hours" in rule and now is not None:
+            at = utc(props.get("last_change_at")) or utc(props.get("data_as_of"))
+            if not at or (now - at).total_seconds() > rule["within_hours"] * 3600:
+                return rule["why"]
+    return None
 
 
 def standing(props):
@@ -425,7 +455,7 @@ def source_lanes(feed) -> dict | None:
 
 def unread_sources(feed, prog) -> dict:
     """{lane: health entry} for the sources a feed's own health block says were not read well on its last run, for a
-    program whose config sets "source_health" (Headwind, 15 Nov 2026). Such a program keeps a failed source's last
+    program whose config sets "source_health" (Headwind from 15 Nov 2026; every program with a health block from 24 Nov). Such a program keeps a failed source's last
     good items in its feed; COP draws those items grey and never picks them, as it does a dead feed's copies. Read is
     the kit's lanes_ok (last success is the last check, and the state, if any, is fresh, late or up)."""
     h = feed.get("health") if isinstance(feed, dict) else None
@@ -442,7 +472,8 @@ def source_summary(feed, prog) -> dict | None:
         return None
     off = unread_sources(feed, prog)
     return {"total": len(h), "not_read": [{"id": k, "state": (v or {}).get("state") if isinstance(v, dict) else None,
-                                           "detail": (v or {}).get("detail") if isinstance(v, dict) else None}
+                                           "detail": (v or {}).get("detail") if isinstance(v, dict) else None,
+                                           "failures": (v or {}).get("failures") if isinstance(v, dict) else None}
                                           for k, v in sorted(off.items())]}
 
 
@@ -487,7 +518,7 @@ def build(feeds, reports, previous, now):
         # A source's register key is its id, else its publisher; one that gives neither as text is the linter's.
         keys = {s.get("id") or s.get("publisher") for i in items for s in (i["properties"].get("sources") or [])
                 if isinstance(s.get("id") or s.get("publisher"), str)}
-        unregistered = sorted(keys - set(SOURCES))
+        unregistered = sorted(k for k in keys if not registered(k))
         ranked = []
         lane_of = history.mapped_lane(prog.get("lane_map") or {})
         for order, item in enumerate(items):
@@ -508,7 +539,7 @@ def build(feeds, reports, previous, now):
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
-                    and not no_longer_current(p):
+                    and not no_longer_current(p, now) and not not_admitted(p, prog, now):
                 # What changed comes before what is merely still there (Tom, 21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
@@ -578,7 +609,8 @@ def build(feeds, reports, previous, now):
                "routine_in_preset": bool(p.get("routine_in_preset")),
                "routine_label": p.get("routine_label", "standing notices"),
                "also_in": [{"preset": r["preset"], "label": r["label"]} for r in p.get("also_in") or []]} |
-              {"strength_labels": [r["label"] for r in p["strength"]]} for p in CONFIG["programs"]]
+              {"strength_labels": [r["label"] for r in p["strength"]],
+               "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
         "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]}}

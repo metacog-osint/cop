@@ -35,6 +35,32 @@ concurrency:
   group: watch
   cancel-in-progress: true
 jobs:
+  # Data quality (ideas#245, from the database review of 24 Nov 2026): seven rules on the bus, report only. It never
+  # fails the run and never touches an item; hits are warnings in the run's summary (tools/data_quality.py says each
+  # rule and its finding). Item counts per program and source are kept between runs in the Actions cache
+  # (dq-state-*) for the rows-low rule; a missing cache only means no norm yet.
+  data-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - name: Earlier runs' item counts
+        uses: actions/cache/restore@v6
+        with:
+          path: dq-state.json
+          key: dq-state-${{ github.run_id }}
+          restore-keys: dq-state-
+      - name: Data quality (report only)
+        run: python tools/data_quality.py --state dq-state.json || true
+      - name: Keep this run's item counts
+        if: always() && hashFiles('dq-state.json') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: dq-state.json
+          key: dq-state-${{ github.run_id }}
   watch:
     runs-on: ubuntu-latest
     timeout-minutes: 3

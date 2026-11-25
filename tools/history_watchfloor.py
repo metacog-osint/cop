@@ -10,8 +10,8 @@ baseline (wf-28d), the "unusual attention" triage counts, exactly when the count
 This reads those day files, converts FIPS 10-4 to ISO alpha-2 (Watchfloor's `catalog/fips_iso.json`; the West
 Bank and Gaza are both PS), and writes one row per country-day.
 
-    python tools/history_watchfloor.py --root "[local path]" \
-        --fips [local path] --start 2024-12-01 --end 2025-12-31
+    python tools/history_watchfloor.py --root "$HOME/cop-history/gdelt-events" \
+        --fips ../more-context/catalog/fips_iso.json --start 2024-12-01 --end 2025-12-31
 """
 import argparse
 import gzip

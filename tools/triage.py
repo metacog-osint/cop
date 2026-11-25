@@ -1,6 +1,6 @@
 """Outage triage: what the other layers show under each Blackout outage.
 
-A named join (scenario 2 of [local path]), not a count of programs. For every
+A named join (scenario 2 of the private planning notes), not a count of programs. For every
 Blackout outage in a COP snapshot it records what Elements, Cordon and Watchfloor show for that country around
 that hour, including "nothing found" and "no current data", which are different answers. It states a reading of
 the pattern and drafts the Verdict question. It never states a probability: that is the analyst's.
@@ -238,13 +238,28 @@ def _rings(cc):
     return _RINGS.get(cc) or []
 
 
+# Territories the kit's country list leaves out but feeds use as codes.
+EXTRA_NAMES = {"GF": "French Guiana", "GP": "Guadeloupe", "MQ": "Martinique", "RE": "Réunion", "YT": "Mayotte",
+               "PF": "French Polynesia", "NC": "New Caledonia", "PR": "Puerto Rico", "GU": "Guam",
+               "HK": "Hong Kong", "MO": "Macao", "FO": "Faroe Islands", "GL": "Greenland"}
+
+
 def country_name(cc):
-    """The kit's name for an ISO alpha-2 code, or the code itself."""
+    """The kit's name for an ISO alpha-2 code, else a territory name, or the code itself."""
     global _NAMES
     if _NAMES is None:
         data = json.loads(COUNTRIES.read_text(encoding="utf-8"))
         _NAMES = {c["cc"]: c.get("name") or c["cc"] for c in data["countries"]}
-    return _NAMES.get(cc) or cc
+    return _NAMES.get(cc) or EXTRA_NAMES.get(cc) or cc
+
+
+def named_title(title, cc):
+    """A feed title that opens with the bare code ("GF: power outage, regional") opens with the name instead."""
+    t = str(title or "")
+    name = country_name(cc) if cc else None
+    if name and name != cc and t.startswith(f"{cc}: "):
+        return f"{name}: {t[len(cc) + 2:]}"
+    return title
 
 
 def _km(lat1, lon1, lat2, lon2):
@@ -1068,6 +1083,10 @@ def power_record(f, features, states, history=None, ended_info=None):
 # country. A Radar entry that names no place (a platform outage) cannot be placed, so it is listed, not triaged.
 INPUT_KINDS = {"outage": "IODA", "radar-anomaly": "Cloudflare Radar (verified anomaly)",
                "radar-outage": "Cloudflare Radar Outage Center"}
+# Blackout kinds that report an outage but that triage does not read (ideas#164, 24 Nov 2026): NetBlocks' reports,
+# which Blackout parses from its public posts. They are listed per country so a reader asking about a country is told
+# a report exists there, never that there is no outage.
+NOT_READ_KINDS = {"netblocks": "NetBlocks (its public posts, via Blackout)"}
 _ISO = r"(\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?Z)"
 _SPAN_RE = re.compile(rf"(?:since {_ISO}, ongoing|from {_ISO} to {_ISO})")
 _CAUSE_RE = re.compile(r"Cause as Cloudflare states it: ([^.]+)\.")
@@ -1207,10 +1226,16 @@ def triage(snapshot, history=None, ended=None):
         if p.get("cop_program") == "blackout" and p.get("indicator_id") == OONI_BLOCKING and not p.get("cop_stale"):
             for cc in p.get("countries") or []:
                 ooni[cc] = _row(p)
-    records, unplaced = [], []
+    records, unplaced, not_read = [], [], []
     for f in features:
         p = f["properties"]
         if p.get("cop_program") != "blackout" or p.get("cop_stale"):
+            continue
+        if _kind(p.get("id")) in NOT_READ_KINDS:
+            gone = utc(p.get("valid_until"))
+            if not (gone and snap_at and gone <= snap_at):
+                not_read.append(_row(p, source=NOT_READ_KINDS[_kind(p.get("id"))],
+                                     countries=list(p.get("countries") or [])))
             continue
         if p.get("indicator_id") == POWER_OUTAGE:
             rec = power_record(f, features, states, history, ended_info)
@@ -1288,7 +1313,7 @@ def triage(snapshot, history=None, ended=None):
                 "join": JOIN["id"], "country": cc, "outage_kind": "internet", "us_state": None,
                 "us_state_name": None,
                 "outage": _row(p, confirmed=confirmed, indicator_id=p.get("indicator_id"), summary=p.get("summary"),
-                               source=inp["source"], started_at=iso(at), ended_at=inp["ended"],
+                               title=named_title(p.get("title"), cc), source=inp["source"], started_at=iso(at), ended_at=inp["ended"],
                                network=inp["network"], stated_cause=inp["stated_cause"]),
                 "layers": {
                     "elements": {"state": states["elements"], **haz,
@@ -1317,7 +1342,7 @@ def triage(snapshot, history=None, ended=None):
                         "ooni_min_measurements": OONI_MIN_MEASUREMENTS, "ooni_min_share": OONI_MIN_SHARE,
                         "ooni_rise": OONI_RISE,
                         "cause_window_days": CAUSE_WINDOW_D, "provisional": True},
-            "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced,
+            "inputs": sorted(INPUT_KINDS.values()), "unplaced": unplaced, "not_read": not_read,
             "baseline_given": history is not None, "ended_items": ended_info,
             "records": records}
 
@@ -1591,7 +1616,7 @@ def public(doc):
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
             "replay": doc.get("replay"), "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
-            "records": records}
+            "not_read": doc.get("not_read") or [], "records": records}
 
 
 def publish_folder(path):

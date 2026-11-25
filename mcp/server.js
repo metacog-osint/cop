@@ -1,4 +1,4 @@
-// COP's MCP server: nine read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
+// COP's MCP server: ten read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
 // functions/mcp.js at https://cop.theintelligence.company/mcp.
 //
 // Built on the official MCP TypeScript SDK v2 (@modelcontextprotocol/server). Its createMcpHandler serves
@@ -27,6 +27,7 @@ How to use these tools well:
 9. Wake has four kinds of item; the second part of its id names the kind. Chokepoint and port items (wake:chokepoint:..., wake:port:...) are IMF PortWatch's counts of AIS-visible transits or port calls, as 7-day means that Wake computes and compares with the 90 days before and the same weeks a year earlier; tier "anomaly" means the week is unusual against those baselines, not a warning or a finding of cause. PortWatch publishes weekly, so the newest day is usually 2 to 16 days old: give the week the item covers. A ship with its transponder off is not counted, and a port's tonnage is the IMF's estimate from draughts, not customs figures. AIS gap and slow items (wake:ais-gap:..., wake:ais-slow:...) are what one vessel's AIS record shows near a subsea cable or pipeline (Digitraffic, the Baltic): a gap is given between Wake's lower and upper bounds, and a receiver outage, a transponder fault and a vessel switching off look the same, so never say the vessel went dark on purpose or caused damage; a slow spell is not a reason. Listed items (wake:ais-listed:...) say a vessel broadcasts an IMO number listed on a named sanctions list: always say "broadcasts an IMO number listed on", never "sanctioned vessel", because an IMO number in AIS is a claim, not an identity, and the item says nothing about owner, operator or purpose; an item with no geometry had a position that failed Wake's checks. UKMTO items (wake:ukmto:...) are the Royal Navy's UKMTO reports as published (number, type, alert level, place, incident time), always routine, not verified by Wake, and they name no one responsible: give UKMTO as the source, its report type in UKMTO's words, and its own page (sources[0].url) for the report itself.
 10. three_signal is COP's own reading of the Strait of Hormuz and the Gulf, four signals since join 0.3: whether GPS interference (Noisefloor), a new notice (Cordon: a navigation warning naming military activity, a new airspace bulletin or a revision that is not a scheduled renewal, or a US embassy security alert), a confirmed internet outage (Blackout) and unusual press reporting of violence in an area country (Watchfloor) fall in the area within 48 hours of each other, with Vis's weather forecast beside them as context. UKMTO's reports in the circle (via Wake) are context too (context.ukmto, since join 0.4): give UKMTO as the source and its report type in its own words, never as COP's finding of who or why; its Attack reports count toward the notice only when context.ukmto.counts is true, a surge above their own 90th percentile over the last 30 days. A signal that fires on most archived days counts only when it rises above its own rate there (signals_at_usual_rate lists those that did not). A reading (converged, partial, none or incomplete) says which signals are present and how close together they fall. It is not a warning, a forecast or a finding of cause, and it carries no probability: report what each layer shows and the base rate (how often each signal fires anyway in the archive), and do not state what the pattern means. question_draft is a drafted question, not a registered Verdict forecast.
 11. Relief's items are the publishers' own records: an IFRC emergency appeal or DREF allocation (hazard, amounts in Swiss francs, people targeted, dates) or a WHO Disease Outbreak News notice (title, date, country, link). Tier is always "routine": Relief makes no anomaly, warning or forecast, so never present an item as one. An IFRC appeal shows where the Red Cross and Red Crescent asked for money, not every place in need; crises led by others may have no appeal. place_context's Poisson figure (tail_probability) is a measurement of how often the country's appeal starts in the last 90 days have occurred against its own ten-year rate, not a warning or a prediction. A WHO notice usually comes weeks after the first report. Never quote WHO notice text: give its title, date, country and link only.
+12. direction is COP's direction of concern: for each warning problem and each of Watchfloor's conflict zones, whether each layer (GPS interference, security notices, confirmed internet outages, press reports of violence, UKMTO's attack reports) moved in the last 7 days against its own 14 days before, and a word that counts the layers moving (Rising, Easing, Mixed, Edging up, Edging down, Steady, Building a baseline). Measurements are never added together. Quote the word with the layers it names and each layer's own text; it is not a warning, a forecast or a finding of cause, and it carries no probability. Ship transits are a condition beside the reading, never counted. top_picks lists a pick in a place read as Rising first and says so in its reason.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -71,6 +72,11 @@ const SearchInput = z.object({
     })
     .optional()
     .describe("Only items within km of this point (items with an area count when the point is inside or near it)."),
+  include_expired: z
+    .boolean()
+    .optional()
+    .describe("Also list items past their own valid_until (default false: they are left out and counted). Every " +
+      "row says expired true or false."),
   limit: z.number().int().min(1).max(T.LIMIT_MAX).optional().describe(`Items to return, default ${T.LIMIT_DEFAULT}.`),
   offset: z
     .number()
@@ -95,6 +101,10 @@ const ThreeSignalInput = z.object({
   area: z.string().regex(/^[a-z0-9-]{1,40}$/).optional().describe("An area key (hormuz). Default: every area."),
 });
 
+const DirectionInput = z.object({
+  area: z.string().regex(/^[a-z0-9-]{1,40}$/).optional().describe("A place key (gulf, ukraine, taiwan). Default: every place."),
+});
+
 const ForecastInput = z.object({
   status: z.enum(T.FORECAST_STATUSES).optional().describe("open, resolved or all (default all)."),
 });
@@ -104,8 +114,9 @@ const EventsInput = z.object({
   origin: z.enum(T.EVENT_ORIGINS).optional().describe("Only events found by this program."),
 });
 
-// data: { index(), programs(), picks(), triage(), threeSignal(), verdict(), events(), shard(n) }, each a promise of the
-// parsed file (see data.js; triage(), threeSignal() and events() resolve to null when the file is absent).
+// data: { index(), programs(), picks(), triage(), threeSignal(), direction(), verdict(), events(), shard(n) }, each a
+// promise of the parsed file (see data.js; triage(), threeSignal(), direction() and events() resolve to null when the
+// file is absent).
 export function buildServer(data, clock = Date.now) {
   const server = new McpServer(
     { name: "cop", title: "COP, The Intelligence Company", version: VERSION, websiteUrl: SITE },
@@ -169,9 +180,10 @@ export function buildServer(data, clock = Date.now) {
     "Today's picks",
     "COP's picks for today: each program's strongest measured anomaly that has a place, at most five, with the " +
       "reason each was picked. Watchfloor and Context both read GDELT and count as one voice: one pick per zone, " +
-      "carrying both programs' readings.",
+      "carrying both programs' readings. A pick in a place COP's direction board reads as Rising comes first and " +
+      "says so.",
     NoInput,
-    async (_a, now) => T.topPicks(await data.index(), await data.picks(), now),
+    async (_a, now) => T.topPicks(await data.index(), await data.picks(), now, await data.direction()),
   );
   tool(
     "outage_triage",
@@ -218,6 +230,16 @@ export function buildServer(data, clock = Date.now) {
       "or a finding of cause.",
     ThreeSignalInput,
     async (a, now) => T.threeSignal(await data.index(), await data.threeSignal(), a, now),
+  );
+  tool(
+    "direction",
+    "Direction of concern",
+    "What is getting more or less concerning, place by place: for each warning problem and conflict zone, whether " +
+      "GPS interference, security notices, internet outages, press reports of violence and UKMTO's attack reports " +
+      "moved in the last 7 days against the 14 before, each on its own, and a word counting the layers moving " +
+      "(Rising, Easing, Mixed, Edging up, Edging down, Steady). Not a warning, a forecast or a finding of cause.",
+    DirectionInput,
+    async (a, now) => T.direction(await data.index(), await data.direction(), a, now),
   );
   return server;
 }
