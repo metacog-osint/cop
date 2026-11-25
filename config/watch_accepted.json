@@ -7,7 +7,7 @@
       "state": "stale",
       "detail_has": "under its floor",
       "until": "2026-12-31",
-      "reason": "ThreatCluster retired its 90-day victims file on 22 Nov 2026 and now publishes a capped free file (25 rows a day) under non-commercial terms. Vigil keeps the capped file with credit, and its row-count floor reads degraded on purpose, which is how its feed says why claims lack a country (decided 23 Nov 2026)."
+      "reason": "ThreatCluster retired its 90-day victims file on 22 Nov 2026 and now publishes a capped free file (25 rows a day) under non-commercial terms. Vigil keeps the capped file with credit, and its row-count floor reads degraded on purpose, which is how its feed says why claims lack a country."
     }
   ]
 }
