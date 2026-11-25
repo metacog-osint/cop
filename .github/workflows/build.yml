@@ -161,7 +161,51 @@ jobs:
             python tools/memory.py --replay out/rates-archive --snapshot site/data/today.geojson --assets out/memory || skip "the first replay failed"
           fi
           python tools/direction.py --memory out/memory --archive out/rates-archive --snapshot site/data/today.geojson \
-            --verdict site/data/agent/verdict.json --publish site/data || skip "the direction join failed"
+            --verdict site/data/agent/verdict.json --picks site/data/picks.json --publish site/data || skip "the direction join failed"
+      # Lane records (tools/lane_log.py, ideas#330): every outage triage reads and every three-signal reading that
+      # flags is logged once, before its outcome can be known, to lane-log.jsonl on the branch lane-log (append-only,
+      # hash-chained, never forced, does not deploy), then site/data/lanes.json gives one record line per lane, counts
+      # only, for the page and the MCP server. The direction log is read, never written, here. Verdict scores the
+      # outcomes. A failure never fails the build: without lanes.json the page and the server leave the line out.
+      - name: Lane records (branch lane-log, then site/data/lanes.json)
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          skip() { rm -f site/data/lanes.json; echo "::warning::lane records: $1; no lane line on this build"; exit 0; }
+          LOG=out/lane-log.jsonl; DLOG=out/direction-log-read.jsonl; PARENT=""; rc=0
+          git ls-remote --exit-code --heads origin lane-log >/dev/null || rc=$?
+          if [ "$rc" = 0 ]; then
+            git fetch --quiet origin +refs/heads/lane-log:refs/remotes/origin/lane-log || skip "the lane log could not be fetched"
+            PARENT=$(git rev-parse refs/remotes/origin/lane-log)
+            git show "$PARENT:lane-log.jsonl" > "$LOG" || skip "the lane log could not be read"
+          elif [ "$rc" = 2 ]; then
+            : > "$LOG"
+          else
+            skip "could not tell whether the lane log exists"
+          fi
+          : > "$DLOG"
+          if git ls-remote --exit-code --heads origin direction-log >/dev/null; then
+            git fetch --quiet origin +refs/heads/direction-log:refs/remotes/origin/direction-log \
+              && git show refs/remotes/origin/direction-log:direction-log.jsonl > "$DLOG" \
+              || { : > "$DLOG"; echo "::warning::lane records: the direction log could not be read"; }
+          fi
+          BEFORE=$(git hash-object "$LOG")
+          python tools/lane_log.py --log "$LOG" --triage site/data/triage.json --three-signal site/data/three-signal.json \
+            || skip "the tool failed"
+          if [ "$(git hash-object "$LOG")" != "$BEFORE" ]; then
+            BLOB=$(git hash-object -w "$LOG")
+            TREE=$(printf '100644 blob %s\tlane-log.jsonl\n' "$BLOB" | git mktree)
+            COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Lane log: build $GITHUB_SHA")
+            # Published counts come only from lines that are locked: an unpushed line is not counted.
+            git push origin "$COMMIT:refs/heads/lane-log" || {
+              if [ -n "$PARENT" ]; then git show "$PARENT:lane-log.jsonl" > "$LOG"; else : > "$LOG"; fi
+              echo "::warning::lane records: the push failed; this build's lines wait for the next build"; }
+          fi
+          python tools/lane_log.py --log "$LOG" --direction-log "$DLOG" --publish site/data --no-append \
+            || skip "the record could not be written"
       # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
       # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
       # writes out/undertow-sanctions/ only. A failure never fails the build.
@@ -180,6 +224,44 @@ jobs:
             --calendar https://metacog-osint.github.io/verdict/data/calendar.geojson \
             --out out/undertow-elections --publish site/data \
             || echo "::warning::Undertow election join failed"
+      # The daily brief (tools/brief.py, site/brief/): five sentences on what changed, written once a UTC day at the
+      # first build after 12:00 UTC and never replaced. Every brief is kept in the releases briefs-YYYY, one
+      # <day>.json each; this step downloads them all, writes today's when it is due, and uploads it without
+      # --clobber before the page is drawn, so the page only ever shows briefs that are kept. When the releases cannot
+      # be read the page is drawn from the live briefs.json and nothing new is written; a failed upload drops the new
+      # brief and the next build tries again. Never fails the build.
+      - name: Daily brief (site/brief/; kept in the releases briefs-YYYY)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out/briefs
+          NEW=""
+          fallback() {
+            echo "::warning::daily brief: $1"
+            [ -n "$NEW" ] && rm -f "$NEW"
+            curl -sf -o out/briefs-live.json https://cop.theintelligence.company/brief/briefs.json || echo '{}' > out/briefs-live.json
+            python tools/brief.py --store out/briefs --publish site/brief --render-only --seed out/briefs-live.json \
+              || echo "::warning::daily brief: the page could not be drawn"
+            exit 0
+          }
+          TAGS=$(gh release list --limit 200 --json tagName --jq '.[].tagName | select(startswith("briefs-"))') \
+            || fallback "the release list could not be read"
+          for TAG in $TAGS; do
+            gh release download "$TAG" --dir out/briefs --pattern "*.json" --clobber || fallback "$TAG could not be downloaded"
+          done
+          python tools/brief.py --snapshot site/data/today.geojson --events site/data/agent/events.json \
+            --verdict site/data/agent/verdict.json --store out/briefs --publish site/brief --new-out out/brief-new.txt \
+            || fallback "the tool failed"
+          NEW=$(cat out/brief-new.txt)
+          if [ -n "$NEW" ]; then
+            YEAR=$(basename "$NEW" | cut -c1-4)
+            TAG="briefs-$YEAR"
+            gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "COP daily briefs $YEAR" \
+              --notes "COP's daily brief, one <day>.json per UTC day (cop-brief/1), written once and never replaced. Published at https://cop.theintelligence.company/brief/. Measurements and scheduled events, never warnings." \
+              || fallback "the release $TAG could not be created; today's brief waits for the next build"
+            gh release upload "$TAG" "$NEW" || fallback "the upload failed; today's brief waits for the next build"
+            echo "daily brief: kept $(basename "$NEW") in $TAG"
+          fi
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
@@ -299,6 +381,41 @@ jobs:
             up memory "out/memory/$MONTH" || { echo "::error::the month's copy of the memory could not be kept"; exit 1; }
           fi
           up memory out/memory/memory.json.gz --clobber || { echo "::error::the memory could not be uploaded"; exit 1; }
+      # The direction log (tools/direction_log.py, ideas#126): each Monday's word per place and, ten days later, the
+      # numbers for the week that followed, appended to direction-log.jsonl on the branch direction-log. Each line
+      # carries the hash of the one before and the push is never forced, so a word cannot be changed once its week has
+      # begun. The branch does not deploy. Verdict reads it and does the scoring. A failure here is red and holds nothing.
+      - name: Lock the direction words (branch direction-log)
+        id: direction_log
+        if: ${{ !cancelled() }}
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -eu
+          if [ ! -f site/data/direction.json ] || [ ! -f out/memory/memory.json.gz ]; then
+            echo "no direction reading from this build"; exit 0
+          fi
+          LOG=out/direction-log.jsonl; PARENT=""; rc=0
+          git ls-remote --exit-code --heads origin direction-log >/dev/null || rc=$?
+          if [ "$rc" = 0 ]; then
+            git fetch --quiet origin +refs/heads/direction-log:refs/remotes/origin/direction-log
+            PARENT=$(git rev-parse refs/remotes/origin/direction-log)
+            git show "$PARENT:direction-log.jsonl" > "$LOG"
+          elif [ "$rc" = 2 ]; then
+            : > "$LOG"
+          else
+            echo "::error::could not tell whether the direction log exists"; exit 1
+          fi
+          BEFORE=$(git hash-object "$LOG")
+          python tools/direction_log.py --log "$LOG" --direction site/data/direction.json --memory out/memory
+          if [ "$(git hash-object "$LOG")" = "$BEFORE" ]; then echo "nothing new to lock"; exit 0; fi
+          BLOB=$(git hash-object -w "$LOG")
+          TREE=$(printf '100644 blob %s\tdirection-log.jsonl\n' "$BLOB" | git mktree)
+          COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Direction log: build $GITHUB_SHA")
+          git push origin "$COMMIT:refs/heads/direction-log"
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
       # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.

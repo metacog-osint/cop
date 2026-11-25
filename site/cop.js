@@ -70,6 +70,27 @@ try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSign
 // Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
 let direction = null;
 try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
+// Lane records (ideas#330): each lane's counts, from the locked lane log. The picture stands without them too.
+let lanes = null;
+try { lanes = await getJSON("data/lanes.json"); } catch { lanes = null; }
+// The lane an item belongs to (mirrors tools/lane_log.py lane_for): prefix lanes before a program's catch-all.
+function laneFor(program, id) {
+  for (const lane of (lanes && lanes.lanes) || []) {
+    const m = lane.match;
+    if (!m || m.program !== program) continue;
+    if (m.id_prefixes && !m.id_prefixes.some((x) => String(id).startsWith(x))) continue;
+    return lane;
+  }
+  return null;
+}
+const laneById = (id) => ((lanes && lanes.lanes) || []).find((x) => x.id === id) || null;
+// One record line, counts only. A lane record describes how a measurement has behaved; it is never a warning.
+function laneNote(lane, withReplay = true) {
+  if (!lane) return null;
+  return h("p", { class: "note lane-line" }, h("strong", { text: "Lane record. " }), lane.text,
+    withReplay && lane.replay ? ` ${lane.replay.text} Credit: ${lane.replay.attribution}.` : null,
+    ` ${lanes.not_a_warning} `, h("a", { href: "scoring.html#lanes" }, "How lanes are counted"));
+}
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
@@ -371,6 +392,31 @@ function closeCard() {
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.removeAttribute("aria-current"));
   writeHash();
 }
+// Terms explained where they appear (Tom, 23 Nov 2026, ideas#264): programs write their own item text, so the card
+// looks for the terms it uses and explains each in a <details>, which a phone can open (no hover). The numbers stay.
+const TERMS = [
+  { re: /\bz\s?[-−]?\d/, term: "z", text: "A z-score says how far a value sits from its own usual level, in units of that measure's usual day-to-day spread. 0 is usual; above +2 or below −2 is unusual." },
+  { re: /\b[A-Z]{2}-IND-\d+\b/, term: "Indicator code (for example BO-IND-4)", text: "The program's own label for one kind of measurement. The sentence beside it says what is counted." },
+  { re: /\bGLIDE\b/, term: "GLIDE number", text: "An international disaster identifier: hazard type, year, serial number and country code." },
+  { re: /\b(NAVAREA|HYDROLANT|HYDROPAC)\b/, term: "NAVAREA, HYDROLANT, HYDROPAC", text: "Navigational warnings to mariners. NAVAREA numbers the world's sea areas; the number after it is that warning's serial and year." },
+  { re: /\bIMO number\b/, term: "IMO number", text: "A ship's permanent identifier, which stays with the hull when its name or flag changes." },
+  { re: /\bTFR\b/, term: "TFR", text: "Temporary flight restriction: airspace the FAA closes or limits for a set time." },
+  { re: /\bAIS\b/, term: "AIS", text: "Automatic Identification System: the position signal most ships broadcast." },
+  { re: /\bADS-B\b/, term: "ADS-B", text: "The position signal most aircraft broadcast, received by volunteer and public receivers." },
+  { re: /\bGDELT\b/, term: "GDELT", text: "A public database that counts news articles about events worldwide." },
+  { re: /\bBGP\b/, term: "BGP", text: "The routing system networks use to announce their addresses; a drop in announced routes can mean a network is cut off." },
+];
+function termsFor(p) {
+  const text = [p.title, p.summary, p.indicator_id, p.cop_strength_text, p.measure].filter((v) => typeof v === "string").join(" ");
+  return TERMS.filter((t) => t.re.test(text));
+}
+function termsBlock(p) {
+  const found = termsFor(p);
+  if (p.likelihood_term) found.push({ term: p.likelihood_term, text: "A likelihood term from intelligence community standard ICD 203, each tied to a probability range. Confidence is stated separately." });
+  if (!found.length) return null;
+  return h("details", { class: "terms" }, h("summary", { text: "Terms in this item" }),
+    h("dl", {}, ...found.flatMap((t) => [h("dt", { text: t.term === "z" ? "z (z-score)" : t.term }), h("dd", { text: t.text })])));
+}
 function renderCard(f) {
   const p = f.properties, prog = PROGS[p.cop_program], pick = PICK_OF.get(p.id);
   const card = $("card");
@@ -411,6 +457,9 @@ function renderCard(f) {
   const facts = h("dl", { class: "facts" });
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
+  const lane = laneFor(p.cop_program, p.id);
+  if (lane) fact("Lane record", lane.replay
+    ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
@@ -449,6 +498,10 @@ function renderCard(f) {
     }
   }
   card.append(facts);
+  const tb = termsBlock(p);
+  if (tb) card.append(tb);
+  card.append(h("p", { class: "caveat" }, "Measured or reported by the program named above, not judged by COP. ",
+    h("a", { href: "scoring.html" }, "How COP reads it")));
   // What else is drawn under the click that opened this card, top first: the card of each is one press away.
   const here = (state.here || []).filter((id) => id !== p.id && BY_ID.has(id));
   if (here.length) {
@@ -609,7 +662,7 @@ function dirMoved(x) {
 }
 function directionLayer(l) {
   const items = l.items || [];
-  const said = l.condition ? "Condition" : DIR_LAYER[l.state];
+  const said = l.condition ? (l.label || "Condition") : DIR_LAYER[l.state];
   return h("div", { class: "tri-layer" + (l.state === "thin" ? " dead" : "") },
     h("dt", {}, dotFor(l.program, {}), h("span", { class: "dir-name", text: l.name }), h("span", { class: `dir-state dir-s-${l.condition ? "cond" : l.state}`, text: said })),
     h("dd", {}, l.text, items.length ? h("details", { class: "dir-items" }, h("summary", {}, `Latest ${items.length === 1 ? "item" : `${items.length} items`}`),
@@ -635,6 +688,8 @@ function renderDirection() {
       `Show ${rest} steady or building`))] : []));
   const r = direction.record;
   $("direction-record").textContent = r ? recordLine(r) : "";
+  const dl = laneById("cop-direction");
+  $("direction-lane").replaceChildren(...(dl ? [laneNote(dl)] : []));
 }
 function recordLine(r) {
   const parts = [`Forecast record: ${r.registered} registered, ${r.resolved} resolved, ${r.on_called_side} of ${r.called} on the side called`
@@ -715,6 +770,8 @@ function renderTriage() {
     ? "No current data from Blackout, so there is nothing to triage. That is not the same as no outages."
     : "No outages in Blackout's current data.";
   list.replaceChildren(...(triage.records.length ? triage.records.map(triageRecord) : [h("li", { class: "empty", text: none })]));
+  const tl = laneById("blackout-outage-triage");
+  if (tl) foot.append(laneNote(tl, false));
   const b = triage.base_rates;
   if (b) {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
@@ -762,6 +819,10 @@ function renderTriage() {
   if (unplaced.length) foot.append(h("p", { class: "note" },
     `Not read: ${count(unplaced.length, "Cloudflare Radar entry", "Cloudflare Radar entries")} ${unplaced.length === 1 ? "names" : "name"} no place, so no country layer can sit under ${unplaced.length === 1 ? "it" : "them"}: `,
     ...unplaced.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
+  const notRead = triage.not_read || [];
+  if (notRead.length) foot.append(h("p", { class: "note" },
+    `Not read: ${count(notRead.length, "NetBlocks report", "NetBlocks reports")} that Blackout carries, of a kind triage does not read, so no triage line sits under ${notRead.length === 1 ? "it" : "them"}: `,
+    ...notRead.map((u, i) => h("span", {}, i ? "; " : "", triageItem(u)))));
 }
 // The three-signal join (four signals since join 0.3): which signals fall in one area within the window, each layer's
 // items in its own words, Vis's weather beside them and how often each fires anyway. It shows what lines up, never
@@ -835,6 +896,8 @@ function renderThreeSignal() {
   }
   $("three-signal-note").textContent = `${threeSignal.what} ${threeSignal.not_a_warning}`;
   list.replaceChildren(...threeSignal.records.map(threeSignalRecord));
+  const sl = laneById("cop-three-signal");
+  $("three-signal-lane").replaceChildren(...(sl ? [laneNote(sl)] : []));
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {
@@ -929,7 +992,17 @@ function readHash() {
   state.view = m ? { zoom: +m[1], center: [+m[3], +m[2]] } : null;
 }
 let hashTimer;
+// Browser title per view (ideas#300): the selected item's title, else the active preset, else the home title.
+const HOME_TITLE = document.title;
+function updateTitle() {
+  const f = state.selected && BY_ID.get(state.selected);
+  const t = f ? String(f.properties.title || "").trim() : "";
+  const label = state.preset !== "all" ? CFG.presets[state.preset] : "";
+  const short = t.length > 70 ? t.slice(0, 69).trimEnd() + "…" : t;
+  document.title = short ? `${short} · COP` : label ? `${label} · COP` : HOME_TITLE;
+}
 function writeHash() {
+  updateTitle();
   clearTimeout(hashTimer);
   hashTimer = setTimeout(() => {
     const c = map.getCenter();
@@ -942,6 +1015,17 @@ function writeHash() {
   }, 250);
 }
 map.on("moveend", writeHash);
+// Back, forward or an edited address: apply the hash again. (The page's own writes use replaceState, which does not fire this.)
+window.addEventListener("hashchange", () => {
+  const prev = state.selected;
+  state.preset = "all"; state.selected = null;
+  readHash();
+  refreshLayers(); renderPanel();
+  if (state.selected && BY_ID.has(state.selected)) select(state.selected, { fly: true });
+  else { if (prev) closeCard(); state.selected = null; }
+  if (state.view) map.jumpTo(state.view);
+  updateTitle();
+});
 
 // ---------------------------------------------------------------- phone sheet, keys, time
 const SHEETS = ["sheet-peek", "sheet-half", "sheet-full"];
@@ -961,6 +1045,7 @@ if (T) { T.mountSettings($("time-settings")); T.onChange(() => renderTimes(docum
 // ---------------------------------------------------------------- start
 renderLegend();
 renderPanel();
+updateTitle();
 if (state.view) map.jumpTo(state.view);
 else map.once("load", fitPicks);
 if (state.selected && BY_ID.has(state.selected)) map.once("load", () => select(state.selected, { fly: !state.view }));

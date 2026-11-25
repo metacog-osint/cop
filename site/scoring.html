@@ -29,6 +29,7 @@
   <p class="bar-times" id="bar-times" aria-live="polite">Reading the live figures…</p>
   <nav class="bar-nav" aria-label="Site">
     <a href="./">Map</a>
+    <a href="https://metacog-osint.github.io/verdict/">Verdict</a>
     <span id="time-settings"></span>
   </nav>
 </header>
@@ -80,6 +81,10 @@
         queues, and one zone gives at most one pick, which names the other program's reading of that zone.</li>
       <li>An item its own program says has ended is never a candidate. Within a program, what changed on the latest
         reading comes before what is merely still there.</li>
+      <li>Strength compares like with like: each scale has its own rule, so a CDC health notice is never ranked as if it
+        were a travel advisory. Cordon's FCDO, Canada and NZ SafeTravel advice is a candidate only when its level moved,
+        as outage triage counts it, and a CDC notice only for <b>72 hours</b> from its date. The table below lists each
+        program's own limits.</li>
       <li>Picks are chosen when the picture is built. A pick that passes its valid-until time afterwards is named under
         the picks and no longer listed.</li>
     </ol>
@@ -239,6 +244,46 @@
       join looks for; it is not a warning, and the call is the analyst's.</p>
     <h3>Base rate <span class="live-tag">live</span></h3>
     <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
+  </section>
+
+  <section class="doc-box" id="brief" aria-labelledby="brief-h">
+    <h2 id="brief-h">The daily brief</h2>
+    <p>The <a href="brief/">daily brief</a> is written once a UTC day, at the first build at or after 12:00 UTC, and
+      is never rewritten; every past brief stays on its page and in the <a href="brief/feed.xml">Atom feed</a>.</p>
+    <ul>
+      <li><strong>What changed</strong>: up to 4 sentences, one program each. A program offers its strongest
+        anomaly with a place, by its own strength rule, that is new or changed (not "unchanged since the last
+        reading"), whose data reaches into the last 48 hours, and whose program and source were read; nothing
+        stale, expired, ended or forecast (Vis never). Programs take turns in the order the map lists them, except
+        that those heard in the last brief go last; strength is never compared across programs. An item already in
+        the last brief with the same title is left out.</li>
+      <li><strong>Why it matters</strong> is each item's own baseline, in its program's words: what it was measured
+        against. Never a cause, an intent or a likelihood.</li>
+      <li><strong>What to watch</strong>: one dated event ahead, from Verdict's calendar within 7 days, else an
+        Orbit scheduled launch within 48 hours; one in a country the brief names first, and one not named in the last
+        brief before one that was. A launch time is the provider's, as Launch Library 2 lists it, and often moves.</li>
+    </ul>
+  </section>
+
+  <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
+    <h2 id="lanes-h">Lane records</h2>
+    <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
+      words, the four-signal join, and one lane for each program with no outside check yet. A lane's record says how
+      that kind of item has behaved. It is not a warning and gives no likelihood to any single item.</p>
+    <ul>
+      <li><strong>Logged first.</strong> Each build writes a line for every outage triage reads and every four-signal
+        reading of converged or partial (once per area, reading and UTC day) before its outcome can be known, to an
+        append-only log in which each line carries the hash of the one before (branch <code>lane-log</code>). The
+        direction words keep their own locked log (branch <code>direction-log</code>).</li>
+      <li><strong>Scored by Verdict.</strong> Once a lane's horizon has passed (14 days for an outage), Verdict counts
+        each item as confirmed by the lane's named second source, withdrawn by its own source, or left unconfirmed.
+        Until then the record shows how many were flagged and "none scored yet".</li>
+      <li><strong>Counts only.</strong> No rate or skill figure before 30 independently scored items, and the pick
+        order does not change. A change of method starts a new count; counts from two methods are never added.</li>
+      <li><strong>Replay is labelled.</strong> Outage triage also shows how it read Access Now's documented 2025
+        shutdowns (#KeepItOn STOP) against the same countries' ordinary days. That is a past labelled set, never live
+        results.</li>
+    </ul>
   </section>
 
   <section id="sources" aria-labelledby="sources-h">

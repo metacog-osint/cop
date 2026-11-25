@@ -20,6 +20,8 @@ const ORDER = [
   "forecast_record",
   "upcoming_events",
   "three_signal",
+  "direction",
+  "lane_record",
 ];
 
 async function client() {
@@ -33,7 +35,7 @@ async function client() {
 
 const body = (r) => r.structuredContent ?? JSON.parse(r.content[0].text);
 
-test("a 2026-07-28 client lists the nine tools in a fixed order, all read-only", async () => {
+test("a 2026-07-28 client lists the eleven tools in a fixed order, all read-only", async () => {
   const c = await client();
   const { tools } = await c.listTools();
   assert.deepEqual(tools.map((t) => t.name), ORDER);
@@ -83,6 +85,25 @@ test("every tool answers through the client", async () => {
   assert.equal(ts.join, "three-signal");
   assert.deepEqual(ts.records.map((r) => r.area), ["hormuz"]);
   assert.match(ts.note, /not a warning, a forecast or a finding of cause/);
+
+  const dir_ = body(await c.callTool({ name: "direction", arguments: { area: "gulf" } }));
+  assert.equal(dir_.join, "direction");
+  assert.equal(dir_.problems[0].word, "Rising");
+  assert.ok(picks.picks[0].in_rising_place, "top_picks reads direction.json");
+
+  const lanes = body(await c.callTool({ name: "lane_record", arguments: {} }));
+  assert.equal(lanes.min_scored_for_rate, 30);
+  assert.match(lanes.note, /not a warning and gives no likelihood/);
+  const tri = lanes.lanes.find((x) => x.id === "blackout-outage-triage");
+  assert.ok(tri.flagged > 0, "the fixtures' outages are logged");
+  assert.equal(tri.scored, 0);
+  assert.match(tri.replay.text, /^Replay, not live/);
+  assert.equal(lanes.lanes.find((x) => x.id === "elements").flagged, null);
+  for (const p of picks.picks) assert.ok(p.lane_record && p.lane_record.lane, `pick ${p.id} carries its lane`);
+  const one_ = body(await c.callTool({ name: "lane_record", arguments: { lane: "cop-direction" } }));
+  assert.deepEqual(one_.lanes.map((x) => x.id), ["cop-direction"]);
+  const bad = await c.callTool({ name: "lane_record", arguments: { lane: "no-such-lane" } });
+  assert.equal(bad.isError, true);
 
   const forecasts = body(await c.callTool({ name: "list_forecasts", arguments: { status: "open" } }));
   assert.equal(forecasts.count, 8);

@@ -14,6 +14,8 @@ const events = readJson(dir, "agent/events.json");
 const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const threeSignal = readJson(dir, "three-signal.json");
+const direction = readJson(dir, "direction.json");
+const lanes = readJson(dir, "lanes.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -50,7 +52,9 @@ test("distance: to a point, to a box, and zero inside a box", () => {
 
 test("search: every filter narrows, warnings and anomalies come first, newest first", () => {
   const all = T.searchItems(index, { limit: 50 }, NOW);
-  assert.equal(all.matched, rows.length);
+  const expired = rows.filter((r) => T.isExpired(r.valid_until, NOW)).length;
+  assert.equal(all.matched + (all.expired_left_out || 0), rows.length);
+  assert.equal(all.expired_left_out || 0, expired);
   assert.equal(all.returned, 50);
   assert.match(all.more, /pass offset 50/);
   assert.equal(all.next_offset, 50);
@@ -78,6 +82,38 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   const byText = T.searchItems(index, { text: word }, NOW);
   assert.ok(byText.items.every((r) => (r.title + r.id).toLowerCase().includes(word.toLowerCase())));
   assert.ok(byText.items.every((r) => !("shard" in r)), "shard numbers stay internal");
+});
+
+test("search leaves out items past their valid_until unless asked, and every row says expired (ideas#164)", () => {
+  const vi = index.fields.indexOf("valid_until");
+  assert.ok(vi >= 0, "the index carries valid_until");
+  const all = T.searchItems(index, { limit: 50, include_expired: true }, NOW);
+  assert.ok(all.items.every((r) => typeof r.expired === "boolean"));
+  // Expire one row by copying the index with its valid_until an hour before NOW.
+  const target = index.rows[0];
+  const id = target[index.fields.indexOf("id")];
+  const past = new Date(Number(NOW) - 3600 * 1000).toISOString();
+  const copy = { ...index, rows: index.rows.map((r) => (r === target ? Object.assign([...r], { [vi]: past }) : r)) };
+  const shown = T.searchItems(copy, { text: id, limit: 50 }, NOW);
+  assert.ok(!shown.items.some((r) => r.id === id), "left out by default");
+  assert.ok(shown.expired_left_out >= 1 && /include_expired/.test(shown.expired_note));
+  const asked = T.searchItems(copy, { text: id, limit: 50, include_expired: true }, NOW);
+  const row = asked.items.find((r) => r.id === id);
+  assert.ok(row && row.expired === true, "listed and marked when asked");
+  assert.equal(T.isExpired(null, NOW), false);
+  assert.equal(T.isExpired(new Date(Number(NOW) + 1000).toISOString(), NOW), false);
+});
+
+test("a pick that passed its valid_until after the build says expired", () => {
+  const first = picks.picks[0];
+  const vi = index.fields.indexOf("valid_until");
+  const ii = index.fields.indexOf("id");
+  const past = new Date(Number(NOW) - 60 * 1000).toISOString();
+  const copy = { ...index, rows: index.rows.map((r) => (r[ii] === first.id ? Object.assign([...r], { [vi]: past }) : r)) };
+  const out = T.topPicks(copy, picks, NOW);
+  assert.equal(out.picks[0].expired, true);
+  assert.ok(out.picks.slice(1).every((p) => p.missing || p.expired === false || p.expired === true));
+  assert.match(out.note, /valid_until/);
 });
 
 test("search by state matches only items placed in that state", () => {
@@ -148,6 +184,34 @@ test("get_item returns the full item with its sources, or a clear miss", () => {
   assert.throws(() => T.getItem(index, null, "nope:1", NOW), /No item "nope:1"/);
 });
 
+test("an item carries its own lane's record line, a prefix lane before its program's catch-all (ideas#330)", () => {
+  const out = rows.find((x) => x.program === "blackout" && /^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  assert.ok(out, "the fixtures hold a Blackout outage");
+  const res = T.getItem(index, shard(out.shard), out.id, NOW, lanes);
+  assert.equal(res.lane_record.lane, "blackout-outage-triage");
+  assert.match(res.lane_record.text, /^This lane: \d+ flagged since 2026-10-31/);
+  assert.match(res.lane_record.replay, /^Replay, not live/);
+  const other = rows.find((x) => x.program === "blackout" && !/^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  if (other) assert.equal(T.getItem(index, shard(other.shard), other.id, NOW, lanes).lane_record.lane, "blackout-other");
+  const v = rows.find((x) => x.program === "vigil");
+  const line = T.getItem(index, shard(v.shard), v.id, NOW, lanes).lane_record;
+  assert.equal(line.lane, "vigil");
+  assert.equal(line.flagged, null);
+  assert.match(line.text, /No outside check yet/);
+  assert.equal(T.getItem(index, shard(v.shard), v.id, NOW).lane_record, null, "no lanes.json, no line");
+});
+
+test("lane records never change the pick order, and a missing file is a tool error", () => {
+  const plain = T.topPicks(index, picks, NOW, direction);
+  const withLanes = T.topPicks(index, picks, NOW, direction, lanes);
+  assert.deepEqual(withLanes.picks.map((p) => p.id), plain.picks.map((p) => p.id));
+  assert.ok(withLanes.picks.every((p) => p.lane_record));
+  assert.throws(() => T.laneRecord(null, {}, NOW), /lane records were not built/);
+  const rec = T.laneRecord(lanes, {}, NOW);
+  assert.equal(rec.lanes.length, lanes.lanes.length);
+  assert.ok(rec.lanes.every((x) => x.rate_shown === false && x.scored === 0));
+});
+
 test("top picks keep COP's order and reasons", () => {
   const res = T.topPicks(index, picks, NOW);
   assert.ok(picks.picks.length > 0, "the fixtures make picks at their own time");
@@ -157,6 +221,34 @@ test("top picks keep COP's order and reasons", () => {
     assert.equal(p.reason, picks.picks[i].reason);
   });
   assert.match(res.note, /not warnings/);
+});
+
+test("a pick in a Rising place comes first and says so; the rest keep their order (ideas#164)", () => {
+  assert.ok(picks.picks.length > 1, "the fixtures make more than one pick");
+  const last = picks.picks[picks.picks.length - 1];
+  const res = T.topPicks(index, picks, NOW, direction);
+  assert.equal(res.picks[0].id, last.id);
+  assert.equal(res.picks[0].rank, 1);
+  assert.equal(res.picks[0].picked_rank, last.n);
+  assert.ok(res.picks[0].in_rising_place);
+  assert.match(res.picks[0].reason, /Listed first: it falls in a place COP reads as Rising: Strait of Hormuz/);
+  assert.deepEqual(res.picks.slice(1).map((p) => p.id), picks.picks.slice(0, -1).map((p) => p.id));
+  assert.deepEqual(res.picks.map((p) => p.rank), res.picks.map((_p, i) => i + 1));
+  assert.equal(res.direction_as_of, direction.generated_at);
+  assert.deepEqual(T.topPicks(index, picks, NOW, null).picks.map((p) => p.id), picks.picks.map((p) => p.id));
+});
+
+test("direction returns the board, one place on request, and refuses when it was not built", () => {
+  const res = T.direction(index, direction, {}, NOW);
+  assert.equal(res.join, "direction");
+  assert.deepEqual(res.rising, ["Strait of Hormuz and the Gulf"]);
+  assert.equal(res.problems.length + res.areas.length, 2);
+  assert.ok(!("press_zone" in res.problems[0]));
+  assert.match(res.note, /not a warning/);
+  assert.ok(res.attribution.length > 0);
+  assert.deepEqual(T.direction(index, direction, { area: "gulf" }, NOW).problems.map((x) => x.area), ["gulf"]);
+  assert.throws(() => T.direction(index, direction, { area: "atlantis" }, NOW), T.ToolError);
+  assert.throws(() => T.direction(index, null, {}, NOW), T.ToolError);
 });
 
 // Watchfloor and Context both read GDELT: one voice, joined on zone number (suite review, 15 Nov 2026).
@@ -351,6 +443,20 @@ test("outage triage: a country with no outage, a dead Blackout feed and a missin
   assert.match(dead.none, /no current data/);
   assert.match(dead.none, /not the same as no outages/);
   assert.throws(() => T.outageTriage(index, null, {}, NOW), /was not built for this snapshot/);
+});
+
+test("outage triage names a NetBlocks report it does not read, so a country with one never reads as no outage", () => {
+  const nb = { id: "blackout:netblocks:3n2totkhmic2i", title: "Iceland: NetBlocks report (Confirmed)", countries: ["IS"],
+    source: "NetBlocks (its public posts, via Blackout)" };
+  const withNb = { ...triage, not_read: [nb] };
+  const is = T.outageTriage(index, withNb, { country: "is" }, NOW);
+  assert.equal(is.count, 0);
+  assert.deepEqual(is.not_read.map((r) => r.id), [nb.id]);
+  assert.match(is.none, /does not read/);
+  assert.match(is.none, /blackout:netblocks:3n2totkhmic2i/);
+  const fr = T.outageTriage(index, withNb, { country: "fr" }, NOW);
+  assert.deepEqual(fr.not_read, []);
+  assert.doesNotMatch(fr.none, /does not read/);
 });
 
 test("a layer with no current data reads incomplete and says so, never quiet", () => {

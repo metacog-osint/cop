@@ -81,9 +81,17 @@ function attributionFor(index, programIds) {
   return out;
 }
 
-function publicRow(r) {
+// An item past its own valid_until is expired (ideas#164, 24 Nov 2026): its program still lists it, but what it
+// reports no longer holds. Every row says so, judged at the time of the call, since the snapshot is up to 2 h old.
+export function isExpired(validUntil, now) {
+  const t = Date.parse(validUntil || "");
+  return Number.isFinite(t) && t < now;
+}
+
+function publicRow(r, now) {
   const { shard, ...rest } = r; // shard is the server's business
   if (rest.data_as_of_precision == null) delete rest.data_as_of_precision; // said only for a date-only item
+  if (now !== undefined) rest.expired = isExpired(rest.valid_until, now);
   return rest;
 }
 
@@ -168,6 +176,7 @@ export function searchItems(index, args, now) {
   const near = a.near || null;
   const limit = Math.min(Math.max(1, a.limit ?? LIMIT_DEFAULT), LIMIT_MAX);
   const offset = Math.max(0, Math.floor(a.offset ?? 0));
+  const includeExpired = Boolean(a.include_expired);
 
   const C = cols(index);
   const wantPrograms = programs && programs.map((p) => stored(index, "program", p));
@@ -176,6 +185,7 @@ export function searchItems(index, args, now) {
   const tiers = decoders(index)[C.tier];
   const rank = (t) => TIER_RANK[tiers ? tiers[t] : t] ?? 9;
   const hits = []; // [rank, distance or 0, data_as_of, id, raw row]
+  let expiredOut = 0;
   for (const r of index.rows) {
     if (wantPrograms && !wantPrograms.includes(r[C.program])) continue;
     if (wantKind !== null && r[C.kind] !== wantKind) continue;
@@ -194,6 +204,10 @@ export function searchItems(index, args, now) {
       km = distanceKm({ point: r[C.point], bbox: r[C.bbox] }, near.lat, near.lon);
       if (km === null || km > near.km) continue;
     }
+    if (!includeExpired && C.valid_until !== undefined && isExpired(r[C.valid_until], now)) {
+      expiredOut++;
+      continue;
+    }
     hits.push([rank(r[C.tier]), km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
   }
   hits.sort((x, y) => x[0] - y[0] || x[1] - y[1] || (y[2] < x[2] ? -1 : y[2] > x[2] ? 1 : 0) || (x[3] < y[3] ? -1 : 1));
@@ -206,6 +220,9 @@ export function searchItems(index, args, now) {
     ...busEnvelope(index, now),
     matched: hits.length,
     returned: page.length,
+    ...(expiredOut
+      ? { expired_left_out: expiredOut, expired_note: `${expiredOut} matching items are past their valid_until and are left out; pass include_expired true to list them (each row says expired).` }
+      : {}),
     ...(offset ? { offset } : {}),
     ...(hits.length > offset + page.length
       ? {
@@ -215,7 +232,7 @@ export function searchItems(index, args, now) {
       : {}),
     order: near ? "warnings, then anomalies, then routine; nearest first within each" : "warnings, then anomalies, then routine; newest first within each",
     note: MEASURED_NOTE,
-    items: page.map(publicRow),
+    items: page.map((r) => publicRow(r, now)),
     attribution: attributionFor(index, page.map((r) => r.program)),
   };
 }
@@ -228,7 +245,65 @@ export function findRow(index, id) {
   return r ? toObject(index, r) : null;
 }
 
-export function getItem(index, shardDoc, id, now) {
+// --- lane records (ideas#330) ---------------------------------------------------------------------------------------
+
+// The lane an item belongs to (lanes.json, mirrors tools/lane_log.py lane_for): the first lane whose match fits, a
+// lane with id prefixes before its program's catch-all.
+export function laneFor(lanes, program, id) {
+  for (const lane of (lanes && lanes.lanes) || []) {
+    const m = lane.match;
+    if (!m || m.program !== program) continue;
+    if (m.id_prefixes && !m.id_prefixes.some((p) => String(id).startsWith(p))) continue;
+    return lane;
+  }
+  return null;
+}
+
+// The one record line an item or pick carries: counts only, with the replay figures where the lane has them.
+export function laneLine(lanes, program, id) {
+  const lane = laneFor(lanes, program, id);
+  if (!lane) return null;
+  return {
+    lane: lane.id,
+    name: lane.name,
+    text: lane.text,
+    flagged: lane.flagged ?? null,
+    since: lane.since ?? null,
+    scored: lane.scored ?? 0,
+    method_version: lane.method_version ?? null,
+    replay: lane.replay ? lane.replay.text : null,
+  };
+}
+
+export const LANE_NOTE =
+  "A lane is one kind of item from one program. Its record counts what it flagged and, once Verdict scores them, " +
+  "how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: no " +
+  "rate or skill figure before 30 independently scored items, and the pick order does not change. A replay figure " +
+  "is labelled replay and comes from a labelled past set, not from live items. A record describes how a " +
+  "measurement has behaved; it is not a warning and gives no likelihood to any item, so never present it as one.";
+
+export function laneRecord(lanes, args, now) {
+  if (!lanes) {
+    throw new ToolError(
+      "The lane records were not built for this snapshot. That says nothing about any lane: use search_items for " +
+        "each program's own items.",
+    );
+  }
+  const id = args && args.lane ? String(args.lane).toLowerCase() : null;
+  const rows = (lanes.lanes || []).filter((x) => !id || x.id === id);
+  if (id && !rows.length) throw new ToolError(`No lane "${id}". Call lane_record with no lane for the list.`);
+  return {
+    as_of: lanes.generated_at,
+    age_hours: ageHours(lanes.generated_at, now),
+    note: LANE_NOTE,
+    not_a_warning: lanes.not_a_warning,
+    min_scored_for_rate: lanes.min_scored_for_rate,
+    pick_order: lanes.pick_order,
+    lanes: rows,
+  };
+}
+
+export function getItem(index, shardDoc, id, now, lanes = null) {
   const row = findRow(index, id);
   const feature = row && shardDoc && shardDoc.items ? shardDoc.items[id] : null;
   if (!feature) {
@@ -246,6 +321,7 @@ export function getItem(index, shardDoc, id, now) {
       "properties.sources lists every source with its publisher, licence and grade; cite them. " +
       "Feed contract: https://github.com/metacog-osint/tic-doctrine (tic-feed/2). " + MEASURED_NOTE,
     item: feature,
+    lane_record: laneLine(lanes, row.program, id),
     attribution: attributionFor(index, [row.program]),
   };
 }
@@ -254,25 +330,42 @@ export function getItem(index, shardDoc, id, now) {
 
 // Watchfloor and Context both read GDELT (15 Nov 2026): COP counts them as one voice per zone, so a pick of that voice
 // carries each program's reading of the zone under `readings`, each its own item with its own id, link and licence.
-function readingOf(index, r) {
+function readingOf(index, r, now) {
   const row = findRow(index, r.id);
   const prog = index.programs[r.program] || {};
   return {
-    ...(row ? publicRow(row) : { id: r.id, program: r.program, missing: true }),
+    ...(row ? publicRow(row, now) : { id: r.id, program: r.program, missing: true }),
     warning_problem_id: r.warning_problem_id ?? null,
     strength: r.strength ?? null,
     licence: prog.licence ?? null,
   };
 }
 
-export function topPicks(index, picks, now) {
+// direction: site/data/direction.json or null. Its picks list says which moving places each pick falls in.
+// lanes: site/data/lanes.json or null. Each pick carries its lane's record line; the order never depends on it.
+export function topPicks(index, picks, now, direction = null, lanes = null) {
+  const places = new Map(((direction && direction.picks) || []).map((x) => [x.pick, x]));
   const items = [];
   for (const p of picks.picks || []) {
     const r = findRow(index, p.id);
-    const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r) : { id: p.id, program: p.program, missing: true }) };
-    if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x)) });
+    const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r, now) : { id: p.id, program: p.program, missing: true }) };
+    if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x, now)) });
+    if (lanes) item.lane_record = laneLine(lanes, item.program, item.id);
+    const at = places.get(p.id);
+    if (at) {
+      item.places = at.places;
+      item.in_rising_place = Boolean(at.rising);
+      if (at.rising) {
+        const names = at.places.filter((x) => x.direction === "rising").map((x) => `${x.name} (${x.up.join(", ")} up)`);
+        item.reason = `${p.reason}. Listed first: it falls in a place COP reads as Rising: ${names.join("; ")}`;
+      }
+    }
     items.push(item);
   }
+  // A pick in a Rising place comes first (ideas#164); the rest keep their order. picked_rank is the build's own order.
+  items.forEach((x) => { x.picked_rank = x.rank; });
+  items.sort((a, b) => Number(Boolean(b.in_rising_place)) - Number(Boolean(a.in_rising_place)) || a.picked_rank - b.picked_rank);
+  items.forEach((x, i) => { x.rank = i + 1; });
   return {
     ...busEnvelope(index, now),
     note:
@@ -280,7 +373,14 @@ export function topPicks(index, picks, now) {
       "measurements, not warnings, and strength is never compared across programs. Watchfloor and Context both " +
       "read GDELT, so they count as one voice: they share one place in each round, a zone gives at most one pick, " +
       "and that pick lists both programs' readings of the zone under readings (its own first). Their agreement is " +
-      "one source read twice, never two independent confirmations; cite each reading by its own id.",
+      "one source read twice, never two independent confirmations; cite each reading by its own id. Picks are " +
+      "chosen when the snapshot is built and never include an item already past its valid_until; a pick marked " +
+      "expired true has passed it since, so treat it as no longer current. places lists the places on COP's " +
+      "direction board that a pick falls in, when that place is moving; a pick in a place read as Rising is listed " +
+      "first and its reason says so (picked_rank is its order before that). A place's word counts layers moving " +
+      "against their own last two weeks: it is not a warning and says nothing about the pick's cause. lane_record is " +
+      "the record of the pick's lane (counts only; see lane_record): it never changes the order.",
+    direction_as_of: direction ? direction.generated_at ?? null : null,
     picks: items,
     attribution: attributionFor(index, items.flatMap((i) => [i.program, ...(i.readings || []).map((x) => x.program)])),
   };
@@ -301,6 +401,11 @@ export function outageTriage(index, triage, args, now) {
   const records = (triage.records || []).filter((r) => !country || r.country === country);
   const blackout = (triage.layer_states || {}).blackout;
   const dead = blackout === "stale" || blackout === "missing";
+  const notRead = (triage.not_read || []).filter((r) => !country || (r.countries || []).includes(country));
+  const notReadText = notRead.length
+    ? ` Blackout carries ${notRead.length === 1 ? "a report" : `${notRead.length} reports`} that triage does not read ` +
+      `(not_read): ${notRead.map((r) => `${r.id} (${r.source})`).join("; ")}. Use get_item on ${notRead.length === 1 ? "it" : "each"}.`
+    : "";
   return {
     as_of: triage.snapshot_generated_at,
     age_hours: ageHours(triage.snapshot_generated_at, now),
@@ -317,7 +422,7 @@ export function outageTriage(index, triage, args, now) {
       "shutdown, with no probability. Each record's " +
       "outage.source says which Blackout kind it is (IODA, a Cloudflare-verified anomaly or a Radar Outage Center " +
       "entry); started_at is when it began; network is set when Cloudflare saw it on one network; stated_cause is " +
-      "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
+      "Cloudflare's own, quoted. unplaced lists Radar entries that name no place and so are not read. not_read lists Blackout's outage reports of a kind triage does not read (NetBlocks' reports): a country there has a report, so never say it has no outage. Records with outage_kind \"power\" are US state power outages (Blackout's BO-IND-14, " +
       "ODIN's reporting utilities, us_state names the state): they are read against hazards in or near that state, " +
       "Cordon and Watchfloor answer \"Not covered\" there (neither nothing found nor no data), so they read natural, " +
       "open or incomplete only (power_readings), and eaglei is how often that state goes over the line in EAGLE-I's " +
@@ -351,9 +456,10 @@ export function outageTriage(index, triage, args, now) {
           none: dead
             ? "Blackout has no current data, so there is nothing to triage. That is not the same as no outages."
             : country
-              ? `No outage for ${country} in Blackout's current data.`
-              : "No outages in Blackout's current data.",
+              ? `No outage for ${country} in the kinds triage reads (${(triage.inputs || []).join(", ")}).${notReadText}`
+              : `No outages in the kinds triage reads (${(triage.inputs || []).join(", ")}).${notReadText}`,
         }),
+    not_read: notRead,
     records,
     attribution: [...attributionFor(index, TRIAGE_PROGRAMS), ...(triage.replay ? [triage.replay.attribution] : [])],
   };
@@ -395,6 +501,47 @@ export function threeSignal(index, doc, args, now) {
     count: records.length,
     records,
     attribution: attributionFor(index, THREE_SIGNAL_PROGRAMS),
+  };
+}
+
+// --- direction ------------------------------------------------------------------------------------------------------
+
+const DIRECTION_PROGRAMS = ["noisefloor", "cordon", "blackout", "wake", "watchfloor"];
+
+export function direction(index, doc, args, now) {
+  if (!doc) {
+    throw new ToolError(
+      "The direction of concern was not built for this snapshot. That says nothing about any place: use " +
+        "search_items for each program's own items.",
+    );
+  }
+  const area = args && args.area ? String(args.area).toLowerCase() : null;
+  const strip = ({ press_zone, ...x }) => x; // eslint-disable-line no-unused-vars
+  const problems = (doc.problems || []).filter((x) => !area || x.area === area).map(strip);
+  const areas = (doc.areas || []).filter((x) => !area || x.area === area).map(strip);
+  if (area && !problems.length && !areas.length) throw new ToolError(`No place "${area}" on the direction board.`);
+  return {
+    as_of: doc.generated_at,
+    age_hours: ageHours(doc.generated_at, now),
+    source: index.bus_url,
+    join: doc.join.id,
+    what: doc.what,
+    note:
+      doc.not_a_warning +
+      " Each place's word (Rising, Easing, Mixed, Edging up, Edging down, Steady, Building a baseline) counts how " +
+      "many of its layers moved against their own 14 days before; quote it with the layers named in up and down, " +
+      "and each layer's own text. A layer marked condition (ship transits) is shown beside the reading and never " +
+      "counted, since PortWatch lags by up to 16 days. since is the day the current word began and was the word " +
+      "before it. record is Verdict's count of how the registered questions have resolved; it scores forecasts, not " +
+      "these words. Cite the item ids a layer gives. Thresholds: https://cop.theintelligence.company/scoring.html",
+    windows: doc.windows,
+    summary: doc.summary,
+    rising: doc.rising,
+    easing: doc.easing,
+    problems,
+    areas,
+    record: doc.record ?? null,
+    attribution: attributionFor(index, DIRECTION_PROGRAMS),
   };
 }
 

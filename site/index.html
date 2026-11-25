@@ -27,6 +27,7 @@
 </head>
 <body>
 <a class="skip" href="#panel">Skip to today's findings</a>
+<noscript><p class="noscript">COP draws its map and findings with JavaScript. Without it, the daily brief and the data feed still work: <a href="brief/">Daily brief</a>.</p></noscript>
 <header class="bar">
   <a class="brand" href="https://theintelligence.company/" aria-label="The Intelligence Company home">
     <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10.5" class="mark-ring"/><circle cx="16" cy="16" r="3.5" class="mark-dot"/></svg>
@@ -35,7 +36,9 @@
   </a>
   <p class="bar-times" id="bar-times" aria-live="polite">Loading today's picture…</p>
   <nav class="bar-nav" aria-label="Site">
+    <a href="brief/">Daily brief</a>
     <a href="scoring.html">How it scores</a>
+    <a href="https://metacog-osint.github.io/verdict/">Verdict</a>
     <a href="https://theintelligence.company/#layers">All programs</a>
     <span id="time-settings"></span>
   </nav>
@@ -64,6 +67,7 @@
           <h3 class="dir-sub" id="direction-areas-h">Every area</h3>
           <ul class="list" id="direction-areas" aria-labelledby="direction-areas-h"></ul>
           <p class="note dir-record" id="direction-record"></p>
+          <div id="direction-lane"></div>
         </div>
         <div id="warnings-sec" hidden>
           <h2 id="warnings-h">Warnings</h2>
@@ -89,6 +93,7 @@
         <h2 id="three-signal-h">Four signals: the Strait of Hormuz and the Gulf</h2>
         <p class="note" id="three-signal-note"></p>
         <ul class="list" id="three-signal"></ul>
+        <div id="three-signal-lane"></div>
       </section>
 
       <section aria-labelledby="also-h">
@@ -137,6 +142,8 @@
             a US embassy security alert), a confirmed internet outage and unusual press reporting of violence fall
             there within 48 hours of each other, each against how often it fires there anyway, with Vis's weather
             forecast beside them. It shows what lines up, not what it means.</li>
+          <li>The <a href="brief/">daily brief</a> says what changed in five sentences, each linked to its item and
+            source, on one page and in an <a href="brief/feed.xml">Atom feed</a>.</li>
           <li><a href="scoring.html">How COP scores</a>: every rule and threshold behind the picks, the freshness
             states, outage triage and the three-signal join (four signals), with their base rates.</li>
           <li>Times show in your own time zone; the Time button changes it.</li>

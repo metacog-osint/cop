@@ -14,6 +14,9 @@ Nothing is inferred. Rules (Tom's yes, 16 Nov 2026, to the cross-suite joins pla
   - Exact match against a hand-kept table (config/undertow-names.json), one row per organisation and list, giving
     the name as that list prints it. No free text, no fuzzy match. A table row whose entry id Headwind shows under
     another name is reported as stale and matches nothing.
+  - The EU list is the exception: it matches on the entry id alone (since 21 Nov 2026), because the name Headwind
+    prints for an EU entry is not stable (on 20 Nov 2026 it changed on 1,167 entries with nothing else changed). An
+    EU change that only moves the printed name is not a list action, so it is neither a match nor stale.
   - A listing corroborates an operator, never an origin. Undertow's origin and confidence are not touched.
   - Declared inputs: undertow and headwind:sanctions. `published` is off until Tom turns it on.
   - Base rate: list changes naming any of the five, per month, from the listings Undertow records from the
@@ -35,9 +38,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import gate  # noqa: E402
 
-JOIN = {"id": "undertow-sanctions", "version": "0.1", "published": False,
+JOIN = {"id": "undertow-sanctions", "version": "0.2", "published": False,
         "inputs": ["undertow", "headwind:sanctions"],
-        "rule": "exact name match, organisations only, against a hand-kept table; nothing inferred"}
+        "rule": ("exact name match (entry id on the EU list), organisations only, against a hand-kept table; "
+                 "nothing inferred")}
+ID_KEYED_LISTS = {"eu-fsf"}   # lists whose printed name is not stable: the entry id is the match
 TABLE = ROOT / "config" / "undertow-names.json"
 HEADWIND_PAGE = "https://headwind.theintelligence.company/#sanctions"
 LISTS = {"ofac-sdn": "the OFAC SDN list", "eu-fsf": "the EU's sanctions list", "uk-sanctions": "the UK Sanctions List",
@@ -103,6 +108,11 @@ def match(changes, table):
             for e in ch.get(field) or []:
                 if e.get("type") != "entity":
                     continue          # organisations only: a person is never matched, even on an exact name
+                if ch["list"] in ID_KEYED_LISTS:
+                    row = by_id.get((ch["list"], str(e.get("list_id"))))
+                    if row and (action != "changed on" or e.get("gained") or e.get("lost")):
+                        hits.append({"change": ch, "entry": e, "row": row, "action": action})
+                    continue          # a name-only change on this list is not a list action
                 row = rows.get((ch["list"], e.get("name")))
                 if row:
                     hits.append({"change": ch, "entry": e, "row": row, "action": action})

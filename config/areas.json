@@ -2,7 +2,7 @@
   "note": "Where COP reads direction (tools/direction.py). Problems are the named warning problems (cop-purpose D2): Tom writes each charter. Areas are Watchfloor's conflict zones, with its country lists. press_zone is the Watchfloor zone whose press counts are read; chokepoint is the Wake chokepoint read as traffic.",
   "problems": [
     {"area": "gulf", "name": "Strait of Hormuz and the Gulf", "center": [56.378, 27.218], "radius_km": 900,
-     "countries": ["IR", "AE", "OM", "QA", "BH", "KW", "SA", "IQ"], "press_zone": "11_Iran_Red_Sea", "press_label": "Iran and Yemen",
+     "countries": ["IR", "AE", "OM", "QA", "BH", "KW", "SA", "IQ"], "press_zone": "11_Iran_Red_Sea", "press_label": "Iran, Iraq, Yemen and the Gulf states",
      "chokepoint": "strait-of-hormuz", "layers": ["attacks", "interference", "notices", "outages", "press", "traffic"]},
     {"area": "shutdowns", "name": "Internet shutdowns", "worldwide": true, "layers": ["outages"]}
   ],
