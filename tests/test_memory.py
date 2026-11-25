@@ -147,6 +147,40 @@ class SeriesScope(unittest.TestCase):
         self.assertNotIn("vs", r)
         self.assertEqual(len(m.current_series(r)), 4)
 
+    def test_a_stated_scope_named_by_a_listed_entry_continues_it(self):
+        mem = self.mem()
+        r = mem["subjects"]["watchfloor:zone:z"]
+        r["v"]["2026-11-24"] = 220
+        r["fs"] = {"2026-11-24": "abc"}
+        scopes = {"watchfloor:zone:z": [{"from": "2026-11-18", "scope": "wide", "zone_scope": "abc"}]}
+        r = m.stamp_scopes(mem, scopes)["subjects"]["watchfloor:zone:z"]
+        self.assertEqual(r["vs"]["2026-11-24"], "wide")
+        self.assertEqual(m.current_series(r), {"2026-11-18": 200, "2026-11-19": 210, "2026-11-24": 220})
+
+    def test_a_new_stated_scope_starts_a_new_series_with_no_listed_entry(self):
+        mem = self.mem()
+        r = mem["subjects"]["watchfloor:zone:other"]
+        r["v"].update({"2026-11-24": 300, "2026-11-25": 310, "2026-11-26": 900, "2026-11-27": 910})
+        r["fs"] = {"2026-11-24": "one", "2026-11-25": "one", "2026-11-26": "two", "2026-11-27": "two"}
+        r = m.stamp_scopes(mem, {})["subjects"]["watchfloor:zone:other"]
+        self.assertEqual(len(r["v"]), 8)
+        self.assertEqual(r["vs"]["2026-11-16"], m.STATED + "one")     # before any stated day: the first stated scope
+        self.assertEqual(m.current_series(r), {"2026-11-26": 900, "2026-11-27": 910})
+
+    def test_a_day_the_feed_left_unstated_keeps_the_scope_before_it(self):
+        labels = m.scope_labels([], {"2026-11-24": "one", "2026-11-26": "two"},
+                                ["2026-11-24", "2026-11-25", "2026-11-26"])
+        self.assertEqual(labels["2026-11-25"], m.STATED + "one")
+
+    def test_fold_keeps_the_stated_scope_with_each_value(self):
+        f = item("watchfloor:2026-11-24:zone:11_Iran_Red_Sea", "2026-11-24", program="watchfloor",
+                 cop_program="watchfloor", subject_id="watchfloor:zone:11_Iran_Red_Sea",
+                 measures={"violent_articles": 124, "zone_scope": "2bc2156e602d", "catalog_version": "2026-11-24.1"})
+        mem = m.fold(m.empty(), snap("2026-11-25", [f], read=("watchfloor",)))
+        r = mem["subjects"]["watchfloor:zone:11_Iran_Red_Sea"]
+        self.assertEqual(r["fs"], {"2026-11-24": "2bc2156e602d"})
+        self.assertEqual(r["vs"]["2026-11-24"], "nine-countries")
+
     def test_the_listed_scopes_are_well_formed(self):
         for changes in m.load_scopes().values():
             for change in changes:
