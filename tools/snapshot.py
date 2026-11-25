@@ -111,8 +111,18 @@ def strength(props, rules):
             continue
         v = dig(props, rule["path"])
         if isinstance(v, (int, float)) and not isinstance(v, bool):
-            return v, rule["label"], i, abs(v) if rule.get("abs") else v
+            return v, strength_label(props, rule), i, abs(v) if rule.get("abs") else v
     return None, None, None, None
+
+
+def strength_label(props, rule):
+    """The rule's label, or its "alt" label when the path named in alt["when_set"] holds a value (25 Nov 2026: Wake's
+    change against the same weeks a year earlier is measured against a fixed window while a moved level stands, so
+    the label says so). Only the words change: the value, the rule and the rank are the rule's own."""
+    alt = rule.get("alt")
+    if alt and dig(props, alt["when_set"]) not in (None, "", False):
+        return alt["label"]
+    return rule["label"]
 
 
 # --- Shared voices (15 Nov 2026, suite review: "COP should treat independence_group gdelt as one voice") ------------
@@ -609,7 +619,8 @@ def build(feeds, reports, previous, now):
                "routine_in_preset": bool(p.get("routine_in_preset")),
                "routine_label": p.get("routine_label", "standing notices"),
                "also_in": [{"preset": r["preset"], "label": r["label"]} for r in p.get("also_in") or []]} |
-              {"strength_labels": [r["label"] for r in p["strength"]],
+              {"strength_labels": [r["label"] + (f" (while a moved level stands: {r['alt']['label']})" if r.get("alt") else "")
+                                   for r in p["strength"]],
                "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],

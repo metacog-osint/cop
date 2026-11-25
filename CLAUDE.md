@@ -67,7 +67,7 @@ the joins that read them together and an MCP server for agents (cop.theintellige
 | Headwind | halos; Economic stress preset; signed z (`abs`) | `ended` |
 | Orbit, Launch | routine only, Spectrum and space; Launch areas dashed | event times read from titles for `events.json` |
 | Undertow | halos at stated targets only; ids `UT-<LANE>-*` via `ID_PREFIXES` | origin is never a finding; reported activity kept apart |
-| Wake | Maritime preset: chokepoints, ports, `ais-listed`, `ais-gap`, `ais-slow`, `ukmto` | "broadcasts an IMO number listed on", never "sanctioned vessel"; UKMTO reports unverified, name no one |
+| Wake | Maritime preset: chokepoints, ports, `ais-listed`, `ais-gap`, `ais-slow`, `ukmto` | "broadcasts an IMO number listed on", never "sanctioned vessel"; UKMTO reports unverified, name no one; size label says "year before the shift began" when `measures.standing_since` is set (rule `alt`) |
 | Relief | halos, Society preset; ids `RL-IFRC-*`, `RL-WHO-*` | never quote WHO notice text |
 
 ## Joins (all write through `tools/gate.py`)
