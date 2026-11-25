@@ -156,7 +156,8 @@
                     "label": "UKMTO reports of attacks, hijacks and boardings" },
                   { "preset": "economy", "kinds": ["ais-listed"], "match": "broadcasts an IMO number listed on",
                     "label": "AIS records broadcasting an IMO number on a sanctions list" }],
-      "strength": [{ "path": "measures.change_year_ago_pct", "abs": true, "label": "{v}% against the same weeks a year earlier" }],
+      "strength": [{ "path": "measures.change_year_ago_pct", "abs": true, "label": "{v}% against the same weeks a year earlier",
+          "alt": { "when_set": "measures.standing_since", "label": "{v}% against the same weeks a year before the shift began" } }],
       "color": {
         "fill": "#006D77",
         "outline_light": "#00363B",

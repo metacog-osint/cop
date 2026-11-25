@@ -302,6 +302,31 @@ class Build(unittest.TestCase):
         nf = next(q for q in health["config"]["programs"] if q["id"] == "noisefloor")
         self.assertEqual([r["preset"] for r in nf["also_in"]], ["conflict"])
 
+    def test_a_standing_shift_says_what_it_is_measured_against(self):
+        """Wake's wake-2.6 items in a moved-level run (25 Nov 2026) compare with a window fixed at the run's first
+        week, so the size label says so. Only the words change: the value, the rule and the pick order do not."""
+        def standing(f):
+            for x in f["wake"]["features"]:
+                if x["properties"]["id"] == "wake:port:istanbul:2026-11-06":
+                    x["properties"]["measures"].update({"standing_since": "2026-09-25", "standing_weeks": 9})
+        before, picks_before, _, _ = build()
+        after, picks_after, health, _ = build(mutate=standing)
+        a = next(f["properties"] for f in after["features"] if f["properties"]["id"] == "wake:port:istanbul:2026-11-06")
+        b = next(f["properties"] for f in before["features"] if f["properties"]["id"] == "wake:port:istanbul:2026-11-06")
+        self.assertEqual(a["cop_strength"], b["cop_strength"])
+        self.assertIn("against the same weeks a year before the shift began", a["cop_strength_text"])
+        self.assertIn("against the same weeks a year earlier", b["cop_strength_text"])
+        self.assertEqual([p["id"] for p in picks_after["picks"]], [p["id"] for p in picks_before["picks"]])
+        wake = next(q for q in health["config"]["programs"] if q["id"] == "wake")
+        self.assertIn("while a moved level stands", wake["strength_labels"][0])
+
+    def test_strength_label_alt_needs_a_value(self):
+        rule = {"path": "m.v", "abs": True, "label": "{v} plain", "alt": {"when_set": "m.since", "label": "{v} alt"}}
+        for props, want in (({"m": {"v": -5}}, "{v} plain"), ({"m": {"v": -5, "since": None}}, "{v} plain"),
+                            ({"m": {"v": -5, "since": "2026-03-08"}}, "{v} alt")):
+            value, label, i, rank = snap.strength(props, [rule])
+            self.assertEqual((value, label, i, rank), (-5, want, 0, 5))
+
     def test_wake_kinds_are_drawn_and_tagged(self):
         """Wake's six kinds (17 Nov 2026): every kind shows under Maritime; UKMTO's attack, hijack and boarding reports
         also under Conflict, its advisories not; listed-IMO records also under Economic stress; ports rank on the
