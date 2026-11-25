@@ -349,7 +349,7 @@ test("Orbit's scheduled launches join Verdict's calendar, in date order, credite
   assert.ok(launches.some((e) => e.at === null && e.net_precision === "Day"), "a day-only launch has no time");
   assert.ok(res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")));
   assert.equal(res.orbit.state, "fresh");
-  assert.match(res.note, /origin orbit marks scheduled orbital launches/);
+  assert.match(res.note, /origin orbit is kept for older snapshots/);
   const only = T.upcomingEvents(verdict, events, { days: 30, origin: "orbit" }, NOW);
   assert.equal(only.count, 13);
   assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
