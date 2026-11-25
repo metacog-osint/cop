@@ -27,6 +27,10 @@ export function fixtureData() {
   // The three-signal join, as the build runs it (no archive beside the fixtures, so no base rate).
   run(["tools/three_signal.py", "--snapshot", path.join(dir, "today.geojson"), "--out", path.join(dir, "ts-work"),
     "--publish", dir]);
+  // Lane records, as the build runs them: the log from this triage and three-signal reading, then lanes.json.
+  const lanelog = path.join(dir, "lane-work", "lane-log.jsonl");
+  run(["tools/lane_log.py", "--log", lanelog, "--triage", path.join(dir, "triage.json"),
+    "--three-signal", path.join(dir, "three-signal.json"), "--publish", dir, "--now", NOW_ISO]);
   // A small direction.json (the real one needs COP's memory): the last pick falls in a Rising place.
   const picks = JSON.parse(readFileSync(path.join(dir, "picks.json"), "utf8")).picks;
   const place = { area: "gulf", name: "Strait of Hormuz and the Gulf", direction: "rising", word: "Rising",

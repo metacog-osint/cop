@@ -265,6 +265,27 @@
     </ul>
   </section>
 
+  <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
+    <h2 id="lanes-h">Lane records</h2>
+    <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
+      words, the four-signal join, and one lane for each program with no outside check yet. A lane's record says how
+      that kind of item has behaved. It is not a warning and gives no likelihood to any single item.</p>
+    <ul>
+      <li><strong>Logged first.</strong> Each build writes a line for every outage triage reads and every four-signal
+        reading of converged or partial (once per area, reading and UTC day) before its outcome can be known, to an
+        append-only log in which each line carries the hash of the one before (branch <code>lane-log</code>). The
+        direction words keep their own locked log (branch <code>direction-log</code>).</li>
+      <li><strong>Scored by Verdict.</strong> Once a lane's horizon has passed (14 days for an outage), Verdict counts
+        each item as confirmed by the lane's named second source, withdrawn by its own source, or left unconfirmed.
+        Until then the record shows how many were flagged and "none scored yet".</li>
+      <li><strong>Counts only.</strong> No rate or skill figure before 30 independently scored items, and the pick
+        order does not change. A change of method starts a new count; counts from two methods are never added.</li>
+      <li><strong>Replay is labelled.</strong> Outage triage also shows how it read Access Now's documented 2025
+        shutdowns (#KeepItOn STOP) against the same countries' ordinary days. That is a past labelled set, never live
+        results.</li>
+    </ul>
+  </section>
+
   <section id="sources" aria-labelledby="sources-h">
     <h2 id="sources-h">Where the rules live</h2>
     <p>COP's code is public at <a href="https://github.com/metacog-osint/cop">github.com/metacog-osint/cop</a>. The
