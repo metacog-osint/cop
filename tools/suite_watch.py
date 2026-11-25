@@ -37,7 +37,7 @@ from datetime import datetime, timedelta, timezone
 
 SNAPSHOT = "https://cop.theintelligence.company/data/today.geojson"
 SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
-VERDICT = "https://metacog-osint.github.io/verdict/data/scores.json"  # until verdict.theintelligence.company has DNS
+VERDICT = "https://verdict.theintelligence.company/data/scores.json"
 VERDICT_HOURS = 48.0
 SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
 UNREAD_RUNS = 2         # a listed source not read this many runs in a row (the feed's own count) is a problem
