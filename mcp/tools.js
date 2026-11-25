@@ -604,7 +604,7 @@ export const EVENT_ORIGINS = ["verdict", "cordon", "orbit", "launch"];
 // (Ascent move, ideas#69): while both list them, events.json keeps Launch's copy of a launch both list.
 const PROGRAM_ORIGINS = new Set(["orbit", "launch"]);
 
-// programEvents: agent/events.json (Orbit's and Launch's scheduled launches), or null when the build did not write it.
+// programEvents: agent/events.json (Launch's scheduled launches; Orbit's until orbit-2.32), or null when the build did not write it.
 export function upcomingEvents(verdict, programEvents, args, now) {
   const days = Math.min(Math.max(1, (args && args.days) ?? 30), 366);
   const origin = args && args.origin;
@@ -653,12 +653,12 @@ export function upcomingEvents(verdict, programEvents, args, now) {
     window: { from, to },
     note:
       "Dated, resolvable events worth forecasting. verified false means the date comes from secondary reporting. " +
-      "origin cordon marks events Cordon found (bulletin expiries, travel advisory changes). origin orbit marks " +
-      "scheduled orbital launches from Orbit's feed: the time is the provider's or press's as Launch Library 2 lists " +
-      "it, often moves, and is given to the precision it states (net_precision; at is null when only the day is " +
-      "known); launch_status is Launch Library 2's (Go for Launch, To Be Confirmed, To Be Determined). origin launch " +
-      "marks Launch's scheduled launches, which replace Orbit's (one event per launch while both list it): kind " +
-      "launch is a listed launch, as for Orbit; kind closure is a launch-site closure with no listed launch, whose time " +
+      "origin cordon marks events Cordon found (bulletin expiries, travel advisory changes). origin launch marks " +
+      "Launch's scheduled orbital launches: kind launch is a listed launch, whose time is the provider's or press's " +
+      "as Launch Library 2 lists it, often moves, and is given to the precision it states (net_precision; at is null " +
+      "when only the day is known); launch_status is Launch Library 2's (Go for Launch, To Be Confirmed, To Be " +
+      "Determined). origin orbit is kept for older snapshots: Orbit stopped listing scheduled launches at " +
+      "orbit-2.32, so it returns none now. For origin launch, kind closure is a launch-site closure with no listed launch, whose time " +
       "is the closure window's opening, not a launch time, and which is not a finding that a launch is coming " +
       "(evidence names what each rests on). A launch whose time has passed is left out. Use get_item with an orbit " +
       "or launch event's id for its sources.",

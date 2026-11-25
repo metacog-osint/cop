@@ -8,7 +8,7 @@ export const PATHS = {
   index: "/data/agent/index.json",
   programs: "/data/agent/programs.json",
   verdict: "/data/agent/verdict.json",
-  events: "/data/agent/events.json", // the programs' own dated events (Orbit's scheduled launches)
+  events: "/data/agent/events.json", // the programs' own dated events (Launch's scheduled launches and closures)
   picks: "/data/picks.json",
   triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
   threeSignal: "/data/three-signal.json", // tools/three_signal.py --publish; absent when that step failed
