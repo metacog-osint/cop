@@ -245,7 +245,65 @@ export function findRow(index, id) {
   return r ? toObject(index, r) : null;
 }
 
-export function getItem(index, shardDoc, id, now) {
+// --- lane records (ideas#330) ---------------------------------------------------------------------------------------
+
+// The lane an item belongs to (lanes.json, mirrors tools/lane_log.py lane_for): the first lane whose match fits, a
+// lane with id prefixes before its program's catch-all.
+export function laneFor(lanes, program, id) {
+  for (const lane of (lanes && lanes.lanes) || []) {
+    const m = lane.match;
+    if (!m || m.program !== program) continue;
+    if (m.id_prefixes && !m.id_prefixes.some((p) => String(id).startsWith(p))) continue;
+    return lane;
+  }
+  return null;
+}
+
+// The one record line an item or pick carries: counts only, with the replay figures where the lane has them.
+export function laneLine(lanes, program, id) {
+  const lane = laneFor(lanes, program, id);
+  if (!lane) return null;
+  return {
+    lane: lane.id,
+    name: lane.name,
+    text: lane.text,
+    flagged: lane.flagged ?? null,
+    since: lane.since ?? null,
+    scored: lane.scored ?? 0,
+    method_version: lane.method_version ?? null,
+    replay: lane.replay ? lane.replay.text : null,
+  };
+}
+
+export const LANE_NOTE =
+  "A lane is one kind of item from one program. Its record counts what it flagged and, once Verdict scores them, " +
+  "how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: no " +
+  "rate or skill figure before 30 independently scored items, and the pick order does not change. A replay figure " +
+  "is labelled replay and comes from a labelled past set, not from live items. A record describes how a " +
+  "measurement has behaved; it is not a warning and gives no likelihood to any item, so never present it as one.";
+
+export function laneRecord(lanes, args, now) {
+  if (!lanes) {
+    throw new ToolError(
+      "The lane records were not built for this snapshot. That says nothing about any lane: use search_items for " +
+        "each program's own items.",
+    );
+  }
+  const id = args && args.lane ? String(args.lane).toLowerCase() : null;
+  const rows = (lanes.lanes || []).filter((x) => !id || x.id === id);
+  if (id && !rows.length) throw new ToolError(`No lane "${id}". Call lane_record with no lane for the list.`);
+  return {
+    as_of: lanes.generated_at,
+    age_hours: ageHours(lanes.generated_at, now),
+    note: LANE_NOTE,
+    not_a_warning: lanes.not_a_warning,
+    min_scored_for_rate: lanes.min_scored_for_rate,
+    pick_order: lanes.pick_order,
+    lanes: rows,
+  };
+}
+
+export function getItem(index, shardDoc, id, now, lanes = null) {
   const row = findRow(index, id);
   const feature = row && shardDoc && shardDoc.items ? shardDoc.items[id] : null;
   if (!feature) {
@@ -263,6 +321,7 @@ export function getItem(index, shardDoc, id, now) {
       "properties.sources lists every source with its publisher, licence and grade; cite them. " +
       "Feed contract: https://github.com/metacog-osint/tic-doctrine (tic-feed/2). " + MEASURED_NOTE,
     item: feature,
+    lane_record: laneLine(lanes, row.program, id),
     attribution: attributionFor(index, [row.program]),
   };
 }
@@ -283,13 +342,15 @@ function readingOf(index, r, now) {
 }
 
 // direction: site/data/direction.json or null. Its picks list says which moving places each pick falls in.
-export function topPicks(index, picks, now, direction = null) {
+// lanes: site/data/lanes.json or null. Each pick carries its lane's record line; the order never depends on it.
+export function topPicks(index, picks, now, direction = null, lanes = null) {
   const places = new Map(((direction && direction.picks) || []).map((x) => [x.pick, x]));
   const items = [];
   for (const p of picks.picks || []) {
     const r = findRow(index, p.id);
     const item = { rank: p.n, reason: p.reason, ...(r ? publicRow(r, now) : { id: p.id, program: p.program, missing: true }) };
     if (p.voice) Object.assign(item, { voice: p.voice, readings: (p.readings || []).map((x) => readingOf(index, x, now)) });
+    if (lanes) item.lane_record = laneLine(lanes, item.program, item.id);
     const at = places.get(p.id);
     if (at) {
       item.places = at.places;
@@ -317,7 +378,8 @@ export function topPicks(index, picks, now, direction = null) {
       "expired true has passed it since, so treat it as no longer current. places lists the places on COP's " +
       "direction board that a pick falls in, when that place is moving; a pick in a place read as Rising is listed " +
       "first and its reason says so (picked_rank is its order before that). A place's word counts layers moving " +
-      "against their own last two weeks: it is not a warning and says nothing about the pick's cause.",
+      "against their own last two weeks: it is not a warning and says nothing about the pick's cause. lane_record is " +
+      "the record of the pick's lane (counts only; see lane_record): it never changes the order.",
     direction_as_of: direction ? direction.generated_at ?? null : null,
     picks: items,
     attribution: attributionFor(index, items.flatMap((i) => [i.program, ...(i.readings || []).map((x) => x.program)])),

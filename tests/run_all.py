@@ -33,6 +33,7 @@ SCRIPTS = [
     "test_memory.py",
     "test_direction.py",
     "test_direction_log.py",
+    "test_lane_log.py",
     "test_brief.py",
 ]
 
