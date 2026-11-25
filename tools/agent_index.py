@@ -302,7 +302,13 @@ def unreadable_parts(docs, reports):
 # for Launch; NET precision Minute"); the feed contract had no field for an event's time until revision 2.1 (kit
 # 0.6.0, 18 Nov 2026). The item's own event_start and event_time_precision come first when it states them; then an
 # `event` object in Verdict's calendar shape; then the text.
-EVENT_PREFIXES = ("orbit:upcoming:",)
+# Launch's upcoming launches (Ascent move step 3, 25 Nov 2026, ideas#69): launch:upcoming:ll2:<LL2 id> for a listed
+# launch, launch:upcoming:closure:<notice key> for a closure with no listed launch (measures.evidence says which).
+# While Orbit still lists its own (until Ascent step 4), an Orbit launch Launch also lists is left out, counted in
+# `skipped`, so one launch is one event.
+EVENT_PREFIXES = ("orbit:upcoming:", "launch:upcoming:")
+EVENT_ORIGINS = {"orbit:upcoming:": "orbit", "launch:upcoming:": "launch"}
+CLOSURE_EVIDENCE = "closure with no listing"
 WHEN = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}):(\d{2}) UTC")
 NET_PRECISION = re.compile(r"NET precision ([^;]+?)\)(?:\s|$|[.,;])")
 LAUNCH_STATUS = re.compile(r"\(status ([^;()]+);")
@@ -310,10 +316,29 @@ TIMED = {"Second", "Minute", "Hour"}  # Launch Library 2 precisions where the ti
 DATED = ("Day", "Morning", "Afternoon", "Night")  # the day is known, the time is not
 LAUNCH_NOTE = ("A scheduled time is the provider's or press's, as Launch Library 2 lists it, not Orbit's, and often "
                "moves.")
+LAUNCH_NOTES = {
+    "orbit": LAUNCH_NOTE,
+    "launch": "A scheduled time is the provider's or press's, as Launch Library 2 lists it, not Launch's, and often "
+              "moves.",
+}
+CLOSURE_NOTE = ("A launch-site closure with no listed launch: the time is the closure window's opening, not a launch "
+                "time. Closures are also issued for tests and other activity, and some are cancelled, so this is not "
+                "a finding that a launch is coming.")
+
+
+def _origin(item_id):
+    return next((o for pre, o in EVENT_ORIGINS.items() if str(item_id or "").startswith(pre)), None)
+
+
+def _ll2_ids(p):
+    """The Launch Library 2 ids a Launch item stands for: its own and any it has joined (measures.aliases)."""
+    m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    ids = [str(p.get("id") or "")] + [f"launch:{a}" for a in m.get("aliases") or [] if isinstance(a, str)]
+    return {i.split("launch:upcoming:ll2:", 1)[1] for i in ids if i.startswith("launch:upcoming:ll2:")}
 
 
 def orbit_event(p):
-    """(event, None) for one Orbit scheduled launch, in Verdict's calendar shape plus the launch fields; or
+    """(event, None) for one Orbit or Launch scheduled launch (or Launch closure with no listing), in Verdict's calendar shape plus the launch fields; or
     (None, reason) when its date cannot be read or is coarser than a day (a week, a month: a placeholder date)."""
     # Text that is not text reads as empty, so one odd item is skipped and counted, never a failed build (15 Nov 2026).
     title, summary = (v if isinstance(v, str) else "" for v in (p.get("title"), p.get("summary")))
@@ -341,18 +366,25 @@ def orbit_event(p):
     else:
         return None, f"NET precision {precision}"
     srcs = p.get("sources") or []
+    origin = _origin(p.get("id")) or "orbit"
+    measures = p.get("measures") if isinstance(p.get("measures"), dict) else {}
+    evidence = [e for e in measures.get("evidence") or [] if isinstance(e, str)]
+    closure = origin == "launch" and CLOSURE_EVIDENCE in evidence and "listed" not in evidence
+    if closure:
+        precision = "closure window"
     return {
         "id": p.get("id"),
         "title": p.get("title"),
         "date": date,
         "at": at,
-        "kind": own.get("kind") or "launch",
+        "kind": own.get("kind") or ("closure" if closure else "launch"),
         "verified": False,  # Launch Library 2 aggregates providers' and press reports
         "occurred": False,
-        "origin": "orbit",
+        "origin": origin,
         "ref": None,
         "forecast_ids": [],
-        "note": LAUNCH_NOTE,
+        "note": CLOSURE_NOTE if closure else LAUNCH_NOTES[origin],
+        **({"evidence": evidence} if origin == "launch" else {}),
         "net_precision": precision,
         "launch_status": sm.group(1).strip() if sm else None,
         "data_as_of": p.get("data_as_of"),
@@ -367,9 +399,12 @@ def build_events(today, now):
     """events.json from COP's merged snapshot. `skipped` counts items left out and why, so a change in Orbit's
     wording shows up as a number rather than as silence."""
     events, skipped = [], {}
-    for f in today.get("features") or []:
-        p = f.get("properties") or {}
-        if not str(p.get("id") or "").startswith(EVENT_PREFIXES):
+    props = [f.get("properties") or {} for f in today.get("features") or [] if isinstance(f, dict)]
+    props = [p for p in props if isinstance(p, dict) and str(p.get("id") or "").startswith(EVENT_PREFIXES)]
+    in_launch = set().union(*(_ll2_ids(p) for p in props if _origin(p.get("id")) == "launch"))
+    for p in props:
+        if _origin(p.get("id")) == "orbit" and str(p["id"]).split("orbit:upcoming:", 1)[1] in in_launch:
+            skipped["also in Launch's feed"] = skipped.get("also in Launch's feed", 0) + 1
             continue
         ev, why = orbit_event(p)
         if ev:
@@ -377,14 +412,14 @@ def build_events(today, now):
         else:
             skipped[why] = skipped.get(why, 0) + 1
     events.sort(key=lambda e: (e["date"], e["at"] or "", e["id"] or ""))
-    cp = (today.get("cop_programs") or {}).get("orbit")
+    cps = today.get("cop_programs") or {}
+    keys = ("name", "state", "data_as_of", "attribution", "licence")
     return {
         "contract": CONTRACT,
         "generated_at": snap.iso(now),
         "bus_generated_at": today.get("generated_at"),
         "bus_url": BUS_URL,
-        "programs": {"orbit": {k: cp.get(k) for k in ("name", "state", "data_as_of", "attribution", "licence")}}
-        if cp else {},
+        "programs": {o: {k: cps[o].get(k) for k in keys} for o in ("orbit", "launch") if isinstance(cps.get(o), dict)},
         "skipped": skipped,
         "events": events,
     }

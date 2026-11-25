@@ -337,7 +337,7 @@ test("upcoming events stay inside the window and can be filtered by origin", () 
 test("Orbit's scheduled launches join Verdict's calendar, in date order, credited to Orbit", () => {
   const res = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
   const launches = res.events.filter((e) => e.origin === "orbit");
-  assert.equal(launches.length, 14);
+  assert.equal(launches.length, 13, "one of Orbit's 14 is also in Launch's feed, and Launch's copy is kept");
   assert.ok(res.events.some((e) => e.origin === "verdict"));
   const cmp = (a, b) => a.date.localeCompare(b.date) || (a.at || "").localeCompare(b.at || "") || a.id.localeCompare(b.id);
   for (let i = 1; i < res.events.length; i++) assert.ok(cmp(res.events[i - 1], res.events[i]) < 0, res.events[i].id);
@@ -351,8 +351,25 @@ test("Orbit's scheduled launches join Verdict's calendar, in date order, credite
   assert.equal(res.orbit.state, "fresh");
   assert.match(res.note, /origin orbit marks scheduled orbital launches/);
   const only = T.upcomingEvents(verdict, events, { days: 30, origin: "orbit" }, NOW);
-  assert.equal(only.count, 14);
+  assert.equal(only.count, 13);
   assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
+});
+
+test("Launch's scheduled launches and closures join the calendar, credited to Launch (Ascent move, ideas#69)", () => {
+  const res = T.upcomingEvents(verdict, events, { days: 30, origin: "launch" }, NOW);
+  assert.deepEqual(res.events.map((e) => [e.id, e.kind]), [
+    ["launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d", "launch"],
+    ["launch:upcoming:closure:A6149/26-ZBPE", "closure"],
+  ]);
+  const closure = res.events[1];
+  assert.equal(closure.net_precision, "closure window");
+  assert.match(closure.note, /not a finding that a launch is coming/);
+  assert.ok(res.attribution.some((a) => a.startsWith("Launch, The Intelligence Company")));
+  assert.ok(!res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")), "Orbit has no launch here");
+  assert.equal(res.launch.state, "fresh");
+  assert.match(res.note, /kind closure is a launch-site closure with no listed launch/);
+  const all = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
+  assert.equal(all.events.filter((e) => e.id.endsWith("bff2fc91-eddd-4dfc-af26-ac0674cfab4d")).length, 1);
 });
 
 test("a launch whose stated time has passed is left out", () => {
@@ -366,12 +383,12 @@ test("a launch whose stated time has passed is left out", () => {
 test("each half of the calendar stands without the other, and both missing is refused", () => {
   const noCalendar = { ...verdict, calendar: null, missing: ["calendar"] };
   const res = T.upcomingEvents(noCalendar, events, { days: 30 }, NOW);
-  assert.equal(res.count, 14);
+  assert.equal(res.count, 15);
   assert.deepEqual(res.missing, ["verdict calendar"]);
   assert.equal(res.as_of, events.bus_generated_at);
   assert.throws(() => T.upcomingEvents(noCalendar, events, { origin: "verdict" }, NOW), /could not be fetched/);
   const noEvents = T.upcomingEvents(verdict, null, { days: 30 }, NOW);
-  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit"));
+  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit" && e.origin !== "launch"));
   assert.deepEqual(noEvents.missing, ["program events"]);
   assert.throws(() => T.upcomingEvents(verdict, null, { origin: "orbit" }, NOW), /were not built/);
   assert.throws(() => T.upcomingEvents(null, null, {}, NOW), /could not be fetched/);
