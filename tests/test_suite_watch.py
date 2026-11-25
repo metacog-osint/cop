@@ -108,6 +108,70 @@ class Watch(unittest.TestCase):
         h["programs"][-1]["sources"] = {"total": 4, "not_read": []}
         self.assertEqual(watch.check_health(h), [])
 
+    def _vigil(self, state="stale", detail="Last run read 8 rows, under its floor of 500", failures=None):
+        h = health()
+        h["programs"].append({"id": "vigil", "name": "Vigil", "sources": {"total": 40, "not_read": [
+            {"id": "threatcluster", "state": state, "detail": detail, "failures": failures}]}})
+        return h
+
+    ENTRY = {"program": "vigil", "source": "threatcluster", "state": "stale", "detail_has": "under its floor",
+             "until": "2026-12-31", "reason": "a capped free file, kept on purpose"}
+
+    def test_a_documented_degraded_source_passes_and_is_named(self):
+        notes = []
+        self.assertEqual(watch.check_health(self._vigil(), [self.ENTRY], NOW, notes), [])
+        self.assertEqual(len(notes), 1)
+        self.assertIn("accepted: Vigil: source threatcluster (stale, Last run read 8 rows, under its floor of 500)", notes[0])
+        self.assertIn("until 2026-12-31: a capped free file, kept on purpose", notes[0])
+
+    def test_a_source_reading_differently_from_its_documentation_is_a_problem_again(self):
+        for h in (self._vigil(state="failing"), self._vigil(detail="HTTP 503 from the file"),
+                  self._vigil(state="failing", detail="HTTP 503", failures=3)):
+            notes = []
+            problems = watch.check_health(h, [self.ENTRY], NOW, notes)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertEqual(notes, [])
+        other = dict(self.ENTRY, source="threatfox")
+        self.assertEqual(len(watch.check_health(self._vigil(), [other], NOW)), 1, "another source is not covered")
+        other = dict(self.ENTRY, program="orbit")
+        self.assertEqual(len(watch.check_health(self._vigil(), [other], NOW)), 1, "another program is not covered")
+
+    def test_the_documentation_lapses_on_its_date(self):
+        last = datetime(2026, 12, 31, 23, 0, tzinfo=timezone.utc)
+        self.assertEqual(watch.check_health(self._vigil(), [self.ENTRY], last), [])
+        late = datetime(2027, 1, 1, 0, 1, tzinfo=timezone.utc)
+        self.assertEqual(len(watch.check_health(self._vigil(), [self.ENTRY], late)), 1)
+        self.assertEqual(len(watch.check_health(self._vigil(), [self.ENTRY])), 1, "no clock, no acceptance")
+
+    def test_an_incomplete_entry_accepts_nothing_and_says_so(self):
+        good, problems = watch.load_accepted({"accepted": [dict(self.ENTRY, reason=""), dict(self.ENTRY, until="soon"),
+                                                          {"program": "vigil"}, self.ENTRY]})
+        self.assertEqual(good, [self.ENTRY])
+        self.assertEqual(len(problems), 3)
+        self.assertEqual(len(watch.load_accepted({})[1]), 1)
+        self.assertEqual(len(watch.load_accepted([])[1]), 1)
+
+    def test_run_passes_with_a_documented_source_and_fails_without_the_file(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            (tmp / "acc.json").write_text(json.dumps({"accepted": [self.ENTRY]}), encoding="utf-8")
+            code, text = run(tmp, snap(), self._vigil(), ["--accepted", str(tmp / "acc.json"), "--sitecheck", "", "--verdict", ""])
+            self.assertEqual((code, text.splitlines()[0][:22]), (0, "all programs current a"), text)
+            self.assertIn("accepted: Vigil: source threatcluster", text)
+            code, text = run(tmp, snap(), self._vigil(), ["--accepted", str(tmp / "missing.json"), "--sitecheck", "", "--verdict", ""])
+            self.assertEqual(code, 1)
+            self.assertIn("watch_accepted.json could not be read", text)
+            self.assertIn("source threatcluster is listed but was not read", text)
+
+    def test_the_shipped_list_is_complete_and_names_only_documented_sources(self):
+        import json
+        doc = json.loads((ROOT / "config" / "watch_accepted.json").read_text(encoding="utf-8"))
+        good, problems = watch.load_accepted(doc)
+        self.assertEqual(problems, [])
+        self.assertEqual([(e["program"], e["source"]) for e in good], [("vigil", "threatcluster")])
+
     def test_a_health_file_of_the_wrong_shape_is_a_problem_not_quiet(self):
         for bad in ({}, {"programs": []}, {"programs": {"vis": {}}}, [], "x"):
             self.assertEqual(len(watch.check_health(bad)), 1, bad)
