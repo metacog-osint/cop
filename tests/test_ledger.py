@@ -3,7 +3,7 @@
 The line format and its rules are the doctrine kit's (tic-history/1; tested in the kit and, on recorded data, in
 Elements). These tests cover what is COP's own: a program is the lane (a program's source, where its feed
 names its sources' health), a program that was not read ends nothing, COP's
-own marks are no change, the files, the refusal to start over without a state, and that the ledger is never published.
+own marks are no change, the files, the refusal to start over without a state, and that the ledger is never served from the site.
 """
 
 import gzip

@@ -26,7 +26,9 @@ that never happened. The files have held about 17 Notable and 2 Major jamming ev
 Files, in --assets (the build keeps them as an asset of the release "memory", not in the repository or on the site):
     memory.json.gz
 
-Not published. Anything drawn from it for the page goes through a join (tools/direction.py and tools/gate.py).
+Not served from the site: this tool refuses the deployed folders. Its release assets are public, as every release of
+this public repository is. Anything drawn from it for the page goes through a join (tools/direction.py and
+tools/gate.py).
 """
 
 import argparse
@@ -433,7 +435,7 @@ def _folder(assets) -> Path:
     folder = Path(assets).resolve()
     for d in gate.DEPLOYED:
         if folder == (ROOT / d).resolve() or (ROOT / d).resolve() in folder.parents:
-            raise SystemExit(f"memory: {folder} is deployed; the memory is not published")
+            raise SystemExit(f"memory: {folder} is deployed; the memory is not served from the site")
     return folder
 
 
