@@ -244,6 +244,17 @@
       join looks for; it is not a warning, and the call is the analyst's.</p>
     <h3>Base rate <span class="live-tag">live</span></h3>
     <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
+    <h3>Hormuz weekly stream</h3>
+    <p>Each Monday-to-Sunday UTC week shows PortWatch's transits through the strait beside UKMTO's Attack reports in the
+      same <b>900 km</b> circle, dated by incident, and the share within <b>150 km</b> of 26.55 N, 56.45 E. The two
+      series are never divided: PortWatch does not count a ship crossing with AIS off. A week's Attack count is set
+      against the median and 90th percentile of earlier whole weeks once <b>4</b> are settled, and a week counts as
+      settled <b>7 days</b> after it ends, because UKMTO can publish late. Severity (L0 to L4, casualties separate) is
+      shown only where an item states a code, and otherwise as not coded yet. Codes are Wake's reading of UKMTO's
+      text by rule v0: struck or harmed is collide; no harm but a change of course is careen; joining an escort is
+      conjoin; contact with no harm and no change is intersect; too little said is undetermined. A second action after
+      the first is kept apart and never changes the outcome. It carries no probability and names no one.
+      <a href="data/hormuz-stream.json">hormuz-stream.json</a></p>
   </section>
 
   <section class="doc-box" id="brief" aria-labelledby="brief-h">

@@ -15,7 +15,8 @@ An item still malformed on the next build (the usual case: a feed keeps a bad it
 written once a day: a row is the same when program, id, place, reason and the item's hash are the same. Earlier lines
 are never dropped or rewritten, only added to; the file is the old lines plus the new ones.
 
-Not published, like the ledger: this tool refuses the folders that are deployed.
+Not served from the site, like the ledger: this tool refuses the folders that are deployed. Its release assets are
+public, as every release of this public repository is.
 """
 
 import argparse

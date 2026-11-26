@@ -68,7 +68,7 @@ jobs:
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
       # The snapshot also fetches each program's list of recently ended items (config "ended": Elements'
-      # data/ended.geojson) to out/ended/, not published and not drawn, and keeps a daily copy beside the archive.
+      # data/ended.geojson) to out/ended/, not drawn and not served from the site, and keeps a daily copy beside the archive.
       - name: Snapshot of the program feeds
         run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl
       - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
@@ -106,7 +106,7 @@ jobs:
       # the release "triage-log", like the suite ledger, never in site/. The first build ever replays the archived
       # days downloaded above (one reading a day, marked backfill) before logging this build. A failure never fails the
       # build; that build is just not logged.
-      - name: Triage log (kept as release assets, not published)
+      - name: Triage log (public release assets, not on the site)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -144,6 +144,32 @@ jobs:
       - name: Red River Valley view (site/data/red-river.json)
         run: |
           python tools/red_river.py --snapshot site/data/today.geojson --publish site/data             || { rm -f site/data/red-river.json; echo "::warning::Red River view failed; its page says it was not built"; }
+      # The Hormuz weekly stream (join 0.1): PortWatch transits and UKMTO's Attack reports by week, from Wake's
+      # items. Every report is kept in the release "hormuz-stream". A state that is listed but cannot be downloaded is
+      # never started over. A failure never fails the build: without the file the page leaves the section out.
+      - name: Hormuz weekly stream (site/data/hormuz-stream.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { rm -f site/data/hormuz-stream.json; echo "::warning::hormuz stream: $1; not updated on this build"; exit 0; }
+          mkdir -p out/hormuz-stream
+          HAVE=no
+          if gh release view hormuz-stream >/dev/null 2>&1; then
+            HAVE=yes
+            ASSETS=$(gh release view hormuz-stream --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+            if echo "$ASSETS" | grep -qx "state.json.gz"; then
+              gh release download hormuz-stream --dir out/hormuz-stream --pattern state.json.gz --clobber || skip "the state could not be downloaded"
+            fi
+          fi
+          python tools/hormuz_stream.py --snapshot site/data/today.geojson --archive out/rates-archive \
+            --state out/hormuz-stream --publish site/data || skip "the join failed"
+          if [ "$HAVE" = no ]; then
+            gh release create hormuz-stream --title "COP Hormuz weekly stream" \
+              --notes "Every UKMTO report and weekly PortWatch transit count the Hormuz stream has read, via Wake. Not a warning or a forecast." \
+              || echo "::warning::hormuz stream: the release could not be created"
+          fi
+          gh release upload hormuz-stream out/hormuz-stream/state.json.gz --clobber \
+            || echo "::warning::hormuz stream: upload failed; the next build merges these reports again from the archive"
       # COP's memory and the direction of concern (Tom, 21 Nov 2026): one record per subject, kept after it leaves the
       # picture (tools/memory.py, release "memory"), and each place's layers read against their own last two weeks
       # (tools/direction.py, site/data/direction.json). The first build rebuilds the memory from the archive copies
@@ -368,7 +394,7 @@ jobs:
       # asset list first: an asset that is listed but cannot be downloaded stops the step, so a failed download never
       # starts the ledger over or overwrites a day's earlier lines. A failed UPLOAD fails the step (three tries, the day
       # file first, then the state), since a build that is not logged and not retried is a gap.
-      - name: Suite ledger (kept as release assets, not published)
+      - name: Suite ledger (public release assets, not on the site)
         id: ledger
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         env:
@@ -390,14 +416,14 @@ jobs:
             fi
           else
             gh release create ledger --title "COP suite ledger" \
-              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Day files for 2027 on are in the releases ledger-YYYY; the state stays here. Not published." \
+              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Day files for 2027 on are in the releases ledger-YYYY; the state stays here. Public with the repository; not served from the site." \
               || skip "the release could not be created"
             ASSETS=""
             FIRST="--first"
           fi
           if [ "$DAYTAG" != ledger ]; then
             gh release view "$DAYTAG" >/dev/null 2>&1 || gh release create "$DAYTAG" --title "COP suite ledger $DAY" \
-              --notes "COP suite ledger day files for ${DAY%%-*}: one YYYY-MM-DD.jsonl.gz per UTC day (tic-history/1). The open state, state.json.gz, is in the release ledger. Not published." \
+              --notes "COP suite ledger day files for ${DAY%%-*}: one YYYY-MM-DD.jsonl.gz per UTC day (tic-history/1). The open state, state.json.gz, is in the release ledger. Public with the repository; not served from the site." \
               || skip "the release $DAYTAG could not be created"
             ASSETS_DAY=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name') || skip "the asset list of $DAYTAG could not be read"
           else
@@ -419,7 +445,7 @@ jobs:
           up ledger out/ledger/state.json.gz --clobber || fail "the new state could not be uploaded; the next build logs these changes again from the last state (the day file already holds them once)"
       # COP's memory: the current file, plus one copy per month that is never replaced. A failed upload fails the step,
       # as for the ledger: the next build folds this one in again from the last copy kept.
-      - name: Keep COP's memory (release memory, not published)
+      - name: Keep COP's memory (public release memory, not on the site)
         id: memory
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         env:
@@ -428,7 +454,7 @@ jobs:
           [ -f out/memory/memory.json.gz ] || { echo "no memory from this build"; exit 0; }
           up() { for i in 1 2 3; do gh release upload "$@" && return 0; sleep $((i * 10)); done; return 1; }
           gh release view memory >/dev/null 2>&1 || gh release create memory --title "COP memory" \
-            --notes "One record per subject COP's picture has carried, kept after it leaves, and each place's daily direction word (tools/memory.py, tools/direction.py). Not published on the site."
+            --notes "One record per subject COP's picture has carried, kept after it leaves, and each place's daily direction word (tools/memory.py, tools/direction.py). Public with the repository; not served from the site."
           MONTH="memory-$(date -u +%Y-%m).json.gz"
           if ! gh release view memory --json assets --jq '.assets[].name' | grep -qx "$MONTH"; then
             cp out/memory/memory.json.gz "out/memory/$MONTH"
@@ -472,8 +498,8 @@ jobs:
           git push origin "$COMMIT:refs/heads/direction-log"
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
-      # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.
-      - name: Dropped items (kept beside the ledger, not published)
+      # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not served from the site.
+      - name: Dropped items (public, beside the ledger, not on the site)
         id: dropped
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         env:
@@ -488,7 +514,7 @@ jobs:
             ASSETS=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name')
           else
             gh release create "$DAYTAG" --title "COP suite ledger ${DAY%%-*}" \
-              --notes "COP suite ledger day files (tic-history/1) and the dropped-items logs for ${DAY%%-*}. Not published."
+              --notes "COP suite ledger day files (tic-history/1) and the dropped-items logs for ${DAY%%-*}. Public with the repository; not served from the site."
             ASSETS=""
           fi
           if echo "$ASSETS" | grep -qx "$DAY.dropped.jsonl.gz"; then
