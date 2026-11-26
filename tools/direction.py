@@ -357,7 +357,7 @@ def read_traffic(snapshot, area):
                        "label": "Condition: no baseline", "condition": True}
     # Fewer ships through a strait is the direction of concern here, so a fall reads as "up".
     state = "up" if pct <= -TRAFFIC_PCT and z <= -TRAFFIC_Z else "down" if pct >= TRAFFIC_PCT and z >= TRAFFIC_Z else "steady"
-    side = f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above"
+    side = ("level with" if round(abs(pct)) == 0 else f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above")
     return base | {"state": state, "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
                    "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}, {side} its 90-day median of "
                            f"{m.get('baseline_90d_median'):g}. {lag}",
