@@ -139,6 +139,11 @@ jobs:
         run: |
           python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data \
             || { rm -f site/data/three-signal.json; echo "::warning::three-signal join failed; the page and the MCP server say it is unavailable"; }
+      # The Red River Valley view: what this snapshot holds for North Dakota and Minnesota, by layer. It adds
+      # no source. A failure never fails the build: without red-river.json the page says the view was not built.
+      - name: Red River Valley view (site/data/red-river.json)
+        run: |
+          python tools/red_river.py --snapshot site/data/today.geojson --publish site/data             || { rm -f site/data/red-river.json; echo "::warning::Red River view failed; its page says it was not built"; }
       # COP's memory and the direction of concern (Tom, 21 Nov 2026): one record per subject, kept after it leaves the
       # picture (tools/memory.py, release "memory"), and each place's layers read against their own last two weeks
       # (tools/direction.py, site/data/direction.json). The first build rebuilds the memory from the archive copies
