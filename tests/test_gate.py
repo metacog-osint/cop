@@ -32,6 +32,8 @@ class Layers(unittest.TestCase):
         self.assertEqual(gate.layer_of("wake:chokepoint:strait-of-hormuz:2026-11-08"), ("wake", "chokepoint"))
         self.assertEqual(gate.layer_of("RL-IFRC-d855019585"), ("relief", "ifrc"))
         self.assertEqual(gate.layer_of("RL-WHO-0b2662db99"), ("relief", "who"))
+        self.assertEqual(gate.layer_of("TP-GDELT-1a2b3c4d5e"), ("temper", "gdelt"))
+        self.assertEqual(gate.layer_of("TP-UNHCR-0b2662db99"), ("temper", "unhcr"))
 
     def test_the_military_lists_are_gone(self):
         # Tom, 15 Nov 2026: no held classes. Nothing in the module may hold a layer back again.
