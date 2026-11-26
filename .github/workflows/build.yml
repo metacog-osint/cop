@@ -211,7 +211,7 @@ jobs:
           fi
           python tools/lane_log.py --log "$LOG" --direction-log "$DLOG" --publish site/data --no-append \
             || skip "the record could not be written"
-      # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
+      # The Undertow sanctions join (join 0.1, published off until the owner turns it on): a Headwind list change naming an
       # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
       # writes out/undertow-sanctions/ only. A failure never fails the build.
       - name: Undertow sanctions join (out/undertow-sanctions/)
@@ -220,7 +220,7 @@ jobs:
             --list-changes https://headwind.theintelligence.company/data/list-changes.json \
             --out out/undertow-sanctions --publish site/data \
             || echo "::warning::Undertow sanctions join failed"
-      # The Undertow election join (join 0.1, published off until Tom turns it on): an Undertow item whose activity or
+      # The Undertow election join (join 0.1, published off until the owner turns it on): an Undertow item whose activity or
       # disclosure period overlaps the 90 days before a national vote, on Verdict's calendar, in a country it states as
       # a target. While off it writes out/undertow-elections/ only. A failure never fails the build.
       - name: Undertow election join (out/undertow-elections/)

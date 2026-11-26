@@ -8,7 +8,7 @@ Television Network). This join puts the two side by side, in COP's voice:
   "Headwind saw <name as the list prints it> added to <list> (<programmes>) on <date>. <Publisher> names
    <organisation> in its disclosure of <operation>."
 
-Nothing is inferred. Rules (Tom's yes, 16 Nov 2026, to the cross-suite joins plan):
+Nothing is inferred. Rules (16 Nov 2026):
   - Organisations only: a list entry is matched only when Headwind types it "entity". A person is never matched,
     even on an exact name.
   - Exact match against a hand-kept table (config/undertow-names.json), one row per organisation and list, giving
@@ -18,7 +18,7 @@ Nothing is inferred. Rules (Tom's yes, 16 Nov 2026, to the cross-suite joins pla
     prints for an EU entry is not stable (on 20 Nov 2026 it changed on 1,167 entries with nothing else changed). An
     EU change that only moves the printed name is not a list action, so it is neither a match nor stale.
   - A listing corroborates an operator, never an origin. Undertow's origin and confidence are not touched.
-  - Declared inputs: undertow and headwind:sanctions. `published` is off until Tom turns it on.
+  - Declared inputs: undertow and headwind:sanctions. `published` is off until the owner turns it on.
   - Base rate: list changes naming any of the five, per month, from the listings Undertow records from the
     publishers' notices (each item's operation.listed_by), with Headwind's own window beside it.
 
@@ -228,7 +228,7 @@ def main(argv=None):
         if JOIN["published"]:
             gate.write(JOIN, doc, a.publish, ["undertow-sanctions.json"])
         else:
-            print("undertow-sanctions: published is off (Tom's call); nothing written to " + a.publish)
+            print("undertow-sanctions: published is off; nothing written to " + a.publish)
     return 0
 
 
