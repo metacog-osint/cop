@@ -67,6 +67,9 @@ try { triage = await getJSON("data/triage.json"); } catch { triage = null; }
 // The three-signal join (published since 15 Nov 2026), built after triage. The picture stands without it too.
 let threeSignal = null;
 try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSignal = null; }
+// The Hormuz weekly stream (join 0.1). Without the file the page leaves the section out.
+let hormuzStream = null;
+try { hormuzStream = await getJSON("data/hormuz-stream.json"); } catch { hormuzStream = null; }
 // Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
 let direction = null;
 try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
@@ -623,6 +626,7 @@ function renderPanel() {
   renderDirection();
   renderTriage();
   renderThreeSignal();
+  renderHormuzStream();
   renderHealth();
   renderBar();
   renderCredits();
@@ -898,6 +902,44 @@ function renderThreeSignal() {
   list.replaceChildren(...threeSignal.records.map(threeSignalRecord));
   const sl = laneById("cop-three-signal");
   $("three-signal-lane").replaceChildren(...(sl ? [laneNote(sl)] : []));
+}
+// The Hormuz weekly stream (join 0.1): transits and UKMTO's Attack reports side by side, never divided, each against
+// its own history. Dates are whole UTC weeks, so they are shown as dates and not moved to the viewer's zone.
+function streamBase(n, base) {
+  if (!base || !base.enough) return "history too short";
+  return `median ${base.median}, 90th pct ${base.p90}${n > base.p90 ? ", above" : ""}`;
+}
+function streamSeverity(s) {
+  const coded = ["L0", "L1", "L2", "L3", "L4"].filter((k) => s[k]).map((k) => `${k}: ${s[k]}`);
+  if (s.not_coded) coded.push(`not coded yet: ${s.not_coded}`);
+  return coded.join(", ") || "none";
+}
+function streamRow(w) {
+  const t = w.transits;
+  const flags = [!w.record_whole ? "record not whole" : "", w.still_filling ? "may still grow" : ""].filter(Boolean);
+  return h("tr", {},
+    h("th", { scope: "row" }, `${w.week} to ${w.week_to}`, flags.length ? h("span", { class: "row-meta", text: ` (${flags.join(", ")})` }) : null),
+    h("td", { text: t ? `${t.per_day} a day (90-day median ${t.median_90d}; year-ago median ${t.median_year_ago})` : "no data yet" }),
+    h("td", { text: `${w.attacks} (${streamBase(w.attacks, w.attacks_base)})` }),
+    h("td", { text: w.share_within_150km === null ? "no Attack reports"
+      : `${Math.round(w.share_within_150km * 100)}%, ${w.attacks_within_150km} of ${w.attacks}` }),
+    h("td", { text: streamSeverity(w.severity) + (w.casualty_reports ? `; casualties in ${w.casualty_reports}` : "") }));
+}
+function renderHormuzStream() {
+  const sec = $("hormuz-stream-sec");
+  sec.hidden = !hormuzStream || !visibleProgram("wake");
+  if (sec.hidden) return;
+  const d = hormuzStream.data_to || {};
+  $("hormuz-stream-note").replaceChildren(`${hormuzStream.what} ${hormuzStream.not_a_warning} Built `,
+    timeEl(hormuzStream.generated_at), `. Transits to ${d.transits || "no data yet"} (a whole UTC day); latest report `,
+    timeEl(d.reports), `. ${hormuzStream.reports_coded} of ${hormuzStream.reports_held} reports coded.`);
+  const head = ["Week (UTC)", "Transits (PortWatch)", "Attack reports (UKMTO)", "Within 150 km of the strait", "Severity"];
+  $("hormuz-stream").replaceChildren(h("table", { class: "stream" },
+    h("thead", {}, h("tr", {}, ...head.map((t) => h("th", { scope: "col", text: t })))),
+    h("tbody", {}, ...hormuzStream.weeks.slice().reverse().map(streamRow))));
+  $("hormuz-stream-foot").replaceChildren(
+    ...Object.values(hormuzStream.limits).map((t) => h("p", { class: "tri-caveat", text: t })),
+    h("p", { class: "tri-rate", text: `Sources: ${hormuzStream.credit.transits}; ${hormuzStream.credit.reports}.` }));
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {

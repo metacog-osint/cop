@@ -106,6 +106,10 @@ button.tri-outage:hover, button.tri-outage:focus-visible, button.tri-item:hover,
 button.tri-item { cursor: pointer; }
 .tri-rate, .tri-caveat { margin: 8px 0 0; font-size: 13px; color: var(--mut); }
 .tri-rate strong { color: var(--ink); font-weight: 500; }
+.stream-wrap { overflow-x: auto; margin-top: 8px; }
+.stream { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 12px; color: var(--mut); }
+.stream th, .stream td { padding: 5px 8px 5px 0; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line, rgba(127,127,127,.3)); }
+.stream th { color: var(--ink); font-weight: 500; }
 .tri-q { margin-top: 8px; font-size: 13px; color: var(--mut); }
 .tri-q summary { cursor: pointer; color: var(--ink); font-weight: 500; }
 .tri-q p { margin: 6px 0 0; }
