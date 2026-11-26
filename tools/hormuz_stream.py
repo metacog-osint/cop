@@ -39,7 +39,7 @@ SCHEMA = "hormuz-stream/1"
 STATE_NAME = "state.json.gz"
 
 AREA = ts.AREAS["hormuz"]
-STRAIT = (26.55, 56.45)      # lat, lon: the reference point of the agreed coding, so the 150 km share matches it
+STRAIT = (26.55, 56.45)      # lat, lon: the reference point rule v0 measures from, so the 150 km share matches the codes
 NEAR_KM = 150
 TRANSIT_PREFIX = "wake:chokepoint:strait-of-hormuz:"
 COUNTED = ("Attack",)        # UKMTO's own type name
