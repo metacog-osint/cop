@@ -293,6 +293,55 @@ jobs:
             gh release upload "$TAG" "$NEW" || fallback "the upload failed; today's brief waits for the next build"
             echo "daily brief: kept $(basename "$NEW") in $TAG"
           fi
+      # History across programs (tools/history.py): what every layer showed per day, country, area and subject, as a
+      # Parquet set plus small per-place files for the MCP server's history tool and the place pages. Rebuilt once a
+      # UTC day, by the first build after midnight, from closed days only: COP's daily snapshots, its ledger and the
+      # programs' own logs (history/log in each repository named in config/history.json, read with a sparse clone).
+      # The set is derived and is kept in the release history as one history.tar.gz, replaced at each rebuild; every
+      # other build serves that copy. Never fails the build: without it the page and the tool say it is absent.
+      - name: History across programs (site/data/history; rebuilt once a UTC day, kept in the release history)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          warn() { echo "::warning::history: $1"; }
+          TODAY=$(date -u +%F)
+          mkdir -p out/history-prev site/data/history
+          BUILT=""
+          if gh release view history >/dev/null 2>&1 \
+             && gh release download history --dir out/history-prev --pattern history.tar.gz --clobber; then
+            tar -xzf out/history-prev/history.tar.gz -C site/data/history \
+              && BUILT=$(python -c "import json; print(json.load(open('site/data/history/manifest.json'))['built_at'][:10])") \
+              || warn "the kept copy could not be unpacked"
+          fi
+          if [ "$BUILT" = "$TODAY" ]; then echo "history: built $BUILT, serving the kept copy"; exit 0; fi
+          T0=$(date +%s)
+          pip install --quiet --disable-pip-version-check pyarrow==26.0.1 || { warn "pyarrow could not be installed; serving the copy built $BUILT"; exit 0; }
+          IN=out/history-in
+          mkdir -p "$IN/snapshots" "$IN/ledger" "$IN/logs"
+          for TAG in $(gh release list --limit 200 --json tagName --jq '.[].tagName | select(startswith("snapshots-"))'); do
+            gh release download "$TAG" --dir "$IN/snapshots" --pattern "????-??-??.geojson.gz" --clobber \
+              || { warn "$TAG could not be downloaded; serving the copy built $BUILT"; exit 0; }
+          done
+          for TAG in $(gh release list --limit 200 --json tagName --jq '.[].tagName | select(test("^ledger(-[0-9]{4})?$"))'); do
+            gh release download "$TAG" --dir "$IN/ledger" --pattern "????-??-??.jsonl.gz" --clobber \
+              || { warn "$TAG could not be downloaded; serving the copy built $BUILT"; exit 0; }
+          done
+          for P in $(python -c "import json; print(' '.join(json.load(open('config/history.json'))['program_logs']))"); do
+            REPO=$(python -c "import json,sys; print(json.load(open('config/history.json'))['program_logs'][sys.argv[1]])" "$P")
+            git clone -q --depth 1 --filter=blob:none --sparse "https://github.com/$REPO.git" "$IN/repo-$P" \
+              && git -C "$IN/repo-$P" sparse-checkout set --no-cone history/log \
+              && [ -d "$IN/repo-$P/history/log" ] && mkdir -p "$IN/logs/$P" && mv "$IN/repo-$P/history/log" "$IN/logs/$P/log" \
+              || warn "$P's own log could not be read; its events come from COP's ledger only"
+          done
+          python tools/history.py --archive "$IN/snapshots" --ledger "$IN/ledger" --logs "$IN/logs" \
+            --publish out/history-new --before "$TODAY" || { warn "the tool failed; serving the copy built $BUILT"; exit 0; }
+          tar -czf out/history.tar.gz -C out/history-new .
+          echo "history: rebuilt in $(( $(date +%s) - T0 )) s, $(du -sh out/history-new | cut -f1) on disk, archive $(du -h out/history.tar.gz | cut -f1)"
+          rm -rf site/data/history && cp -r out/history-new site/data/history
+          gh release view history >/dev/null 2>&1 || gh release create history --title "COP history across programs" \
+            --notes "What every layer of COP showed per day, country, area and subject (tools/history.py, cop-history/1): a Parquet set and the per-place files the site serves at /data/history/. Derived from COP's daily snapshots, its ledger and the programs' own logs, and rebuilt from them once a UTC day; history.tar.gz is replaced at each rebuild." \
+            || { warn "the release could not be created; the new set is served but not kept"; exit 0; }
+          gh release upload history out/history.tar.gz --clobber || warn "the new set is served but was not kept; the next build rebuilds it"
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages

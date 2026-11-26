@@ -22,6 +22,7 @@ const ORDER = [
   "three_signal",
   "direction",
   "lane_record",
+  "history",
 ];
 
 async function client() {
@@ -35,7 +36,7 @@ async function client() {
 
 const body = (r) => r.structuredContent ?? JSON.parse(r.content[0].text);
 
-test("a 2026-07-28 client lists the eleven tools in a fixed order, all read-only", async () => {
+test("a 2026-07-28 client lists the twelve tools in a fixed order, all read-only", async () => {
   const c = await client();
   const { tools } = await c.listTools();
   assert.deepEqual(tools.map((t) => t.name), ORDER);
