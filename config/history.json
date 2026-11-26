@@ -1,13 +1,12 @@
 {
- "note": "What tools/history.py reads besides COP's own snapshots and ledger, and the periods it marks as not comparable. program_logs: the programs whose repositories keep a tic-history/1 log under history/log (only that folder is read; the other files in history/ are outside the feeds and are never read). breaks: a row that matches gets the note, and a note means the row is not comparable with rows outside its period.",
+ "note": "What tools/history.py reads besides COP's own snapshots and ledger, and the periods it marks as not comparable. program_logs: the programs whose repositories keep a tic-history/1 log under history/log (only that folder is read; the other files in history/ are outside the feeds and are never read). Public repositories only: a program whose repository is private keeps its log private, and its items reach this set through COP's snapshots and ledger alone. breaks: a row that matches gets the note, and a note means the row is not comparable with rows outside its period.",
  "program_logs": {
   "elements": "metacog-osint/elements",
   "relief": "metacog-osint/relief",
   "blackout": "metacog-osint/blackout",
   "undertow": "metacog-osint/undertow",
   "headwind": "metacog-osint/headwind",
-  "vis": "metacog-osint/vis",
-  "wake": "metacog-osint/wake"
+  "vis": "metacog-osint/vis"
  },
  "breaks": [
   {"program": "watchfloor", "subject_contains": "11_Iran_Red_Sea", "before": "2026-11-18",
