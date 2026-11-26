@@ -28,9 +28,10 @@ function strengthTable(health) {
   if (!health || !health.config) return fill(tbody, [h("tr", {}, h("td", { colspan: "2", text: "The picture's configuration could not be read." }))]);
   fill(tbody, health.config.programs.map((p) => {
     const labels = (p.strength_labels || []).map((l) => l.replace("{v}", "x"));
+    const admits = (p.pick_admits || []).map((w) => `${w}.`).join(" ");
     return h("tr", {}, h("th", { scope: "row", text: p.name }),
-      h("td", { text: labels.length ? labels.map((l, i) => (labels.length > 1 ? `${i + 1}. ${l}` : l)).join("; ")
-        : "No rule: its feed's own order (it makes no picks if it never marks an anomaly)." }));
+      h("td", { text: (labels.length ? labels.map((l, i) => (labels.length > 1 ? `${i + 1}. ${l}` : l)).join("; ")
+        : "No rule: its feed's own order (it makes no picks if it never marks an anomaly).") + (admits ? ` ${admits}` : "") }));
   }));
   if (Number.isFinite(health.config.max_picks)) $("max-picks").textContent = String(health.config.max_picks);
 }

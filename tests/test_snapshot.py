@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +79,38 @@ class Build(unittest.TestCase):
         self.assertLess(snap.strength(fall, plain)[3], snap.strength(rise, plain)[3], "without abs a fall ranks low")
         self.assertEqual(snap.strength({}, rules), (None, None, None, None))
 
+    def test_cordon_compares_like_with_like(self):
+        """ideas#164: each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
+        cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
+        item = lambda name, v: {"signal": {"name": name, "value": v}, "measures": {"level": v}}
+        state = snap.strength(item("State Dept advisory level 1-4", 2), cd["strength"])
+        cdc = snap.strength(item("CDC travel notice level 1-4", 3), cd["strength"])
+        canada = snap.strength(item("Canada risk level 0-3", 1), cd["strength"])
+        self.assertEqual(state[1].replace("{v}", "2"), "State Department travel advisory level 2 of 4")
+        self.assertEqual(canada[1].replace("{v}", "1"), "Canada risk level 1 (0 to 3)")
+        self.assertLess(state[2], cdc[2], "a travel advisory outranks a health notice at any level")
+        self.assertEqual(snap.strength({"measures": {"level": 4}}, cd["strength"]), (None, None, None, None),
+                         "a level on no named scale has no strength")
+
+    def test_cordon_pick_admits(self):
+        """ideas#164: Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours (Tom, 23 Nov)."""
+        from datetime import datetime, timezone
+        cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
+        now = datetime(2026, 11, 24, 12, tzinfo=timezone.utc)
+        text_only = {"id": "cordon:canada:CN", "last_change": "changed"}
+        self.assertTrue(snap.not_admitted(text_only, cd, now))
+        self.assertIsNone(snap.not_admitted({"id": "cordon:canada:CN", "last_change": "raised"}, cd, now))
+        self.assertTrue(snap.not_admitted({"id": "cordon:fcdo:mali", "last_change": "new"}, cd, now))
+        self.assertIsNone(snap.not_admitted({"id": "cordon:advisory:ML", "last_change": "changed"}, cd, now))
+        old = {"id": "cordon:cdc:malaria-panama", "data_as_of": "2026-11-18T05:00:00Z"}
+        fresh = {"id": "cordon:cdc:measles-x", "data_as_of": "2026-11-22T05:00:00Z"}
+        self.assertTrue(snap.not_admitted(old, cd, now))
+        self.assertIsNone(snap.not_admitted(fresh, cd, now))
+        self.assertTrue(snap.not_admitted({"id": "cordon:cdc:undated"}, cd, now), "an undated notice is not current")
+        html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
+        hours = next(r["within_hours"] for r in cd["pick_admits"] if "within_hours" in r)
+        self.assertIn(f"<b>{hours} hours</b>", html)
+
     def test_headwind_ranks_its_anomalies_by_the_size_of_z(self):
         hw = next(p for p in snap.CONFIG["programs"] if p["id"] == "headwind")
         self.assertEqual([(r["path"], r.get("abs")) for r in hw["strength"]], [("measures.z", True)])
@@ -101,6 +133,26 @@ class Build(unittest.TestCase):
         first_round = [p["program"] for p in ps][:len({p["program"] for p in ps})]
         self.assertEqual(len(first_round), len(set(first_round)))
         self.assertEqual([p["n"] for p in ps], list(range(1, len(ps) + 1)))
+
+    def test_an_item_past_its_valid_until_is_never_a_pick(self):
+        today, picks, _, _ = build()
+        first = picks["picks"][0]["id"]
+
+        def mutate(f):
+            for feed in f.values():
+                for x in feed.get("features", []) if isinstance(feed, dict) else []:
+                    if x["properties"].get("id") == first:
+                        x["properties"]["valid_until"] = snap.iso(NOW - timedelta(minutes=1))
+        today2, picks2, _, _ = build(mutate=mutate)
+        self.assertNotIn(first, [p["id"] for p in picks2["picks"]])
+        self.assertIn(first, [f["properties"]["id"] for f in today2["features"]], "still stored and shown")
+
+    def test_valid_until_ahead_or_absent_still_picks(self):
+        later = {"valid_until": snap.iso(NOW + timedelta(hours=1))}
+        self.assertFalse(snap.no_longer_current(later, NOW))
+        self.assertFalse(snap.no_longer_current({}, NOW))
+        self.assertTrue(snap.no_longer_current({"valid_until": snap.iso(NOW - timedelta(seconds=1))}, NOW))
+        self.assertTrue(snap.no_longer_current({"measures": {"current": False}}, NOW))
 
     def test_noisefloor_events_outrank_new_areas(self):
         today, picks, _, _ = build()
@@ -130,10 +182,22 @@ class Build(unittest.TestCase):
         h = health_of(health, "headwind")
         self.assertEqual(h["state"], "fresh")                  # the feed itself is current
         self.assertEqual(h["sources"], {"total": len(lanes), "not_read": [
-            {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies"}]})
+            {"id": "ecb-eurofxref", "state": "failing", "detail": "29 currencies", "failures": None}]})
         self.assertEqual(today["cop_programs"]["headwind"]["sources"]["total"], len(lanes))
-        # Another program with a health block but without source_health keeps its items as they were.
-        self.assertNotIn("sources", health_of(health, "cordon"))
+        # A program whose feed has no health block (Launch) has no sources summary.
+        self.assertNotIn("sources", health_of(health, "launch"))
+
+    def test_a_prefix_key_registers_every_source_id_that_starts_with_it(self):
+        self.assertTrue(snap.registered("usembassy-ye"))
+        self.assertTrue(snap.registered("watchfloor:watchfloor:2026-11-23:zone:19_Somalia"))
+        self.assertFalse(snap.registered("usembassy"))
+        self.assertFalse(snap.registered("no-such-source"))
+
+    def test_source_health_on_for_every_program_but_those_without_a_health_block(self):
+        # ideas#164: every program whose feed carries a per-source health block reads it. Watchfloor and Launch
+        # publish none today; turn it on for them when they do.
+        off = {p["id"] for p in snap.CONFIG["programs"] if not p.get("source_health")}
+        self.assertEqual(off, {"watchfloor", "launch"})
 
     def test_dead_feed_keeps_last_good_copy_and_goes_grey(self):
         prev, _, _, _ = build()
@@ -237,6 +301,31 @@ class Build(unittest.TestCase):
         self.assertNotIn("noisefloor-milair-gulf-2026-11-17", [k["id"] for k in picks["picks"]], "routine: never a pick")
         nf = next(q for q in health["config"]["programs"] if q["id"] == "noisefloor")
         self.assertEqual([r["preset"] for r in nf["also_in"]], ["conflict"])
+
+    def test_a_standing_shift_says_what_it_is_measured_against(self):
+        """Wake's wake-2.6 items in a moved-level run (25 Nov 2026) compare with a window fixed at the run's first
+        week, so the size label says so. Only the words change: the value, the rule and the pick order do not."""
+        def standing(f):
+            for x in f["wake"]["features"]:
+                if x["properties"]["id"] == "wake:port:istanbul:2026-11-06":
+                    x["properties"]["measures"].update({"standing_since": "2026-09-25", "standing_weeks": 9})
+        before, picks_before, _, _ = build()
+        after, picks_after, health, _ = build(mutate=standing)
+        a = next(f["properties"] for f in after["features"] if f["properties"]["id"] == "wake:port:istanbul:2026-11-06")
+        b = next(f["properties"] for f in before["features"] if f["properties"]["id"] == "wake:port:istanbul:2026-11-06")
+        self.assertEqual(a["cop_strength"], b["cop_strength"])
+        self.assertIn("against the same weeks a year before the shift began", a["cop_strength_text"])
+        self.assertIn("against the same weeks a year earlier", b["cop_strength_text"])
+        self.assertEqual([p["id"] for p in picks_after["picks"]], [p["id"] for p in picks_before["picks"]])
+        wake = next(q for q in health["config"]["programs"] if q["id"] == "wake")
+        self.assertIn("while a moved level stands", wake["strength_labels"][0])
+
+    def test_strength_label_alt_needs_a_value(self):
+        rule = {"path": "m.v", "abs": True, "label": "{v} plain", "alt": {"when_set": "m.since", "label": "{v} alt"}}
+        for props, want in (({"m": {"v": -5}}, "{v} plain"), ({"m": {"v": -5, "since": None}}, "{v} plain"),
+                            ({"m": {"v": -5, "since": "2026-03-08"}}, "{v} alt")):
+            value, label, i, rank = snap.strength(props, [rule])
+            self.assertEqual((value, label, i, rank), (-5, want, 0, 5))
 
     def test_wake_kinds_are_drawn_and_tagged(self):
         """Wake's six kinds (17 Nov 2026): every kind shows under Maritime; UKMTO's attack, hijack and boarding reports

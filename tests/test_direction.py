@@ -33,6 +33,15 @@ class Direction(unittest.TestCase):
         self.assertEqual(d.word_for([l("steady"), l("quiet")]), "steady")
         self.assertEqual(d.word_for([l("thin"), l("thin")]), "building")
 
+    def test_a_measure_on_two_cards_says_what_each_covers(self):
+        areas = [{"area": "gulf", "name": "Gulf"}, {"area": "shutdowns", "name": "Shutdowns", "worldwide": True}]
+        names = []
+        for a in areas:
+            out = d.read_area({"subjects": {}, "days": {}}, {"features": []}, a, ["outages"], "2026-11-23", {}, {})
+            names.append(out["layers"][0]["name"])
+        self.assertEqual(len(set(names)), 2)
+        self.assertIn("worldwide", names[1])
+
     def test_ship_transits_are_a_condition_and_never_count(self):
         self.assertEqual(d.word_for([l("up", "traffic"), l("steady"), l("steady")]), "steady")
 
@@ -71,6 +80,28 @@ class Direction(unittest.TestCase):
         cfg = json.loads((ROOT / "config" / "areas.json").read_text(encoding="utf-8"))
         names = [a["area"] for a in cfg["problems"] + cfg["areas"]]
         self.assertEqual(len(names), len(set(names)))
+
+    def test_a_pick_names_the_moving_places_it_falls_in(self):
+        cfg = {"problems": [{"area": "gulf", "name": "Gulf", "center": [56.4, 27.2], "radius_km": 900,
+                             "countries": ["IR"]},
+                            {"area": "shutdowns", "name": "Shutdowns", "worldwide": True}],
+               "areas": [{"area": "ukraine", "name": "Ukraine", "countries": ["UA"]},
+                         {"area": "sudan", "name": "Sudan", "countries": ["SD"]}]}
+        word = lambda a, w: {"area": a, "name": a, "direction": w, "word": d.WORDS[w], "up": ["x"], "down": []}
+        doc = {"problems": [word("gulf", "rising"), word("shutdowns", "rising")],
+               "areas": [word("ukraine", "edging_up"), word("sudan", "steady")]}
+        pt = lambda lon, lat, cc: {"type": "Feature", "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                                   "properties": {"id": f"noisefloor-event-{cc}", "countries": [cc]}}
+        snap = {"features": [pt(55.0, 26.0, "IR"), pt(31.0, 49.0, "UA"), pt(30.0, 15.0, "SD")]}
+        picks = {"picks": [{"id": "noisefloor-event-IR"}, {"id": "noisefloor-event-UA"}, {"id": "noisefloor-event-SD"},
+                           {"id": "gone"}]}
+        out = {x["pick"]: x for x in d.pick_places(doc, snap, picks, cfg)}
+        self.assertEqual([p["area"] for p in out["noisefloor-event-IR"]["places"]], ["gulf"])  # never the worldwide one
+        self.assertTrue(out["noisefloor-event-IR"]["rising"])
+        self.assertFalse(out["noisefloor-event-UA"]["rising"])            # Edging up is named, never reordered
+        self.assertNotIn("noisefloor-event-SD", out)                       # a steady place says nothing
+        doc["picks"] = list(out.values())
+        self.assertTrue(gate.review(d.JOIN, doc)["may_publish"], "pick ids are not citations of the join")
 
 
 if __name__ == "__main__":

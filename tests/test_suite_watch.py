@@ -96,6 +96,82 @@ class Watch(unittest.TestCase):
         self.assertEqual(problems, ["Vigil: 1 malformed item left out of the picture",
                                     "Orbit: 3 malformed items left out of the picture (orbit:y: NaN)"])
 
+    def test_a_listed_source_not_read_twice_is_named_and_once_is_left_to_the_next_run(self):
+        h = health()
+        h["programs"].append({"id": "context", "name": "Context", "sources": {"total": 4, "not_read": [
+            {"id": "google-news", "state": "failing", "detail": "none answered", "failures": 1},
+            {"id": "gdelt-gkg", "state": "failing", "detail": "timeout", "failures": 3},
+            {"id": "cop-bus", "state": None, "detail": None, "failures": None}]}})
+        self.assertEqual(watch.check_health(h), [
+            "Context: source gdelt-gkg is listed but was not read (failing, 3 runs in a row, timeout)",
+            "Context: source cop-bus is listed but was not read"])
+        h["programs"][-1]["sources"] = {"total": 4, "not_read": []}
+        self.assertEqual(watch.check_health(h), [])
+
+    def _vigil(self, state="stale", detail="Last run read 8 rows, under its floor of 500", failures=None):
+        h = health()
+        h["programs"].append({"id": "vigil", "name": "Vigil", "sources": {"total": 40, "not_read": [
+            {"id": "threatcluster", "state": state, "detail": detail, "failures": failures}]}})
+        return h
+
+    ENTRY = {"program": "vigil", "source": "threatcluster", "state": "stale", "detail_has": "under its floor",
+             "until": "2026-12-31", "reason": "a capped free file, kept on purpose"}
+
+    def test_a_documented_degraded_source_passes_and_is_named(self):
+        notes = []
+        self.assertEqual(watch.check_health(self._vigil(), [self.ENTRY], NOW, notes), [])
+        self.assertEqual(len(notes), 1)
+        self.assertIn("accepted: Vigil: source threatcluster (stale, Last run read 8 rows, under its floor of 500)", notes[0])
+        self.assertIn("until 2026-12-31: a capped free file, kept on purpose", notes[0])
+
+    def test_a_source_reading_differently_from_its_documentation_is_a_problem_again(self):
+        for h in (self._vigil(state="failing"), self._vigil(detail="HTTP 503 from the file"),
+                  self._vigil(state="failing", detail="HTTP 503", failures=3)):
+            notes = []
+            problems = watch.check_health(h, [self.ENTRY], NOW, notes)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertEqual(notes, [])
+        other = dict(self.ENTRY, source="threatfox")
+        self.assertEqual(len(watch.check_health(self._vigil(), [other], NOW)), 1, "another source is not covered")
+        other = dict(self.ENTRY, program="orbit")
+        self.assertEqual(len(watch.check_health(self._vigil(), [other], NOW)), 1, "another program is not covered")
+
+    def test_the_documentation_lapses_on_its_date(self):
+        last = datetime(2026, 12, 31, 23, 0, tzinfo=timezone.utc)
+        self.assertEqual(watch.check_health(self._vigil(), [self.ENTRY], last), [])
+        late = datetime(2027, 1, 1, 0, 1, tzinfo=timezone.utc)
+        self.assertEqual(len(watch.check_health(self._vigil(), [self.ENTRY], late)), 1)
+        self.assertEqual(len(watch.check_health(self._vigil(), [self.ENTRY])), 1, "no clock, no acceptance")
+
+    def test_an_incomplete_entry_accepts_nothing_and_says_so(self):
+        good, problems = watch.load_accepted({"accepted": [dict(self.ENTRY, reason=""), dict(self.ENTRY, until="soon"),
+                                                          {"program": "vigil"}, self.ENTRY]})
+        self.assertEqual(good, [self.ENTRY])
+        self.assertEqual(len(problems), 3)
+        self.assertEqual(len(watch.load_accepted({})[1]), 1)
+        self.assertEqual(len(watch.load_accepted([])[1]), 1)
+
+    def test_run_passes_with_a_documented_source_and_fails_without_the_file(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            (tmp / "acc.json").write_text(json.dumps({"accepted": [self.ENTRY]}), encoding="utf-8")
+            code, text = run(tmp, snap(), self._vigil(), ["--accepted", str(tmp / "acc.json"), "--sitecheck", "", "--verdict", ""])
+            self.assertEqual((code, text.splitlines()[0][:22]), (0, "all programs current a"), text)
+            self.assertIn("accepted: Vigil: source threatcluster", text)
+            code, text = run(tmp, snap(), self._vigil(), ["--accepted", str(tmp / "missing.json"), "--sitecheck", "", "--verdict", ""])
+            self.assertEqual(code, 1)
+            self.assertIn("watch_accepted.json could not be read", text)
+            self.assertIn("source threatcluster is listed but was not read", text)
+
+    def test_the_shipped_list_is_complete_and_names_only_documented_sources(self):
+        import json
+        doc = json.loads((ROOT / "config" / "watch_accepted.json").read_text(encoding="utf-8"))
+        good, problems = watch.load_accepted(doc)
+        self.assertEqual(problems, [])
+        self.assertEqual([(e["program"], e["source"]) for e in good], [("vigil", "threatcluster")])
+
     def test_a_health_file_of_the_wrong_shape_is_a_problem_not_quiet(self):
         for bad in ({}, {"programs": []}, {"programs": {"vis": {}}}, [], "x"):
             self.assertEqual(len(watch.check_health(bad)), 1, bad)
@@ -141,6 +217,21 @@ def sitecheck(finished="2026-11-14T17:11:00Z", **bad):
                         "problems": problems})
     return {"contract": "tic-sitecheck/1", "finished_at": finished, "sites": len(results),
             "ok": sum(r["ok"] for r in results), "results": results}
+
+
+class VerdictAge(unittest.TestCase):
+    def test_a_recent_scorecard_has_no_problems(self):
+        self.assertEqual(watch.check_verdict({"generated_at": "2026-11-13T21:00:00Z"}, NOW), [])
+
+    def test_a_scorecard_over_48_hours_old_is_named(self):
+        out = watch.check_verdict({"generated_at": "2026-11-12T20:00:00Z"}, NOW)
+        self.assertEqual(len(out), 1)
+        self.assertIn("Verdict", out[0])
+        self.assertIn("49.0 h", out[0])
+
+    def test_no_build_time_or_a_wrong_shape_is_a_problem_not_quiet(self):
+        self.assertEqual(len(watch.check_verdict({}, NOW)), 1)
+        self.assertEqual(len(watch.check_verdict([], NOW)), 1)
 
 
 class SiteCheck(unittest.TestCase):

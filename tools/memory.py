@@ -12,7 +12,10 @@ subject is a series. A record is never removed.
 
 A series can change what it counts (Watchfloor's Iran zone went from two countries to nine on 18 Nov 2026). config/
 series_scopes.json names the day each new scope starts. Every value of such a series is stamped with its scope in `vs`
-and kept; current_series() hands readers only the newest scope, so a change of scope starts a new series.
+and kept; current_series() hands readers only the newest scope, so a change of scope starts a new series. Since 24 Nov
+2026 Watchfloor's feed states each zone's scope itself (measures.zone_scope, a hash of what the zone counts; catalog
+2026-11-24.1, ideas#241). Memory keeps it per value in `fs`, and a new stated scope starts a new series with no entry in
+series_scopes.json. A listed entry may name the zone_scope that continues it, so its values stay one series.
 
 An absence counts only when the program was read. A day a program's feed failed is not a gap in its subjects' runs.
 
@@ -80,6 +83,53 @@ def key(p: dict) -> str:
     return item
 
 
+def continues(mem: dict, k: str) -> str | None:
+    """The older record this subject continues, or None.
+
+    When a feed starts stating subject_id (contract 2.1: Context and Vis on 24 Nov 2026), its subjects get new keys
+    (context:zone:01_Ukraine_Conflict) while their history sits under the key their dated item ids gave before
+    (context:01_Ukraine_Conflict). The old key is still what key() makes of the item's id, so it can be found again.
+    Only a record of the same program, itself keyed from its id and begun no later, counts (ideas#205)."""
+    r = mem["subjects"].get(k)
+    if not r or not r.get("id"):
+        return None
+    old = key({"id": r["id"]})
+    o = mem["subjects"].get(old)
+    if old == k or not o or o.get("p") != r.get("p") or key({"id": o.get("id")}) != old or o["first"] > r["first"]:
+        return None
+    return old
+
+
+def subject(mem: dict, k: str) -> dict | None:
+    """A subject's record joined with the older record it continues. Read only: no stored record is changed."""
+    r = mem["subjects"].get(k)
+    old = continues(mem, k)
+    if old is None:
+        return r
+    o = mem["subjects"][old]
+    spans = []
+    for s in sorted([list(x) for x in o["spans"] + r["spans"]]):
+        if spans and (s[0] <= spans[-1][1] or not _was_read_between(mem, r["p"], spans[-1][1], s[0])):
+            spans[-1][1] = max(spans[-1][1], s[1])
+        else:
+            spans.append(s)
+    out = {**o, **r, "first": min(o["first"], r["first"]), "spans": spans,
+           "at": sorted(set(o["at"]) | set(r["at"])), "was": old}
+    for field in ("v", "vs", "fs"):
+        if o.get(field) or r.get(field):
+            out[field] = {**(o.get(field) or {}), **(r.get(field) or {})}
+    if o.get("hot") or r.get("hot"):
+        out["hot"] = max(o.get("hot") or "", r.get("hot") or "")
+    return out
+
+
+def joined_subjects(mem: dict) -> dict:
+    """Every subject once: a record that a newer subject continues is read as part of it and not listed alone."""
+    lineage = {k: old for k in mem["subjects"] if (old := continues(mem, k))}
+    gone = set(lineage.values())
+    return {k: (subject(mem, k) if k in lineage else r) for k, r in mem["subjects"].items() if k not in gone}
+
+
 def family(item_key: str) -> str:
     """The kind of subject, for "the last similar item": cordon:alert, wake:ukmto, noisefloor:event."""
     parts = item_key.split(":")
@@ -121,13 +171,42 @@ def scope_of(changes: list, day: str) -> str:
     return scope
 
 
+STATED = "stated:"                           # the label of a scope the feed stated and no listed entry names
+
+
+def scope_labels(changes: list, stated: dict, days) -> dict:
+    """day -> scope label, from the listed changes and the scopes the feed stated (`fs`).
+
+    A stated scope wins on its day; a listed entry that names it (zone_scope) gives its own label, so a series listed
+    before the feed stated scopes runs on unbroken. A day with neither takes the label of the stated day before it,
+    or, before the first stated day, the first one: a series is one scope until the feed or a listed entry says
+    otherwise."""
+    named = {c["zone_scope"]: c["scope"] for c in changes if c.get("zone_scope")}
+    raw = {}
+    for day in days:
+        if stated.get(day):
+            raw[day] = named.get(stated[day], STATED + str(stated[day]))
+        elif changes:
+            raw[day] = scope_of(changes, day)
+        else:
+            raw[day] = None
+    known = [raw[d] for d in sorted(raw) if raw[d] is not None]
+    last = known[0] if known else FIRST_SCOPE
+    out = {}
+    for day in sorted(raw):
+        last = raw[day] if raw[day] is not None else last
+        out[day] = last
+    return out
+
+
 def stamp_scopes(mem: dict, scopes: dict | None = None) -> dict:
-    """Stamp each value of a listed series with its scope. Adds `vs`; never changes or removes a value."""
+    """Stamp each value of a listed series, or one whose feed states its scope, with its scope. Adds `vs`; never
+    changes or removes a value."""
     scopes = load_scopes() if scopes is None else scopes
-    for k, changes in scopes.items():
-        r = mem["subjects"].get(k)
-        if r and r.get("v"):
-            r["vs"] = {day: scope_of(changes, day) for day in r["v"]}
+    for k, r in mem["subjects"].items():
+        changes = scopes.get(k) or []
+        if r.get("v") and (changes or r.get("fs")):
+            r["vs"] = scope_labels(changes, r.get("fs") or {}, r["v"])
     return mem
 
 
@@ -224,6 +303,9 @@ def fold(mem: dict, snapshot: dict) -> dict:
         data_day = day_of(p.get("data_as_of"))
         if value is not None and data_day:
             r.setdefault("v", {})[data_day] = value
+            stated = _dig(p, "measures.zone_scope")
+            if isinstance(stated, str) and stated:
+                r.setdefault("fs", {})[data_day] = stated
     mem["updated_at"] = at
     return stamp_scopes(mem)
 
@@ -269,7 +351,7 @@ def ingest_events(mem: dict, today: str, source: str) -> int:
 def similar_index(mem: dict) -> dict:
     """(family, country) -> records of that kind in that country; (family, None) -> those with a point and no country."""
     index = {}
-    for k, r in mem["subjects"].items():
+    for k, r in joined_subjects(mem).items():
         if r.get("c"):
             for c in r["c"]:
                 index.setdefault((family(k), c), []).append(r)
@@ -300,7 +382,7 @@ def last_similar(mem: dict, k: str, r: dict | None, countries: list, xy, event: 
         pool = []
     best = None
     for o in pool:
-        if o is r:
+        if o is r or (r is not None and o.get("id") == r.get("id")):   # r may be a joined copy of the same subject
             continue
         for day in reversed(o["at"]):
             if day < event:
@@ -313,7 +395,7 @@ def last_similar(mem: dict, k: str, r: dict | None, countries: list, xy, event: 
 def compare(mem: dict, p: dict, today: str, index: dict | None = None) -> dict:
     """What COP remembers about this item, against everything before it. A short line and its parts."""
     k = key(p)
-    r = mem["subjects"].get(k)
+    r = subject(mem, k)
     index = similar_index(mem) if index is None else index
     start = min(mem["days"]) if mem["days"] else today
     event = p.get("event_day") or day_of(p.get("event_start")) or day_of(p.get("data_as_of")) or (

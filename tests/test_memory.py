@@ -1,4 +1,5 @@
 """COP's memory: a subject is kept after it leaves, and a new item is compared with what came before."""
+import json
 import sys
 import tempfile
 import unittest
@@ -67,6 +68,65 @@ class Memory(unittest.TestCase):
             self.assertEqual(m.load(d)["subjects"], mem["subjects"])
 
 
+def ctx(day, entity="01_Ukraine_Conflict", stated=True, countries=("UA",)):
+    """A Context zone item as its feed sent it before (dated id only) and after contract 2.1 (subject_id too)."""
+    p = {"id": f"context:{day}_1200Z:{entity}", "program": "context", "cop_program": "context", "title": entity,
+         "countries": list(countries), "data_as_of": f"{day}T12:00:00Z"}
+    if stated:
+        p["subject_id"] = f"context:zone:{entity}"
+    return {"type": "Feature", "geometry": None, "properties": p}
+
+
+class SubjectIdArrives(unittest.TestCase):
+    """ideas#205: Context began stating subject_id on 24 Nov 2026; its zones keep their history."""
+
+    def build(self, gap_day=None):
+        mem = m.empty()
+        for day in ("2026-11-20", "2026-11-21", "2026-11-22"):
+            m.fold(mem, snap(day, [ctx(day, stated=False)], read=("context",)))
+        if gap_day:
+            m.fold(mem, snap(gap_day, [], read=("context",)))
+        m.fold(mem, snap("2026-11-24", [ctx("2026-11-24")], read=("context",)))
+        return mem
+
+    def test_the_new_key_continues_the_old_record(self):
+        mem = self.build()
+        self.assertEqual(m.continues(mem, "context:zone:01_Ukraine_Conflict"), "context:01_Ukraine_Conflict")
+        r = m.subject(mem, "context:zone:01_Ukraine_Conflict")
+        self.assertEqual((r["first"], r["spans"]), ("2026-11-20", [["2026-11-20", "2026-11-24"]]))
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertEqual((said["state"], said["days"]), ("running", 5))
+
+    def test_a_day_read_without_the_subject_is_still_a_gap(self):
+        mem = self.build(gap_day="2026-11-23")
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertEqual((said["state"], said["gap_days"]), ("back", 2))
+
+    def test_no_stored_record_is_changed_or_lost(self):
+        mem = self.build()
+        before = json.dumps(mem, sort_keys=True)
+        m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        m.similar_index(mem)
+        self.assertEqual(json.dumps(mem, sort_keys=True), before)
+        self.assertEqual(set(mem["subjects"]), {"context:01_Ukraine_Conflict", "context:zone:01_Ukraine_Conflict"})
+
+    def test_the_subject_is_listed_once_and_is_not_its_own_last_like_it(self):
+        mem = self.build()
+        joined = m.joined_subjects(mem)
+        self.assertNotIn("context:01_Ukraine_Conflict", joined)
+        self.assertEqual(joined["context:zone:01_Ukraine_Conflict"]["was"], "context:01_Ukraine_Conflict")
+        said = m.compare(mem, ctx("2026-11-24")["properties"], "2026-11-24")
+        self.assertNotIn("last_similar", said)
+
+    def test_another_program_or_a_stated_old_subject_is_not_joined(self):
+        mem = self.build()
+        mem["subjects"]["context:01_Ukraine_Conflict"]["p"] = "watchfloor"
+        self.assertIsNone(m.continues(mem, "context:zone:01_Ukraine_Conflict"))
+        mem = m.empty()
+        m.fold(mem, snap("2026-11-01", [item("wake:ukmto:a", "2026-11-01")]))
+        self.assertIsNone(m.continues(mem, "wake:ukmto:a"))
+
+
 class SeriesScope(unittest.TestCase):
     SCOPES = {"watchfloor:zone:z": [{"from": "2026-11-18", "scope": "wide"}]}
 
@@ -86,6 +146,40 @@ class SeriesScope(unittest.TestCase):
         r = m.stamp_scopes(self.mem(), self.SCOPES)["subjects"]["watchfloor:zone:other"]
         self.assertNotIn("vs", r)
         self.assertEqual(len(m.current_series(r)), 4)
+
+    def test_a_stated_scope_named_by_a_listed_entry_continues_it(self):
+        mem = self.mem()
+        r = mem["subjects"]["watchfloor:zone:z"]
+        r["v"]["2026-11-24"] = 220
+        r["fs"] = {"2026-11-24": "abc"}
+        scopes = {"watchfloor:zone:z": [{"from": "2026-11-18", "scope": "wide", "zone_scope": "abc"}]}
+        r = m.stamp_scopes(mem, scopes)["subjects"]["watchfloor:zone:z"]
+        self.assertEqual(r["vs"]["2026-11-24"], "wide")
+        self.assertEqual(m.current_series(r), {"2026-11-18": 200, "2026-11-19": 210, "2026-11-24": 220})
+
+    def test_a_new_stated_scope_starts_a_new_series_with_no_listed_entry(self):
+        mem = self.mem()
+        r = mem["subjects"]["watchfloor:zone:other"]
+        r["v"].update({"2026-11-24": 300, "2026-11-25": 310, "2026-11-26": 900, "2026-11-27": 910})
+        r["fs"] = {"2026-11-24": "one", "2026-11-25": "one", "2026-11-26": "two", "2026-11-27": "two"}
+        r = m.stamp_scopes(mem, {})["subjects"]["watchfloor:zone:other"]
+        self.assertEqual(len(r["v"]), 8)
+        self.assertEqual(r["vs"]["2026-11-16"], m.STATED + "one")     # before any stated day: the first stated scope
+        self.assertEqual(m.current_series(r), {"2026-11-26": 900, "2026-11-27": 910})
+
+    def test_a_day_the_feed_left_unstated_keeps_the_scope_before_it(self):
+        labels = m.scope_labels([], {"2026-11-24": "one", "2026-11-26": "two"},
+                                ["2026-11-24", "2026-11-25", "2026-11-26"])
+        self.assertEqual(labels["2026-11-25"], m.STATED + "one")
+
+    def test_fold_keeps_the_stated_scope_with_each_value(self):
+        f = item("watchfloor:2026-11-24:zone:11_Iran_Red_Sea", "2026-11-24", program="watchfloor",
+                 cop_program="watchfloor", subject_id="watchfloor:zone:11_Iran_Red_Sea",
+                 measures={"violent_articles": 124, "zone_scope": "2bc2156e602d", "catalog_version": "2026-11-24.1"})
+        mem = m.fold(m.empty(), snap("2026-11-25", [f], read=("watchfloor",)))
+        r = mem["subjects"]["watchfloor:zone:11_Iran_Red_Sea"]
+        self.assertEqual(r["fs"], {"2026-11-24": "2bc2156e602d"})
+        self.assertEqual(r["vs"]["2026-11-24"], "nine-countries")
 
     def test_the_listed_scopes_are_well_formed(self):
         for changes in m.load_scopes().values():
