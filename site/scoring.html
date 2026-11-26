@@ -29,7 +29,7 @@
   <p class="bar-times" id="bar-times" aria-live="polite">Reading the live figures…</p>
   <nav class="bar-nav" aria-label="Site">
     <a href="./">Map</a>
-    <a href="https://metacog-osint.github.io/verdict/">Verdict</a>
+    <a href="https://verdict.theintelligence.company/">Verdict</a>
     <span id="time-settings"></span>
   </nav>
 </header>
@@ -51,7 +51,7 @@
       <li><strong>Judgments are kept apart.</strong> Vis's forecasts and Blackout's assessments are the programs' own
         judgments, with a likelihood and a separate confidence. They are labelled so and are never picks.</li>
       <li><strong>Probabilities live in Verdict only.</strong> A probability appears only on a question registered in
-        <a href="https://metacog-osint.github.io/verdict/">Verdict</a>, the public forecast ledger, where it is scored.
+        <a href="https://verdict.theintelligence.company/">Verdict</a>, the public forecast ledger, where it is scored.
         A question COP drafts beside a reading is marked "draft, not registered" and has no likelihood.</li>
       <li><strong>Base rates come with every reading.</strong> COP replays its own daily archive to say how often
         each reading happens on ordinary days. The windows below are first picks, marked provisional, and are looked at
@@ -262,6 +262,27 @@
       <li><strong>What to watch</strong>: one dated event ahead, from Verdict's calendar within 7 days, else an
         Orbit scheduled launch within 48 hours; one in a country the brief names first, and one not named in the last
         brief before one that was. A launch time is the provider's, as Launch Library 2 lists it, and often moves.</li>
+    </ul>
+  </section>
+
+  <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
+    <h2 id="lanes-h">Lane records</h2>
+    <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
+      words, the four-signal join, and one lane for each program with no outside check yet. A lane's record says how
+      that kind of item has behaved. It is not a warning and gives no likelihood to any single item.</p>
+    <ul>
+      <li><strong>Logged first.</strong> Each build writes a line for every outage triage reads and every four-signal
+        reading of converged or partial (once per area, reading and UTC day) before its outcome can be known, to an
+        append-only log in which each line carries the hash of the one before (branch <code>lane-log</code>). The
+        direction words keep their own locked log (branch <code>direction-log</code>).</li>
+      <li><strong>Scored by Verdict.</strong> Once a lane's horizon has passed (14 days for an outage), Verdict counts
+        each item as confirmed by the lane's named second source, withdrawn by its own source, or left unconfirmed.
+        Until then the record shows how many were flagged and "none scored yet".</li>
+      <li><strong>Counts only.</strong> No rate or skill figure before 30 independently scored items, and the pick
+        order does not change. A change of method starts a new count; counts from two methods are never added.</li>
+      <li><strong>Replay is labelled.</strong> Outage triage also shows how it read Access Now's documented 2025
+        shutdowns (#KeepItOn STOP) against the same countries' ordinary days. That is a past labelled set, never live
+        results.</li>
     </ul>
   </section>
 

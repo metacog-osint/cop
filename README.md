@@ -13,4 +13,6 @@ MCP protocol 2026-07-28 and 2025-era clients). In Claude Code:
 `search_items`, `get_item`, `top_picks`, `outage_triage`, `list_forecasts`, `forecast_record`, `upcoming_events`,
 `three_signal`, `direction`.
 
-See `CLAUDE.md` for how it works and the commands.
+## AI assistance
+
+This repository is built with AI coding assistance (Anthropic's Claude Code). The Intelligence Company is responsible for everything published here.

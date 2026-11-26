@@ -15,6 +15,7 @@ const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const threeSignal = readJson(dir, "three-signal.json");
 const direction = readJson(dir, "direction.json");
+const lanes = readJson(dir, "lanes.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -183,6 +184,34 @@ test("get_item returns the full item with its sources, or a clear miss", () => {
   assert.throws(() => T.getItem(index, null, "nope:1", NOW), /No item "nope:1"/);
 });
 
+test("an item carries its own lane's record line, a prefix lane before its program's catch-all (ideas#330)", () => {
+  const out = rows.find((x) => x.program === "blackout" && /^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  assert.ok(out, "the fixtures hold a Blackout outage");
+  const res = T.getItem(index, shard(out.shard), out.id, NOW, lanes);
+  assert.equal(res.lane_record.lane, "blackout-outage-triage");
+  assert.match(res.lane_record.text, /^This lane: \d+ flagged since 2026-10-31/);
+  assert.match(res.lane_record.replay, /^Replay, not live/);
+  const other = rows.find((x) => x.program === "blackout" && !/^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  if (other) assert.equal(T.getItem(index, shard(other.shard), other.id, NOW, lanes).lane_record.lane, "blackout-other");
+  const v = rows.find((x) => x.program === "vigil");
+  const line = T.getItem(index, shard(v.shard), v.id, NOW, lanes).lane_record;
+  assert.equal(line.lane, "vigil");
+  assert.equal(line.flagged, null);
+  assert.match(line.text, /No outside check yet/);
+  assert.equal(T.getItem(index, shard(v.shard), v.id, NOW).lane_record, null, "no lanes.json, no line");
+});
+
+test("lane records never change the pick order, and a missing file is a tool error", () => {
+  const plain = T.topPicks(index, picks, NOW, direction);
+  const withLanes = T.topPicks(index, picks, NOW, direction, lanes);
+  assert.deepEqual(withLanes.picks.map((p) => p.id), plain.picks.map((p) => p.id));
+  assert.ok(withLanes.picks.every((p) => p.lane_record));
+  assert.throws(() => T.laneRecord(null, {}, NOW), /lane records were not built/);
+  const rec = T.laneRecord(lanes, {}, NOW);
+  assert.equal(rec.lanes.length, lanes.lanes.length);
+  assert.ok(rec.lanes.every((x) => x.rate_shown === false && x.scored === 0));
+});
+
 test("top picks keep COP's order and reasons", () => {
   const res = T.topPicks(index, picks, NOW);
   assert.ok(picks.picks.length > 0, "the fixtures make picks at their own time");
@@ -308,7 +337,7 @@ test("upcoming events stay inside the window and can be filtered by origin", () 
 test("Orbit's scheduled launches join Verdict's calendar, in date order, credited to Orbit", () => {
   const res = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
   const launches = res.events.filter((e) => e.origin === "orbit");
-  assert.equal(launches.length, 14);
+  assert.equal(launches.length, 13, "one of Orbit's 14 is also in Launch's feed, and Launch's copy is kept");
   assert.ok(res.events.some((e) => e.origin === "verdict"));
   const cmp = (a, b) => a.date.localeCompare(b.date) || (a.at || "").localeCompare(b.at || "") || a.id.localeCompare(b.id);
   for (let i = 1; i < res.events.length; i++) assert.ok(cmp(res.events[i - 1], res.events[i]) < 0, res.events[i].id);
@@ -320,10 +349,27 @@ test("Orbit's scheduled launches join Verdict's calendar, in date order, credite
   assert.ok(launches.some((e) => e.at === null && e.net_precision === "Day"), "a day-only launch has no time");
   assert.ok(res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")));
   assert.equal(res.orbit.state, "fresh");
-  assert.match(res.note, /origin orbit marks scheduled orbital launches/);
+  assert.match(res.note, /origin orbit is kept for older snapshots/);
   const only = T.upcomingEvents(verdict, events, { days: 30, origin: "orbit" }, NOW);
-  assert.equal(only.count, 14);
+  assert.equal(only.count, 13);
   assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
+});
+
+test("Launch's scheduled launches and closures join the calendar, credited to Launch (Ascent move, ideas#69)", () => {
+  const res = T.upcomingEvents(verdict, events, { days: 30, origin: "launch" }, NOW);
+  assert.deepEqual(res.events.map((e) => [e.id, e.kind]), [
+    ["launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d", "launch"],
+    ["launch:upcoming:closure:A6149/26-ZBPE", "closure"],
+  ]);
+  const closure = res.events[1];
+  assert.equal(closure.net_precision, "closure window");
+  assert.match(closure.note, /not a finding that a launch is coming/);
+  assert.ok(res.attribution.some((a) => a.startsWith("Launch, The Intelligence Company")));
+  assert.ok(!res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")), "Orbit has no launch here");
+  assert.equal(res.launch.state, "fresh");
+  assert.match(res.note, /kind closure is a launch-site closure with no listed launch/);
+  const all = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
+  assert.equal(all.events.filter((e) => e.id.endsWith("bff2fc91-eddd-4dfc-af26-ac0674cfab4d")).length, 1);
 });
 
 test("a launch whose stated time has passed is left out", () => {
@@ -337,12 +383,12 @@ test("a launch whose stated time has passed is left out", () => {
 test("each half of the calendar stands without the other, and both missing is refused", () => {
   const noCalendar = { ...verdict, calendar: null, missing: ["calendar"] };
   const res = T.upcomingEvents(noCalendar, events, { days: 30 }, NOW);
-  assert.equal(res.count, 14);
+  assert.equal(res.count, 15);
   assert.deepEqual(res.missing, ["verdict calendar"]);
   assert.equal(res.as_of, events.bus_generated_at);
   assert.throws(() => T.upcomingEvents(noCalendar, events, { origin: "verdict" }, NOW), /could not be fetched/);
   const noEvents = T.upcomingEvents(verdict, null, { days: 30 }, NOW);
-  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit"));
+  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit" && e.origin !== "launch"));
   assert.deepEqual(noEvents.missing, ["program events"]);
   assert.throws(() => T.upcomingEvents(verdict, null, { origin: "orbit" }, NOW), /were not built/);
   assert.throws(() => T.upcomingEvents(null, null, {}, NOW), /could not be fetched/);

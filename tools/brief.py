@@ -186,7 +186,9 @@ def watch(events, verdict, today, now, countries, watched=frozenset()):
                 "at": e.get("at"), "publishers": [host.removeprefix("www.")] if host else [],
                 "link": e.get("link") or "https://metacog-osint.github.io/verdict/", "note": e.get("note"),
                 "countries": e.get("countries") or []}
-    launches = ahead((events or {}).get("events") or [], timedelta(hours=WATCH_LAUNCH_HOURS))
+    # Listed launches only: a closure with no listed launch (Launch, kind "closure") is not a launch to watch for.
+    launches = ahead([e for e in (events or {}).get("events") or [] if (e.get("kind") or "launch") == "launch"],
+                     timedelta(hours=WATCH_LAUNCH_HOURS))
     if launches:
         e = launches[0]
         props = by_id.get(e["id"]) or {}

@@ -70,6 +70,27 @@ try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSign
 // Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
 let direction = null;
 try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
+// Lane records (ideas#330): each lane's counts, from the locked lane log. The picture stands without them too.
+let lanes = null;
+try { lanes = await getJSON("data/lanes.json"); } catch { lanes = null; }
+// The lane an item belongs to (mirrors tools/lane_log.py lane_for): prefix lanes before a program's catch-all.
+function laneFor(program, id) {
+  for (const lane of (lanes && lanes.lanes) || []) {
+    const m = lane.match;
+    if (!m || m.program !== program) continue;
+    if (m.id_prefixes && !m.id_prefixes.some((x) => String(id).startsWith(x))) continue;
+    return lane;
+  }
+  return null;
+}
+const laneById = (id) => ((lanes && lanes.lanes) || []).find((x) => x.id === id) || null;
+// One record line, counts only. A lane record describes how a measurement has behaved; it is never a warning.
+function laneNote(lane, withReplay = true) {
+  if (!lane) return null;
+  return h("p", { class: "note lane-line" }, h("strong", { text: "Lane record. " }), lane.text,
+    withReplay && lane.replay ? ` ${lane.replay.text} Credit: ${lane.replay.attribution}.` : null,
+    ` ${lanes.not_a_warning} `, h("a", { href: "scoring.html#lanes" }, "How lanes are counted"));
+}
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
@@ -436,6 +457,9 @@ function renderCard(f) {
   const facts = h("dl", { class: "facts" });
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
+  const lane = laneFor(p.cop_program, p.id);
+  if (lane) fact("Lane record", lane.replay
+    ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
@@ -664,6 +688,8 @@ function renderDirection() {
       `Show ${rest} steady or building`))] : []));
   const r = direction.record;
   $("direction-record").textContent = r ? recordLine(r) : "";
+  const dl = laneById("cop-direction");
+  $("direction-lane").replaceChildren(...(dl ? [laneNote(dl)] : []));
 }
 function recordLine(r) {
   const parts = [`Forecast record: ${r.registered} registered, ${r.resolved} resolved, ${r.on_called_side} of ${r.called} on the side called`
@@ -744,6 +770,8 @@ function renderTriage() {
     ? "No current data from Blackout, so there is nothing to triage. That is not the same as no outages."
     : "No outages in Blackout's current data.";
   list.replaceChildren(...(triage.records.length ? triage.records.map(triageRecord) : [h("li", { class: "empty", text: none })]));
+  const tl = laneById("blackout-outage-triage");
+  if (tl) foot.append(laneNote(tl, false));
   const b = triage.base_rates;
   if (b) {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
@@ -868,6 +896,8 @@ function renderThreeSignal() {
   }
   $("three-signal-note").textContent = `${threeSignal.what} ${threeSignal.not_a_warning}`;
   list.replaceChildren(...threeSignal.records.map(threeSignalRecord));
+  const sl = laneById("cop-three-signal");
+  $("three-signal-lane").replaceChildren(...(sl ? [laneNote(sl)] : []));
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {
@@ -962,7 +992,17 @@ function readHash() {
   state.view = m ? { zoom: +m[1], center: [+m[3], +m[2]] } : null;
 }
 let hashTimer;
+// Browser title per view (ideas#300): the selected item's title, else the active preset, else the home title.
+const HOME_TITLE = document.title;
+function updateTitle() {
+  const f = state.selected && BY_ID.get(state.selected);
+  const t = f ? String(f.properties.title || "").trim() : "";
+  const label = state.preset !== "all" ? CFG.presets[state.preset] : "";
+  const short = t.length > 70 ? t.slice(0, 69).trimEnd() + "…" : t;
+  document.title = short ? `${short} · COP` : label ? `${label} · COP` : HOME_TITLE;
+}
 function writeHash() {
+  updateTitle();
   clearTimeout(hashTimer);
   hashTimer = setTimeout(() => {
     const c = map.getCenter();
@@ -975,6 +1015,17 @@ function writeHash() {
   }, 250);
 }
 map.on("moveend", writeHash);
+// Back, forward or an edited address: apply the hash again. (The page's own writes use replaceState, which does not fire this.)
+window.addEventListener("hashchange", () => {
+  const prev = state.selected;
+  state.preset = "all"; state.selected = null;
+  readHash();
+  refreshLayers(); renderPanel();
+  if (state.selected && BY_ID.has(state.selected)) select(state.selected, { fly: true });
+  else { if (prev) closeCard(); state.selected = null; }
+  if (state.view) map.jumpTo(state.view);
+  updateTitle();
+});
 
 // ---------------------------------------------------------------- phone sheet, keys, time
 const SHEETS = ["sheet-peek", "sheet-half", "sheet-full"];
@@ -994,6 +1045,7 @@ if (T) { T.mountSettings($("time-settings")); T.onChange(() => renderTimes(docum
 // ---------------------------------------------------------------- start
 renderLegend();
 renderPanel();
+updateTitle();
 if (state.view) map.jumpTo(state.view);
 else map.once("load", fitPicks);
 if (state.selected && BY_ID.has(state.selected)) map.once("load", () => select(state.selected, { fly: !state.view }));
