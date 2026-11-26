@@ -60,6 +60,16 @@ class Direction(unittest.TestCase):
             self.assertEqual(d.read_traffic(gone, area)["text"], "No current transit count.",
                              "a missing or stale item has no current count")
 
+    def test_a_count_that_rounds_to_its_median_reads_level(self):
+        def line(pct):
+            item = {"id": "wake:chokepoint:x:2026-11-22", "data_as_of": "2026-11-22T00:00:00Z",
+                    "measures": {"n_total_7d": 27, "change_90d_pct": pct, "z_90d": -0.1, "baseline_90d_median": 27.14}}
+            return d.read_traffic({"features": [{"properties": item}]}, {"chokepoint": "x"})["text"]
+        self.assertIn("level with its 90-day median", line(-0.5))
+        self.assertNotIn("0% below", line(-0.5))
+        self.assertIn("12% below", line(-12.0))
+        self.assertIn("3% above", line(3.2))
+
     def test_one_alert_under_two_ids_counts_once(self):
         a = d._same("cordon:alert:UA:1", {"c": ["UA"], "t": "Security Alert: Kyiv"})
         b = d._same("cordon:alert:UA:2", {"c": ["UA"], "t": "Security  alert: kyiv"})
