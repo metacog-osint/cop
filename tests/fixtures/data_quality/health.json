@@ -1,0 +1,8 @@
+{
+ "generated_at": "2026-11-24T04:00:00Z",
+ "programs": [
+  {"id": "vigil", "name": "Vigil", "state": "fresh", "from_previous": false, "fetch": {"ok": true}},
+  {"id": "wake", "name": "Wake", "state": "fresh", "from_previous": false, "fetch": {"ok": true}},
+  {"id": "elements", "name": "Elements", "state": "stale", "from_previous": true, "fetch": {"ok": false}}
+ ]
+}

@@ -34,7 +34,7 @@ sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 from tic_doctrine import confidence, contract, likelihood  # noqa: E402
 
 PUBLISHED = "https://cop.theintelligence.company/data/triage.json"
-VERDICT = Path(r"[local path]")
+VERDICT = ROOT.parent / "verdict"
 DRAFTS = Path("drafts") / "cop-triage.json"
 DRAFTS_NOTE = ("Questions drafted by COP's outage triage (D6). Each was added by tools/register_question.py in COP, "
                "with the probability and approval of the person who ran it, then registered.")

@@ -32,6 +32,9 @@ a { color: var(--acc); }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 50; background: var(--panel); padding: 8px 12px; }
 .skip:focus { left: 8px; }
+.noscript { position: fixed; top: 64px; left: 8px; right: 8px; z-index: 60; margin: 0; padding: 10px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.notfound { max-width: 40rem; margin: 0 auto; padding: 72px 16px 32px; }
+.notfound h1 { margin: 0 0 8px; }
 
 /* top bar */
 .bar { position: fixed; inset: 0 0 auto 0; height: 56px; z-index: 30; display: flex; align-items: center; gap: 18px;
@@ -209,3 +212,9 @@ body:has(> .tic-house) .app { top: calc(var(--tic-house-h, 34px) + 56px); }
 .dir-area { color: var(--ink); font-size: 13px; font-weight: 500; }
 .dir-why { grid-column: 1 / -1; }
 .dir-record { margin-top: 10px; }
+
+.terms { margin: .5rem 0; font-size: .85rem; }
+.terms summary { cursor: pointer; padding: .35rem 0; }
+.terms dt { font-weight: 600; margin-top: .4rem; }
+.terms dd { margin: 0; }
+.caveat { font-size: .8rem; opacity: .8; margin: .5rem 0; }

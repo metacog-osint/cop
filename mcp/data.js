@@ -8,10 +8,12 @@ export const PATHS = {
   index: "/data/agent/index.json",
   programs: "/data/agent/programs.json",
   verdict: "/data/agent/verdict.json",
-  events: "/data/agent/events.json", // the programs' own dated events (Orbit's scheduled launches)
+  events: "/data/agent/events.json", // the programs' own dated events (Launch's scheduled launches and closures)
   picks: "/data/picks.json",
   triage: "/data/triage.json", // tools/triage.py --publish; absent when that step failed
   threeSignal: "/data/three-signal.json", // tools/three_signal.py --publish; absent when that step failed
+  direction: "/data/direction.json", // tools/direction.py --publish; absent when that step failed
+  lanes: "/data/lanes.json", // tools/lane_log.py --publish; absent when that step failed
 };
 
 export function shardPath(n) {
@@ -40,6 +42,8 @@ export function makeData(fetchAsset) {
     picks: () => get(PATHS.picks),
     triage: () => get(PATHS.triage).catch(() => null), // the picture stands without it
     threeSignal: () => get(PATHS.threeSignal).catch(() => null), // so does the three-signal join
+    direction: () => get(PATHS.direction).catch(() => null), // and the direction of concern
+    lanes: () => get(PATHS.lanes).catch(() => null), // and the lane records
     shard: (n) => get(shardPath(n)),
   };
 }

@@ -221,13 +221,21 @@ class ProgramEvents(unittest.TestCase):
                 "countries": ["US"], "sources": [{"url": "https://ll.example/1"}], **extra}
 
     def test_every_fixture_launch_becomes_an_event(self):
-        upcoming = [f for f in self.today["features"] if f["properties"]["id"].startswith("orbit:upcoming:")]
-        self.assertEqual(len(self.doc["events"]), len(upcoming))
-        self.assertEqual(self.doc["skipped"], {})
+        upcoming = [f for f in self.today["features"]
+                    if f["properties"]["id"].startswith(("orbit:upcoming:", "launch:upcoming:"))]
+        # One Orbit launch is also in Launch's feed: Launch's copy is kept, Orbit's counted as skipped.
+        self.assertEqual(len(self.doc["events"]), len(upcoming) - 1)
+        self.assertEqual(self.doc["skipped"], {"also in Launch's feed": 1})
         self.assertEqual(self.doc["programs"]["orbit"]["name"], "Orbit")
+        self.assertEqual(self.doc["programs"]["launch"]["name"], "Launch")
         for e in self.doc["events"]:
-            self.assertEqual((e["origin"], e["kind"], e["verified"], e["occurred"]), ("orbit", "launch", False, False))
+            self.assertEqual((e["verified"], e["occurred"]), (False, False))
+            self.assertEqual(e["origin"], e["id"].split(":")[0])
             self.assertTrue(e["at"] is None or e["at"].startswith(e["date"]), e["id"])
+        kinds = {e["id"]: e["kind"] for e in self.doc["events"] if e["origin"] == "launch"}
+        self.assertEqual(kinds, {"launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d": "launch",
+                                 "launch:upcoming:closure:A6149/26-ZBPE": "closure"})
+        self.assertNotIn("orbit:upcoming:bff2fc91-eddd-4dfc-af26-ac0674cfab4d", [e["id"] for e in self.doc["events"]])
         keys = [(e["date"], e["at"] or "", e["id"]) for e in self.doc["events"]]
         self.assertEqual(keys, sorted(keys))
 
@@ -242,6 +250,29 @@ class ProgramEvents(unittest.TestCase):
             e, why = ai.orbit_event(self.launch("2026-12-01 00:00 UTC", coarse))
             self.assertIsNone(e)
             self.assertEqual(why, f"NET precision {coarse}")
+
+    def test_launch_events_listed_and_closure(self):
+        by_id = {e["id"]: e for e in self.doc["events"]}
+        listed = by_id["launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d"]
+        self.assertEqual((listed["date"], listed["at"], listed["net_precision"], listed["launch_status"]),
+                         ("2026-10-31", "2026-10-31T23:16:00Z", "Minute", "Go for Launch"))
+        self.assertEqual(listed["evidence"], ["listed"])
+        self.assertIn("not Launch's", listed["note"])
+        closure = by_id["launch:upcoming:closure:A6149/26-ZBPE"]
+        self.assertEqual((closure["date"], closure["at"], closure["net_precision"], closure["launch_status"]),
+                         ("2026-11-03", "2026-11-03T04:59:00Z", "closure window", None))
+        self.assertEqual(closure["evidence"], ["closure with no listing"])
+        self.assertIn("not a finding that a launch is coming", closure["note"])
+
+    def test_a_launch_record_that_joined_an_ll2_listing_replaces_orbits(self):
+        orbit = self.launch() | {"id": "orbit:upcoming:u1"}
+        joined = self.launch() | {"id": "launch:upcoming:closure:K-1", "event_start": "2026-11-14T17:32:00Z",
+                                  "measures": {"evidence": ["closure with no listing", "listed"],
+                                               "aliases": ["upcoming:ll2:u1"]}}
+        doc = ai.build_events({"features": [{"properties": orbit}, {"properties": joined}],
+                               "generated_at": "2026-11-06T14:00:00Z"}, NOW)
+        self.assertEqual([(e["id"], e["kind"]) for e in doc["events"]], [("launch:upcoming:closure:K-1", "launch")])
+        self.assertEqual(doc["skipped"], {"also in Launch's feed": 1})
 
     def test_no_time_is_skipped_and_counted(self):
         bad = self.launch()
@@ -305,7 +336,7 @@ class EndToEnd(unittest.TestCase):
             index = json.loads((out / "agent" / "index.json").read_text(encoding="utf-8"), parse_constant=self.fail)
             self.assertEqual(len(index["rows"]), len(today["features"]))
             events = json.loads((out / "agent" / "events.json").read_text(encoding="utf-8"))
-            self.assertEqual(events["skipped"], {"no time in the title or summary": 1})
+            self.assertEqual(events["skipped"], {"no time in the title or summary": 1, "also in Launch's feed": 1})
             for p in (out / "agent" / "items").glob("*.json"):
                 json.loads(p.read_text(encoding="utf-8"), parse_constant=self.fail)
 

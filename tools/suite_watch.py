@@ -3,7 +3,7 @@
     python tools/suite_watch.py
 
 Exit 0 when everything is current, 1 when something is wrong (so a scheduled run fails and its owner is mailed).
-It checks five things the picture cannot say about itself:
+It checks six things the picture cannot say about itself:
   1. COP's own snapshot is older than --cop-hours (COP's build stopped).
   2. A program's state in the snapshot is not "fresh" (its feed stopped or failed).
   3. A program's data time is in the future by more than --future-minutes (Elements, 12 Nov 2026: a clock that runs
@@ -15,6 +15,15 @@ It checks five things the picture cannot say about itself:
      05:10 and 17:10 UTC) failed a page, or has not finished a run in --sitecheck-hours (18 Nov 2026, Tom's yes). It is
      read only when the snapshot is the live one, or when --sitecheck names a file or address, so tests stay offline.
      A site check that cannot be read is a problem, never a quiet pass.
+  6. Verdict's scores.json (the public forecast ledger's scorecard) has a generated_at older than --verdict-hours, 48 h
+     (ideas#161, 23 Nov 2026). Read only when the snapshot is the live one, or when --verdict names a file or address.
+     A scorecard that cannot be read is a problem, never a quiet pass.
+  7. A source a program's feed lists in its own health block was not read (health.json's sources.not_read), on
+     UNREAD_RUNS runs in a row by the feed's own failure count, or with no count given (ideas#164, 24 Nov 2026). One
+     failed run is left to the next, so a passing timeout does not mail anyone.
+  A source named in config/watch_accepted.json (a reason, a state, a phrase its detail must hold, and an `until` date)
+  is not a problem while it reads exactly as documented and the date has not passed: the run says so on its own line
+  ("accepted: ...") and passes. Any other state or detail, or a lapsed date, is a problem again (25 Nov 2026).
 If the environment has HC_PING_URL (a Healthchecks.io check address, set as a secret, never written in a file), it
 pings that address on success and its /fail address on a problem. Without it, nothing is sent anywhere.
 --test-failure adds one problem that says it is a test, so a hand-started run can prove the alerts reach Tom
@@ -28,10 +37,15 @@ import os
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 SNAPSHOT = "https://cop.theintelligence.company/data/today.geojson"
 SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
+VERDICT = "https://verdict.theintelligence.company/data/scores.json"
+VERDICT_HOURS = 48.0
 SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
+UNREAD_RUNS = 2         # a listed source not read this many runs in a row (the feed's own count) is a problem
+ACCEPTED = Path(__file__).resolve().parents[1] / "config" / "watch_accepted.json"
 
 
 def when(s):
@@ -61,8 +75,39 @@ def check(snap, now, cop_hours=6.0, future_minutes=30.0):
     return problems
 
 
-def check_health(health):
-    """Problems from COP's health.json: every program whose feed had items the build left out as malformed."""
+def load_accepted(doc):
+    """The documented degraded sources in config/watch_accepted.json, as (entries, problems). An entry needs a program,
+    a source, a reason, a phrase its detail holds and an until date; one that lacks any is a problem, never accepted."""
+    entries = doc.get("accepted") if isinstance(doc, dict) else None
+    if not isinstance(entries, list):
+        return [], ["COP: watch_accepted.json has no \"accepted\" list, so no degraded source is accepted"]
+    good, problems = [], []
+    for e in entries:
+        ok = (isinstance(e, dict) and all(isinstance(e.get(k), str) and e.get(k).strip()
+                                          for k in ("program", "source", "reason", "detail_has", "until"))
+              and when(e["until"] + "T00:00:00Z") is not None)
+        if ok:
+            good.append(e)
+        else:
+            problems.append(f"COP: an entry of watch_accepted.json is incomplete ({json.dumps(e)[:120]}), so it accepts nothing")
+    return good, problems
+
+
+def accepted_by(entries, prog_id, src, now):
+    """The entry that documents this source as it reads now (same program, source and state, its detail holding the
+    phrase, `until` not yet over), or None."""
+    for e in entries:
+        end = when(e["until"] + "T00:00:00Z")
+        if (e["program"] == prog_id and e["source"] == src.get("id") and e.get("state", src.get("state")) == src.get("state")
+                and e["detail_has"].lower() in str(src.get("detail") or "").lower()
+                and now is not None and end is not None and now < end + timedelta(days=1)):
+            return e
+    return None
+
+
+def check_health(health, accepted=(), now=None, notes=None):
+    """Problems from COP's health.json: every program whose feed had items the build left out as malformed.
+    A listed source documented in `accepted` and reading as documented is not a problem; it is added to `notes`."""
     progs = health.get("programs") if isinstance(health, dict) else None
     if not isinstance(progs, list) or not progs:
         return ["COP: health.json lists no programs, so malformed items were not checked"]
@@ -76,6 +121,23 @@ def check_health(health):
             examples = [e for e in (dropped.get("examples") or []) if isinstance(e, str)]
             problems.append(f"{prog.get('name') or prog.get('id')}: {count} malformed item{'' if count == 1 else 's'} "
                             "left out of the picture" + (" (" + "; ".join(examples) + ")" if examples else ""))
+        sources = prog.get("sources")
+        for s in (sources.get("not_read") or []) if isinstance(sources, dict) else []:
+            if not isinstance(s, dict):
+                continue
+            runs = s.get("failures")
+            if isinstance(runs, int) and not isinstance(runs, bool) and runs < UNREAD_RUNS:
+                continue
+            doc = accepted_by(accepted, prog.get("id"), s, now)
+            if doc is not None:
+                if notes is not None:
+                    notes.append(f"accepted: {prog.get('name') or prog.get('id')}: source {s.get('id')} "
+                                 f"({s.get('state')}, {s.get('detail')}) until {doc['until']}: {doc['reason']}")
+                continue
+            how = ", ".join(str(x) for x in (s.get("state"), f"{runs} runs in a row" if isinstance(runs, int) else None,
+                                              s.get("detail")) if x)
+            problems.append(f"{prog.get('name') or prog.get('id')}: source {s.get('id')} is listed but was not read"
+                            + (f" ({how})" if how else ""))
     return problems
 
 
@@ -99,6 +161,16 @@ def check_sitecheck(doc, now, max_hours=SITECHECK_HOURS):
             problems.append(f"Site check: {r.get('id') or r.get('url')} page failed"
                             + (" (" + "; ".join(why[:3]) + ")" if why else "") + f", {r.get('url')}")
     return problems
+
+
+def check_verdict(doc, now, max_hours=VERDICT_HOURS):
+    """Problems from Verdict's scores.json: no build time, or one older than max_hours."""
+    gen = when(doc.get("generated_at")) if isinstance(doc, dict) else None
+    if gen is None:
+        return ["Verdict: scores.json has no build time"]
+    if now - gen > timedelta(hours=max_hours):
+        return [f"Verdict: scores.json is {(now - gen).total_seconds() / 3600:.1f} h old (limit {max_hours:g} h)"]
+    return []
 
 
 def health_beside(snapshot):
@@ -133,6 +205,11 @@ def main(argv=None):
     ap.add_argument("--sitecheck", help=f"the hub's site check, file or address (default {SITECHECK}, "
                                         "read only when the snapshot is an address)")
     ap.add_argument("--sitecheck-hours", type=float, default=SITECHECK_HOURS)
+    ap.add_argument("--verdict", help=f"Verdict's scores.json, file or address (default {VERDICT}, "
+                                      "read only when the snapshot is an address)")
+    ap.add_argument("--verdict-hours", type=float, default=VERDICT_HOURS)
+    ap.add_argument("--accepted", default=str(ACCEPTED),
+                    help="the documented degraded sources (default config/watch_accepted.json)")
     ap.add_argument("--test-failure", action="store_true",
                     help="fail on purpose, to test that the alerts arrive")
     a = ap.parse_args(argv)
@@ -141,8 +218,15 @@ def main(argv=None):
         problems = check(read_json(a.snapshot), now, a.cop_hours, a.future_minutes)
     except Exception as e:
         problems = [f"COP: the snapshot could not be read ({type(e).__name__}: {e})"]
+    accepted, notes = [], []
     try:
-        problems += check_health(read_json(a.health or health_beside(a.snapshot)))
+        accepted, bad = load_accepted(read_json(a.accepted))
+        problems += bad
+    except Exception as e:
+        problems.append(f"COP: watch_accepted.json could not be read ({type(e).__name__}: {e}), "
+                        "so no degraded source is accepted")
+    try:
+        problems += check_health(read_json(a.health or health_beside(a.snapshot)), accepted, now, notes)
     except Exception as e:
         problems.append(f"COP: health.json could not be read ({type(e).__name__}: {e}), "
                         "so malformed items were not checked")
@@ -153,9 +237,18 @@ def main(argv=None):
         except Exception as e:
             problems.append(f"Site check: the latest run could not be read ({type(e).__name__}: {e}), "
                             "so pages were not checked")
+    verdict = a.verdict or (VERDICT if a.snapshot.startswith("http") else None)
+    if verdict:
+        try:
+            problems += check_verdict(read_json(verdict), now, a.verdict_hours)
+        except Exception as e:
+            problems.append(f"Verdict: scores.json could not be read ({type(e).__name__}: {e}), "
+                            "so its age was not checked")
     if a.test_failure:
         problems.append("TEST: a failure asked for by hand (--test-failure); nothing is wrong")
     text = "\n".join(problems) if problems else f"all programs current at {now:%Y-%m-%dT%H:%MZ}"
+    if notes:
+        text += "\n" + "\n".join(notes)
     print(text)
     url = os.environ.get("HC_PING_URL", "").rstrip("/")
     if url:

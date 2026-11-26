@@ -10,21 +10,21 @@
       "color": { "fill": "#D55E00", "outline_light": "#6B2F00", "outline_dark": "#FFC9A3" }
     },
     {
-      "id": "context", "preset": "information",
+      "id": "context", "source_health": true, "preset": "information",
       "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [{ "path": "measures.volume_12h", "label": "{v} articles in the last 12 hours" }],
       "color": { "fill": "#CC79A7", "outline_light": "#5E2A4A", "outline_dark": "#F5CCE3" }
     },
     {
-      "id": "vigil", "preset": "cyber",
+      "id": "vigil", "source_health": true, "preset": "cyber",
       "freshness": "data",
       "mark": "halos", "country_mark": "halo", "area_style": "solid",
       "strength": [{ "path": "measures.victims_7d", "label": "{v} victims claimed in 7 days" }],
       "color": { "fill": "#0072B2", "outline_light": "#003A5C", "outline_dark": "#A9D8F5" }
     },
     {
-      "id": "noisefloor", "preset": "spectrum",
+      "id": "noisefloor", "source_health": true, "preset": "spectrum",
       "freshness": "data",
       "mark": "cells", "country_mark": "fill", "area_style": "solid",
       "strength": [
@@ -39,7 +39,7 @@
       "color": { "fill": "#E69F00", "outline_light": "#5C3F00", "outline_dark": "#FFE3A3" }
     },
     {
-      "id": "elements", "ended": "https://elements.theintelligence.company/data/ended.geojson", "preset": "hazards",
+      "id": "elements", "source_health": true, "ended": "https://elements.theintelligence.company/data/ended.geojson", "preset": "hazards",
       "freshness": "data",
       "mark": "markers", "country_mark": "fill", "area_style": "solid",
       "strength": [
@@ -50,18 +50,29 @@
       "color": { "fill": "#009E73", "outline_light": "#004534", "outline_dark": "#A8EBD3" }
     },
     {
-      "id": "cordon",
+      "id": "cordon", "source_health": true,
       "lane_map": {"usembassy-*": "us-embassy-alerts"}, "preset": "notices",
       "freshness": "feed",
       "mark": "areas", "country_mark": "halo", "area_style": "dashed", "routine_in_preset": true,
       "also_in": [{ "preset": "spectrum", "kinds": ["navwarn"],
                     "match": "ROCKET LAUNCH|SPACE DEBRIS|SPACE VEHICLE|SPACECRAFT|RE-?ENTRY",
                     "label": "launch, space-debris and reentry warnings" }],
-      "strength": [{ "path": "measures.level", "label": "travel advisory level {v}" }],
+      "strength": [
+        { "when": { "signal.name": "State Dept advisory level 1-4" }, "path": "measures.level", "label": "State Department travel advisory level {v} of 4" },
+        { "when": { "signal.name": "Canada risk level 0-3" }, "path": "measures.level", "label": "Canada risk level {v} (0 to 3)" },
+        { "when": { "signal.name": "NZ SafeTravel level 1-4" }, "path": "measures.level", "label": "NZ SafeTravel level {v} of 4" },
+        { "when": { "signal.name": "CDC travel notice level 1-4" }, "path": "measures.level", "label": "CDC travel health notice level {v} of 4" }
+      ],
+      "pick_admits": [
+        { "id_prefix": ["cordon:fcdo:", "cordon:canada:", "cordon:safetravel:"], "last_change": ["raised", "lowered"],
+          "why": "FCDO, Canada and NZ SafeTravel advice is a candidate only when its level moved (raised or lowered), as outage triage counts it; a text update is not" },
+        { "id_prefix": ["cordon:cdc:"], "within_hours": 72,
+          "why": "A CDC travel health notice is a candidate for 72 hours from its date (Tom, 23 Nov 2026)" }
+      ],
       "color": { "fill": "#56B4E9", "outline_light": "#174A68", "outline_dark": "#C6E7FA" }
     },
     {
-      "id": "vis", "preset": "weather",
+      "id": "vis", "source_health": true, "preset": "weather",
       "freshness": "data",
       "mark": "markers", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
       "routine_label": "forecast for every point",
@@ -69,7 +80,7 @@
       "color": { "fill": "#F0E442", "outline_light": "#5C5500", "outline_dark": "#FFF8B8" }
     },
     {
-      "id": "blackout", "preset": "connectivity",
+      "id": "blackout", "source_health": true, "preset": "connectivity",
       "ended": "https://blackout.theintelligence.company/data/ended.geojson",
       "freshness": "feed",
       "mark": "zones", "country_mark": "fill", "area_style": "solid",
@@ -91,10 +102,10 @@
       "color": { "fill": "#882255", "outline_light": "#4A0F2C", "outline_dark": "#F2BFD6" }
     },
     {
-      "id": "orbit", "preset": "spectrum",
+      "id": "orbit", "source_health": true, "preset": "spectrum",
       "freshness": "feed",
       "mark": "markers", "country_mark": "halo", "area_style": "solid", "routine_in_preset": true,
-      "routine_label": "launches, scheduled launches, reentries, catalog changes and orbit changes in watched satellites",
+      "routine_label": "launches, reentries, catalog changes and orbit changes in watched satellites",
       "strength": [],
       "color": { "fill": "#999933", "outline_light": "#4D4D19", "outline_dark": "#E6E6B3" }
     },
@@ -145,7 +156,8 @@
                     "label": "UKMTO reports of attacks, hijacks and boardings" },
                   { "preset": "economy", "kinds": ["ais-listed"], "match": "broadcasts an IMO number listed on",
                     "label": "AIS records broadcasting an IMO number on a sanctions list" }],
-      "strength": [{ "path": "measures.change_year_ago_pct", "abs": true, "label": "{v}% against the same weeks a year earlier" }],
+      "strength": [{ "path": "measures.change_year_ago_pct", "abs": true, "label": "{v}% against the same weeks a year earlier",
+          "alt": { "when_set": "measures.standing_since", "label": "{v}% against the same weeks a year before the shift began" } }],
       "color": {
         "fill": "#006D77",
         "outline_light": "#00363B",

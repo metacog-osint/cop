@@ -1,14 +1,14 @@
 """The Undertow election join: reported influence activity against a country in the 90 days before its national vote.
 
 Verdict's event calendar (`verdict:calendar`) holds national elections, kind `election`, hand-entered from each
-electoral body's own page for the 40 countries Undertow's items name as stated targets (Tom's choice, 18 Nov 2026).
+electoral body's own page for the 40 countries Undertow's items name as stated targets (18 Nov 2026).
 Undertow (`undertow`) records operations that platforms, the EEAS and named reporters disclosed or reported. This join
 puts the two side by side, in COP's voice:
 
   "<Country> voted on <date>; <publisher> reported <operation> targeting <country> from <a> to <b> days before."
 
 ("votes on" for a vote still to come.) Nothing is inferred: no intent, and no claim that the operation aimed at the
-vote. Rules (Tom's yes, 16 Nov 2026, to the cross-suite joins plan; step 3 of the Undertow handoff, 18 Nov 2026):
+vote. Rules (16 Nov 2026; extended 18 Nov 2026):
   - A match is an Undertow item whose stated target (operation.targets) is a country with a national vote on the
     calendar, whose period overlaps the window: 90 days before the vote through election day (provisional).
   - The item's time is when the activity ran, never when it was reported: a watch row's activity.activity_period,
@@ -17,7 +17,7 @@ vote. Rules (Tom's yes, 16 Nov 2026, to the cross-suite joins plan; step 3 of th
   - Each match keeps the period's length and whether it lies inside the window or only overlaps it: a half-year
     disclosure period overlaps a window far more easily than a month does, so a long period is weaker evidence of
     timing. Nothing is dropped for being long.
-  - Declared inputs: undertow and verdict:calendar. `published` is off until Tom turns it on.
+  - Declared inputs: undertow and verdict:calendar. `published` is off until the owner turns it on.
   - Base rate: the share of item-country pairs whose period overlaps a window in that country, against the share of
     days that fall in a window, and against the chance that a period of the same length placed at random overlaps
     one. A described measure, never a rule: each country has few votes.
@@ -49,7 +49,7 @@ JOIN = {"id": "undertow-elections", "version": "0.1", "published": False,
                  "country it states as a target; nothing inferred")}
 SCOPE = ROOT / "config" / "undertow-elections.json"
 VERDICT_CALENDAR = "https://metacog-osint.github.io/verdict/data/calendar.geojson"
-WINDOW_DAYS = 90          # provisional (Tom, 16 Nov 2026)
+WINDOW_DAYS = 90          # provisional (16 Nov 2026)
 NOT_A_FINDING = ("This join shows that a publisher reported activity against a country in the 90 days before a "
                  "national vote there. It does not say the activity aimed at the vote, who directed it, or that it "
                  "changed anything. Undertow's origin and confidence are not touched. Dates of votes come from each "
@@ -347,7 +347,7 @@ def main(argv=None):
         if JOIN["published"]:
             gate.write(JOIN, doc, a.publish, ["undertow-elections.json"])
         else:
-            print("undertow-elections: published is off (Tom's call); nothing written to " + a.publish)
+            print("undertow-elections: published is off; nothing written to " + a.publish)
     return 0
 
 

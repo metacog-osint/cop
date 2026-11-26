@@ -319,10 +319,14 @@ def read_press(mem, area, today, through):
     base = {"layer": "press", "name": LAYER_NAMES["press"] + label, "program": "watchfloor"}
     if not r or not r.get("v"):
         return base | {"state": "thin", "text": "No press series for this area yet."}
-    recent = [r["v"][d] for d in _days(through, RECENT_DAYS) if d in r["v"]]
-    prior = [r["v"][d] for d in _days(through - timedelta(days=RECENT_DAYS), PRIOR_DAYS) if d in r["v"]]
+    values = mem_tool.current_series(r)           # a change in what the series counts starts a new series
+    recent = [values[d] for d in _days(through, RECENT_DAYS) if d in values]
+    prior = [values[d] for d in _days(through - timedelta(days=RECENT_DAYS), PRIOR_DAYS) if d in values]
     if len(recent) < MIN_RECENT or len(prior) < MIN_PRIOR:
-        return base | {"state": "thin", "text": f"Not enough history yet: {len(prior)} of the {PRIOR_DAYS} days before."}
+        restart = (f" What this series counts changed on {_when(min(values))}, so it starts again there."
+                   if values and len(values) < len(r["v"]) else "")
+        return base | {"state": "thin",
+                       "text": f"Not enough history yet: {len(prior)} of the {PRIOR_DAYS} days before.{restart}"}
     a, b = statistics.median(recent), statistics.median(prior)
     q = statistics.quantiles(prior, n=4, method="inclusive")
     return base | {"state": level_move(recent, prior), "recent": a, "usual": b, "id": r["id"],
@@ -342,14 +346,22 @@ def read_traffic(snapshot, area):
             break
     m = (p or {}).get("measures") or {}
     pct, z, n = m.get("change_90d_pct"), m.get("z_90d"), m.get("n_total_7d")
-    if pct is None or z is None or n is None:
+    if p is None or n is None:
         return base | {"state": "thin", "text": "No current transit count."}
+    lag = "A condition, not counted: PortWatch's counts lag by up to 16 days."
+    if pct is None or z is None:
+        # A count with no usable comparison (a strait whose 90-day baseline is zero or too short) is still a count.
+        return base | {"state": "thin", "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
+                       "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}. Its 90-day baseline is too "
+                               f"thin to compare against. {lag}",
+                       "label": "Condition: no baseline", "condition": True}
     # Fewer ships through a strait is the direction of concern here, so a fall reads as "up".
     state = "up" if pct <= -TRAFFIC_PCT and z <= -TRAFFIC_Z else "down" if pct >= TRAFFIC_PCT and z >= TRAFFIC_Z else "steady"
     side = f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above"
     return base | {"state": state, "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
                    "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}, {side} its 90-day median of "
-                           f"{m.get('baseline_90d_median'):g}.",
+                           f"{m.get('baseline_90d_median'):g}. {lag}",
+                   "label": {"up": "Condition: fewer ships", "down": "Condition: more ships"}.get(state, "Condition: steady"),
                    "condition": True}
 
 
@@ -395,6 +407,9 @@ def read_area(mem, snapshot, area, names, today, index, shapes, detail=False):
             layers.append(read_press(mem, area, today, through))
         else:
             layers.append(read_count(mem, area, layer, today, through, index, detail))
+    for x in layers:
+        if x["layer"] == "outages":      # the same measure sits on two cards, so each says what it covers
+            x["name"] += " (worldwide)" if area.get("worldwide") else f" ({area['name']})"
     word = word_for(layers)
     return {"area": area["area"], "name": area["name"], "direction": word, "word": WORDS[word],
             "up": [x["name"] for x in layers if x["state"] == "up" and x["layer"] not in CONDITIONS],
@@ -497,12 +512,43 @@ def build(mem, snapshot, config, verdict=None):
             "record": record(verdict)}
 
 
+RISING = ("rising",)   # the words that move a pick to the front (ideas#164); Edging up is named, never reordered
+
+
+def pick_places(doc, snapshot, picks, config):
+    """For each of today's picks, the places on the board it falls in and their word. A pick in a Rising place is
+    listed first by top_picks and says so. Pick ids sit under "pick", not "id": this join cites none of them."""
+    by_id = {(f.get("properties") or {}).get("id"): f for f in snapshot.get("features") or []}
+    areas = {a["area"]: a for a in config["problems"] + config["areas"]}
+    out = []
+    for p in (picks or {}).get("picks") or []:
+        f = by_id.get(p.get("id"))
+        if f is None:
+            continue
+        props = f.get("properties") or {}
+        r = {"c": props.get("countries") or [], "xy": mem_tool.place_point(f.get("geometry"))}
+        places = []
+        for x in doc["problems"] + doc["areas"]:
+            area = areas.get(x["area"])
+            if area is None or area.get("worldwide") or not in_area(str(p["id"]), r, area, None):
+                continue
+            if x["direction"] in ("building", "steady"):
+                continue
+            places.append({"area": x["area"], "name": x["name"], "direction": x["direction"], "word": x["word"],
+                           "up": x["up"], "down": x["down"]})
+        if places:
+            out.append({"pick": p["id"], "places": places,
+                        "rising": any(pl["direction"] in RISING for pl in places)})
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--memory", required=True, help="folder holding memory.json.gz")
     ap.add_argument("--snapshot", required=True)
     ap.add_argument("--verdict", help="COP's copy of Verdict's files (site/data/agent/verdict.json)")
     ap.add_argument("--publish", required=True, help="folder to write direction.json in")
+    ap.add_argument("--picks", help="today's picks (site/data/picks.json), to say which fall in a moving place")
     ap.add_argument("--archive", help="archived daily snapshots, read once to backfill the log of words")
     a = ap.parse_args(argv)
     mem = mem_tool.load(a.memory)
@@ -516,6 +562,8 @@ def main(argv=None) -> int:
     if a.archive and "directions" not in mem:
         backfill(mem, a.archive, config)
     doc = build(mem, snapshot, config, verdict)
+    if a.picks and Path(a.picks).exists():
+        doc["picks"] = pick_places(doc, snapshot, json.loads(Path(a.picks).read_text(encoding="utf-8")), config)
     log_directions(mem, doc)
     mem_tool.save(a.memory, mem)
     gate.write(JOIN, doc, a.publish, [PUBLIC_NAME])
