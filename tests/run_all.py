@@ -37,6 +37,7 @@ SCRIPTS = [
     "test_lane_log.py",
     "test_brief.py",
     "test_red_river.py",
+    "test_place.py",
     "test_history.py",
 ]
 

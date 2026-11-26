@@ -342,6 +342,12 @@ jobs:
             --notes "What every layer of COP showed per day, country, area and subject (tools/history.py, cop-history/1): a Parquet set and the per-place files the site serves at /data/history/. Derived from COP's daily snapshots, its ledger and the programs' own logs, and rebuilt from them once a UTC day; history.tar.gz is replaced at each rebuild." \
             || { warn "the release could not be created; the new set is served but not kept"; exit 0; }
           gh release upload history out/history.tar.gz --clobber || warn "the new set is served but was not kept; the next build rebuilds it"
+      # Place pages (tools/place.py): each watched area's current reading per layer, and its 30- and 90-day windows
+      # from the history set above. It adds no source. A failure never fails the build: the page says so.
+      - name: Place pages (site/data/places)
+        run: |
+          python tools/place.py --snapshot site/data/today.geojson --history site/data/history/areas --publish site/data \
+            || { rm -rf site/data/places; echo "::warning::place pages failed; the page says they were not built"; }
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
