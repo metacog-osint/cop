@@ -109,4 +109,26 @@ for needed in ("45-77", "79-103", "7 single numbers", "baltic only", "not counte
     assert needed in words, needed
 assert "probability" in doc["not_a_warning"] and "no probability" in doc["not_a_warning"]
 
+# The optional second action is kept beside the outcome, never in its place; outcomes count every report in the week.
+assert hs.code_then({"then_action": "Careen"}) == "careen" and hs.code_then({"then_action": "collide"}) is None
+st = hs.add(hs.new_state(), snap(report(1, "2026-11-10T00:00:00Z", outcome="collide", severity="L1",
+                                        then_action="careen"),
+                                 report(2, "2026-11-10T01:00:00Z", kind="Suspicious Activity", outcome="intersect"),
+                                 report(3, "2026-11-10T02:00:00Z")))
+doc2 = hs.build(st, NOW)
+w = doc2["weeks"][0]
+assert st["reports"]["wake:ukmto:ukmto-1"]["outcome"] == "collide"
+assert st["reports"]["wake:ukmto:ukmto-1"]["then_action"] == "careen"
+assert w["outcomes"]["collide"] == 1 and w["outcomes"]["intersect"] == 1 and w["outcomes"]["not_coded"] == 1
+assert w["then_action_reports"] == 1 and w["severity"]["not_coded"] == 1
+assert doc2["reports_coded"] == 2 and doc2["reports_held"] == 3
+assert doc2["data_to"]["reports"] == "2026-11-10T02:00:00Z"
+# A state written before then_action existed still merges.
+old = hs.new_state()
+old["reports"]["wake:ukmto:ukmto-9"] = {k: v for k, v in hs._report(report(9, "2026-11-11T00:00:00Z")).items()
+                                        if k != "then_action"}
+hs.add(old, snap(report(9, "2026-11-11T00:00:00Z", outcome="collide", severity="L0", then_action="careen")))
+assert old["reports"]["wake:ukmto:ukmto-9"]["then_action"] == "careen" and hs.build(old, NOW)["weeks"]
+assert "not coded yet" in doc["limits"]["severity"] and "rule v0" in doc["limits"]["severity"]
+
 print("test_hormuz_stream: ok")

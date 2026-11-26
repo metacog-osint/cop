@@ -250,7 +250,10 @@
       series are never divided: PortWatch does not count a ship crossing with AIS off. A week's Attack count is set
       against the median and 90th percentile of earlier whole weeks once <b>4</b> are settled, and a week counts as
       settled <b>7 days</b> after it ends, because UKMTO can publish late. Severity (L0 to L4, casualties separate) is
-      shown only where an item states a code. It carries no probability and names no one.
+      shown only where an item states a code, and otherwise as not coded yet. Codes are Wake's reading of UKMTO's
+      text by rule v0: struck or harmed is collide; no harm but a change of course is careen; joining an escort is
+      conjoin; contact with no harm and no change is intersect; too little said is undetermined. A second action after
+      the first is kept apart and never changes the outcome. It carries no probability and names no one.
       <a href="data/hormuz-stream.json">hormuz-stream.json</a></p>
   </section>
 

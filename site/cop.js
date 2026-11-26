@@ -911,7 +911,7 @@ function streamBase(n, base) {
 }
 function streamSeverity(s) {
   const coded = ["L0", "L1", "L2", "L3", "L4"].filter((k) => s[k]).map((k) => `${k}: ${s[k]}`);
-  if (s.not_coded) coded.push(`not coded: ${s.not_coded}`);
+  if (s.not_coded) coded.push(`not coded yet: ${s.not_coded}`);
   return coded.join(", ") || "none";
 }
 function streamRow(w) {
@@ -929,7 +929,10 @@ function renderHormuzStream() {
   const sec = $("hormuz-stream-sec");
   sec.hidden = !hormuzStream || !visibleProgram("wake");
   if (sec.hidden) return;
-  $("hormuz-stream-note").textContent = `${hormuzStream.what} ${hormuzStream.not_a_warning}`;
+  const d = hormuzStream.data_to || {};
+  $("hormuz-stream-note").replaceChildren(`${hormuzStream.what} ${hormuzStream.not_a_warning} Built `,
+    timeEl(hormuzStream.generated_at), `. Transits to ${d.transits || "no data yet"} (a whole UTC day); latest report `,
+    timeEl(d.reports), `. ${hormuzStream.reports_coded} of ${hormuzStream.reports_held} reports coded.`);
   const head = ["Week (UTC)", "Transits (PortWatch)", "Attack reports (UKMTO)", "Within 150 km of the strait", "Severity"];
   $("hormuz-stream").replaceChildren(h("table", { class: "stream" },
     h("thead", {}, h("tr", {}, ...head.map((t) => h("th", { scope: "col", text: t })))),

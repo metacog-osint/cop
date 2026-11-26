@@ -9,8 +9,9 @@ probability and no outcome forecast, never divides one series by the other, and 
 are unverified and name no one.
 
 Severity and outcome are read only from codes an item states (measures.severity, measures.outcome,
-measures.casualties). Wake's items do not carry them yet, because the coding reads UKMTO's free text, which Wake
-leaves out. Until they do, a report counts as "not coded". Nothing here guesses a code from a report's type.
+measures.casualties, and the optional measures.then_action, a second action after the first). Wake codes them from
+UKMTO's free text in its reader and publishes only the codes. Until an item carries them, a report counts as "not
+coded yet". Nothing here guesses a code from a report's type.
 
 Every report and week is kept in a state file (release "hormuz-stream"); the page shows a window of it.
 
@@ -46,6 +47,7 @@ SEVERITIES = ("L0", "L1", "L2", "L3", "L4")
 SEVERITY_WORDS = {"L0": "not stated", "L1": "minor or continuing", "L2": "fire or serious damage",
                   "L3": "disabled or abandoned", "L4": "lost"}
 OUTCOMES = ("collide", "careen", "conjoin", "intersect", "undetermined")
+THEN_ACTIONS = ("careen", "conjoin", "intersect")   # a second action UKMTO's text states after the first
 # PROVISIONAL, like the other joins' windows.
 BASE_MIN_WEEKS = 4           # complete weeks before a week's count is set against its own history
 FILLING_DAYS = 7             # UKMTO can publish days after an incident, so a week this recent may still grow
@@ -60,7 +62,8 @@ LIMITS = {
                 "how many do so has not been measured, so the two series are shown side by side and never divided.",
     "ais": "Wake's AIS lane covers the Baltic only, so AIS gaps and listed-IMO broadcasts do not exist for this strait.",
     "severity": "Severity runs L0 to L4 with casualties as a separate flag, and applies to reports coded as a vessel "
-                "struck. A report without a stated code counts as not coded.",
+                "struck. Codes are Wake's reading of UKMTO's text by rule v0, one coder and no second check; a report "
+                "Wake has not coded counts as not coded yet.",
 }
 WHAT = ("Commercial transits through the Strait of Hormuz beside UKMTO's Attack reports in the 900 km circle, by week "
         "of the incident, each against its own history.")
@@ -95,6 +98,11 @@ def code_outcome(measures):
     return raw if raw in OUTCOMES else None
 
 
+def code_then(measures):
+    raw = str((measures or {}).get("then_action") or "").strip().lower()
+    return raw if raw in THEN_ACTIONS else None
+
+
 def new_state():
     return {"schema": SCHEMA, "reports": {}, "transits": {}, "covered_from": None}
 
@@ -112,7 +120,8 @@ def _report(feature):
     return {"id": p["id"], "number": m.get("ukmto_number"), "report_type": m.get("report_type"),
             "incident_at": tri.iso(at), "created_at": m.get("created_at"), "lat": lat, "lon": lon,
             "vessel_type": m.get("vessel_type"), "outcome": code_outcome(m), "severity": code_severity(m),
-            "casualties": m.get("casualties") if isinstance(m.get("casualties"), bool) else None}
+            "casualties": m.get("casualties") if isinstance(m.get("casualties"), bool) else None,
+            "then_action": code_then(m)}
 
 
 def add(state, doc, covers=True):
@@ -130,8 +139,8 @@ def add(state, doc, covers=True):
             if rec is None:
                 continue
             old = state["reports"].setdefault(pid, rec)
-            for k in ("outcome", "severity", "casualties"):
-                if rec[k] is not None:
+            for k in ("outcome", "severity", "casualties", "then_action"):
+                if rec.get(k) is not None:
                     old[k] = rec[k]
         elif pid.startswith(TRANSIT_PREFIX):
             day = pid[len(TRANSIT_PREFIX):]
@@ -198,6 +207,8 @@ def build(state, now):
         near = [r for r in attacks if km_from_strait(r["lat"], r["lon"]) <= NEAR_KM]
         severity = {s: sum(1 for r in attacks if r["severity"] == s) for s in SEVERITIES}
         severity["not_coded"] = sum(1 for r in attacks if r["severity"] is None and r["outcome"] is None)
+        outcomes = {o: sum(1 for r in rows if r["outcome"] == o) for o in OUTCOMES}
+        outcomes["not_coded"] = sum(1 for r in rows if r["outcome"] is None)
         whole = bool(covered and start >= covered)
         complete = end <= now
         share = round(len(near) / len(attacks), 3) if attacks else None
@@ -206,7 +217,8 @@ def build(state, now):
             "still_filling": now < end + timedelta(days=FILLING_DAYS), "record_whole": whole,
             "transits": state["transits"].get(key),
             "reports": len(rows), "attacks": len(attacks), "attacks_within_150km": len(near), "share_within_150km": share,
-            "severity": severity, "casualty_reports": sum(1 for r in attacks if r["casualties"] is True),
+            "severity": severity, "outcomes": outcomes,
+            "then_action_reports": sum(1 for r in rows if r.get("then_action")), "casualty_reports": sum(1 for r in attacks if r["casualties"] is True),
             "attacks_base": _base(past_attacks), "share_base": _base(past_share),
             "items": [{"id": r["id"], "number": r["number"]} for r in sorted(attacks, key=lambda x: x["incident_at"])]})
         if complete and whole and now >= end + timedelta(days=FILLING_DAYS):
@@ -217,6 +229,9 @@ def build(state, now):
             "credit": {"transits": "IMF PortWatch (International Monetary Fund and University of Oxford), via Wake",
                        "reports": ts.UKMTO_CREDIT},
             "history_from": state.get("covered_from"), "reports_held": len(placed),
+            "reports_coded": sum(1 for r in placed if r["outcome"] is not None),
+            "data_to": {"transits": max((t["week_to"] for t in state["transits"].values()), default=None),
+                        "reports": max((r["incident_at"] for r in placed), default=None)},
             "severity_scale": SEVERITY_WORDS, "limits": LIMITS, "weeks": weeks[-SHOW_WEEKS:]}
 
 
