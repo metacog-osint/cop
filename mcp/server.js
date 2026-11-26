@@ -1,4 +1,4 @@
-// COP's MCP server: eleven read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
+// COP's MCP server: twelve read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
 // functions/mcp.js at https://cop.theintelligence.company/mcp.
 //
 // Built on the official MCP TypeScript SDK v2 (@modelcontextprotocol/server). Its createMcpHandler serves
@@ -29,6 +29,7 @@ How to use these tools well:
 11. Relief's items are the publishers' own records: an IFRC emergency appeal or DREF allocation (hazard, amounts in Swiss francs, people targeted, dates) or a WHO Disease Outbreak News notice (title, date, country, link). Tier is always "routine": Relief makes no anomaly, warning or forecast, so never present an item as one. An IFRC appeal shows where the Red Cross and Red Crescent asked for money, not every place in need; crises led by others may have no appeal. place_context's Poisson figure (tail_probability) is a measurement of how often the country's appeal starts in the last 90 days have occurred against its own ten-year rate, not a warning or a prediction. A WHO notice usually comes weeks after the first report. Never quote WHO notice text: give its title, date, country and link only.
 12. direction is COP's direction of concern: for each warning problem and each of Watchfloor's conflict zones, whether each layer (GPS interference, security notices, confirmed internet outages, press reports of violence, UKMTO's attack reports) moved in the last 7 days against its own 14 days before, and a word that counts the layers moving (Rising, Easing, Mixed, Edging up, Edging down, Steady, Building a baseline). Measurements are never added together. Quote the word with the layers it names and each layer's own text; it is not a warning, a forecast or a finding of cause, and it carries no probability. Ship transits are a condition beside the reading, never counted. top_picks lists a pick in a place read as Rising first and says so in its reason.
 13. lane_record gives each lane's record: a lane is one kind of item from one program (Blackout's internet outages read through triage, COP's direction words, the three-signal join, and one lane per program with no outside check yet). It counts what the lane flagged since its logging began and, once Verdict scores them, how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: there is no rate or skill figure before 30 independently scored items, and the record never changes the pick order. get_item and top_picks carry the line of the item's own lane as lane_record. A replay figure comes from a labelled past set (Access Now's documented 2025 shutdowns, #KeepItOn STOP; credit "Access Now, #KeepItOn STOP") and is always called replay. A record describes how a measurement has behaved; it is not a warning and gives no likelihood to any single item.
+14. history gives what every layer showed for one place (an ISO country code or a direction-board area key) over up to 31 days: each program's readings as runs of days with the same reading, and its new, changed and ended items, from COP's daily snapshots (since 31 Oct 2026), its ledger and the programs' own logs. days_read says on how many of those days the program was read: a day read with nothing for the place is an absence, a day not read is not. Rows with a note are not comparable with rows outside their period (a change of scope or a named break); compare rows within one method_version. Id churn is left out by default. The full set is Parquet, listed in files.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -104,6 +105,18 @@ const ThreeSignalInput = z.object({
 
 const DirectionInput = z.object({
   area: z.string().regex(/^[a-z0-9-]{1,40}$/).optional().describe("A place key (gulf, ukraine, taiwan). Default: every place."),
+});
+
+const HistoryInput = z.object({
+  place: z
+    .string()
+    .regex(/^([A-Za-z]{2}|[a-z0-9-]{3,40})$/)
+    .describe("A two-letter ISO country code (IR, UA, US) or an area key from the direction board (gulf, ukraine)."),
+  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("First UTC day, YYYY-MM-DD. Default: days before today."),
+  days: z.number().int().min(1).max(T.HISTORY_DAYS_MAX).optional().describe("How many days, default 7 (a week)."),
+  program: z.string().regex(/^[a-z]{2,20}$/).optional().describe("Only this program's layer."),
+  include_churn: z.boolean().optional().describe("Also list ledger lines that are only id churn. Default false."),
+  limit: z.number().int().min(1).max(100).optional().describe("Readings and events listed per program, default 20."),
 });
 
 const LaneInput = z.object({
@@ -260,6 +273,23 @@ export function buildServer(data, clock = Date.now) {
     LaneInput,
     async (a, now) => T.laneRecord(await lanesOf(data), a, now),
   );
+  tool(
+    "history",
+    "History of a place",
+    "What every layer showed for one place over a range of days (a week by default): each program's readings day by " +
+      "day from COP's daily snapshots, and what was new, changed or ended, with method versions and the periods " +
+      "that cannot be compared marked. For comparing the present with the past. Measurements, not warnings.",
+    HistoryInput,
+    async (a, now) => {
+      const place = T.historyPlaceKey(a.place);
+      const { from, to } = T.historyRange(a, now);
+      const manifest = typeof data.history === "function" ? await data.history() : null;
+      const docs = manifest
+        ? await Promise.all(T.historyWeeks(from, to).map((w) => data.historyPlace(place, w)))
+        : [];
+      return T.history(await data.index(), manifest, docs, a, now);
+    },
+  );
   return server;
 }
 
@@ -280,7 +310,7 @@ const HELP = `This is COP's MCP server, for AI agents (Model Context Protocol, S
 Add it to an MCP client with this address: ${SITE}/mcp
 Claude Code: claude mcp add --transport http cop ${SITE}/mcp
 
-Eleven read-only tools over COP's current snapshot and Verdict's forecast ledger. Public information only; no sign-in.
+Twelve read-only tools over COP's current snapshot, its history and Verdict's forecast ledger. Public information only; no sign-in.
 The map itself is at ${SITE}/
 `;
 
