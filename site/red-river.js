@@ -13,10 +13,12 @@
     for (const k of kids.flat()) if (k != null) el.append(k);
     return el;
   }
-  const timeEl = (iso) => (iso ? h("time", { datetime: iso, "data-tic": "datetime" }, iso) : h("span", { text: "unknown" }));
+  // An item's own times can lie in another year (a notice valid into next spring), so they carry the full date.
+  const timeEl = (iso, year) => (iso ? h("time", { datetime: iso, "data-tic": "datetime", "data-tic-year": year ? "" : null }, iso)
+    : h("span", { text: "unknown" }));
   // A day- or month-precision time is a UTC date and is never moved into the viewer's zone.
   const dataTime = (it) => (it.data_as_of_precision === "day" ? h("span", { text: `${it.data_as_of.slice(0, 10)} (UTC date)` })
-    : it.data_as_of_precision === "month" ? h("span", { text: `${it.data_as_of.slice(0, 7)} (UTC month)` }) : timeEl(it.data_as_of));
+    : it.data_as_of_precision === "month" ? h("span", { text: `${it.data_as_of.slice(0, 7)} (UTC month)` }) : timeEl(it.data_as_of, true));
   const safeLink = (u) => (typeof u === "string" && /^https:\/\//.test(u) ? u : null);
   const expired = (it, now) => { const t = Date.parse(it.valid_until); return Number.isFinite(t) && t < now; };
 
@@ -25,7 +27,7 @@
     return h("li", {}, h("span", { text: it.title }),
       h("span", { class: "rr-item-meta" },
         `${(it.publishers || []).join(", ") || "Source not named"} · ${it.status_class || it.kind || "report"} · data `, it.data_as_of ? dataTime(it) : "time unknown",
-        it.valid_until ? " · valid until " : null, it.valid_until ? timeEl(it.valid_until) : null,
+        it.valid_until ? " · valid until " : null, it.valid_until ? timeEl(it.valid_until, true) : null,
         it.stale ? " · last good copy, not current" : null),
       h("span", { class: "rr-item-meta" },
         h("a", { href: `./#r=1&i=${encodeURIComponent(it.id)}`, text: "On the map" }),
@@ -62,8 +64,11 @@
     const now = Date.now();
     $("states").replaceChildren(...doc.states.map((s) => h("section", { class: "rr-state", "aria-labelledby": `st-${s.code}` },
       h("h2", { id: `st-${s.code}`, text: s.name }), s.layers.map((l) => layerBox(l, now)))));
+    const v = doc.vigil;
+    if (v && $("vigil-meta")) $("vigil-meta").replaceChildren(h("span", { class: `st st-${v.state}`, text: STATE[v.state] || v.state }),
+      ` · Vigil's feed in this picture: data as of `, timeEl(v.data_as_of), " · source: Vigil, The Intelligence Company");
     $("bar-times").replaceChildren("Picture built ", timeEl(doc.snapshot_generated_at));
-    $("credits").replaceChildren(h("p", { text: "Cordon, Elements and Blackout, The Intelligence Company. Each entry names its publisher; full credits are on the map page." }));
+    $("credits").replaceChildren(h("p", { text: "Cordon, Elements, Blackout and Vigil, The Intelligence Company. Each entry names its publisher; full credits are on the map page." }));
     if (T) T.renderAll(document);
   }
 

@@ -23,16 +23,19 @@ import gate  # noqa: E402
 from triage import POWER_LINE, us_state_of  # noqa: E402
 
 PUBLIC_NAME = "red-river.json"
-JOIN = {"id": "red-river", "version": "0.1", "published": True, "inputs": ["cordon", "elements", "blackout:us-power"]}
+JOIN = {"id": "red-river", "version": "0.1", "published": True,
+        "inputs": ["cordon", "elements", "blackout:us-power", "vigil"]}
 STATES = (("ND", "North Dakota"), ("MN", "Minnesota"))
 LAYERS = (
     {"program": "cordon", "label": "Official notices", "lanes": {"faa-tfr": "FAA temporary flight restrictions"}},
     {"program": "elements", "label": "Natural hazards", "lanes": {
-        "nws-alerts": "National Weather Service alerts", "usgs-earthquakes": "USGS earthquakes",
+        "nws-alerts": "National Weather Service alerts", "spc-outlook": "NOAA Storm Prediction Center outlooks",
+        "usgs-earthquakes": "USGS earthquakes",
         "usgs-volcanoes": "USGS volcanoes", "nifc-wfigs": "National Interagency Fire Center",
         "gdacs": "GDACS", "noaa-tsunami": "NOAA tsunami warning centres"}},
     {"program": "blackout", "label": "Grid outages", "lanes": {"odin-ornl": "ODIN (Oak Ridge National Laboratory)"}},
 )
+VIGIL_PAGE = "https://vigil.theintelligence.company/upper-midwest"
 ITEM_KEYS = ("id", "title", "tier", "kind", "status_class", "data_as_of", "data_as_of_precision", "valid_until", "link")
 
 
@@ -60,7 +63,9 @@ def empty_text(layer, state_name, unread, program_state):
     if program_state == "stale" or unread:
         what = join_names(unread) if unread else "this program's feed"
         return f"No current data from {what}, so this list cannot tell you what is happening in {state_name}."
-    text = f"Nothing placed in {state_name} in this build. Checked: {join_names(layer['lanes'].values())}."
+    text = f"Nothing placed in {state_name} in this build from the {'source' if len(layer['lanes']) == 1 else 'sources'} above."
+    if layer["program"] == "elements":
+        text += " NASA FIRMS fire counts and the US Drought Monitor are national figures, so they are on the map, not here."
     if layer["program"] == "blackout":
         text += f" Blackout lists a state only above {POWER_LINE:,} meters without power, so smaller outages do not appear here."
     return text
@@ -85,7 +90,12 @@ def build(snapshot):
                            "lanes_known": read is not None, "items": items,
                            "empty_text": empty_text(layer, name, unread or ([] if state != "missing" else ["this program's feed"]), state)})
         states.append({"code": code, "name": name, "layers": layers})
-    return {"join": dict(JOIN), "snapshot_generated_at": snapshot.get("generated_at"), "power_line": POWER_LINE, "states": states}
+    vigil = programs.get("vigil") or {}
+    # Vigil is linked, not listed: only its feed's freshness is read, so the page can say how current Vigil is.
+    linked = {"program": "vigil", "name": vigil.get("name") or "Vigil", "state": vigil.get("state") or "missing",
+              "data_as_of": vigil.get("data_as_of"), "page": VIGIL_PAGE}
+    return {"join": dict(JOIN), "snapshot_generated_at": snapshot.get("generated_at"), "power_line": POWER_LINE,
+            "states": states, "vigil": linked}
 
 
 def main(argv=None):

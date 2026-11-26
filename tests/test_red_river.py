@@ -45,11 +45,19 @@ class RedRiver(unittest.TestCase):
     def test_empty_layer_says_what_was_checked(self):
         doc = rr.build(snapshot())
         text = layer(doc, "ND", "blackout")["empty_text"]
-        self.assertIn("ODIN", text)
+        self.assertIn("sources above", text.replace("source above", "sources above"))
+        self.assertIn("ODIN (Oak Ridge National Laboratory)", layer(doc, "ND", "blackout")["sources"])
         self.assertIn(f"{rr.POWER_LINE:,} meters", text)
         for s in doc["states"]:
             for l in s["layers"]:
                 self.assertNotIn("quiet", l["empty_text"].lower())
+
+    def test_vigil_is_linked_not_listed(self):
+        doc = rr.build(snapshot())
+        ids = [i["id"] for s in doc["states"] for l in s["layers"] for i in l["items"]]
+        self.assertNotIn("vigil:x:1", ids, "Vigil's leak-site claims are linked, never copied into the list")
+        self.assertEqual(doc["vigil"]["page"], rr.VIGIL_PAGE)
+        self.assertEqual(doc["vigil"]["state"], "missing", "a program absent from the snapshot reads missing")
 
     def test_unread_source_is_named(self):
         l = layer(rr.build(snapshot(odin_read=False)), "ND", "blackout")
