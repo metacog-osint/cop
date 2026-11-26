@@ -782,7 +782,7 @@ def main(argv=None):
     ap.add_argument("--previous", default=None, help=f"last published snapshot, URL or file (live default: {PREVIOUS})")
     ap.add_argument("--archive", help="also write a gzip copy of today's snapshot here, named by its UTC day")
     ap.add_argument("--ended-out", default=str(ROOT / "out" / "ended"),
-                    help="where each program's ended-items file goes (<program>.geojson; not published, not drawn)")
+                    help="where each program's ended-items file goes (<program>.geojson; not drawn, not served from the site)")
     ap.add_argument("--dropped-out", help="write the malformed items this build left out, with reasons, as JSON lines "
                                           "(tools/dropped.py keeps them with the ledger); removed when there are none")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
