@@ -1,4 +1,4 @@
-"""The lane log and lane records (ideas#330): logged once before the outcome, chained, segmented by method version,
+"""The lane log and lane records: logged once before the outcome, chained, segmented by method version,
 counts only, and never a rate before the minimum scored."""
 import json
 import sys

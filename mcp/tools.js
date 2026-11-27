@@ -95,7 +95,7 @@ function attributionFor(index, programIds) {
   return out;
 }
 
-// An item past its own valid_until is expired (ideas#164, 24 Nov 2026): its program still lists it, but what it
+// An item past its own valid_until is expired (since 24 Nov 2026): its program still lists it, but what it
 // reports no longer holds. Every row says so, judged at the time of the call, since the snapshot is up to 2 h old.
 export function isExpired(validUntil, now) {
   const t = Date.parse(validUntil || "");
@@ -478,7 +478,7 @@ export function topPicks(index, picks, now, direction = null, lanes = null) {
     }
     items.push(item);
   }
-  // A pick in a Rising place comes first (ideas#164); the rest keep their order. picked_rank is the build's own order.
+  // A pick in a Rising place comes first; the rest keep their order. picked_rank is the build's own order.
   items.forEach((x) => { x.picked_rank = x.rank; });
   items.sort((a, b) => Number(Boolean(b.in_rising_place)) - Number(Boolean(a.in_rising_place)) || a.picked_rank - b.picked_rank);
   items.forEach((x, i) => { x.rank = i + 1; });

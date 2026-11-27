@@ -1083,7 +1083,7 @@ def power_record(f, features, states, history=None, ended_info=None):
 # country. A Radar entry that names no place (a platform outage) cannot be placed, so it is listed, not triaged.
 INPUT_KINDS = {"outage": "IODA", "radar-anomaly": "Cloudflare Radar (verified anomaly)",
                "radar-outage": "Cloudflare Radar Outage Center"}
-# Blackout kinds that report an outage but that triage does not read (ideas#164, 24 Nov 2026): NetBlocks' reports,
+# Blackout kinds that report an outage but that triage does not read (since 24 Nov 2026): NetBlocks' reports,
 # which Blackout parses from its public posts. They are listed per country so a reader asking about a country is told
 # a report exists there, never that there is no outage.
 NOT_READ_KINDS = {"netblocks": "NetBlocks (its public posts, via Blackout)"}

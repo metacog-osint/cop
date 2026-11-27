@@ -512,7 +512,7 @@ def build(mem, snapshot, config, verdict=None):
             "record": record(verdict)}
 
 
-RISING = ("rising",)   # the words that move a pick to the front (ideas#164); Edging up is named, never reordered
+RISING = ("rising",)   # the words that move a pick to the front; Edging up is named, never reordered
 
 
 def pick_places(doc, snapshot, picks, config):

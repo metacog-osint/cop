@@ -45,7 +45,7 @@
    "note": "not a hit: baseline_n stands in for expected"}},
   {"type": "Feature", "geometry": null, "properties": {"id": "wake:chokepoint:kerch", "program": "wake", "tier": "routine",
    "measures": {"z_90d": 428571428.6, "baseline_90d_median": 19.6, "baseline_90d_sd": 0},
-   "sources": [{"id": "imf-portwatch"}], "note": "z-zero-base: the ideas#212 row"}},
+   "sources": [{"id": "imf-portwatch"}], "note": "z-zero-base: a z beside a zero base"}},
   {"type": "Feature", "geometry": null, "properties": {"id": "watchfloor:2026-11-23:zone:08_South_China_Sea", "program": "watchfloor",
    "tier": "routine", "warning_problem_id": "WF-WP-Z08",
    "measures": {"violence": {"z": -0.42, "expected": 3.1, "median90": 0}}, "sources": [{"id": "gdelt-events"}],

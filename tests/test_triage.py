@@ -720,7 +720,7 @@ class TriageFixes(unittest.TestCase):
         self.assertIn("Cloudflare Radar", tri.public(tri.attach_rates(doc, None))["what"])
 
     def test_a_netblocks_report_is_listed_as_not_read_never_triaged(self):
-        # ideas#164: Iceland had a NetBlocks report while triage said no outage there.
+        # Iceland had a NetBlocks report while triage said no outage there.
         nb = item("blackout", "blackout:netblocks:3n2totkhmic2i", ["IS"], "anomaly", "2026-11-12T01:45:32Z",
                   title="Iceland: NetBlocks report (Confirmed)")
         doc = tri.triage(snapshot(nb))

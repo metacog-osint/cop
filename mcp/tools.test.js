@@ -84,7 +84,7 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   assert.ok(byText.items.every((r) => !("shard" in r)), "shard numbers stay internal");
 });
 
-test("search leaves out items past their valid_until unless asked, and every row says expired (ideas#164)", () => {
+test("search leaves out items past their valid_until unless asked, and every row says expired", () => {
   const vi = index.fields.indexOf("valid_until");
   assert.ok(vi >= 0, "the index carries valid_until");
   const all = T.searchItems(index, { limit: 50, include_expired: true }, NOW);
@@ -184,7 +184,7 @@ test("get_item returns the full item with its sources, or a clear miss", () => {
   assert.throws(() => T.getItem(index, null, "nope:1", NOW), /No item "nope:1"/);
 });
 
-test("an item carries its own lane's record line, a prefix lane before its program's catch-all (ideas#330)", () => {
+test("an item carries its own lane's record line, a prefix lane before its program's catch-all", () => {
   const out = rows.find((x) => x.program === "blackout" && /^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
   assert.ok(out, "the fixtures hold a Blackout outage");
   const res = T.getItem(index, shard(out.shard), out.id, NOW, lanes);
@@ -232,7 +232,7 @@ test("top picks keep COP's order and reasons", () => {
   assert.match(res.note, /not warnings/);
 });
 
-test("a pick in a Rising place comes first and says so; the rest keep their order (ideas#164)", () => {
+test("a pick in a Rising place comes first and says so; the rest keep their order", () => {
   assert.ok(picks.picks.length > 1, "the fixtures make more than one pick");
   const last = picks.picks[picks.picks.length - 1];
   const res = T.topPicks(index, picks, NOW, direction);
@@ -364,7 +364,7 @@ test("Orbit's scheduled launches join Verdict's calendar, in date order, credite
   assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
 });
 
-test("Launch's scheduled launches and closures join the calendar, credited to Launch (Ascent move, ideas#69)", () => {
+test("Launch's scheduled launches and closures join the calendar, credited to Launch", () => {
   const res = T.upcomingEvents(verdict, events, { days: 30, origin: "launch" }, NOW);
   assert.deepEqual(res.events.map((e) => [e.id, e.kind]), [
     ["launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d", "launch"],
@@ -549,7 +549,7 @@ test("three-signal gives the reading, the layers' items and the wording, and a m
   assert.throws(() => T.threeSignal(index, null, {}, NOW), /not built for this snapshot/);
 });
 
-test("search by the framework tags and the topic key: any value fits, tags combine, values are checked (ideas#488)", () => {
+test("search by the framework tags and the topic key: any value fits, tags combine, values are checked", () => {
   for (const k of T.TAGS) assert.ok(index.fields.includes(k), `index carries ${k}`);
   assert.ok(rows.every((r) => T.TAGS.every((k) => Array.isArray(r[k]))), "every row has each tag as a list");
   assert.ok(index.tag_vocab && index.tag_vocab.pmesii_pt.includes("infrastructure") && index.tag_vocab.ncf.includes("provide_pnt"));
@@ -574,7 +574,7 @@ test("search by the framework tags and the topic key: any value fits, tags combi
   }
 });
 
-test("search can count its matches by one tag, each value an item carries counted once (ideas#488)", () => {
+test("search can count its matches by one tag, each value an item carries counted once", () => {
   const res = T.searchItems(index, { program: ["noisefloor", "cordon"], group_by: "pmesii_pt", limit: 1 }, NOW);
   assert.equal(res.group_by, "pmesii_pt");
   const sum = res.groups.reduce((s, g) => s + g.count, 0);
@@ -588,7 +588,7 @@ test("search can count its matches by one tag, each value an item carries counte
   assert.equal(T.searchItems(index, { limit: 1 }, NOW).groups, undefined, "no groups unless asked");
 });
 
-test("get_item lists the same topic in other layers, never its own program, and says it is no link (ideas#488)", () => {
+test("get_item lists the same topic in other layers, never its own program, and says it is no link", () => {
   const r = rows.find((x) => x.program === "noisefloor" && x.ncf.includes("transport_by_air") && !T.isExpired(x.valid_until, NOW));
   assert.ok(r, "the fixtures hold a Noisefloor item filed under transport_by_air");
   const st = T.getItem(index, shard(r.shard), r.id, NOW).same_topic_in_other_layers;

@@ -177,7 +177,7 @@ def reading(props):
 
 def no_longer_current(props, now=None):
     """The program itself says this has ended (Elements' GDACS items, measures.current false), or the item is past its
-    own valid_until (ideas#164: 21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
+    own valid_until (21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
     as before; only the picks skip it."""
     if dig(props, "measures.current") is False:
         return True
@@ -186,7 +186,7 @@ def no_longer_current(props, now=None):
 
 
 def not_admitted(props, prog, now=None):
-    """Why this program's own pick rules leave the item out, or None (ideas#164: like with like). Each rule in the
+    """Why this program's own pick rules leave the item out, or None (like with like). Each rule in the
     program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
     FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
     the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
