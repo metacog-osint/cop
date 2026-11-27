@@ -80,7 +80,7 @@ class Build(unittest.TestCase):
         self.assertEqual(snap.strength({}, rules), (None, None, None, None))
 
     def test_cordon_compares_like_with_like(self):
-        """ideas#164: each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
+        """Each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
         cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
         item = lambda name, v: {"signal": {"name": name, "value": v}, "measures": {"level": v}}
         state = snap.strength(item("State Dept advisory level 1-4", 2), cd["strength"])
@@ -93,7 +93,7 @@ class Build(unittest.TestCase):
                          "a level on no named scale has no strength")
 
     def test_cordon_pick_admits(self):
-        """ideas#164: Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours (Tom, 23 Nov)."""
+        """Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours."""
         from datetime import datetime, timezone
         cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
         now = datetime(2026, 11, 24, 12, tzinfo=timezone.utc)
@@ -224,7 +224,7 @@ class Build(unittest.TestCase):
         self.assertFalse(snap.registered("no-such-source"))
 
     def test_source_health_on_for_every_program_but_those_without_a_health_block(self):
-        # ideas#164: every program whose feed carries a per-source health block reads it. Watchfloor and Launch
+        # Every program whose feed carries a per-source health block reads it. Watchfloor and Launch
         # publish none today; turn it on for them when they do.
         off = {p["id"] for p in snap.CONFIG["programs"] if not p.get("source_health")}
         self.assertEqual(off, {"watchfloor", "launch"})
@@ -844,7 +844,7 @@ WF, CX = "watchfloor:2026-10-30:", "context:2026-10-31_1200Z:"
 
 class GdeltVoice(unittest.TestCase):
     """Watchfloor and Context both read GDELT (independence_group "gdelt") and number their zones alike (WF-WP-Z07 is
-    CX-WP-Z07; Context's Z17, Horn of Africa, is Watchfloor's Z18 plus Z19). Suite review of 15 Nov 2026: COP's picks
+    CX-WP-Z07; both use the doctrine kit's zone list, so Horn of Africa is Z18 and Z19 in each). Suite review of 15 Nov 2026: COP's picks
     took one per program, so GDELT held two of five slots; they are one voice, joined on zone, never two layers."""
 
     def test_voice_keys_join_on_zone_number(self):
@@ -853,7 +853,8 @@ class GdeltVoice(unittest.TestCase):
         vk = snap.voice_keys
         self.assertEqual(vk({"warning_problem_id": "WF-WP-Z07", "sources": gd}), ["gdelt:Z07"])
         self.assertEqual(vk({"warning_problem_id": "CX-WP-Z07", "sources": cx}), ["gdelt:Z07"])
-        self.assertEqual(vk({"warning_problem_id": "CX-WP-Z17", "sources": cx}), ["gdelt:Z18", "gdelt:Z19"])
+        self.assertEqual(vk({"warning_problem_id": "CX-WP-Z18", "sources": cx}), ["gdelt:Z18"])
+        self.assertEqual(vk({"warning_problem_id": "CX-WP-Z19", "sources": cx}), ["gdelt:Z19"])
         self.assertEqual(vk({"warning_problem_id": "WF-WP-Z18", "sources": gd}), ["gdelt:Z18"])
         self.assertEqual(vk({"warning_problem_id": "WF-WP-T3", "sources": gd}), vk({"warning_problem_id": "CX-WP-T3",
                                                                                      "sources": cx}))
@@ -900,22 +901,27 @@ class GdeltVoice(unittest.TestCase):
         self.assertEqual((cx["tier"], cx["warning_problem_id"]), ("anomaly", "CX-WP-Z07"))
         self.assertEqual(cx["strength"], "900 articles in the last 12 hours")
 
-    def test_horn_of_africa_joins_two_watchfloor_zones(self):
+    def test_somalia_joins_watchfloor_somalia_only(self):
+        # The fixture predates the kit zone list, so its Horn of Africa row stands in for Context's 19_Somalia.
         def mutate(f):
-            raise_items(f, {CX + "17_Horn_of_Africa": {"volume_12h": 900},
+            for x in f["context"]["features"]:
+                pr = x["properties"]
+                if pr["id"] == CX + "17_Horn_of_Africa":
+                    pr.update({"id": CX + "19_Somalia", "warning_problem_id": "CX-WP-Z19", "countries": ["DJ", "SO"]})
+            raise_items(f, {CX + "19_Somalia": {"volume_12h": 900},
                             WF + "zone:19_Somalia": {"score": {"z": 1.0}}})
         _, picks, _, _ = build(dead=gdelt_only(), mutate=mutate)
         by_id = {p["id"]: p for p in picks["picks"]}
-        self.assertIn(CX + "17_Horn_of_Africa", by_id, "Context's strongest is picked")
-        horn = by_id[CX + "17_Horn_of_Africa"]
-        self.assertEqual(horn["voice"], ["gdelt:Z18", "gdelt:Z19"])
-        self.assertNotIn(WF + "country:ET:violence", by_id, "Watchfloor's Ethiopia (Z18) is the same voice")
+        self.assertIn(CX + "19_Somalia", by_id, "Context's strongest is picked")
+        somalia = by_id[CX + "19_Somalia"]
+        self.assertEqual(somalia["voice"], ["gdelt:Z19"])
         self.assertNotIn(WF + "zone:19_Somalia", by_id, "Watchfloor's Somalia (Z19) is the same voice")
-        ids = [r["id"] for r in horn["readings"]]
-        for wf in ("country:ET:violence", "zone:18_Ethiopia_Eritrea", "zone:19_Somalia"):
-            self.assertIn(WF + wf, ids)
+        ids = [r["id"] for r in somalia["readings"]]
+        self.assertIn(WF + "zone:19_Somalia", ids)
+        for wf in ("country:ET:violence", "zone:18_Ethiopia_Eritrea"):
+            self.assertNotIn(WF + wf, ids, "Ethiopia and Eritrea (Z18) is another voice")
         # Readings list anomalies before routine items, each program's own strongest first.
-        tiers = [r["tier"] for r in horn["readings"]]
+        tiers = [r["tier"] for r in somalia["readings"]]
         self.assertEqual(tiers, sorted(tiers, key=lambda t: t != "anomaly"))
 
     def test_same_zone_items_of_one_program_make_one_pick(self):
@@ -959,6 +965,13 @@ class GdeltVoice(unittest.TestCase):
             item(None),
             item({"type": "MultiPoint", "coordinates": [[-70, 40], [100, -30]]}),   # two places stay two
             item({"type": "Polygon", "coordinates": [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]]}),
+            # A label point beside an outline (Context's zones): the outline's place, not the label's.
+            item({"type": "GeometryCollection", "geometries": [
+                {"type": "Point", "coordinates": [55, 55]},
+                {"type": "Polygon", "coordinates": [[[60, 50], [62, 50], [62, 52], [60, 52], [60, 50]]]}]}),
+            item({"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-5, -5]}]}),
+            item({"type": "Polygon"}),                                     # malformed: no point, no error
+            item({"type": "Point", "coordinates": ["x"]}),
         ]}
         doc = snap.home_points(today, NOW)
         self.assertEqual(set(doc), {"generated_at", "points"})
@@ -967,7 +980,7 @@ class GdeltVoice(unittest.TestCase):
         self.assertEqual(len(across), 1, "a shape across the antimeridian stays there")
         self.assertEqual(across[0][1], 1.0)
         self.assertEqual([p for p in doc["points"] if p not in across],
-                         [[-70.0, 40.0], [4.0, 4.0], [10.0, 20.1], [100.0, -30.0]])
+                         [[-70.0, 40.0], [-5.0, -5.0], [4.0, 4.0], [10.0, 20.1], [61.0, 51.0], [100.0, -30.0]])
         self.assertNotIn("secret", json.dumps(doc), "places only: no id or title")
 
     def test_build_writes_a_small_home_points_file(self):

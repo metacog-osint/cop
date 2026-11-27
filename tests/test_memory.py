@@ -78,7 +78,7 @@ def ctx(day, entity="01_Ukraine_Conflict", stated=True, countries=("UA",)):
 
 
 class SubjectIdArrives(unittest.TestCase):
-    """ideas#205: Context began stating subject_id on 24 Nov 2026; its zones keep their history."""
+    """Context began stating subject_id on 24 Nov 2026; its zones keep their history."""
 
     def build(self, gap_day=None):
         mem = m.empty()

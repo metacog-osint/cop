@@ -91,7 +91,7 @@ def continues(mem: dict, k: str) -> str | None:
     When a feed starts stating subject_id (contract 2.1: Context and Vis on 24 Nov 2026), its subjects get new keys
     (context:zone:01_Ukraine_Conflict) while their history sits under the key their dated item ids gave before
     (context:01_Ukraine_Conflict). The old key is still what key() makes of the item's id, so it can be found again.
-    Only a record of the same program, itself keyed from its id and begun no later, counts (ideas#205)."""
+    Only a record of the same program, itself keyed from its id and begun no later, counts."""
     r = mem["subjects"].get(k)
     if not r or not r.get("id"):
         return None

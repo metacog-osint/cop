@@ -31,6 +31,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 sys.path.insert(0, str(ROOT / "tools"))
+import cells as celltool  # noqa: E402
+import refresh as refreshtool  # noqa: E402
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
 from tic_doctrine import ladder  # noqa: E402
@@ -133,8 +135,6 @@ def strength_label(props, rule):
 # layers, so COP gives them one seat in the picks and joins their readings of one zone on one pick. Each item keeps
 # its own id, sources, licence and attribution: joined, never merged.
 SHARED_GROUPS = ("gdelt",)
-# Context's Z17 (Horn of Africa: DJ, ER, ET, SO) is Watchfloor's Z18 (Ethiopia and Eritrea) plus Z19 (Somalia).
-ZONE_ALIASES = {"CX-WP-Z17": ("Z18", "Z19")}
 _WP = re.compile(r"^([A-Z]+-WP-)([ZT])(\d+)$")
 
 
@@ -145,17 +145,15 @@ def shared_group(props):
 
 
 def voice_keys(props):
-    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone (Context's Z17 gives ["gdelt:Z18",
-    "gdelt:Z19"]), ["gdelt:T3"] for a Watch Topic, ["gdelt:<country>"] for a GDELT item outside every zone, [] for an
-    item of no shared group. Two items are one voice when their keys meet."""
+    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone, ["gdelt:T3"] for a Watch Topic,
+    ["gdelt:<country>"] for a GDELT item outside every zone, [] for an item of no shared group. Two items are one
+    voice when their keys meet."""
     group = shared_group(props)
     if not group:
         return []
     wp = props.get("warning_problem_id")
     m = _WP.match(wp) if isinstance(wp, str) else None
     if m:
-        if wp in ZONE_ALIASES:
-            return [f"{group}:{z}" for z in ZONE_ALIASES[wp]]
         letter, n = m.group(2), int(m.group(3))
         return [f"{group}:{letter}{n:02d}" if letter == "Z" else f"{group}:{letter}{n}"]
     return sorted({f"{group}:{c}" for c in (props.get("countries") or []) if isinstance(c, str)})
@@ -175,7 +173,7 @@ def reading(props):
 
 def no_longer_current(props, now=None):
     """The program itself says this has ended (Elements' GDACS items, measures.current false), or the item is past its
-    own valid_until (ideas#164: 21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
+    own valid_until (21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
     as before; only the picks skip it."""
     if dig(props, "measures.current") is False:
         return True
@@ -184,7 +182,7 @@ def no_longer_current(props, now=None):
 
 
 def not_admitted(props, prog, now=None):
-    """Why this program's own pick rules leave the item out, or None (ideas#164: like with like). Each rule in the
+    """Why this program's own pick rules leave the item out, or None (like with like). Each rule in the
     program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
     FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
     the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
@@ -554,6 +552,8 @@ def build(feeds, reports, previous, now):
             also = also_in(p, prog)
             if also:
                 p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
+            # COP's grid cell, computed here and never read from a feed (contract 2.1: the grid cell is COP's).
+            p[celltool.FIELD] = celltool.cells_for(item.get("geometry"), p.get("precision_class"))
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
@@ -577,6 +577,8 @@ def build(feeds, reports, previous, now):
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
             # Contract revision 2.1 (kit 0.6.0): items carrying each new field, and what the feed's header states.
             "coverage": coverage(items), "revision": rev,
+            # When it is expected to update, when it last did, and whether it is late (tools/refresh.py).
+            "refresh": refreshtool.clock(pid, feed, now, covered),
         })
 
     # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks. Watchfloor and
@@ -632,7 +634,8 @@ def build(feeds, reports, previous, now):
                "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
-        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]}}
+        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]},
+        "refresh": {"cop": refreshtool.cop_clock(now), "method": refreshtool.method()}}
     return today, {"generated_at": iso(now), "picks": picks}, health_doc, countries
 
 
@@ -679,8 +682,25 @@ def world_shapes(step=0.1):
 def place_points(geometry):
     """One (lon, lat) per separate place in a geometry: each part of a Multi- shape stands alone, so two places far
     apart never average to a spot between them. A part's point is the mean of its vertices, with longitude averaged
-    around the circle so a shape across the antimeridian stays there."""
-    kind, c = geometry["type"], geometry["coordinates"]
+    around the circle so a shape across the antimeridian stays there. A GeometryCollection gives the points of its
+    outlines and lines, its own points only when it has neither (beside an outline they are label points). A shape
+    this cannot read gives no point, never an error: one item must not stop the build."""
+    if not isinstance(geometry, dict):
+        return []
+    kind, c = geometry.get("type"), geometry.get("coordinates")
+    if kind == "GeometryCollection":
+        subs = [g for g in geometry.get("geometries") or [] if isinstance(g, dict)]
+        shapes = [g for g in subs if g.get("type") not in ("Point", "MultiPoint")]
+        return [pt for g in (shapes or subs) for pt in place_points(g)]
+    try:
+        return _part_points(kind, c)
+    except (TypeError, ValueError, IndexError, KeyError):
+        return []
+
+
+def _part_points(kind, c):
+    if not isinstance(c, list):
+        return []
     if kind == "Point":
         parts = [[c]]
     elif kind == "MultiPoint":

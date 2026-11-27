@@ -37,7 +37,7 @@ concurrency:
   group: watch
   cancel-in-progress: true
 jobs:
-  # Data quality (ideas#245, from the database review of 24 Nov 2026): seven rules on the bus, report only. It never
+  # Data quality (from the database review of 24 Nov 2026): seven rules on the bus, report only. It never
   # fails the run and never touches an item; hits are warnings in the run's summary (tools/data_quality.py says each
   # rule and its finding). Item counts per program and source are kept between runs in the Actions cache
   # (dq-state-*) for the rows-low rule; a missing cache only means no norm yet.

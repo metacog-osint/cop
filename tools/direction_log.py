@@ -2,10 +2,14 @@
 
     python tools/direction_log.py --log out/direction-log.jsonl --direction site/data/direction.json --memory out/memory
 
-Rule adopted by Tom, 21 Nov 2026 (ideas#126). Each Monday the first build before 06:00 UTC writes one "call" line per
+Rule in force since 21 Nov 2026. Each Monday the first build before 06:00 UTC writes one "call" line per
 place: the word, each layer's state and the numbers behind its test, read from data through Sunday. Ten days after that
 Monday a "followup" line per place holds the same layers' numbers for that Monday through Sunday. A week whose Monday
 window was missed gets one "missed" line, so a gap shows. Words before the first locked week are never logged.
+
+A layer whose call cannot be compared with its follow-up week (a source changed what it counts, say) is named in
+config/direction_corrections.json. Each entry is appended once as a "correction" line, and the call's follow-up leaves
+that layer out and says why. The call line is never changed.
 
 The file is append-only. Each line carries the SHA-256 of the line before it, and a broken chain stops the tool. This
 holds counts and medians, never the memory itself. A direction word is not a forecast and carries no probability:
@@ -68,6 +72,23 @@ def append(path, lines, records):
     return len(new)
 
 
+def corrections_due(records, config_corrections, now):
+    """Correction lines for entries not yet in the log, for weeks that have a call for that place and layer."""
+    held = {(r["week"], r["area"], r["layer"]) for r in records if r["type"] == "correction"}
+    calls = {(r["week"], r["area"]): r for r in records if r["type"] == "call"}
+    out = []
+    for c in config_corrections:
+        key = (c["week"], c["area"], c["layer"])
+        call = calls.get((c["week"], c["area"]))
+        if key in held or call is None or not any(l["layer"] == c["layer"] for l in call["layers"]):
+            continue
+        out.append({"type": "correction", "schema": SCHEMA, "rule": call["rule"], "week": c["week"], "area": c["area"],
+                    "layer": c["layer"], "action": "left_out_of_followup", "why": c["why"],
+                    "noted_at": now.strftime("%Y-%m-%dT%H:%M:%SZ")})
+        held.add(key)
+    return out
+
+
 def monday_of(day):
     return (day - timedelta(days=day.weekday())).isoformat()
 
@@ -116,7 +137,8 @@ def measure(mem, area, layer, days, shapes):
             "a": len(d.dated_events(mem, area, layer, set(days)))}
 
 
-def followup_records(mem, config, calls, week, read_at):
+def followup_records(mem, config, calls, week, read_at, corrections=()):
+    left_out = {(c["area"], c["layer"]): c["why"] for c in corrections if c["week"] == week}
     start = date.fromisoformat(week)
     days = [(start + timedelta(days=i)).isoformat() for i in range(7)]
     areas = {a["area"]: a for a in config["problems"] + config["areas"]}
@@ -129,17 +151,25 @@ def followup_records(mem, config, calls, week, read_at):
                         "area": call["area"], "window": [days[0], days[-1]], "layers": [],
                         "note": "This place is no longer configured."})
             continue
-        layers = [{"layer": l["layer"]} | measure(mem, area, l["layer"], days, shapes)
-                  for l in call["layers"] if l.get("test")]
-        out.append({"type": "followup", "schema": SCHEMA, "rule": call["rule"], "week": week, "read_at": read_at,
-                    "area": call["area"], "window": [days[0], days[-1]], "layers": layers})
+        tested = [l["layer"] for l in call["layers"] if l.get("test")]
+        layers = [{"layer": x} | measure(mem, area, x, days, shapes) for x in tested
+                  if (call["area"], x) not in left_out]
+        rec = {"type": "followup", "schema": SCHEMA, "rule": call["rule"], "week": week, "read_at": read_at,
+               "area": call["area"], "window": [days[0], days[-1]], "layers": layers}
+        gone = [{"layer": x, "why": left_out[(call["area"], x)]} for x in tested if (call["area"], x) in left_out]
+        if gone:
+            rec["left_out"] = gone
+        out.append(rec)
     return out
 
 
-def update(path, doc, mem, config, now):
+def update(path, doc, mem, config, now, config_corrections=()):
     """Append whatever is due. Returns (calls, followups, missed) written."""
     lines = read_log(path)
     records = [r for _, r in lines]
+    fixes = corrections_due(records, config_corrections, now)
+    records += fixes
+    held_fixes = [r for r in records if r["type"] == "correction"]
     today = now.date()
     week = monday_of(today)
     seen = {r["week"] for r in records if r["type"] in ("call", "missed")}
@@ -159,8 +189,8 @@ def update(path, doc, mem, config, now):
     for w in sorted({r["week"] for r in records if r["type"] == "call"} - done):
         if (today - date.fromisoformat(w)).days >= FOLLOWUP_AFTER_DAYS:
             calls = [r for r in records if r["type"] == "call" and r["week"] == w]
-            followups += followup_records(mem, config, calls, w, now.strftime("%Y-%m-%dT%H:%M:%SZ"))
-    append(path, lines, followups + missed + new_calls)
+            followups += followup_records(mem, config, calls, w, now.strftime("%Y-%m-%dT%H:%M:%SZ"), held_fixes)
+    append(path, lines, fixes + followups + missed + new_calls)
     return len(new_calls), len(followups), len(missed)
 
 
@@ -177,7 +207,9 @@ def main(argv=None) -> int:
     doc = json.loads(Path(a.direction).read_text(encoding="utf-8"))
     config = json.loads((ROOT / "config" / "areas.json").read_text(encoding="utf-8"))
     now = datetime.fromisoformat(a.now.replace("Z", "+00:00")) if a.now else datetime.now(timezone.utc)
-    calls, followups, missed = update(a.log, doc, mem, config, now)
+    fixes = ROOT / "config" / "direction_corrections.json"
+    corrections = json.loads(fixes.read_text(encoding="utf-8"))["corrections"] if fixes.exists() else []
+    calls, followups, missed = update(a.log, doc, mem, config, now, corrections)
     print(f"direction log: {calls} calls, {followups} follow-ups, {missed} missed weeks written")
     return 0
 

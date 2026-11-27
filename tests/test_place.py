@@ -167,6 +167,47 @@ class Place(unittest.TestCase):
         snap["features"] = []
         self.assertEqual(pl.place_doc(snap, GULF, progs)["coverage"]["class"], "none", "nothing read: not monitored")
 
+    def test_each_layer_gets_its_own_class(self):
+        """The row's `layers`: each program's class from its own items alone, so a place that reads several across
+        the layers still shows a layer with no source there ("Not monitored") and one with one or two."""
+        snap = {"generated_at": "2026-11-26T12:00:00Z",
+                "cop_programs": {"cordon": {"state": "fresh"}, "watchfloor": {"state": "fresh"},
+                                 "noisefloor": {"state": "fresh"}, "relief": {"state": "stale"}},
+                "features": [
+                    sourced("cordon:advisory:UA", "cordon", ["us-state-department", "fcdo", "global-affairs-canada"]),
+                    sourced("watchfloor:zone:UA", "watchfloor", ["gdelt"]),
+                    sourced("watchfloor:claim:UA", "watchfloor", ["example-ministry"],
+                            corroboration={"state": "lead", "origins": 1, "party_claim": True}),
+                    sourced("relief:appeal:UA", "relief", ["ifrc"], cop_stale=True),
+                    sourced("noisefloor:region:IR", "noisefloor", ["gpsjam"], countries=["IR"])]}
+        snap["features"][-1]["geometry"] = {"type": "Point", "coordinates": [56.4, 26.6]}   # in the Gulf's circle
+        progs = sorted(snap["cop_programs"])
+        row = pl.place_doc(snap, UKRAINE, progs)["coverage"]
+        self.assertEqual((row["class"], row["independent"]), ("several", 4), "the layers together")
+        lay = row["layers"]
+        self.assertEqual(sorted(lay), progs, "one entry per program, held or not")
+        self.assertEqual((lay["cordon"]["class"], lay["cordon"]["independent"]), ("several", 3))
+        self.assertEqual(lay["cordon"]["groups"], ["fcdo", "global-affairs-canada", "us-state-department"])
+        self.assertEqual((lay["watchfloor"]["class"], lay["watchfloor"]["independent"], lay["watchfloor"]["set_aside"]),
+                         ("few", 1, 1), "the claim is set aside in its own layer too")
+        self.assertEqual((lay["noisefloor"]["class"], lay["noisefloor"]["groups"]), ("none", []),
+                         "no interference source in Ukraine: not monitored there")
+        self.assertEqual((lay["relief"]["class"], lay["relief"]["state"]), ("none", "stale"),
+                         "a stale copy counts for no layer, and the layer says its feed was not read on time")
+        gulf = pl.place_doc(snap, GULF, progs)["coverage"]["layers"]
+        self.assertEqual(gulf["noisefloor"]["class"], "few", "the same layer has a source in another place")
+        self.assertEqual(gulf["cordon"]["class"], "none")
+        self.assertEqual(gate.cited_ids({"places": [row]}), set(), "layer group ids are sources, not items")
+
+    def test_the_index_shows_the_layer_grid(self):
+        js = (ROOT / "site" / "place.js").read_text(encoding="utf-8")
+        self.assertIn("layerGrid(cov, names, order)", js)
+        self.assertIn('"By layer"', js)
+        self.assertIn("coverageClass(l.independent, (l.set_aside || 0) + (l.not_counted || 0))", js,
+                      "the kit's class rule labels each cell")
+        self.assertIn("a dash is a lower bound", js)
+        self.assertIn("Layers are never added to one another", js)
+
     def test_the_page_labels_a_whole_row(self):
         """The page passes the whole row to the kit's coverageClass, so a row with no independent group but sources
         set aside reads "No independent source"; a row from before kit 0.6.17 (no not_counted) still reads."""

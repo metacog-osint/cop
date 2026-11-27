@@ -95,7 +95,7 @@ function attributionFor(index, programIds) {
   return out;
 }
 
-// An item past its own valid_until is expired (ideas#164, 24 Nov 2026): its program still lists it, but what it
+// An item past its own valid_until is expired (since 24 Nov 2026): its program still lists it, but what it
 // reports no longer holds. Every row says so, judged at the time of the call, since the snapshot is up to 2 h old.
 export function isExpired(validUntil, now) {
   const t = Date.parse(validUntil || "");
@@ -131,7 +131,9 @@ export function suiteStatus(programs, now) {
       "and shows its last good copy. Planned programs publish nothing yet. page_check is the hub's last site check " +
       "of the program's page (opened in headless Chrome twice a day): ok false means the page failed to load, run " +
       "its scripts or draw its map, whatever its data says; null means the check does not cover that page or was " +
-      "not readable at COP's last build.",
+      "not readable at COP's last build. in_cop.refresh is the program's expected schedule (every_hours, runs, UTC " +
+      "start times), its last update as COP read it and status: on_time, or late when the last update is more than " +
+      "late_after_hours old at COP's build (a run missed), or not_read; the same table is on the page /refresh.html.",
     page_check: programs.page_check ?? null,
     programs: programs.programs.map((p) => ({
       id: p.id,
@@ -476,7 +478,7 @@ export function topPicks(index, picks, now, direction = null, lanes = null) {
     }
     items.push(item);
   }
-  // A pick in a Rising place comes first (ideas#164); the rest keep their order. picked_rank is the build's own order.
+  // A pick in a Rising place comes first; the rest keep their order. picked_rank is the build's own order.
   items.forEach((x) => { x.picked_rank = x.rank; });
   items.sort((a, b) => Number(Boolean(b.in_rising_place)) - Number(Boolean(a.in_rising_place)) || a.picked_rank - b.picked_rank);
   items.forEach((x, i) => { x.rank = i + 1; });

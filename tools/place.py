@@ -9,7 +9,8 @@ count of what its program placed there, with the program's freshness.
 Each area also gets its row of the coverage table (kit format tic-coverage/1, docs/event-ladder.md): how many
 independent source groups stand behind the items COP holds for it, counting only items read on time (not a stale
 copy, and not an item its program says has ended). A source that watches a place but has nothing to report there is
-missed, so every count is a lower bound.
+missed, so every count is a lower bound. The row also carries `layers`: each program's own class for the place, from
+that program's items alone, so a layer with thin coverage shows even where the layers together read "several".
 
     python tools/place.py --snapshot site/data/today.geojson --publish site/data
 
@@ -111,6 +112,20 @@ def counts_for_coverage(p, now):
     return not p.get("cop_stale") and not snap.no_longer_current(p, now)
 
 
+def layer_coverage(area, name, held, programs, infos):
+    """Each program's own coverage class for a place: the kit's coverage_place() over that program's items alone (the
+    same items read on time as the place's row). A program with no such item reads none ("Not monitored"), which
+    also covers a program that watches the place but has nothing to report there: a lower bound, like the row.
+    Groups are listed by id only; their labels are in the row's own groups."""
+    out = {}
+    for prog in programs:
+        row = ladder.coverage_place(area, name, [p for p in held if (p.get("cop_program") or p.get("program")) == prog])
+        out[prog] = {"class": row["class"], "independent": row["independent"], "groups": [g["id"] for g in row["groups"]],
+                     "set_aside": len(row["set_aside"]), "not_counted": len(row["not_counted"]),
+                     "state": (infos.get(prog) or {}).get("state") or "missing"}
+    return out
+
+
 def item_row(p):
     return {k: p[k] for k in ("id", "title", "tier", "kind", "status_class", "data_as_of", "data_as_of_precision",
                               "countries") if p.get(k) is not None} | {"stale": bool(p.get("cop_stale"))}
@@ -140,9 +155,11 @@ def place_doc(snapshot, area, programs, hist=None):
                         "data_as_of": info.get("data_as_of"), "site": info.get("site"),
                         "items": len(rows), "anomalies": len(anomalies), "top": [item_row(p) for p in top]}
     name = area.get("name") or area["area"]
+    coverage = ladder.coverage_place(area["area"], name, held) | {
+        "layers": layer_coverage(area["area"], name, held, programs, infos)}
     return {"format": FORMAT, "join": dict(JOIN), "area": area["area"], "name": name,
             "definition": definition(area), "snapshot_generated_at": snapshot.get("generated_at"), "layers": layers,
-            "coverage": ladder.coverage_place(area["area"], name, held), "coverage_method": coverage_method(),
+            "coverage": coverage, "coverage_method": coverage_method(),
             "history": {"available": hist is not None, "first_day": (hist or {}).get("days", [None])[0] if hist else None,
                         "last_day": (hist or {}).get("days", [None])[-1] if hist else None,
                         "trend_share": TREND_SHARE, "layers": trends(hist)}}

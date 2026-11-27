@@ -72,7 +72,7 @@ READ_STATES = ("fresh", "late")
 KEYED_ON = "subject_id, else id"              # kit history.key(), from kit 0.6.0
 BEFORE_KEYING = "state-before-subject-id.json.gz"
 # COP's own marks on an item change with the rest of the picture, not with the item: no change at all.
-VOLATILE = ("published_at", "cop_pick", "cop_stale", "cop_strength", "cop_strength_text")
+VOLATILE = ("published_at", "cop_pick", "cop_stale", "cop_strength", "cop_strength_text", "cop_cells")
 
 
 def program_of(feature: dict) -> str | None:
