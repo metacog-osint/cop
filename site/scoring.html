@@ -356,6 +356,28 @@
     </ul>
   </section>
 
+  <section class="doc-box" id="cells" aria-labelledby="cells-h">
+    <h2 id="cells-h">Grid cells</h2>
+    <p>Every item on COP's snapshot carries <code>cop_cells</code>: the cells of one worldwide grid that its place
+      covers, so items from different layers can be read together by place as well as by country. The grid is
+      <a href="https://h3geo.org/">H3</a> at resolution 2, cells of about 87,000 km&sup2; (some 158 km a side), the grid
+      Noisefloor's regions already use. COP computes the cells itself as it reads each feed; no program sends them.</p>
+    <ul>
+      <li><strong>A point</strong> gets the one cell it lies in, the same cell H3's own software gives. A set of points
+        gets the cell of each.</li>
+      <li><strong>An area or a line</strong> gets every cell it overlaps, by its outline as the map draws it. An outline
+        that only runs along a cell's edge, such as another program's own H3 cell, does not take the neighbouring cells:
+        for this test each cell is shrunk by 0.2%, about 300 m.</li>
+      <li><strong>A point that stands for a wider place gets no cell.</strong> An item placed only by its country, its
+        province or state, or a zone, is drawn at a label point, and that point is not a place: such items carry an
+        empty list, so a join by cell never meets them there. They still join by <code>countries</code>.</li>
+      <li><strong>No place, no cell.</strong> An item with no geometry carries an empty list.</li>
+    </ul>
+    <p>The cell outlines are stored with COP's code (<code>tools/data/h3-res2.json</code>, written from h3-py, the H3
+      project's Python library), and a test checks COP's cells against H3's on 3,000 points. A cell says where an item
+      is; it is not a measurement and adds nothing to any tier, pick or direction.</p>
+  </section>
+
   <section id="sources" aria-labelledby="sources-h">
     <h2 id="sources-h">Where the rules live</h2>
     <p>COP's code is public at <a href="https://github.com/metacog-osint/cop">github.com/metacog-osint/cop</a>. The

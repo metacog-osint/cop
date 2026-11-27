@@ -11,6 +11,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCRIPTS = [
     "test_snapshot.py",
+    "test_cells.py",
     "test_agent_index.py",
     "test_gate.py",
     "test_suite_watch.py",
