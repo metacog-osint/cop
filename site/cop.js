@@ -8,6 +8,7 @@
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";
 import { withCountryNames } from "./country-names.js";
+import { orderPicks, risingNote } from "./pick-order.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -110,7 +111,8 @@ for (const f of today.features) {
 const BY_ID = new Map(today.features.map((f) => [f.properties.id, f]));
 // A join's row (triage, for example) names its countries, or is an item of the picture that does.
 const rowTitle = (row) => withCountryNames(row.title, row.countries || (BY_ID.get(row.id) || { properties: {} }).properties.countries);
-const PICKS = picksDoc.picks;
+// A pick in a place read as Rising is listed first and says so (pick-order.js); numbers follow the order shown.
+const PICKS = orderPicks(picksDoc.picks, direction);
 const PICK_OF = new Map(PICKS.map((p) => [p.id, p]));
 // Watchfloor and Context both read GDELT, so COP counts them as one voice per zone (15 Nov 2026): a pick of that voice
 // carries every reading of it in `readings` (its own first), each still its own program's item. READING_OF maps the
@@ -572,7 +574,8 @@ function rowFor(f, cls = "row", fly = true) {
         p.cop_stale ? " · no current data" : null),
       pick && cls === "pick" && otherReadings(pick).length
         ? h("span", { class: "pick-meta", text: `Same GDELT coverage: ${otherReadings(pick).map(readingText).join("; ")}` })
-        : null)));
+        : null,
+      pick && cls === "pick" && risingNote(pick) ? h("span", { class: "pick-meta", text: risingNote(pick) }) : null)));
 }
 // A warning's row says whose judgment it is and how long it stands. Warnings are tier "warning": a forecast or an
 // assessment by contract (the kit's linter refuses an observation at that tier), never a measurement, never a pick.
