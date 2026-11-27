@@ -170,9 +170,9 @@ function coverageNote(method) {
     + "for the place at this snapshot, from programs and sources read on time; stale copies and items their program "
     + "says have ended are not counted. A source that watches a place but has nothing to report there is missed, so "
     + "each count is a lower bound, and it says nothing about how good the sources are or how often they report. "
-    + "Party claims and state media are listed but set aside: they never raise a place's class. Sources the suite "
-    + "makes itself (a program's own reading, computation or model, such as Vis's weather forecasts) are not about "
-    + "the place, so they are listed as not counted. ",
+    + "Party claims and state media are listed but set aside: they never raise a place's class. A source that is a "
+    + "program's own reading or computation, a model or a machine summary (a weather model Vis reads, or an AI "
+    + "summary, for example) is not a report about the place, so it is listed as not counted. ",
     h("a", { href: `${url}#the-coverage-table`, rel: "noopener", text: "How coverage is counted" }));
 }
 function coverageTable(cov, names) {
@@ -209,7 +209,7 @@ function coverageBox(row, method, names) {
         h("span", { class: "rr-item-meta", text: `${ASIDE[g.why] || g.why} · carried by ${progNames(g.programs, names)}` })))));
   }
   if (notCounted(row).length) {
-    kids.push(h("p", { class: "rr-meta pl-aside", text: "Not counted, the suite's own sources:" }),
+    kids.push(h("p", { class: "rr-meta pl-aside", text: "Not counted, not a report about the place (a program's own reading, a model or a machine summary):" }),
       h("ul", { class: "rr-items" }, notCounted(row).map((g) => h("li", {}, h("span", { text: g.label }),
         h("span", { class: "rr-item-meta", text: `Carried by ${progNames(g.programs, names)}` })))));
   }

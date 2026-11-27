@@ -298,9 +298,10 @@
       a source's independence group, else its publisher, so GDELT counts once however many programs read it. Only items
       read on time count: not a stale copy, not an item whose own source its program could not read, and not an item
       its program says has ended or that is past its valid-until time. Sources of items resting only on a party's claim
-      or on state media, and state-owned media, are listed but set aside and never raise a place's class. Sources the
-      suite makes itself (a program's own reading, computation or model, such as Vis's weather forecasts) are not about
-      the place: they are listed as not counted and never raise a place's class either. The count is
+      or on state media, and state-owned media, are listed but set aside and never raise a place's class. A source that
+      is a program's own reading or computation, a model or a machine summary (a weather model Vis reads, or an AI
+      summary, for example) is not a report about the place: it is listed as not counted and never raises a place's
+      class either. The count is
       made from the sources behind the items COP holds for the place at this snapshot, so a source that watches a
       place but has nothing to report there is missed: each count is a lower bound, and it says nothing about how good
       the sources are. The file is <a href="data/places/coverage.json">coverage.json</a>; the rule is the kit's

@@ -156,7 +156,7 @@ class Place(unittest.TestCase):
         self.assertEqual((gulf["class"], gulf["independent"]), ("no_independent", 0))
         self.assertEqual([g["id"] for g in gulf["set_aside"]], ["example-ministry"])
         self.assertEqual(gulf["not_counted"], [])
-        # Only the suite's own source read there: listed as not counted, and the program is named.
+        # Only a derived source read there: listed as not counted, and the program is named.
         vis = at_hormuz(sourced("vis:fc:IR", "vis", ["vis"], countries=["IR"]))
         vis["properties"]["sources"][0]["source_type"] = "derived"
         snap["features"] = [vis]
