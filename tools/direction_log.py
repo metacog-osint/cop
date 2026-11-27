@@ -2,7 +2,7 @@
 
     python tools/direction_log.py --log out/direction-log.jsonl --direction site/data/direction.json --memory out/memory
 
-Rule adopted by Tom, 21 Nov 2026 (ideas#126). Each Monday the first build before 06:00 UTC writes one "call" line per
+Rule in force since 21 Nov 2026. Each Monday the first build before 06:00 UTC writes one "call" line per
 place: the word, each layer's state and the numbers behind its test, read from data through Sunday. Ten days after that
 Monday a "followup" line per place holds the same layers' numbers for that Monday through Sunday. A week whose Monday
 window was missed gets one "missed" line, so a gap shows. Words before the first locked week are never logged.

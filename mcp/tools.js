@@ -18,6 +18,20 @@ const MEASURED_NOTE =
 
 export class ToolError extends Error {}
 
+// The kit's framework tags and topic key, each a list on every item (tools/agent_index.py TAGS): PMESII-PT
+// operational variables, the information environment's aspects, ASCOPE civil considerations, and CISA's National
+// Critical Functions (`ncf`), the suite's topic key.
+export const TAGS = ["pmesii_pt", "ie_aspect", "ascope", "ncf"];
+export const SAME_TOPIC_MAX = 10;
+const TAG_NOTE =
+  "pmesii_pt, ie_aspect and ascope are how each program files its items under the doctrine frameworks (the kit's " +
+  "vocab/frameworks.json); ncf is the topic key, CISA's National Critical Functions used as a list of topics " +
+  "(vocab/infrastructure.json). They say what an item is about, not how serious it is.";
+const SAME_TOPIC_NOTE =
+  "Items from other programs that carry one of this item's ncf topic keys, so the same topic in another layer. A " +
+  "shared key is how the programs file their items; it does not mean the events are linked, that one caused the " +
+  "other, or that anything will follow. Read each item on its own terms.";
+
 // Index rows are columnar ({fields, rows}). The hot path filters the raw arrays by column number and builds objects
 // only for the rows it returns: turning all ~1,000 rows into objects first cost more CPU than the search itself.
 // Columns listed in `codes` (program, kind, tier, status_class, us_person_data, stale; 15 Nov 2026; and
@@ -81,7 +95,7 @@ function attributionFor(index, programIds) {
   return out;
 }
 
-// An item past its own valid_until is expired (ideas#164, 24 Nov 2026): its program still lists it, but what it
+// An item past its own valid_until is expired (since 24 Nov 2026): its program still lists it, but what it
 // reports no longer holds. Every row says so, judged at the time of the call, since the snapshot is up to 2 h old.
 export function isExpired(validUntil, now) {
   const t = Date.parse(validUntil || "");
@@ -117,7 +131,9 @@ export function suiteStatus(programs, now) {
       "and shows its last good copy. Planned programs publish nothing yet. page_check is the hub's last site check " +
       "of the program's page (opened in headless Chrome twice a day): ok false means the page failed to load, run " +
       "its scripts or draw its map, whatever its data says; null means the check does not cover that page or was " +
-      "not readable at COP's last build.",
+      "not readable at COP's last build. in_cop.refresh is the program's expected schedule (every_hours, runs, UTC " +
+      "start times), its last update as COP read it and status: on_time, or late when the last update is more than " +
+      "late_after_hours old at COP's build (a run missed), or not_read; the same table is on the page /refresh.html.",
     page_check: programs.page_check ?? null,
     programs: programs.programs.map((p) => ({
       id: p.id,
@@ -177,6 +193,12 @@ export function searchItems(index, args, now) {
   const limit = Math.min(Math.max(1, a.limit ?? LIMIT_DEFAULT), LIMIT_MAX);
   const offset = Math.max(0, Math.floor(a.offset ?? 0));
   const includeExpired = Boolean(a.include_expired);
+  const tagWants = tagFilters(index, a);
+  const groupBy = a.group_by == null ? null : String(a.group_by);
+  if (groupBy !== null && !TAGS.includes(groupBy)) throw new ToolError(`group_by must be one of ${TAGS.join(", ")}.`);
+  if (groupBy !== null && cols(index)[groupBy] === undefined) {
+    throw new ToolError(`This snapshot's index carries no ${groupBy} column, so it cannot be grouped by it.`);
+  }
 
   const C = cols(index);
   const wantPrograms = programs && programs.map((p) => stored(index, "program", p));
@@ -195,6 +217,7 @@ export function searchItems(index, args, now) {
     if (text && !((r[C.title] || "").toLowerCase().includes(text) || (r[C.id] || "").toLowerCase().includes(text))) {
       continue;
     }
+    if (tagWants.length && !tagWants.every(([col, fits]) => fits(r[col]))) continue;
     if (since !== null) {
       const t = Date.parse(r[C.data_as_of] || r[C.published_at] || "");
       if (!(t >= since)) continue;
@@ -211,6 +234,7 @@ export function searchItems(index, args, now) {
     hits.push([rank(r[C.tier]), km ?? 0, String(r[C.data_as_of] || ""), String(r[C.id]), r, km]);
   }
   hits.sort((x, y) => x[0] - y[0] || x[1] - y[1] || (y[2] < x[2] ? -1 : y[2] > x[2] ? 1 : 0) || (x[3] < y[3] ? -1 : 1));
+  const groups = groupBy === null ? null : groupCounts(index, groupBy, hits.map((h) => h[4]));
   // Paging (17 Nov 2026): offset skips that many matches in this order, so offset 50 then 100 walks every match.
   const page = hits.slice(offset, offset + limit).map((h) => {
     const o = toObject(index, h[4]);
@@ -231,9 +255,94 @@ export function searchItems(index, args, now) {
         }
       : {}),
     order: near ? "warnings, then anomalies, then routine; nearest first within each" : "warnings, then anomalies, then routine; newest first within each",
+    ...(groups
+      ? {
+          group_by: groupBy,
+          groups,
+          groups_note:
+            `Every match counted under each ${groupBy} value it carries, so an item with two values counts twice ` +
+            "and the counts can add up to more than matched; untagged counts matches with none. Counts of items, " +
+            "never of measurements added together. " + TAG_NOTE,
+        }
+      : {}),
     note: MEASURED_NOTE,
     items: page.map((r) => publicRow(r, now)),
     attribution: attributionFor(index, page.map((r) => r.program)),
+  };
+}
+
+// A tag filter: [column number, does a stored cell fit]. A row fits when it carries any of the values asked for;
+// several tags must all fit. A value outside the kit's vocabulary is refused, naming the allowed ones.
+function tagFilters(index, a) {
+  const C = cols(index);
+  const out = [];
+  for (const k of TAGS) {
+    if (a[k] == null) continue;
+    const want = [].concat(a[k]).map(String);
+    const vocab = (index.tag_vocab || {})[k];
+    const bad = vocab ? want.filter((v) => !vocab.includes(v)) : [];
+    if (bad.length) throw new ToolError(`Unknown ${k} value "${bad[0]}". Values: ${vocab.join(", ")}.`);
+    if (C[k] === undefined) throw new ToolError(`This snapshot's index carries no ${k} column, so it cannot filter by it.`);
+    const list = (index.codes || {})[k];
+    if (list) {
+      const fit = list.map((vals) => (vals || []).some((v) => want.includes(v)));
+      out.push([C[k], (cell) => fit[cell] === true]);
+    } else out.push([C[k], (cell) => (cell || []).some((v) => want.includes(v))]);
+  }
+  return out;
+}
+
+function tagValues(index, k, cell) {
+  const list = (index.codes || {})[k];
+  return (list ? list[cell] : cell) || [];
+}
+
+function groupCounts(index, k, rows) {
+  const C = cols(index);
+  const n = new Map();
+  for (const r of rows) {
+    const vals = tagValues(index, k, r[C[k]]);
+    for (const v of vals.length ? new Set(vals) : ["untagged"]) n.set(v, (n.get(v) || 0) + 1);
+  }
+  return [...n].map(([value, count]) => ({ value, count })).sort((x, y) => y.count - x.count || (x.value < y.value ? -1 : 1));
+}
+
+// Items in other programs' layers that share one of this row's ncf topic keys: warnings, then anomalies, then
+// routine; newest first. Expired items are left out, as search_items does by default.
+export function sameTopic(index, row, now) {
+  const C = cols(index);
+  const keys = row.ncf || [];
+  if (C.ncf === undefined || !keys.length) return { ncf: keys, matched: 0, items: [], note: SAME_TOPIC_NOTE };
+  const tiers = decoders(index)[C.tier];
+  const progs = decoders(index)[C.program];
+  const hits = [];
+  for (const r of index.rows) {
+    const program = progs ? progs[r[C.program]] : r[C.program];
+    if (program === row.program) continue;
+    const shared = tagValues(index, "ncf", r[C.ncf]).filter((v) => keys.includes(v));
+    if (!shared.length) continue;
+    if (C.valid_until !== undefined && isExpired(r[C.valid_until], now)) continue;
+    hits.push([TIER_RANK[tiers ? tiers[r[C.tier]] : r[C.tier]] ?? 9, String(r[C.data_as_of] || ""), String(r[C.id]), r, shared]);
+  }
+  hits.sort((x, y) => x[0] - y[0] || (y[1] < x[1] ? -1 : y[1] > x[1] ? 1 : 0) || (x[2] < y[2] ? -1 : 1));
+  const byProgram = {};
+  for (const h of hits) {
+    const p = progs ? progs[h[3][C.program]] : h[3][C.program];
+    byProgram[p] = (byProgram[p] || 0) + 1;
+  }
+  return {
+    ncf: keys,
+    matched: hits.length,
+    by_program: byProgram,
+    items: hits.slice(0, SAME_TOPIC_MAX).map((h) => {
+      const o = toObject(index, h[3]);
+      return { id: o.id, program: o.program, kind: o.kind, tier: o.tier, title: o.title, data_as_of: o.data_as_of,
+        countries: o.countries, link: o.link, shared_ncf: h[4] };
+    }),
+    ...(hits.length > SAME_TOPIC_MAX
+      ? { more: `${hits.length - SAME_TOPIC_MAX} more; search_items with ncf ${JSON.stringify(keys)} lists them all` }
+      : {}),
+    note: SAME_TOPIC_NOTE,
   };
 }
 
@@ -245,7 +354,7 @@ export function findRow(index, id) {
   return r ? toObject(index, r) : null;
 }
 
-// --- lane records (ideas#330) ---------------------------------------------------------------------------------------
+// --- lane records ----------------------------------------------------------------------------------------------------
 
 // The lane an item belongs to (lanes.json, mirrors tools/lane_log.py lane_for): the first lane whose match fits, a
 // lane with id prefixes before its program's catch-all.
@@ -272,6 +381,8 @@ export function laneLine(lanes, program, id) {
     scored: lane.scored ?? 0,
     method_version: lane.method_version ?? null,
     replay: lane.replay ? lane.replay.text : null,
+    // Another program's own record of this lane's items (Verdict's of Vis's forecasts): a link, never its figures.
+    scored_elsewhere: lane.scored_elsewhere ?? null,
   };
 }
 
@@ -279,8 +390,12 @@ export const LANE_NOTE =
   "A lane is one kind of item from one program. Its record counts what it flagged and, once Verdict scores them, " +
   "how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: no " +
   "rate or skill figure before 30 independently scored items, and the pick order does not change. A replay figure " +
-  "is labelled replay and comes from a labelled past set, not from live items. A record describes how a " +
-  "measurement has behaved; it is not a warning and gives no likelihood to any item, so never present it as one.";
+  "is labelled replay and comes from a labelled past set, not from live items. Vis's lane is scored outside the " +
+  "lane records: Verdict scores Vis's forecasts against METAR observations in its own record (scored_elsewhere " +
+  "links it). COP restates none of its figures: cite them from that record, where rows with too few forecasts " +
+  "are marked as such, never as a lane count, and never add them to one. A record " +
+  "describes how a measurement has behaved; it is not a warning and gives no likelihood to any item, so never " +
+  "present it as one.";
 
 export function laneRecord(lanes, args, now) {
   if (!lanes) {
@@ -322,6 +437,7 @@ export function getItem(index, shardDoc, id, now, lanes = null) {
       "Feed contract: https://github.com/metacog-osint/tic-doctrine (tic-feed/2). " + MEASURED_NOTE,
     item: feature,
     lane_record: laneLine(lanes, row.program, id),
+    same_topic_in_other_layers: sameTopic(index, row, now),
     attribution: attributionFor(index, [row.program]),
   };
 }
@@ -362,7 +478,7 @@ export function topPicks(index, picks, now, direction = null, lanes = null) {
     }
     items.push(item);
   }
-  // A pick in a Rising place comes first (ideas#164); the rest keep their order. picked_rank is the build's own order.
+  // A pick in a Rising place comes first; the rest keep their order. picked_rank is the build's own order.
   items.forEach((x) => { x.picked_rank = x.rank; });
   items.sort((a, b) => Number(Boolean(b.in_rising_place)) - Number(Boolean(a.in_rising_place)) || a.picked_rank - b.picked_rank);
   items.forEach((x, i) => { x.rank = i + 1; });
@@ -601,7 +717,7 @@ const DAY = 24 * HOUR;
 
 export const EVENT_ORIGINS = ["verdict", "cordon", "orbit", "launch"];
 // From COP's events.json; the rest come from Verdict's calendar. Launch took scheduled launches over from Orbit
-// (Ascent move, ideas#69): while both list them, events.json keeps Launch's copy of a launch both list.
+// (Ascent move): while both list them, events.json keeps Launch's copy of a launch both list.
 const PROGRAM_ORIGINS = new Set(["orbit", "launch"]);
 
 // programEvents: agent/events.json (Launch's scheduled launches; Orbit's until orbit-2.32), or null when the build did not write it.
@@ -674,7 +790,8 @@ export const HISTORY_DAYS_MAX = 31;
 const HISTORY_LIMIT_MAX = 100;
 export const HISTORY_NOTE =
   "What each layer showed for this place, day by day, from COP's daily snapshots (readings: runs of days with the " +
-  "same reading), with what was new, changed or ended from COP's ledger and the programs' own logs (events). A " +
+  "same reading), with what was new, changed or ended (events), each change once: from the program's own log where " +
+  "it keeps one (manifest programs.<id>.events_from), else from COP's ledger. A " +
   "reading is a measurement or report as its program published it, not a warning. days_read counts the days the " +
   "program's feed was read in the range: a day read with no reading here means the program showed nothing for the " +
   "place, while a day not read says nothing. A row with a note cannot be compared with rows outside its period " +

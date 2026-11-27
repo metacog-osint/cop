@@ -1,5 +1,7 @@
 // Place pages: draws site/data/places/<area>.json (tools/place.py). Text goes in as text, never as HTML.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
+import { coverageClass } from "./vendor/tic-doctrine.js";
+import { withCountryNames } from "./country-names.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -51,7 +53,7 @@ async function drawMap(def) {
   let outline, what;
   if (def.kind === "circle") {
     outline = { type: "FeatureCollection", features: [circle(def.center, def.radius_km)] };
-    what = `The area is everything within ${def.radius_km.toLocaleString("en")} km of ${def.center[1].toFixed(2)}° N, ${def.center[0].toFixed(2)}° E, drawn as that circle on the ground, plus items its programs place in ${def.countries.join(", ")}.`;
+    what = `The area is everything within ${def.radius_km.toLocaleString("en")} km of ${def.center[1].toFixed(2)}° N, ${def.center[0].toFixed(2)}° E, drawn as that circle on the ground. Blackout's country outages and Cordon's embassy alerts count here by the country they name instead: ${def.countries.join(", ")}.`;
   } else {
     const world = await getJSON("data/world.geojson");
     outline = { type: "FeatureCollection", features: world.features.filter((f) => def.countries.includes(f.properties.cc)) };
@@ -135,7 +137,7 @@ function layerBox(prog, now, hist, share) {
     h("p", { class: "rr-meta" }, h("span", { class: `st st-${now.state}`, text: STATE[now.state] || now.state }), " · data as of ", timeEl(now.data_as_of)),
     h("p", { class: "pl-now", text: `Now: ${now.items} item${now.items === 1 ? "" : "s"} placed here, ${now.anomalies} unusual against ${name}'s own baseline.` })];
   if (now.top.length) {
-    kids.push(h("ul", { class: "rr-items" }, now.top.map((it) => h("li", {}, h("span", { text: it.title }),
+    kids.push(h("ul", { class: "rr-items" }, now.top.map((it) => h("li", {}, h("span", { text: withCountryNames(it.title, it.countries) }),
       h("span", { class: "rr-item-meta" }, `${it.tier} · data `, timeEl(it.data_as_of, true), it.stale ? " · last good copy" : null, " · ",
         h("a", { href: `./#r=1&i=${encodeURIComponent(it.id)}`, text: "On the map" }))))));
   }
@@ -148,10 +150,114 @@ function layerBox(prog, now, hist, share) {
   return h("section", { class: "rr-layer" }, kids);
 }
 
+// --- coverage (kit format tic-coverage/1) ----------------------------------------------------------------------------
+// How many independent source groups stand behind what COP holds for a place. The class labels and their thresholds
+// are the kit's (coverageClass); the basis is COP's own, stated wherever a row is shown.
+const KIT_LADDER = "https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md";
+const ASIDE = { party_claim: "party claim", state_media: "state media" };
+const progNames = (ids, names) => ids.map((p) => names[p] || p).join(", ");
+const groupsText = (n) => `${n} independent source group${n === 1 ? "" : "s"}`;
+// A table written before kit 0.6.17 has no not_counted list: read it as empty.
+const notCounted = (r) => (Array.isArray(r.not_counted) ? r.not_counted : []);
+function coverageNote(method) {
+  const url = (method && method.url) || KIT_LADDER;
+  return h("p", { class: "rr-meta" },
+    `${coverageClass(3).label}: 3 or more independent source groups. ${coverageClass(1).label}: 1 or 2. `
+    + `${coverageClass(0, 1).label}: none, but COP holds items for the place from sources it sets aside or does not `
+    + "count, so the place was read. "
+    + `${coverageClass(0).label}: COP holds no item for the place from a source read on time. `
+    + "A source group is one publisher, or outlets that share one origin (all of GDELT's readings, for example), "
+    + "counted once however many programs carry it. The count is made from the sources behind the items COP holds "
+    + "for the place at this snapshot, from programs and sources read on time; stale copies and items their program "
+    + "says have ended are not counted. A source that watches a place but has nothing to report there is missed, so "
+    + "each count is a lower bound, and it says nothing about how good the sources are or how often they report. "
+    + "Party claims and state media are listed but set aside: they never raise a place's class. A source that is a "
+    + "program's own reading or computation, a model or a machine summary (a weather model Vis reads, or an AI "
+    + "summary, for example) is not a report about the place, so it is listed as not counted. ",
+    h("a", { href: `${url}#the-coverage-table`, rel: "noopener", text: "How coverage is counted" }));
+}
+// Each layer's own class for each place (tools/place.py layer_coverage): the same count from one program's items alone.
+const SHORT = { several: "Several", few: "1 or 2", no_independent: "None independent", none: "—" };
+function layerGrid(cov, names, order) {
+  if (!cov.places.some((r) => r.layers)) return null;
+  const seen = new Set(cov.places.flatMap((r) => Object.keys(r.layers || {})));
+  const progs = [...order.filter((p) => seen.has(p)), ...[...seen].filter((p) => !order.includes(p)).sort()];
+  const cell = (r, p) => {
+    const l = (r.layers || {})[p];
+    if (!l) return h("td", { class: "pl-cell pl-na", text: "n/a", title: `${names[p] || p} is not one of this problem's layers` });
+    const c = coverageClass(l.independent, (l.set_aside || 0) + (l.not_counted || 0));
+    const off = l.state !== "fresh" && l.state !== "late";
+    return h("td", { class: `pl-cell pl-cov-${c.id}`, text: `${SHORT[c.id] || c.label}${off ? " *" : ""}`,
+      title: `${names[p] || p} in ${r.name}: ${c.label}, ${groupsText(l.independent)}${off ? "; its feed was not read on time in this picture" : ""}` });
+  };
+  return h("div", { class: "pl-layers" },
+    h("h3", { id: "layers-h", text: "By layer" }),
+    h("p", { class: "rr-meta", text: "Each cell is one program's own class for the place, counted the same way from that "
+      + "program's items alone, so a layer with thin coverage shows even where the layers together read several. "
+      + `Several: 3 or more independent source groups. 1 or 2: one or two. None independent: the layer holds items `
+      + "there, but only from sources set aside or not counted. — (Not monitored): the layer holds no item for the "
+      + "place from a source read on time. That includes a program that watches the place and has nothing to report "
+      + "there, so a dash is a lower bound, never proof that nobody watches. n/a: a worldwide problem counts only its "
+      + "own layers. *: the program's feed was not read on time in this picture, so none of its items count. "
+      + "Layers are never added to one another here." }),
+    h("div", { class: "doc-table-wrap" }, h("table", { class: "doc-table pl-grid", "aria-labelledby": "layers-h" },
+      h("thead", {}, h("tr", {}, h("th", { scope: "col", text: "Place" }), progs.map((p) => h("th", { scope: "col", text: names[p] || p })))),
+      h("tbody", {}, cov.places.map((r) => h("tr", {},
+        h("th", { scope: "row" }, h("a", { href: `place.html?area=${encodeURIComponent(r.place)}`, text: r.name })),
+        progs.map((p) => cell(r, p))))))));
+}
+function coverageTable(cov, names, order = []) {
+  if (!cov || !Array.isArray(cov.places)) {
+    return h("p", { class: "note", text: "The coverage table was not built for this picture. That says nothing about any place." });
+  }
+  const rows = cov.places.map((r) => h("tr", {},
+    h("th", { scope: "row" }, h("a", { href: `place.html?area=${encodeURIComponent(r.place)}`, text: r.name })),
+    h("td", { text: coverageClass(r).label }),
+    h("td", { class: "pl-num", text: String(r.independent) }),
+    h("td", { text: progNames(r.programs, names) || "none" }),
+    h("td", { class: "pl-num", text: String(r.set_aside.length) }),
+    h("td", { class: "pl-num", text: String(notCounted(r).length) })));
+  return h("section", { class: "pl-coverage", "aria-labelledby": "coverage-h" },
+    h("h2", { id: "coverage-h", text: "Coverage" }),
+    h("p", { class: "rr-meta" }, "How many independent sources stand behind what COP holds for each place now, counted at the picture built ",
+      timeEl(cov.generated_at), "."),
+    h("div", { class: "doc-table-wrap" }, h("table", { class: "doc-table" },
+      h("thead", {}, h("tr", {}, ["Place", "Coverage", "Independent groups", "Programs", "Set aside", "Not counted"].map((c) => h("th", { scope: "col", text: c })))),
+      h("tbody", {}, rows))),
+    layerGrid(cov, names, order),
+    coverageNote(cov));
+}
+function coverageBox(row, method, names) {
+  const kids = [h("h3", { text: "Coverage" }),
+    h("p", { class: "pl-now" }, h("strong", { text: coverageClass(row).label }),
+      `: ${groupsText(row.independent)} behind what COP holds here now.`)];
+  if (row.groups.length) {
+    kids.push(h("ul", { class: "rr-items" }, row.groups.map((g) => h("li", {}, h("span", { text: g.label }),
+      h("span", { class: "rr-item-meta", text: `Carried by ${progNames(g.programs, names)}` })))));
+  }
+  if (row.set_aside.length) {
+    kids.push(h("p", { class: "rr-meta pl-aside", text: "Set aside, never raising the class:" }),
+      h("ul", { class: "rr-items" }, row.set_aside.map((g) => h("li", {}, h("span", { text: g.label }),
+        h("span", { class: "rr-item-meta", text: `${ASIDE[g.why] || g.why} · carried by ${progNames(g.programs, names)}` })))));
+  }
+  if (notCounted(row).length) {
+    kids.push(h("p", { class: "rr-meta pl-aside", text: "Not counted, not a report about the place (a program's own reading, a model or a machine summary):" }),
+      h("ul", { class: "rr-items" }, notCounted(row).map((g) => h("li", {}, h("span", { text: g.label }),
+        h("span", { class: "rr-item-meta", text: `Carried by ${progNames(g.programs, names)}` })))));
+  }
+  kids.push(coverageNote(method));
+  return h("section", { class: "rr-layer pl-coverage" }, kids);
+}
+
 // --- the page -------------------------------------------------------------------------------------------------------
 async function index() {
   const ix = await getJSON("data/places/index.json");
-  $("body").replaceChildren(h("ul", { class: "pl-index" }, ix.areas.map((a) => h("li", {}, h("a", { href: `place.html?area=${encodeURIComponent(a.area)}`, text: a.name })))));
+  // The coverage table and the programs' names are read beside the list; the list stands without them.
+  const [cov, health] = await Promise.all([getJSON("data/places/coverage.json").catch(() => null), getJSON("data/health.json").catch(() => null)]);
+  const listed = (health && health.config && health.config.programs) || [];
+  const names = Object.fromEntries(listed.map((p) => [p.id, p.name]));
+  $("body").replaceChildren(h("ul", { class: "pl-index" }, ix.areas.map((a) => h("li", {}, h("a", { href: `place.html?area=${encodeURIComponent(a.area)}`, text: a.name })))),
+    coverageTable(cov, names, listed.map((p) => p.id)));
   $("bar-times").replaceChildren("Picture built ", timeEl(ix.snapshot_generated_at));
 }
 async function place(id) {
@@ -162,9 +268,10 @@ async function place(id) {
   const layers = Object.entries(doc.layers).filter(([p, l]) => l.items || (hist.layers && hist.layers[p]));
   const none = Object.entries(doc.layers).filter(([p, l]) => !l.items && !(hist.layers && hist.layers[p])).map(([, l]) => l.name);
   $("body").replaceChildren(
-    doc.definition.kind === "worldwide" ? null : h("figure", { class: "pl-figure" }, h("div", { id: "place-map", class: "pl-map" }), h("figcaption", { id: "map-note", class: "rr-meta" })),
+    doc.definition.kind === "worldwide" ? (doc.definition.counts ? h("p", { class: "rr-meta", text: doc.definition.counts }) : null) : h("figure", { class: "pl-figure" }, h("div", { id: "place-map", class: "pl-map" }), h("figcaption", { id: "map-note", class: "rr-meta" })),
     hist.available ? h("p", { class: "rr-meta", text: `History: closed UTC days ${day(hist.first_day)} to ${day(hist.last_day)}, from COP's daily snapshots, its ledger and the programs' own logs. A day a program was not read has no value, never a zero.` })
       : h("p", { class: "note", text: "COP's history set was not available in this build, so no lines are drawn. That says nothing about the place." }),
+    doc.coverage ? coverageBox(doc.coverage, doc.coverage_method, Object.fromEntries(Object.entries(doc.layers).map(([p, l]) => [p, l.name || p]))) : null,
     ...layers.map(([p, l]) => layerBox(p, l, hist.layers && hist.layers[p], hist.trend_share || 0.8)),
     none.length ? h("p", { class: "rr-meta", text: `Nothing placed here now or since 31 Oct 2026: ${none.join(", ")}.` }) : null);
   $("bar-times").replaceChildren("Picture built ", timeEl(doc.snapshot_generated_at));

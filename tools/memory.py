@@ -14,7 +14,7 @@ A series can change what it counts (Watchfloor's Iran zone went from two countri
 series_scopes.json names the day each new scope starts. Every value of such a series is stamped with its scope in `vs`
 and kept; current_series() hands readers only the newest scope, so a change of scope starts a new series. Since 24 Nov
 2026 Watchfloor's feed states each zone's scope itself (measures.zone_scope, a hash of what the zone counts; catalog
-2026-11-24.1, ideas#241). Memory keeps it per value in `fs`, and a new stated scope starts a new series with no entry in
+2026-11-24.1). Memory keeps it per value in `fs`, and a new stated scope starts a new series with no entry in
 series_scopes.json. A listed entry may name the zone_scope that continues it, so its values stay one series.
 
 An absence counts only when the program was read. A day a program's feed failed is not a gap in its subjects' runs.
@@ -91,7 +91,7 @@ def continues(mem: dict, k: str) -> str | None:
     When a feed starts stating subject_id (contract 2.1: Context and Vis on 24 Nov 2026), its subjects get new keys
     (context:zone:01_Ukraine_Conflict) while their history sits under the key their dated item ids gave before
     (context:01_Ukraine_Conflict). The old key is still what key() makes of the item's id, so it can be found again.
-    Only a record of the same program, itself keyed from its id and begun no later, counts (ideas#205)."""
+    Only a record of the same program, itself keyed from its id and begun no later, counts."""
     r = mem["subjects"].get(k)
     if not r or not r.get("id"):
         return None

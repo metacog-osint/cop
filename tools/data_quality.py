@@ -2,8 +2,7 @@
 
     python tools/data_quality.py [--snapshot URL|FILE] [--health URL|FILE] [--zones FILE] [--state FILE]
 
-Each rule comes from a finding of the suite database review of 24 Nov 2026 (ideas#210, decision 12; built under
-ideas#245). The checks read the bus (today.geojson), COP's health.json and the kit's zone list. They never drop, edit
+Each rule comes from a finding of the suite database review of 24 Nov 2026. The checks read the bus (today.geojson), COP's health.json and the kit's zone list. They never drop, edit
 or hold an item, and they never fail a run: the exit code is 0 whatever they find, so a hit is a warning in the run's
 summary, not an alert mail. Read the hits; a real one becomes an issue on the program (a frozen program's fix waits
 for its own item).
@@ -16,7 +15,7 @@ The rules, each named with the finding it comes from:
   status-no-base a baseline-relative status word (situation_status, status, trend) where the item says its baseline
                  is missing ("insufficient" in status_basis), or an indicator marked present whose signal has a tail
                  but no expected value, no baseline_n and no baseline_ref (F21, Context's "holding").
-  z-zero-base    a z value beside a zero median, expected value or spread, or a z of 1,000 or more (ideas#212, Wake's
+  z-zero-base    a z value beside a zero median, expected value or spread, or a z of 1,000 or more (Wake's
                  Kerch Strait row at z 428571428.6).
   hours-covered  an anomaly or warning whose coverage_fraction is under 0.9: the measurement that stands out covers
                  less than nine tenths of its window (F9, Noisefloor's truncated days). Routine items that state a
@@ -57,7 +56,7 @@ RULES = {
     "expired": "still on the bus after its own valid_until (F19)",
     "source-ended": "its source says it has ended, but it is still emitted (F18)",
     "status-no-base": "a status word with no baseline under it (F21)",
-    "z-zero-base": "a z value on a zero median, expected value or spread (ideas#212)",
+    "z-zero-base": "a z value on a zero median, expected value or spread",
     "hours-covered": f"stands out but covers under {COVERAGE_MIN:.0%} of its window (F9)",
     "rows-low": f"read successfully with under {ROWS_RATIO:.0%} of its usual item count (F4)",
     "zone-unknown": "a zone id that is not a current zone in the kit (F10)",

@@ -3,13 +3,13 @@
     python tools/lane_log.py --log out/lane-log.jsonl --triage site/data/triage.json \
         --three-signal site/data/three-signal.json --direction-log out/direction-log.jsonl --publish site/data
 
-Design adopted by Tom, 24 Nov 2026 (ideas#88; built under ideas#330, steps 1 and 2). A lane is one kind of item from one
+Built 24-25 Nov 2026. A lane is one kind of item from one
 program (config/lanes.json). Each build appends a "flag" line for every item a logged lane flags for the first time,
 before its outcome can be known: the lane, its method version, the item's key and reading, and when the lane's
 horizon ends. The file is append-only; each line carries the SHA-256 of the line before it, and a broken chain stops
 the tool. A method change starts a new segment, and segments are never pooled.
 
-The public record (site/data/lanes.json) holds counts only. Verdict scores the outcomes (ideas#331); until a lane has
+The public record (site/data/lanes.json) holds counts only. Verdict scores the outcomes; until a lane has
 min_scored_for_rate independently scored items it shows no rate or skill figure, and the pick order does not change.
 A record describes how a measurement has behaved. It is not a warning and gives no likelihood to any single item.
 """
@@ -33,6 +33,11 @@ GENESIS = "0" * 64
 NOT_A_WARNING = ("A lane record counts how one kind of item has behaved: how many it flagged and, once Verdict scores "
                  "them, how many a second source confirmed. It is not a warning and gives no likelihood to any item.")
 NO_CHECK = "No outside check yet. COP's ledger keeps every item; this lane gets a record once a second source is named."
+# A lane whose items are true forecasts that another program scores on its own (config scored_elsewhere): the line
+# names who scores them and links that record. It quotes no figure from it, and nothing adds those scores to a lane's.
+SCORED_ELSEWHERE = ("Scored outside the lane records: {by} scores this lane's stored forecasts against {against} in "
+                    "its own record, kept apart from lane records and never added to them. COP's ledger keeps every "
+                    "item.")
 REPLAY_ORDER = ("natural", "tension context", "open")
 
 
@@ -173,12 +178,19 @@ def _segment(records):
     return version, cur, older
 
 
-def _flag_text(n, since, counts, scored):
+# The split is the reading the lane's tool gave each item when it was logged, never an outcome: "unconfirmed" is
+# triage's reading for a single-source dip, while a scored outcome (confirmed, withdrawn or left unconfirmed) is
+# Verdict's. So the line names the tool and words the dip as a dip.
+READERS = {"triage": "triage", "three-signal": "the join"}
+READING_WORDS = {"unconfirmed": "a single-source dip"}
+
+
+def _flag_text(n, since, counts, scored, reader="the lane's tool"):
     if not n:
         return "Nothing flagged yet in this segment."
-    by = ", ".join(f"{v} {k}" for k, v in counts.items())
+    by = ", ".join(f"{v} as {READING_WORDS.get(k, k.replace('_', ' '))}" for k, v in counts.items())
     tail = "none scored yet" if not scored else f"{scored} scored"
-    return f"This lane: {n} flagged since {since} ({by}); {tail}."
+    return f"This lane: {n} flagged since {since}; {reader} read {by} (readings when logged, not outcomes); {tail}."
 
 
 def _direction(lane, log_records):
@@ -224,10 +236,15 @@ def records(cfg, log_records, direction_records, rep, now):
             since = _day(cur[0]["logged_at"]) if cur else None
             counts = _counts(cur)
             row |= {"flagged": len(cur), "since": since, "by_reading": counts, "method_version": version,
-                    "older_segments": older, "text": _flag_text(len(cur), since, counts, 0)}
+                    "older_segments": older, "text": _flag_text(len(cur), since, counts, 0, READERS.get(src, "the lane's tool"))}
         else:
             row |= {"flagged": None, "since": None, "by_reading": {}, "method_version": None, "older_segments": [],
                     "text": NO_CHECK}
+        elsewhere = lane.get("scored_elsewhere")
+        row["scored_elsewhere"] = None
+        if isinstance(elsewhere, dict) and not src:
+            row["scored_elsewhere"] = {k: elsewhere.get(k) for k in ("by", "against", "label", "record", "data")}
+            row["text"] = SCORED_ELSEWHERE.format(by=elsewhere["by"], against=elsewhere["against"])
         row["replay"] = replay if lane["id"] == "blackout-outage-triage" else None
         out.append(row)
     return {"schema": PUBLIC_SCHEMA, "generated_at": _iso(now), "what": cfg.get("about"), "not_a_warning": NOT_A_WARNING,

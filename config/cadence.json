@@ -1,0 +1,26 @@
+{
+  "basis": "When each program is started, from its scheduler. Times are UTC start times; a run's update lands some minutes later. Most programs are started by the suite's dispatcher (tic-dispatch), because GitHub's own scheduled runs fire hours late for these repositories; their own crons are the fallback.",
+  "late_rule": "Late when the last update is more than two expected intervals plus half an hour old at the time of COP's picture: at least one run was missed, allowing for the time a run takes.",
+  "cop": {"every_hours": 2, "runs": "20 past every even hour", "scheduler": "tic-dispatch"},
+  "programs": {
+    "watchfloor": {"every_hours": 24, "last_update": "data", "scheduler": "Cloud Scheduler",
+                   "runs": "Reads GDELT every 15 minutes; its items are whole UTC days, closed after 03:15 the next day"},
+    "context": {"every_hours": 12, "runs": "00:15 and 12:15", "scheduler": "Cloud Scheduler"},
+    "vigil": {"every_hours": 1, "scheduler": "Cloudflare Worker cron",
+              "runs": "Its worker wakes at 15 and 45 past each hour and reads each source when it is due: most hourly, others every 6 hours or daily"},
+    "noisefloor": {"every_hours": 24, "scheduler": "tic-dispatch",
+                   "runs": "Once a UTC day: the ADS-B day job from 04:25, the satellite and ground-station jobs from 04:50 to 22:30"},
+    "elements": {"every_hours": 0.5, "runs": "05 and 35 past every hour", "scheduler": "tic-dispatch"},
+    "cordon": {"every_hours": 0.5, "runs": "10 and 40 past every hour", "scheduler": "tic-dispatch"},
+    "vis": {"every_hours": 12, "runs": "08:25 and 20:25, after the 00Z and 12Z ensembles", "scheduler": "tic-dispatch"},
+    "blackout": {"every_hours": 4, "runs": "01:45, 05:45, 09:45, 13:45, 17:45 and 21:45", "scheduler": "tic-dispatch"},
+    "headwind": {"every_hours": 6, "runs": "03:50, 09:50, 15:50 and 21:50", "scheduler": "tic-dispatch"},
+    "orbit": {"every_hours": 6, "runs": "00:55, 06:55, 12:55 and 18:55; the satellite catalog once a day at 17:30",
+              "scheduler": "tic-dispatch"},
+    "launch": {"every_hours": 6, "runs": "01:15, 07:15, 13:15 and 19:15, after Orbit", "scheduler": "tic-dispatch"},
+    "undertow": {"every_hours": 6, "runs": "02:30, 08:30, 14:30 and 20:30", "scheduler": "tic-dispatch"},
+    "wake": {"every_hours": 6, "runs": "04:55, 10:55, 16:55 and 22:55; IMF PortWatch itself publishes weekly",
+             "scheduler": "tic-dispatch"},
+    "relief": {"every_hours": 6, "runs": "02:00, 08:00, 14:00 and 20:00", "scheduler": "tic-dispatch"}
+  }
+}
