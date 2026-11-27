@@ -4,7 +4,7 @@ Once a UTC day, at the first build at or after BRIEF_HOUR (12:00 UTC, 6 AM CST),
 the snapshot it has just built: up to four sentences on what changed, each the strongest new or changed measurement
 of one program, read against that program's own baseline, and one sentence on a dated event ahead. Every sentence
 links to the item behind it and names its source publisher. A brief is never replaced: a day that already has one
-keeps it, and every past brief stays on the page and in the feed (Tom, 23 Nov 2026, ideas#259).
+keeps it, and every past brief stays on the page and in the feed (since 23 Nov 2026).
 
 What a sentence may say (the voice rule, as for COP's joins): the item's own title, the baseline its program measured
 it against, and who published the data. Never a cause, an intent, a likelihood or a warning in COP's voice. Vis

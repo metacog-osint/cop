@@ -16,10 +16,10 @@ It checks seven things the picture cannot say about itself:
      only when the snapshot is the live one, or when --sitecheck names a file or address, so tests stay offline.
      A site check that cannot be read is a problem, never a quiet pass.
   6. Verdict's scores.json (the public forecast ledger's scorecard) has a generated_at older than --verdict-hours, 48 h
-     (ideas#161, 23 Nov 2026). Read only when the snapshot is the live one, or when --verdict names a file or address.
+     (since 23 Nov 2026). Read only when the snapshot is the live one, or when --verdict names a file or address.
      A scorecard that cannot be read is a problem, never a quiet pass.
   7. A source a program's feed lists in its own health block was not read (health.json's sources.not_read), on
-     UNREAD_RUNS runs in a row by the feed's own failure count, or with no count given (ideas#164, 24 Nov 2026). One
+     UNREAD_RUNS runs in a row by the feed's own failure count, or with no count given (since 24 Nov 2026). One
      failed run is left to the next, so a passing timeout does not mail anyone.
   A source named in config/watch_accepted.json (a reason, a state, a phrase its detail must hold, and an `until` date)
   is not a problem while it reads exactly as documented and the date has not passed: the run says so on its own line

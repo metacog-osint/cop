@@ -80,7 +80,7 @@ class Build(unittest.TestCase):
         self.assertEqual(snap.strength({}, rules), (None, None, None, None))
 
     def test_cordon_compares_like_with_like(self):
-        """ideas#164: each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
+        """Each scale has its own rule and label; a CDC notice never ranks as a travel advisory."""
         cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
         item = lambda name, v: {"signal": {"name": name, "value": v}, "measures": {"level": v}}
         state = snap.strength(item("State Dept advisory level 1-4", 2), cd["strength"])
@@ -93,7 +93,7 @@ class Build(unittest.TestCase):
                          "a level on no named scale has no strength")
 
     def test_cordon_pick_admits(self):
-        """ideas#164: Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours (Tom, 23 Nov)."""
+        """Canada, FCDO and SafeTravel only on a level move; a CDC notice for 72 hours."""
         from datetime import datetime, timezone
         cd = next(p for p in snap.CONFIG["programs"] if p["id"] == "cordon")
         now = datetime(2026, 11, 24, 12, tzinfo=timezone.utc)
@@ -224,7 +224,7 @@ class Build(unittest.TestCase):
         self.assertFalse(snap.registered("no-such-source"))
 
     def test_source_health_on_for_every_program_but_those_without_a_health_block(self):
-        # ideas#164: every program whose feed carries a per-source health block reads it. Watchfloor and Launch
+        # Every program whose feed carries a per-source health block reads it. Watchfloor and Launch
         # publish none today; turn it on for them when they do.
         off = {p["id"] for p in snap.CONFIG["programs"] if not p.get("source_health")}
         self.assertEqual(off, {"watchfloor", "launch"})
