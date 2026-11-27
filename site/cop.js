@@ -8,6 +8,7 @@
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";
 import { withCountryNames } from "./country-names.js";
+import * as shareCard from "./share-card.js";
 import { orderPicks, risingNote } from "./pick-order.js";
 
 const T = window.TicTime;
@@ -556,8 +557,32 @@ function renderCard(f) {
           onclick: () => { state.hereAll = true; renderCard(f); } }, `Show ${here.length - shown.length} more`))] : []))));
   }
   const href = p.link || (p.visual && p.visual.url) || prog.site;
+  card.append(shareBlock(p, prog, [...badges.children].map((e) => e.textContent), pubs));
   card.append(h("a", { class: "card-open", href, rel: "noopener" }, `Open in ${prog.name} →`));
   renderTimes(card);
+}
+
+// A PNG of this item in two sizes (site/share-card.js): its status words as the card shows them, its data time with
+// the zone named, the publishers, each source's credit and licence, and the link that opens this item here.
+function shareInfo(p, prog, status, pubs) {
+  const label = asOfDateLabel(p);
+  const asOf = !p.data_as_of ? "" : label ? `${label} (UTC date; the source gives no time of day)`
+    : T ? T.format(p.data_as_of, { year: true }) : p.data_as_of;
+  const credits = [...new Map((p.sources || []).filter((x) => x && x.publisher)
+    .map((x) => [x.publisher, x.licence ? `${x.publisher} (${x.licence})` : x.publisher])).values()];
+  return {
+    brand: "COP · The Intelligence Company", program: prog.name, family: prog.family, color: colours(p.cop_program, false).fill,
+    title: p.title, status: status.slice(0, 3), asOf,
+    sources: pubs.slice(0, 3).join("; ") + (pubs.length > 3 ? ` and ${pubs.length - 3} more` : ""),
+    credit: `${prog.name}, The Intelligence Company.${credits.length ? ` Credit: ${credits.join("; ")}.` : ""} Full credits at the link.`,
+    url: `${location.origin}${location.pathname}#i=${encodeURIComponent(p.id)}`,
+  };
+}
+function shareBlock(p, prog, status, pubs) {
+  const name = `cop-${String(p.id).replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)}`;
+  return h("div", { class: "share" }, h("span", { class: "share-h", text: "Share card (PNG):" }),
+    ...Object.entries(shareCard.SIZES).map(([k, z]) => h("button", { type: "button", class: "chip",
+      onclick: () => shareCard.save(shareInfo(p, prog, status, pubs), k, name) }, z.label)));
 }
 
 // ---------------------------------------------------------------- panel
