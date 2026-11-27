@@ -120,6 +120,79 @@ class Memory(unittest.TestCase):
         self.assertNotIn("v", leak, "a signal does not make a subject a series")
 
 
+class Backfill(unittest.TestCase):
+    """tools/memory.py backfill_sv: earlier `sv` values from the archived daily snapshots, additive only."""
+
+    @staticmethod
+    def snap(day, value, data_day=None, state="fresh", sid=True, stale=False, gen="T22:00:00Z"):
+        p = {"id": f"wake:chokepoint:x:{day}", "cop_program": "wake", "data_as_of": f"{data_day or day}T00:00:00Z",
+             "measures": {"n_total_7d": 5}, "signal": {"name": "transits", "value": value, "tail": "low"}}
+        if sid:
+            p["subject_id"] = "wake:chokepoint:x"
+        if stale:
+            p["cop_stale"] = True
+        return {"generated_at": f"{day}{gen}", "cop_programs": {"wake": {"state": state}},
+                "features": [{"type": "Feature", "geometry": None, "properties": p}]}
+
+    def archive(self, folder, snaps):
+        for name, snap in snaps.items():
+            with gzip.open(Path(folder) / f"{name}.geojson.gz", "wt", encoding="utf-8") as fh:
+                json.dump(snap, fh)
+
+    def test_adds_earlier_values_and_never_replaces_one(self):
+        mem = M.empty()
+        mem["subjects"]["wake:chokepoint:x"] = {"p": "wake", "first": "2026-11-18", "spans": [["2026-11-18", "2026-11-27"]],
+                                               "at": [], "v": {"2026-11-20": 5}, "sv": {"2026-11-20": 99}}
+        before = json.loads(json.dumps(mem))
+        with tempfile.TemporaryDirectory() as tmp:
+            self.archive(tmp, {
+                "2026-11-19": self.snap("2026-11-19", 1),
+                "2026-11-20": self.snap("2026-11-20", 2),                 # the memory holds this day: kept
+                "2026-11-21": self.snap("2026-11-21", 3, data_day="2026-11-19"),   # a later build of 19 Nov wins
+                "2026-11-22": self.snap("2026-11-22", 4, state="dead"),   # the program was not read
+                "2026-11-23": self.snap("2026-11-23", 5, stale=True),     # a carried stale copy
+                "2026-11-24": self.snap("2026-11-24", float("nan")),
+            })
+            counts = M.backfill_sv(mem, tmp)
+        r = mem["subjects"]["wake:chokepoint:x"]
+        self.assertEqual(r["sv"], {"2026-11-19": 3, "2026-11-20": 99})
+        self.assertEqual(counts["wake"], {"subjects": 1, "values": 1, "left_out": 0, "enough": 0})
+        for field in ("v", "spans", "first", "at"):
+            self.assertEqual(r[field], before["subjects"]["wake:chokepoint:x"][field])
+        self.assertEqual((mem["days"], mem["updated_at"]), (before["days"], before["updated_at"]))
+
+    def test_an_older_key_goes_to_the_record_that_continues_it_and_an_unknown_subject_is_left_out(self):
+        mem = M.empty()
+        mem["subjects"]["wake:chokepoint:x"] = {"p": "wake", "first": "2026-11-18", "spans": [], "at": [],
+                                               "id": "wake:chokepoint:x:2026-11-18"}          # keyed from its id
+        mem["subjects"]["wake:zone:x"] = {"p": "wake", "first": "2026-11-24", "spans": [], "at": [],
+                                         "id": "wake:chokepoint:x:2026-11-24"}               # continues it
+        self.assertEqual(M.continues(mem, "wake:zone:x"), "wake:chokepoint:x")
+        other = self.snap("2026-11-20", 7)
+        other["features"][0]["properties"].update(id="wake:chokepoint:y:2026-11-20", subject_id="wake:chokepoint:y")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.archive(tmp, {"2026-11-19": self.snap("2026-11-19", 1, sid=False), "2026-11-20": other})
+            counts = M.backfill_sv(mem, tmp)
+        self.assertEqual(mem["subjects"]["wake:zone:x"]["sv"], {"2026-11-19": 1})
+        self.assertNotIn("sv", mem["subjects"]["wake:chokepoint:x"])
+        self.assertNotIn("wake:chokepoint:y", mem["subjects"], "no record is made")
+        self.assertEqual(counts["wake"]["left_out"], 1)
+
+    def test_dry_run_writes_nothing(self):
+        mem = M.empty()
+        mem["subjects"]["wake:chokepoint:x"] = {"p": "wake", "first": "2026-11-18", "spans": [], "at": []}
+        with tempfile.TemporaryDirectory() as tmp:
+            arch, assets = Path(tmp) / "a", Path(tmp) / "m"
+            arch.mkdir()
+            self.archive(arch, {"2026-11-19": self.snap("2026-11-19", 1)})
+            path = M.save(assets, mem)
+            raw = path.read_bytes()
+            self.assertEqual(M.main(["--backfill-sv", str(arch), "--assets", str(assets), "--dry-run"]), 0)
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(M.main(["--backfill-sv", str(arch), "--assets", str(assets)]), 0)
+            self.assertEqual(M.load(assets)["subjects"]["wake:chokepoint:x"]["sv"], {"2026-11-19": 1})
+
+
 class Snapshot(unittest.TestCase):
     def test_the_snapshot_reads_the_last_memory_and_survives_without_it(self):
         with tempfile.TemporaryDirectory() as t:
