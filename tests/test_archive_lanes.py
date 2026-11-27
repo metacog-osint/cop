@@ -383,7 +383,11 @@ class TestArchiveBeforeReplace(unittest.TestCase):
         self.assertIn("exit 0", deploy[skip])
         self.assertEqual(deploy[-1], 'echo "deployed=yes" >> "$GITHUB_OUTPUT"')
         self.assertLess(skip, wrangler)
-        self.assertEqual(len(deploy) - 1, wrangler + 1, "the output is set right after wrangler returns")
+        # Wrangler runs in a retry loop; the output is set only once a try has succeeded.
+        tail = deploy[wrangler + 1:-1]
+        self.assertTrue(any("deployed=yes; break" in ln for ln in tail), "a try that succeeds leaves the loop")
+        self.assertTrue(any('"$deployed" != yes' in ln and "exit 1" in ln for ln in tail),
+                        "three failed tries stop the step before the output is set")
         self.assertIn("if: ${{ !cancelled() && steps.deploy.outputs.deployed == 'yes' }}", STEPS[SITE_STEP])
 
     def test_a_hung_step_fails_at_its_own_limit_before_the_job_limit(self):
