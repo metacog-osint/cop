@@ -283,7 +283,10 @@
     <h2 id="places-h">Place pages</h2>
     <p>Each <a href="place.html">place page</a> gives, per layer, what its program places in the area now and its
       count a day over the last 30 and 90 closed UTC days, from COP's history set. Items are placed by the same rule
-      as the direction of concern: the area's circle or its countries. A line is drawn only when the program was read
+      as the direction of concern: the area's circle or its countries, with Blackout's country outages and Cordon's
+      embassy alerts placed by the country they name. The worldwide problem (internet shutdowns) counts only its own
+      layer, Blackout's confirmed internet outages, wherever they are. Each new, changed or ended item is counted once:
+      from its program's own log where the program keeps one, else from COP's ledger. A line is drawn only when the program was read
       on at least 80% of the window's days; otherwise the page says there is too little history. A day the program was
       not read has no value, never a zero. Days whose history carries a note (a change of scope or a capped feed) are
       shaded. No layer is added to another.</p>
@@ -335,7 +338,8 @@
         direction words keep their own locked log (branch <code>direction-log</code>).</li>
       <li><strong>Scored by Verdict.</strong> Once a lane's horizon has passed (14 days for an outage), Verdict counts
         each item as confirmed by the lane's named second source, withdrawn by its own source, or left unconfirmed.
-        Until then the record shows how many were flagged and "none scored yet".</li>
+        Until then the record shows how many were flagged, how the lane's tool read them when they were logged (a
+        reading, such as triage's single-source dip, is not an outcome), and "none scored yet".</li>
       <li><strong>Counts only.</strong> No rate or skill figure before 30 independently scored items, and the pick
         order does not change. A change of method starts a new count; counts from two methods are never added.</li>
       <li><strong>Replay is labelled.</strong> Outage triage also shows how it read Access Now's documented 2025

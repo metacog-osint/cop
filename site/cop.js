@@ -73,7 +73,7 @@ try { hormuzStream = await getJSON("data/hormuz-stream.json"); } catch { hormuzS
 // Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
 let direction = null;
 try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
-// Lane records (ideas#330): each lane's counts, from the locked lane log. The picture stands without them too.
+// Lane records: each lane's counts, from the locked lane log. The picture stands without them too.
 let lanes = null;
 try { lanes = await getJSON("data/lanes.json"); } catch { lanes = null; }
 // The lane an item belongs to (mirrors tools/lane_log.py lane_for): prefix lanes before a program's catch-all.
@@ -395,7 +395,7 @@ function closeCard() {
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.removeAttribute("aria-current"));
   writeHash();
 }
-// Terms explained where they appear (Tom, 23 Nov 2026, ideas#264): programs write their own item text, so the card
+// Terms explained where they appear (23 Nov 2026): programs write their own item text, so the card
 // looks for the terms it uses and explains each in a <details>, which a phone can open (no hover). The numbers stay.
 const TERMS = [
   { re: /\bz\s?[-−]?\d/, term: "z", text: "A z-score says how far a value sits from its own usual level, in units of that measure's usual day-to-day spread. 0 is usual; above +2 or below −2 is unusual." },
@@ -482,10 +482,10 @@ function renderCard(f) {
   const facts = h("dl", { class: "facts" });
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
+  else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const lane = laneFor(p.cop_program, p.id);
   if (lane) fact("Lane record", lane.replay
     ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text);
-  else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
   if (sameVoice.length) {
@@ -898,7 +898,7 @@ function threeSignalRecord(r) {
     ...(r.caveats || []).map((t) => h("p", { class: "tri-caveat", text: t })),
     triageQuestion(r.question_draft));
 }
-// UKMTO's reports in the circle (join 0.4, Tom's option D): context beside the reading, credited to UKMTO via Wake.
+// UKMTO's reports in the circle (join 0.4, option D): context beside the reading, credited to UKMTO via Wake.
 // Its attacks add to the notice only on a surge against their own rate; the record says which, in its caveats.
 function ukmtoContext(uk) {
   if (!uk) return null;
@@ -1060,7 +1060,7 @@ function readHash() {
   state.view = m ? { zoom: +m[1], center: [+m[3], +m[2]] } : null;
 }
 let hashTimer;
-// Browser title per view (ideas#300): the selected item's title, else the active preset, else the home title.
+// Browser title per view: the selected item's title, else the active preset, else the home title.
 const HOME_TITLE = document.title;
 function updateTitle() {
   const f = state.selected && BY_ID.get(state.selected);

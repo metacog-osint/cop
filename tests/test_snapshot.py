@@ -600,6 +600,29 @@ class Card(unittest.TestCase):
         self.assertEqual(js.count('map.on("click"'), 1, "one handler: a handler per layer let the country fill's run last")
         self.assertIn("here: ids", js, "the card lists what else is under the click")
 
+    def test_card_shows_size_and_the_lane_record_together(self):
+        """The card's first facts, run in Node with the page's own code: "Size" stands in for "Why it's here" on an item
+        that is not a pick, and the lane record is its own row, so a lane (every program has one) never hides the size."""
+        import shutil
+        import subprocess
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is not installed")
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        start = js.index("  const fact = (k, v) => facts.append(")
+        block = js[start:js.index("  const voicePick = ", start)]
+        script = ("const run = (p, pick, given) => { const keys = [];"
+                  " const facts = { append: (dt) => keys.push(dt.text) };"
+                  " const h = (tag, attrs) => attrs || {}; const laneFor = () => given;\n" + block +
+                  "\nreturn keys; };\n"
+                  "const p = { cop_program: 'elements', id: 'elements:usgs:1', cop_strength_text: 'magnitude 6.1' };"
+                  " const lane = { text: 'No outside check yet.' };"
+                  " console.log(JSON.stringify([run(p, null, lane), run(p, { n: 1, reason: 'x' }, lane),"
+                  " run(p, null, null), run({ id: 'x' }, null, lane)]));")
+        out = subprocess.run([node, "-e", script], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(json.loads(out), [["Size", "Lane record"], ["Why it's here", "Lane record"], ["Size"],
+                                           ["Lane record"]])
+
     def test_page_reads_valid_until(self):
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
         self.assertIn("Date.parse(f.properties.valid_until)", js)

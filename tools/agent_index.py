@@ -302,7 +302,7 @@ def unreadable_parts(docs, reports):
 # for Launch; NET precision Minute"); the feed contract had no field for an event's time until revision 2.1 (kit
 # 0.6.0, 18 Nov 2026). The item's own event_start and event_time_precision come first when it states them; then an
 # `event` object in Verdict's calendar shape; then the text.
-# Launch's upcoming launches (Ascent move step 3, 25 Nov 2026, ideas#69): launch:upcoming:ll2:<LL2 id> for a listed
+# Launch's upcoming launches (Ascent move step 3, 25 Nov 2026): launch:upcoming:ll2:<LL2 id> for a listed
 # launch, launch:upcoming:closure:<notice key> for a closure with no listed launch (measures.evidence says which).
 # While Orbit still lists its own (until Ascent step 4), an Orbit launch Launch also lists is left out, counted in
 # `skipped`, so one launch is one event.

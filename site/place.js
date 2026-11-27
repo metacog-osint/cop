@@ -52,7 +52,7 @@ async function drawMap(def) {
   let outline, what;
   if (def.kind === "circle") {
     outline = { type: "FeatureCollection", features: [circle(def.center, def.radius_km)] };
-    what = `The area is everything within ${def.radius_km.toLocaleString("en")} km of ${def.center[1].toFixed(2)}° N, ${def.center[0].toFixed(2)}° E, drawn as that circle on the ground, plus items its programs place in ${def.countries.join(", ")}.`;
+    what = `The area is everything within ${def.radius_km.toLocaleString("en")} km of ${def.center[1].toFixed(2)}° N, ${def.center[0].toFixed(2)}° E, drawn as that circle on the ground. Blackout's country outages and Cordon's embassy alerts count here by the country they name instead: ${def.countries.join(", ")}.`;
   } else {
     const world = await getJSON("data/world.geojson");
     outline = { type: "FeatureCollection", features: world.features.filter((f) => def.countries.includes(f.properties.cc)) };
@@ -223,7 +223,7 @@ async function place(id) {
   const layers = Object.entries(doc.layers).filter(([p, l]) => l.items || (hist.layers && hist.layers[p]));
   const none = Object.entries(doc.layers).filter(([p, l]) => !l.items && !(hist.layers && hist.layers[p])).map(([, l]) => l.name);
   $("body").replaceChildren(
-    doc.definition.kind === "worldwide" ? null : h("figure", { class: "pl-figure" }, h("div", { id: "place-map", class: "pl-map" }), h("figcaption", { id: "map-note", class: "rr-meta" })),
+    doc.definition.kind === "worldwide" ? (doc.definition.counts ? h("p", { class: "rr-meta", text: doc.definition.counts }) : null) : h("figure", { class: "pl-figure" }, h("div", { id: "place-map", class: "pl-map" }), h("figcaption", { id: "map-note", class: "rr-meta" })),
     hist.available ? h("p", { class: "rr-meta", text: `History: closed UTC days ${day(hist.first_day)} to ${day(hist.last_day)}, from COP's daily snapshots, its ledger and the programs' own logs. A day a program was not read has no value, never a zero.` })
       : h("p", { class: "note", text: "COP's history set was not available in this build, so no lines are drawn. That says nothing about the place." }),
     doc.coverage ? coverageBox(doc.coverage, doc.coverage_method, Object.fromEntries(Object.entries(doc.layers).map(([p, l]) => [p, l.name || p]))) : null,

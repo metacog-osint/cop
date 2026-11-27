@@ -5,18 +5,18 @@
  "lanes": [
   {
    "id": "blackout-outage-triage",
-   "name": "Blackout's internet outages, read through COP's triage",
+   "name": "Blackout's internet outages and single-source dips, read through COP's triage",
    "program": "blackout",
    "match": {"program": "blackout", "id_prefixes": ["blackout:outage:", "blackout:radar-anomaly:", "blackout:radar-outage:"]},
    "logged_from": "triage",
    "horizon_days": 14,
    "second_source": "The provider's own stated cause, Access Now's #KeepItOn records, or two wire services reporting the same outage",
    "tests": {
-    "live_outcome": "Logged from 25 Nov 2026; Verdict scores each outage once its horizon has passed (ideas#331).",
+    "live_outcome": "Logged from 25 Nov 2026; Verdict scores each outage once its horizon has passed.",
     "replay": "Access Now's documented 2025 shutdowns (#KeepItOn STOP), replayed through triage, against the same countries' ordinary days.",
     "background": "Triage's base rates from COP's archived days (tools/triage_rates.py)."
    },
-   "ids_stable": "Cloudflare Radar ids (radar-anomaly, radar-outage) are Radar's own and survive the day. Blackout's own outage ids wait for feed contract 2.1 (ideas#163), so a live outcome for those may need matching by country and time."
+   "ids_stable": "Cloudflare Radar ids (radar-anomaly, radar-outage) are Radar's own and survive the day. Blackout's own outage ids wait for feed contract 2.1, so a live outcome for those may need matching by country and time."
   },
   {
    "id": "cop-direction",
@@ -27,7 +27,7 @@
    "horizon_days": 10,
    "second_source": "The same layers' own numbers for the week after each Monday's call (Verdict reads the follow-up lines)",
    "tests": {
-    "live_outcome": "Locked each Monday on the branch direction-log since 23 Nov 2026; Verdict scores whether the change was still there a week later (ideas#126).",
+    "live_outcome": "Locked each Monday on the branch direction-log since 23 Nov 2026; Verdict scores whether the change was still there a week later.",
     "replay": null,
     "background": null
    },
@@ -52,7 +52,7 @@
   {"id": "elements", "name": "Elements' natural hazards", "program": "elements", "match": {"program": "elements"}, "logged_from": null, "second_source": "Planned: GDACS and USGS revise and end their own events (withdrawn and ended counts)", "tests": {"live_outcome": null, "replay": null, "background": null}},
   {"id": "noisefloor", "name": "Noisefloor's GPS interference", "program": "noisefloor", "match": {"program": "noisefloor"}, "logged_from": null, "second_source": "Planned: GPSJam and the HÆRTS cross-check (terms to be quoted first)", "tests": {"live_outcome": null, "replay": null, "background": null}},
   {"id": "blackout-other", "name": "Blackout's other items (OONI, providers' status, public-report counts)", "program": "blackout", "match": {"program": "blackout"}, "logged_from": null, "second_source": null, "tests": {"live_outcome": null, "replay": null, "background": null}},
-  {"id": "vis", "name": "Vis's weather forecasts", "program": "vis", "match": {"program": "vis"}, "logged_from": null, "second_source": "METAR observations (verified under ideas#246, kept apart from lane records because these are true forecasts)", "tests": {"live_outcome": null, "replay": null, "background": null}},
+  {"id": "vis", "name": "Vis's weather forecasts", "program": "vis", "match": {"program": "vis"}, "logged_from": null, "second_source": "METAR observations (verified on their own, kept apart from lane records because these are true forecasts)", "tests": {"live_outcome": null, "replay": null, "background": null}},
   {"id": "watchfloor", "name": "Watchfloor's conflict attention", "program": "watchfloor", "match": {"program": "watchfloor"}, "logged_from": null, "second_source": null, "tests": {"live_outcome": null, "replay": null, "background": null}},
   {"id": "context", "name": "Context's press framing", "program": "context", "match": {"program": "context"}, "logged_from": null, "second_source": null, "tests": {"live_outcome": null, "replay": null, "background": null}},
   {"id": "vigil", "name": "Vigil's ransomware claims and exploited vulnerabilities", "program": "vigil", "match": {"program": "vigil"}, "logged_from": null, "second_source": null, "tests": {"live_outcome": null, "replay": null, "background": null}},
