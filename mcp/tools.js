@@ -245,7 +245,7 @@ export function findRow(index, id) {
   return r ? toObject(index, r) : null;
 }
 
-// --- lane records (ideas#330) ---------------------------------------------------------------------------------------
+// --- lane records ----------------------------------------------------------------------------------------------------
 
 // The lane an item belongs to (lanes.json, mirrors tools/lane_log.py lane_for): the first lane whose match fits, a
 // lane with id prefixes before its program's catch-all.
@@ -601,7 +601,7 @@ const DAY = 24 * HOUR;
 
 export const EVENT_ORIGINS = ["verdict", "cordon", "orbit", "launch"];
 // From COP's events.json; the rest come from Verdict's calendar. Launch took scheduled launches over from Orbit
-// (Ascent move, ideas#69): while both list them, events.json keeps Launch's copy of a launch both list.
+// (Ascent move): while both list them, events.json keeps Launch's copy of a launch both list.
 const PROGRAM_ORIGINS = new Set(["orbit", "launch"]);
 
 // programEvents: agent/events.json (Launch's scheduled launches; Orbit's until orbit-2.32), or null when the build did not write it.
@@ -674,7 +674,8 @@ export const HISTORY_DAYS_MAX = 31;
 const HISTORY_LIMIT_MAX = 100;
 export const HISTORY_NOTE =
   "What each layer showed for this place, day by day, from COP's daily snapshots (readings: runs of days with the " +
-  "same reading), with what was new, changed or ended from COP's ledger and the programs' own logs (events). A " +
+  "same reading), with what was new, changed or ended (events), each change once: from the program's own log where " +
+  "it keeps one (manifest programs.<id>.events_from), else from COP's ledger. A " +
   "reading is a measurement or report as its program published it, not a warning. days_read counts the days the " +
   "program's feed was read in the range: a day read with no reading here means the program showed nothing for the " +
   "place, while a day not read says nothing. A row with a note cannot be compared with rows outside its period " +

@@ -8,9 +8,11 @@ Reads three kinds of source, all left as they are (this set is derived and can b
   program's feed carried that day. One row per item, day and country: the table `readings`.
 - COP's suite ledger (release ledger, <day>.jsonl.gz, tic-history/1) and each program's own log (history/log in its
   repository, the same format, config/history.json): every item new, changed or ended, with its time. The table
-  `events`.
+  `events`. Each change is counted once: a program with its own log has its events from that log from the log's
+  first day, and from COP's ledger only before it (the ledger records the same change again at COP's build).
 - config/areas.json: the warning problems and Watchfloor's conflict zones, so each row also names the areas it falls
-  in (the `zones` column), by the same rules as the direction of concern (tools/direction.py in_area).
+  in (the `zones` column), by the same rules as the direction of concern (tools/direction.py in_area, with Blackout's
+  country outages placed by country). A worldwide problem holds only the items of its own layers.
 
 Keys on every row: date (UTC day), country (ISO 3166-1 alpha-2, empty when the item names none), zones, subject_id.
 subject_basis says whether the feed sent the subject_id (feed contract 2.1) or it was derived here from the item id with
@@ -121,13 +123,26 @@ def zones_for(subject, item_id, countries, geom, areas):
     return _ZONES[key]
 
 
+def _in_layer(subject, item_id, r, layer):
+    return dr.in_family(str(subject), r, layer) or dr.in_family(str(item_id), r, layer)
+
+
 def zones_of(subject, item_id, countries, xy, areas):
-    """The areas a row falls in: by direction's rules (circle or countries), or by naming the area's press zone."""
+    """The areas a row falls in: by direction's rules (circle or countries), or by naming the area's press zone.
+
+    Direction's rules in full: a Blackout country outage is placed by the countries it names, as on the direction board,
+    not by its point. A worldwide problem holds only the items of its own layers (direction in_family; layers that read
+    an item's title, such as notices, are not used by any worldwide problem): every item of every program is somewhere
+    in the world, so the area alone says nothing about which ones belong to it."""
     out = []
     r = {"c": list(countries), "xy": xy}
     text = f"{subject} {item_id}"
+    layer = "outages" if _in_layer(subject, item_id, r, "outages") else None
     for a in areas:
-        hit = dr.in_area(subject, r, a, None)
+        if a.get("worldwide"):
+            hit = any(_in_layer(subject, item_id, r, lay) for lay in a.get("layers") or [])
+        else:
+            hit = dr.in_area(subject, r, a, layer)
         if not hit and a.get("press_zone") and a["press_zone"] in text:
             hit = True
         if hit:
@@ -372,19 +387,29 @@ def collect(archive, ledger=None, logs=None, config=None):
             read_days[prog].append(day)
     mark_method_changes(readings)
     events = []
-    if ledger and Path(ledger).is_dir():
-        events.extend(events_of(ledger, "cop-ledger", areas, breaks))
-    logs_read = {}
+    logs_read, log_from = {}, {}
     for program in sorted((config or {}).get("program_logs") or {}):
         folder = Path(logs or "") / program
         if logs and folder.is_dir():
             rows = events_of(folder, f"program-log:{program}", areas, breaks, program)
             events.extend(rows)
             logs_read[program] = len(rows)
+            days = [day for day, _ in log_files(folder)]
+            if days:
+                log_from[program] = min(days)
         else:
             logs_read[program] = None
+    if ledger and Path(ledger).is_dir():
+        events.extend(ledger_events(events_of(ledger, "cop-ledger", areas, breaks), log_from))
     return {"areas": areas, "readings": readings, "events": events, "read_days": dict(read_days), "stats": stats,
-            "logs_read": logs_read}
+            "logs_read": logs_read, "log_from": log_from}
+
+
+def ledger_events(rows, log_from):
+    """COP's ledger lines, less those a program's own log already holds. COP's ledger records the same change as the
+    program's log, minutes later, at COP's build: kept both, one change would count twice. So a program with its own
+    log has its events from that log from the log's first day, and from COP's ledger only for the days before it."""
+    return [r for r in rows if r["program"] not in log_from or r["date"] < log_from[r["program"]]]
 
 
 def week_of(day):
@@ -435,6 +460,8 @@ def manifest(data, files, built_at):
             "notes": sorted({r["note"] for r in rs if r["note"]} | {e["note"] for e in ev if e["note"]}),
             "events": len(ev), "churn_events": sum(1 for e in ev if e["churn"]),
             "own_log": data["logs_read"].get(prog, "not kept") if prog in data["logs_read"] else "not kept",
+            "events_from": (f"its own log from {data['log_from'][prog]}, COP's ledger before that"
+                            if prog in data.get("log_from", {}) else "COP's ledger"),
         }
     days = sorted({r["date"] for r in readings})
     return {"format": FORMAT, "join": dict(JOIN), "built_at": built_at,

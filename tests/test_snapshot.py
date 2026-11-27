@@ -147,6 +147,36 @@ class Build(unittest.TestCase):
         self.assertNotIn(first, [p["id"] for p in picks2["picks"]])
         self.assertIn(first, [f["properties"]["id"] for f in today2["features"]], "still stored and shown")
 
+    def test_an_item_resting_on_a_party_claim_or_state_media_is_never_a_pick(self):
+        """Kit event ladder (docs/event-ladder.md): such an item is labelled and raises nothing on its own."""
+        _, picks, _, _ = build()
+        first = picks["picks"][0]["id"]
+        lead = {"state": "lead", "basis": None, "origins": 1, "official": None, "confirmed_at": None,
+                "verified_at": None, "first_reported_at": "2026-10-30T00:00:00Z", "rule": "ladder-1: test"}
+
+        def with_corroboration(c):
+            def mutate(f):
+                for feed in f.values():
+                    for x in feed.get("features", []) if isinstance(feed, dict) else []:
+                        if x["properties"].get("id") == first:
+                            x["properties"]["corroboration"] = c
+            return mutate
+
+        def picked(c):
+            today, ps, _, _ = build(mutate=with_corroboration(c))
+            self.assertIn(first, [f["properties"]["id"] for f in today["features"]], "still stored and shown")
+            return first in [p["id"] for p in ps["picks"]]
+
+        self.assertFalse(picked(dict(lead, party_claim=True)), "a party's claim alone")
+        self.assertFalse(picked(dict(lead, state_media=True)), "state media alone")
+        self.assertFalse(picked(dict(lead, state="reported", party_claim=True)), "the kit 0.6.2 name of a lead")
+        self.assertTrue(picked(dict(lead)), "a lead with no claim is still a candidate")
+        verified = dict(lead, state="verified", basis="origins", origins=2, verified_at="2026-10-30T06:00:00Z",
+                        party_claim=True)
+        self.assertTrue(picked(verified), "verified on an origin outside the party: it may be a pick again")
+        self.assertTrue(snap.rests_on_claim({"corroboration": dict(lead, state_media=True)}))
+        self.assertFalse(snap.rests_on_claim({}), "an item outside the ladder rests on no claim")
+
     def test_valid_until_ahead_or_absent_still_picks(self):
         later = {"valid_until": snap.iso(NOW + timedelta(hours=1))}
         self.assertFalse(snap.no_longer_current(later, NOW))
@@ -570,6 +600,29 @@ class Card(unittest.TestCase):
         self.assertEqual(js.count('map.on("click"'), 1, "one handler: a handler per layer let the country fill's run last")
         self.assertIn("here: ids", js, "the card lists what else is under the click")
 
+    def test_card_shows_size_and_the_lane_record_together(self):
+        """The card's first facts, run in Node with the page's own code: "Size" stands in for "Why it's here" on an item
+        that is not a pick, and the lane record is its own row, so a lane (every program has one) never hides the size."""
+        import shutil
+        import subprocess
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is not installed")
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        start = js.index("  const fact = (k, v) => facts.append(")
+        block = js[start:js.index("  const voicePick = ", start)]
+        script = ("const run = (p, pick, given) => { const keys = [];"
+                  " const facts = { append: (dt) => keys.push(dt.text) };"
+                  " const h = (tag, attrs) => attrs || {}; const laneFor = () => given;\n" + block +
+                  "\nreturn keys; };\n"
+                  "const p = { cop_program: 'elements', id: 'elements:usgs:1', cop_strength_text: 'magnitude 6.1' };"
+                  " const lane = { text: 'No outside check yet.' };"
+                  " console.log(JSON.stringify([run(p, null, lane), run(p, { n: 1, reason: 'x' }, lane),"
+                  " run(p, null, null), run({ id: 'x' }, null, lane)]));")
+        out = subprocess.run([node, "-e", script], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(json.loads(out), [["Size", "Lane record"], ["Why it's here", "Lane record"], ["Size"],
+                                           ["Lane record"]])
+
     def test_page_reads_valid_until(self):
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
         self.assertIn("Date.parse(f.properties.valid_until)", js)
@@ -577,6 +630,14 @@ class Card(unittest.TestCase):
         self.assertIn("const standsOut = (p) => STANDS_OUT.includes(p.tier) && !p.cop_expired;", js)
         self.assertIn('["in", ["get", "tier"], ["literal", STANDS_OUT]], NOT_EXPIRED]', js)
         self.assertIn('fact(p.cop_expired ? "Expired" : "Valid until", timeEl(p.valid_until))', js)
+
+    def test_card_shows_the_event_ladder_state(self):
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertIn("const lb = ladderBlock(p);", js)
+        for words in ("es.label", "es.meaning", "es.basis_label", "es.claim_label", "es.claim_meaning", "es.url",
+                      '"How this is set"'):
+            self.assertIn(words, js)
+        self.assertIn("if (!es) return null;", js, "an item outside the ladder shows no state")
 
     def test_page_lists_warnings_first_and_never_as_picks(self):
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
@@ -625,7 +686,7 @@ class Card(unittest.TestCase):
         """data_as_of_precision (kit 0.5.6): a date-only or month-only time is shown as written, never moved into the
         viewer's zone (Undertow's '2025-06' read 'May 31, 7:00 PM CDT' before)."""
         js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
-        self.assertIn('import { judgmentChips, asOfDateLabel } from "./vendor/tic-doctrine.js";', js)
+        self.assertIn('import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";', js)
         self.assertIn('fact("Data as of", asOfEl(p));', js)
         self.assertIn('asOfEl(p, "date")', js)
         self.assertEqual(js.count("timeEl(p.data_as_of"), 1, "only asOfEl's own fallback for an exact time")
@@ -718,9 +779,19 @@ class Design(unittest.TestCase):
         sys.path.insert(0, str(ROOT / "tools"))
         import three_signal as ts
         import triage as tri
+        from tic_doctrine import vocab
         html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
         text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))
         hormuz = ts.AREAS["hormuz"]
+        cov = {c["id"]: c for c in vocab.load("event_ladder")["coverage"]["classes"]}
+        self.assertEqual(set(cov), {"several", "few", "none"})
+        for phrase in (f"{cov['several']['label']} when {cov['several']['min']} or more independent source groups",
+                       f"{cov['few']['label']} for {cov['few']['min']} or {cov['few']['max']}",
+                       f"{cov['none']['label']} for {cov['none']['max']}",
+                       "rests only on a party's claim or on state media is never a candidate",
+                       "never raise a place's class", "each count is a lower bound"):
+            self.assertIn(phrase, text)
+        self.assertIsNone(cov["several"]["max"], "several has no upper bound: the page says 'or more'")
         for phrase in (f"{tri.HAZARD_BEFORE_H} hours before the outage", f"up to {tri.HAZARD_AFTER_H} hours after",
                        f"within {tri.HAZARD_NEAR_KM} km", f"last advisory plus {tri.EPISODIC_LAG_H} hours",
                        f"dated in the {tri.NOTICE_RECENT_H} hours before", "28 complete days",

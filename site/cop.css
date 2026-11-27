@@ -220,3 +220,10 @@ a.dir-place:hover, a.dir-place:focus-visible { color: var(--acc); text-decoratio
 .terms dt { font-weight: 600; margin-top: .4rem; }
 .terms dd { margin: 0; }
 .caveat { font-size: .8rem; opacity: .8; margin: .5rem 0; }
+
+/* an event report's place on the event ladder (kit docs/event-ladder.md): lead, confirmed, verified */
+.ladder { margin: 10px 0 0; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; }
+.card .ladder p { margin: 4px 0 0; font-size: 13px; }
+.card .ladder .ladder-h { margin: 0; font: 500 12px/1.4 var(--mono); color: var(--mut); }
+.ladder-h strong { color: var(--ink); }
+.badge.claim { border-color: var(--late); color: var(--late); }

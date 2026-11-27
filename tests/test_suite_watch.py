@@ -151,6 +151,14 @@ class Watch(unittest.TestCase):
         self.assertEqual(len(watch.load_accepted({})[1]), 1)
         self.assertEqual(len(watch.load_accepted([])[1]), 1)
 
+    def test_an_entry_without_a_state_accepts_nothing(self):
+        """An entry holds only while its source reads in the state it names: one naming none would accept the source
+        in any state, a source gone from stale to failing included."""
+        no_state = {k: v for k, v in self.ENTRY.items() if k != "state"}
+        good, problems = watch.load_accepted({"accepted": [no_state]})
+        self.assertEqual((good, len(problems)), ([], 1))
+        self.assertEqual(len(watch.check_health(self._vigil(state="failing"), good, NOW)), 1)
+
     def test_run_passes_with_a_documented_source_and_fails_without_the_file(self):
         import json
         import tempfile

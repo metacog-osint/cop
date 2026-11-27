@@ -86,7 +86,12 @@ class LaneLog(unittest.TestCase):
         doc = L.records(self.cfg, self.lines(), [], replay_mod.load(), at("2026-11-25T04:30:00"))
         self.assertNotIn('"join"', json.dumps(doc), "not a join: the gate check must not read it as one")
         row = next(x for x in doc["lanes"] if x["id"] == "blackout-outage-triage")
-        self.assertEqual(row["text"], "This lane: 2 flagged since 2026-11-25 (1 open, 1 unconfirmed); none scored yet.")
+        # The split is triage's reading when logged, never a scored outcome: "unconfirmed" is a scored outcome's word
+        # on the scoring page, so triage's single-source dip is called a dip here.
+        self.assertEqual(row["text"], "This lane: 2 flagged since 2026-11-25; triage read 1 as open, 1 as a single-source "
+                                      "dip (readings when logged, not outcomes); none scored yet.")
+        self.assertNotIn("unconfirmed", row["text"])
+        self.assertEqual(row["by_reading"], {"open": 1, "unconfirmed": 1}, "the data keeps triage's own reading names")
         self.assertTrue(row["replay"]["text"].startswith("Replay, not live"))
         self.assertIn("natural on 15.9% of shutdowns and 5.8% of ordinary days", row["replay"]["text"])
         self.assertEqual(row["replay"]["attribution"], "Access Now, #KeepItOn STOP")
@@ -98,6 +103,14 @@ class LaneLog(unittest.TestCase):
         quiet = next(x for x in doc["lanes"] if x["id"] == "elements")
         self.assertIsNone(quiet["flagged"])
         self.assertEqual(quiet["text"], L.NO_CHECK)
+
+    def test_the_public_record_carries_no_queue_references(self):
+        """lanes.json is served on the site and through MCP: it describes the lanes for readers, with no issue numbers
+        from the private work queue."""
+        doc = L.records(L.load_config(), [], [], replay_mod.load(), at("2026-11-25T04:30:00"))
+        text = json.dumps(doc, ensure_ascii=False)
+        self.assertNotRegex(text, r"ideas#|#\d{2,}")
+        self.assertNotRegex(L.CONFIG.read_text(encoding="utf-8"), r"ideas#")
 
     def test_the_direction_lane_reads_the_direction_log(self):
         calls = [{"type": "call", "rule": "1", "week": "2026-11-23", "word": w, "scored": s}
