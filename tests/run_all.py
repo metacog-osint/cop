@@ -40,6 +40,7 @@ SCRIPTS = [
     "test_place.py",
     "test_history.py",
     "test_archive_lanes.py",
+    "test_country_names.py",
 ]
 
 

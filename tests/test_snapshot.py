@@ -784,10 +784,12 @@ class Design(unittest.TestCase):
         text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html))
         hormuz = ts.AREAS["hormuz"]
         cov = {c["id"]: c for c in vocab.load("event_ladder")["coverage"]["classes"]}
-        self.assertEqual(set(cov), {"several", "few", "none"})
+        self.assertEqual(set(cov), {"several", "few", "no_independent", "none"})
         for phrase in (f"{cov['several']['label']} when {cov['several']['min']} or more independent source groups",
                        f"{cov['few']['label']} for {cov['few']['min']} or {cov['few']['max']}",
-                       f"{cov['none']['label']} for {cov['none']['max']}",
+                       f"{cov['no_independent']['label']} for {cov['no_independent']['max']} when COP still holds "
+                       "items there from sources it sets aside or does not count",
+                       f"{cov['none']['label']} for {cov['none']['max']} when it holds none",
                        "rests only on a party's claim or on state media is never a candidate",
                        "never raise a place's class", "each count is a lower bound"):
             self.assertIn(phrase, text)

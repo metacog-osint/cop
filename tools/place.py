@@ -112,8 +112,8 @@ def counts_for_coverage(p, now):
 
 
 def item_row(p):
-    return {k: p[k] for k in ("id", "title", "tier", "kind", "status_class", "data_as_of", "data_as_of_precision")
-            if p.get(k) is not None} | {"stale": bool(p.get("cop_stale"))}
+    return {k: p[k] for k in ("id", "title", "tier", "kind", "status_class", "data_as_of", "data_as_of_precision",
+                              "countries") if p.get(k) is not None} | {"stale": bool(p.get("cop_stale"))}
 
 
 def place_doc(snapshot, area, programs, hist=None):

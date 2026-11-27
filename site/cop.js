@@ -7,6 +7,7 @@
 // rest; and the sentences that count or describe findings are written from the snapshot, not fixed in the page.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";
+import { withCountryNames } from "./country-names.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -91,6 +92,7 @@ const laneById = (id) => ((lanes && lanes.lanes) || []).find((x) => x.id === id)
 function laneNote(lane, withReplay = true) {
   if (!lane) return null;
   return h("p", { class: "note lane-line" }, h("strong", { text: "Lane record. " }), lane.text,
+    lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : null,
     withReplay && lane.replay ? ` ${lane.replay.text} Credit: ${lane.replay.attribution}.` : null,
     ` ${lanes.not_a_warning} `, h("a", { href: "scoring.html#lanes" }, "How lanes are counted"));
 }
@@ -98,7 +100,16 @@ const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
 for (const hp of health.programs) Object.assign(PROGS[hp.id], { state: hp.state, health: hp });
+// A bare country code in a program's title or summary ("Elpro GmbH (DE)") reads as the country's name, for the
+// item's own countries only (country-names.js). Shown text only: ids, links and the data files are unchanged.
+for (const f of today.features) {
+  const p = f.properties;
+  p.title = withCountryNames(p.title, p.countries);
+  p.summary = withCountryNames(p.summary, p.countries);
+}
 const BY_ID = new Map(today.features.map((f) => [f.properties.id, f]));
+// A join's row (triage, for example) names its countries, or is an item of the picture that does.
+const rowTitle = (row) => withCountryNames(row.title, row.countries || (BY_ID.get(row.id) || { properties: {} }).properties.countries);
 const PICKS = picksDoc.picks;
 const PICK_OF = new Map(PICKS.map((p) => [p.id, p]));
 // Watchfloor and Context both read GDELT, so COP counts them as one voice per zone (15 Nov 2026): a pick of that voice
@@ -484,8 +495,9 @@ function renderCard(f) {
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const lane = laneFor(p.cop_program, p.id);
-  if (lane) fact("Lane record", lane.replay
-    ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text);
+  // A lane scored in another program's record (Verdict's of Vis's forecasts) links it; COP restates none of its figures.
+  if (lane) fact("Lane record", [lane.replay ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text,
+    ...(lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : [])]);
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
   if (sameVoice.length) {
@@ -668,8 +680,8 @@ const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "u
 function triageItem(row) {
   const ended = row.ended_at ? h("span", { class: "row-meta" }, " (ended ", timeEl(row.ended_at), ")") : null;
   return BY_ID.has(row.id)
-    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title, ended)
-    : h("span", { class: "tri-item" }, row.title, ended);
+    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, rowTitle(row), ended)
+    : h("span", { class: "tri-item" }, rowTitle(row), ended);
 }
 // Where concern is moving: never colour alone, so each word carries its own mark.
 const DIR_MARK = { rising: "▲", edging_up: "△", mixed: "◆", easing: "▼", edging_down: "▽", steady: "–", building: "…" };
@@ -739,8 +751,8 @@ function triageRecord(r) {
   });
   return h("li", { class: "tri" },
     BY_ID.has(r.outage.id)
-      ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, r.outage.title)
-      : h("span", { class: "tri-outage", text: r.outage.title }),
+      ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, rowTitle(r.outage))
+      : h("span", { class: "tri-outage", text: rowTitle(r.outage) }),
     h("div", { class: "row-meta" }, r.outage_kind === "power" ? "ODIN reading at " : "Began ",
       timeEl(r.outage.started_at || r.outage.data_as_of), r.outage.source ? ` · ${r.outage.source}` : null),
     h("div", { class: "badges" },

@@ -63,9 +63,12 @@ def layer_of(item_id):
     return program, kind
 
 
+COVERAGE_GROUP_KEYS = ("groups", "set_aside", "not_counted")
+
+
 def coverage_row(node):
-    """A row of the kit's coverage table (format tic-coverage/1): its groups and set_aside list source groups (a
-    publisher or an independence group, with the programs that carry it), not items."""
+    """A row of the kit's coverage table (format tic-coverage/1): its groups, set_aside and not_counted (kit 0.6.17)
+    list source groups (a publisher or an independence group, with the programs that carry it), not items."""
     return (isinstance(node, dict) and isinstance(node.get("place"), str) and isinstance(node.get("independent"), int)
             and isinstance(node.get("groups"), list) and isinstance(node.get("set_aside"), list))
 
@@ -81,7 +84,7 @@ def cited_ids(doc):
             for k, v in node.items():
                 if top and k in ("join", "gate"):
                     continue
-                if groups and k in ("groups", "set_aside"):
+                if groups and k in COVERAGE_GROUP_KEYS:
                     continue
                 if k == "id" and isinstance(v, str):
                     found.add(v)

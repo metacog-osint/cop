@@ -33,6 +33,11 @@ GENESIS = "0" * 64
 NOT_A_WARNING = ("A lane record counts how one kind of item has behaved: how many it flagged and, once Verdict scores "
                  "them, how many a second source confirmed. It is not a warning and gives no likelihood to any item.")
 NO_CHECK = "No outside check yet. COP's ledger keeps every item; this lane gets a record once a second source is named."
+# A lane whose items are true forecasts that another program scores on its own (config scored_elsewhere): the line
+# names who scores them and links that record. It quotes no figure from it, and nothing adds those scores to a lane's.
+SCORED_ELSEWHERE = ("Scored outside the lane records: {by} scores this lane's stored forecasts against {against} in "
+                    "its own record, kept apart from lane records and never added to them. COP's ledger keeps every "
+                    "item.")
 REPLAY_ORDER = ("natural", "tension context", "open")
 
 
@@ -235,6 +240,11 @@ def records(cfg, log_records, direction_records, rep, now):
         else:
             row |= {"flagged": None, "since": None, "by_reading": {}, "method_version": None, "older_segments": [],
                     "text": NO_CHECK}
+        elsewhere = lane.get("scored_elsewhere")
+        row["scored_elsewhere"] = None
+        if isinstance(elsewhere, dict) and not src:
+            row["scored_elsewhere"] = {k: elsewhere.get(k) for k in ("by", "against", "label", "record", "data")}
+            row["text"] = SCORED_ELSEWHERE.format(by=elsewhere["by"], against=elsewhere["against"])
         row["replay"] = replay if lane["id"] == "blackout-outage-triage" else None
         out.append(row)
     return {"schema": PUBLIC_SCHEMA, "generated_at": _iso(now), "what": cfg.get("about"), "not_a_warning": NOT_A_WARNING,
