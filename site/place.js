@@ -1,6 +1,7 @@
 // Place pages: draws site/data/places/<area>.json (tools/place.py). Text goes in as text, never as HTML.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
 import { coverageClass } from "./vendor/tic-doctrine.js";
+import { withCountryNames } from "./country-names.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -136,7 +137,7 @@ function layerBox(prog, now, hist, share) {
     h("p", { class: "rr-meta" }, h("span", { class: `st st-${now.state}`, text: STATE[now.state] || now.state }), " · data as of ", timeEl(now.data_as_of)),
     h("p", { class: "pl-now", text: `Now: ${now.items} item${now.items === 1 ? "" : "s"} placed here, ${now.anomalies} unusual against ${name}'s own baseline.` })];
   if (now.top.length) {
-    kids.push(h("ul", { class: "rr-items" }, now.top.map((it) => h("li", {}, h("span", { text: it.title }),
+    kids.push(h("ul", { class: "rr-items" }, now.top.map((it) => h("li", {}, h("span", { text: withCountryNames(it.title, it.countries) }),
       h("span", { class: "rr-item-meta" }, `${it.tier} · data `, timeEl(it.data_as_of, true), it.stale ? " · last good copy" : null, " · ",
         h("a", { href: `./#r=1&i=${encodeURIComponent(it.id)}`, text: "On the map" }))))));
   }

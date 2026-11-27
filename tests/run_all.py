@@ -39,6 +39,7 @@ SCRIPTS = [
     "test_red_river.py",
     "test_place.py",
     "test_history.py",
+    "test_country_names.py",
 ]
 
 
