@@ -182,6 +182,28 @@
       }
     }
   ],
+  "pending": {
+    "note": "Drawing rules for programs that are built but not live, kept here so nothing reads them: tools/snapshot.py takes each program in 'programs' with its feed and site from the kit's registry, and stops the build on one that has none. At launch the entry moves into 'programs', in the same change that vendors the kit release giving it a feed (Temper, 25 Nov 2026: tic-doctrine PR 21 keeps it planned). Temper: GDELT protest share, English Wikipedia attention and UNHCR displacement by origin, one country-level point each, so country_mark 'halo' rings the label point. Most rows are routine readings, shown under 'Society' (routine_in_preset). Anomalies are TP-IND-1 to 3, each with a signal; strength ranks protest first, then attention, then displacement, because the three have different units. Freshness 'feed': UNHCR items carry the calendar year and GDELT items the last full day, while the feed is rebuilt every 6 hours (registry windows to set at launch, 12 h and 36 h proposed). Colour: the Society family colour, as Relief's note planned; told apart from Relief by name and the routine label.",
+    "programs": [
+      {
+        "id": "temper",
+        "preset": "society",
+        "source_health": true,
+        "freshness": "feed",
+        "mark": "halos",
+        "country_mark": "halo",
+        "routine_in_preset": true,
+        "routine_label": "Protest reporting, Wikipedia attention and UNHCR displacement, ringed on their countries",
+        "strength": [
+          { "when": { "signal.name": "gdelt_protest_share_7d" }, "path": "signal.value", "label": "{v} of its articles coded as protest in 7 days" },
+          { "when": { "signal.name": "wikipedia_views_7d" }, "path": "signal.value", "label": "{v} views of its English Wikipedia article in 7 days" },
+          { "when": { "signal.name": "unhcr_displaced_abroad" }, "path": "signal.value", "label": "{v} people displaced abroad" },
+          { "when": { "signal.name": "unhcr_idps" }, "path": "signal.value", "label": "{v} people displaced inside the country" }
+        ],
+        "color": { "fill": "#8C510A", "outline_light": "#3F2405", "outline_dark": "#E8CFA0" }
+      }
+    ]
+  },
   "presets": {
     "all": "Everything",
     "conflict": "Conflict",
