@@ -3,6 +3,7 @@
     python tools/memory.py --snapshot site/data/today.geojson --assets out/memory            one build
     python tools/memory.py --snapshot site/data/today.geojson --assets out/memory --first    no memory yet
     python tools/memory.py --replay out/rates-archive --assets out/memory                    rebuild from archived days
+    python tools/memory.py --backfill-sv out/snapshots --assets out/memory --dry-run         add earlier `sv` values
 
 21 Nov 2026: when an item drops off COP, COP keeps something to compare the next incoming item against. The suite
 ledger (tools/ledger.py) already keeps every item in full, line by line, but nothing read it back. This file is the
@@ -484,6 +485,65 @@ def replay(archive, into: dict | None = None) -> dict:
     return mem
 
 
+def _signal_value(p: dict):
+    sig = p.get("signal") if isinstance(p.get("signal"), dict) else {}
+    v = sig.get("value")
+    ok = isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
+    return v if ok else None
+
+
+def backfill_sv(mem: dict, archive) -> dict:
+    """Add `sv` values from the archived daily snapshots in `archive` (YYYY-MM-DD.geojson.gz, as releases
+    snapshots-YYYY-MM hold them), so a subject's signal history starts before `sv` was kept. Additive only: a value
+    the memory already holds for a subject and data day is never replaced, and nothing but `sv` changes (not `v`,
+    spans, days or updated_at). Snapshots are read oldest first with fold's rules (a program read that day, no stale
+    item), so the last build of a data day wins among the archived ones. A value for an older key goes to the record
+    that continues it (continues()), where rarity looks it up. An item whose subject the memory does not hold is left
+    out and counted. Returns counts per program: subjects gaining, values added, items left out, and subjects with at
+    least rarity.MIN_READINGS values afterwards."""
+    import rarity
+    files = sorted(Path(archive).glob("????-??-??.geojson.gz"))
+    if not files:
+        raise SystemExit(f"memory: no archived snapshots in {archive}")
+    subjects = mem["subjects"]
+    newer = {old: k for k in subjects if (old := continues(mem, k))}
+    found: dict = {}
+    left_out: dict = {}
+    for path in files:
+        snap = _read(path)
+        read = programs_read(snap)
+        for f in snap.get("features") or []:
+            p = f.get("properties") or {}
+            program = p.get("cop_program") or p.get("program")
+            if program not in read or p.get("cop_stale") or not p.get("id"):
+                continue
+            v, day = _signal_value(p), day_of(p.get("data_as_of"))
+            if v is None or not day:
+                continue
+            k = key(p)
+            k = newer.get(k, k)
+            if k not in subjects:
+                left_out[program] = left_out.get(program, 0) + 1
+                continue
+            found.setdefault(k, {})[day] = v            # a later snapshot of the same data day wins
+    counts: dict = {}
+    for k, days in found.items():
+        r = subjects[k]
+        sv = r.setdefault("sv", {})
+        new = {d: v for d, v in days.items() if d not in sv}
+        sv.update(new)
+        c = counts.setdefault(r.get("p"), {"subjects": 0, "values": 0, "left_out": 0, "enough": 0})
+        if new:
+            c["subjects"] += 1
+            c["values"] += len(new)
+    for r in subjects.values():
+        if r.get("sv") and r.get("p") in counts and len(r["sv"]) >= rarity.MIN_READINGS:
+            counts[r["p"]]["enough"] += 1
+    for program, n in left_out.items():
+        counts.setdefault(program, {"subjects": 0, "values": 0, "left_out": 0, "enough": 0})["left_out"] = n
+    return counts
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--snapshot", help="the snapshot just built")
@@ -491,8 +551,25 @@ def main(argv=None) -> int:
     ap.add_argument("--first", action="store_true", help="there is no memory yet: start from nothing")
     ap.add_argument("--replay", help="rebuild from this folder of archived daily snapshots")
     ap.add_argument("--events", default=NOISEFLOOR_EVENTS, help="Noisefloor's daily event files, a URL base or folder")
+    ap.add_argument("--backfill-sv", help="add earlier `sv` values from this folder of archived daily snapshots")
+    ap.add_argument("--dry-run", action="store_true", help="with --backfill-sv: report, write nothing")
     a = ap.parse_args(argv)
     folder = _folder(a.assets)
+    if a.backfill_sv:
+        mem = load(folder)
+        if mem is None:
+            raise SystemExit(f"memory: no {NAME} in {folder} to add to")
+        counts = backfill_sv(mem, a.backfill_sv)
+        import rarity
+        for program, c in sorted(counts.items(), key=lambda kv: str(kv[0])):
+            print(f"{program}: {c['subjects']} subjects gain {c['values']} values; {c['left_out']} items with no "
+                  f"record left out; {c['enough']} subjects hold {rarity.MIN_READINGS}+ values")
+        if a.dry_run:
+            print("dry run: nothing written")
+            return 0
+        path = save(folder, mem)
+        print(f"memory {mem['updated_at']}: sv added, {path.stat().st_size / 1024:.0f} KB")
+        return 0
     if a.replay:
         if load(folder) is not None:
             raise SystemExit(f"memory: {folder} already holds a memory; a replay starts from an empty folder")
