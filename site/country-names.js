@@ -2,27 +2,17 @@
 // ("Elpro GmbH (DE)", "US embassy (MX)", "USA 123 (US)"), so a reader new to the codes can read every card.
 // Only a code the item itself lists in its `countries` is named, so an acronym that looks like a code
 // ("antidumping duty (AD)", "general license (GL)") stays as written, and a code already beside its name
-// ("Iran (IR)") is left alone. The names are the browser's own (Intl.DisplayNames); where it has none, the text
-// stays as the program wrote it. Only shown text changes: ids, links and the data files are never touched.
-let regions = null;
-try {
-  regions = new Intl.DisplayNames(["en"], { type: "region", fallback: "none" });
-} catch {
-  regions = null;
-}
+// ("Iran (IR)", "Turkey (TR)") is left alone. The names are the doctrine kit's (Natural Earth), the ones the
+// programs write and the daily brief shows (tools/country_names.py writes country-names-data.js); a code with no
+// name there stays as the program wrote it. Only shown text changes: ids, links and the data files are never touched.
+import { NAMES } from "./country-names-data.js";
 
 const CODE = /^[A-Z]{2}$/;
 
-/** The English name of an ISO alpha-2 code, or null when the browser has none. */
+/** The English name of an ISO alpha-2 code, or null when the list has none. */
 export function countryName(cc) {
-  if (!regions || typeof cc !== "string" || !CODE.test(cc)) return null;
-  try {
-    // The short form: "Myanmar (Burma)" reads "Myanmar", so a name never carries brackets of its own.
-    const name = String(regions.of(cc) || "").replace(/\s*\([^)]*\)$/, "");
-    return name && name !== cc ? name : null;
-  } catch {
-    return null;
-  }
+  if (typeof cc !== "string" || !CODE.test(cc) || !Object.prototype.hasOwnProperty.call(NAMES, cc)) return null;
+  return NAMES[cc] || null;
 }
 
 /** `text` with each "(XX)" whose code is in `countries` read as "(Name)". */
