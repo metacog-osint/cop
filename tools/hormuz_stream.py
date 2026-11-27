@@ -243,8 +243,11 @@ def load_state(folder):
 def save_state(state, folder):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
-    with gzip.open(folder / STATE_NAME, "wt", encoding="utf-8", newline="\n") as fh:
-        json.dump(state, fh, ensure_ascii=False, sort_keys=True)
+    # A fixed gzip header (no file name, time 0): an unchanged state gives the same bytes, so an archive that stores
+    # files by content does not keep it again.
+    data = json.dumps(state, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    with open(folder / STATE_NAME, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as fh:
+        fh.write(data)
 
 
 def main(argv=None):

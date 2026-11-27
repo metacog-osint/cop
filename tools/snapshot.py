@@ -749,6 +749,16 @@ def write_json(path, obj, compact=True):
     tmp.replace(path)
 
 
+def write_gz_json(path, obj):
+    """A gzip copy of obj with a fixed header (no file name, time 0), so the same object gives the same bytes under
+    any name and at any time: the day's copy and the slot's copy of one build are one file to an archive that stores
+    files by content."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    with open(path, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as fh:
+        fh.write(data)
+
+
 def slot_name(now):
     """The archive name of the 6-hour slot `now` falls in: <day>T<00|06|12|18>Z.snap.json.gz. Not .geojson.gz, so the
     readers that glob the daily copies (<day>.geojson.gz) never see it."""
@@ -795,9 +805,7 @@ def fetch_ended(now, out, fixtures=None, archive=None, dropped=None):
         data["cop_fetched_at"] = iso(now)
         write_json(dest, data)
         if archive:
-            archive.mkdir(parents=True, exist_ok=True)
-            with gzip.open(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", "wt", encoding="utf-8") as fh:
-                json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
+            write_gz_json(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", data)
         lines.append(f"{pid} ended items: {len(data['features'])}, generated {data.get('generated_at')}"
                      + (f"; {len(left_out)} malformed left out" if left_out else ""))
     return lines
@@ -840,11 +848,8 @@ def main(argv=None):
     write_json(out / "home-points.json", home_points(today, now))
     if a.archive:
         arch = Path(a.archive)
-        arch.mkdir(parents=True, exist_ok=True)
-        with gzip.open(arch / f"{now:%Y-%m-%d}.geojson.gz", "wt", encoding="utf-8") as fh:
-            json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
-        with gzip.open(arch / slot_name(now), "wt", encoding="utf-8") as fh:  # first run of each slot is kept by the workflow
-            json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
+        write_gz_json(arch / f"{now:%Y-%m-%d}.geojson.gz", today)
+        write_gz_json(arch / slot_name(now), today)  # first run of each slot is kept by the workflow
     ended_dropped = []
     for line in fetch_ended(now, Path(a.ended_out), a.fixtures, Path(a.archive) if a.archive else None, ended_dropped):
         print(line)
