@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 sys.path.insert(0, str(ROOT / "tools"))
 import cells as celltool  # noqa: E402
+import refresh as refreshtool  # noqa: E402
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
 from tic_doctrine import ladder  # noqa: E402
@@ -580,6 +581,8 @@ def build(feeds, reports, previous, now):
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
             # Contract revision 2.1 (kit 0.6.0): items carrying each new field, and what the feed's header states.
             "coverage": coverage(items), "revision": rev,
+            # When it is expected to update, when it last did, and whether it is late (tools/refresh.py).
+            "refresh": refreshtool.clock(pid, feed, now, covered),
         })
 
     # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks. Watchfloor and
@@ -635,7 +638,8 @@ def build(feeds, reports, previous, now):
                "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
-        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]}}
+        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]},
+        "refresh": {"cop": refreshtool.cop_clock(now), "method": refreshtool.method()}}
     return today, {"generated_at": iso(now), "picks": picks}, health_doc, countries
 
 
