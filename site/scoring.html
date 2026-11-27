@@ -307,6 +307,11 @@
       the sources are. The file is <a href="data/places/coverage.json">coverage.json</a>; the rule is the kit's
       (<a href="https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md#the-coverage-table">the
       coverage table</a>).</p>
+    <p><strong>Coverage by layer.</strong> Each row also gives every program's own class for the place, counted the same
+      way from that program's items alone, and the list of places shows them as a grid. A layer can be thin where the
+      layers together read several: a place with no interference or maritime source shows it there. A layer with no
+      item for the place from a source read on time reads Not monitored, which includes a program that watches the place
+      and has nothing to report there, so it too is a lower bound. Layers are never added to one another.</p>
   </section>
 
   <section class="doc-box" id="ladder" aria-labelledby="ladder-h">
