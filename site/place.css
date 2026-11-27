@@ -23,3 +23,11 @@
 .pl-coverage { margin-top: 18px; }
 .doc-table td.pl-num { font-variant-numeric: tabular-nums; }
 .pl-coverage .pl-aside { margin: 10px 0 2px; }
+/* coverage by layer: one program's own class per place */
+.pl-layers h3 { margin: 16px 0 2px; }
+.doc-table.pl-grid th, .doc-table.pl-grid td { padding: 4px 8px; white-space: nowrap; }
+.doc-table.pl-grid td { font-size: 13px; }
+.doc-table.pl-grid tbody th { position: sticky; left: 0; background: var(--panel); }
+.pl-grid .pl-cov-several { font-weight: 600; color: var(--ink); }
+.pl-grid .pl-cov-none, .pl-grid .pl-na { color: var(--mut); }
+@media (max-width: 600px) { .doc-table.pl-grid tbody th { white-space: normal; min-width: 7em; max-width: 9em; } }

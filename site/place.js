@@ -176,7 +176,37 @@ function coverageNote(method) {
     + "summary, for example) is not a report about the place, so it is listed as not counted. ",
     h("a", { href: `${url}#the-coverage-table`, rel: "noopener", text: "How coverage is counted" }));
 }
-function coverageTable(cov, names) {
+// Each layer's own class for each place (tools/place.py layer_coverage): the same count from one program's items alone.
+const SHORT = { several: "Several", few: "1 or 2", no_independent: "None independent", none: "—" };
+function layerGrid(cov, names, order) {
+  if (!cov.places.some((r) => r.layers)) return null;
+  const seen = new Set(cov.places.flatMap((r) => Object.keys(r.layers || {})));
+  const progs = [...order.filter((p) => seen.has(p)), ...[...seen].filter((p) => !order.includes(p)).sort()];
+  const cell = (r, p) => {
+    const l = (r.layers || {})[p];
+    if (!l) return h("td", { class: "pl-cell pl-na", text: "n/a", title: `${names[p] || p} is not one of this problem's layers` });
+    const c = coverageClass(l.independent, (l.set_aside || 0) + (l.not_counted || 0));
+    const off = l.state !== "fresh" && l.state !== "late";
+    return h("td", { class: `pl-cell pl-cov-${c.id}`, text: `${SHORT[c.id] || c.label}${off ? " *" : ""}`,
+      title: `${names[p] || p} in ${r.name}: ${c.label}, ${groupsText(l.independent)}${off ? "; its feed was not read on time in this picture" : ""}` });
+  };
+  return h("div", { class: "pl-layers" },
+    h("h3", { id: "layers-h", text: "By layer" }),
+    h("p", { class: "rr-meta", text: "Each cell is one program's own class for the place, counted the same way from that "
+      + "program's items alone, so a layer with thin coverage shows even where the layers together read several. "
+      + `Several: 3 or more independent source groups. 1 or 2: one or two. None independent: the layer holds items `
+      + "there, but only from sources set aside or not counted. — (Not monitored): the layer holds no item for the "
+      + "place from a source read on time. That includes a program that watches the place and has nothing to report "
+      + "there, so a dash is a lower bound, never proof that nobody watches. n/a: a worldwide problem counts only its "
+      + "own layers. *: the program's feed was not read on time in this picture, so none of its items count. "
+      + "Layers are never added to one another here." }),
+    h("div", { class: "doc-table-wrap" }, h("table", { class: "doc-table pl-grid", "aria-labelledby": "layers-h" },
+      h("thead", {}, h("tr", {}, h("th", { scope: "col", text: "Place" }), progs.map((p) => h("th", { scope: "col", text: names[p] || p })))),
+      h("tbody", {}, cov.places.map((r) => h("tr", {},
+        h("th", { scope: "row" }, h("a", { href: `place.html?area=${encodeURIComponent(r.place)}`, text: r.name })),
+        progs.map((p) => cell(r, p))))))));
+}
+function coverageTable(cov, names, order = []) {
   if (!cov || !Array.isArray(cov.places)) {
     return h("p", { class: "note", text: "The coverage table was not built for this picture. That says nothing about any place." });
   }
@@ -194,6 +224,7 @@ function coverageTable(cov, names) {
     h("div", { class: "doc-table-wrap" }, h("table", { class: "doc-table" },
       h("thead", {}, h("tr", {}, ["Place", "Coverage", "Independent groups", "Programs", "Set aside", "Not counted"].map((c) => h("th", { scope: "col", text: c })))),
       h("tbody", {}, rows))),
+    layerGrid(cov, names, order),
     coverageNote(cov));
 }
 function coverageBox(row, method, names) {
@@ -223,9 +254,10 @@ async function index() {
   const ix = await getJSON("data/places/index.json");
   // The coverage table and the programs' names are read beside the list; the list stands without them.
   const [cov, health] = await Promise.all([getJSON("data/places/coverage.json").catch(() => null), getJSON("data/health.json").catch(() => null)]);
-  const names = Object.fromEntries(((health && health.config && health.config.programs) || []).map((p) => [p.id, p.name]));
+  const listed = (health && health.config && health.config.programs) || [];
+  const names = Object.fromEntries(listed.map((p) => [p.id, p.name]));
   $("body").replaceChildren(h("ul", { class: "pl-index" }, ix.areas.map((a) => h("li", {}, h("a", { href: `place.html?area=${encodeURIComponent(a.area)}`, text: a.name })))),
-    coverageTable(cov, names));
+    coverageTable(cov, names, listed.map((p) => p.id)));
   $("bar-times").replaceChildren("Picture built ", timeEl(ix.snapshot_generated_at));
 }
 async function place(id) {
