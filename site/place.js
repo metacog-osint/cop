@@ -156,17 +156,23 @@ const KIT_LADDER = "https://github.com/metacog-osint/tic-doctrine/blob/main/docs
 const ASIDE = { party_claim: "party claim", state_media: "state media" };
 const progNames = (ids, names) => ids.map((p) => names[p] || p).join(", ");
 const groupsText = (n) => `${n} independent source group${n === 1 ? "" : "s"}`;
+// A table written before kit 0.6.17 has no not_counted list: read it as empty.
+const notCounted = (r) => (Array.isArray(r.not_counted) ? r.not_counted : []);
 function coverageNote(method) {
   const url = (method && method.url) || KIT_LADDER;
   return h("p", { class: "rr-meta" },
     `${coverageClass(3).label}: 3 or more independent source groups. ${coverageClass(1).label}: 1 or 2. `
+    + `${coverageClass(0, 1).label}: none, but COP holds items for the place from sources it sets aside or does not `
+    + "count, so the place was read. "
     + `${coverageClass(0).label}: COP holds no item for the place from a source read on time. `
     + "A source group is one publisher, or outlets that share one origin (all of GDELT's readings, for example), "
     + "counted once however many programs carry it. The count is made from the sources behind the items COP holds "
     + "for the place at this snapshot, from programs and sources read on time; stale copies and items their program "
     + "says have ended are not counted. A source that watches a place but has nothing to report there is missed, so "
     + "each count is a lower bound, and it says nothing about how good the sources are or how often they report. "
-    + "Party claims and state media are listed but set aside: they never raise a place's class. ",
+    + "Party claims and state media are listed but set aside: they never raise a place's class. Sources the suite "
+    + "makes itself (a program's own reading, computation or model, such as Vis's weather forecasts) are not about "
+    + "the place, so they are listed as not counted. ",
     h("a", { href: `${url}#the-coverage-table`, rel: "noopener", text: "How coverage is counted" }));
 }
 function coverageTable(cov, names) {
@@ -175,22 +181,23 @@ function coverageTable(cov, names) {
   }
   const rows = cov.places.map((r) => h("tr", {},
     h("th", { scope: "row" }, h("a", { href: `place.html?area=${encodeURIComponent(r.place)}`, text: r.name })),
-    h("td", { text: coverageClass(r.independent).label }),
+    h("td", { text: coverageClass(r).label }),
     h("td", { class: "pl-num", text: String(r.independent) }),
     h("td", { text: progNames(r.programs, names) || "none" }),
-    h("td", { class: "pl-num", text: String(r.set_aside.length) })));
+    h("td", { class: "pl-num", text: String(r.set_aside.length) }),
+    h("td", { class: "pl-num", text: String(notCounted(r).length) })));
   return h("section", { class: "pl-coverage", "aria-labelledby": "coverage-h" },
     h("h2", { id: "coverage-h", text: "Coverage" }),
     h("p", { class: "rr-meta" }, "How many independent sources stand behind what COP holds for each place now, counted at the picture built ",
       timeEl(cov.generated_at), "."),
     h("div", { class: "doc-table-wrap" }, h("table", { class: "doc-table" },
-      h("thead", {}, h("tr", {}, ["Place", "Coverage", "Independent groups", "Programs", "Set aside"].map((c) => h("th", { scope: "col", text: c })))),
+      h("thead", {}, h("tr", {}, ["Place", "Coverage", "Independent groups", "Programs", "Set aside", "Not counted"].map((c) => h("th", { scope: "col", text: c })))),
       h("tbody", {}, rows))),
     coverageNote(cov));
 }
 function coverageBox(row, method, names) {
   const kids = [h("h3", { text: "Coverage" }),
-    h("p", { class: "pl-now" }, h("strong", { text: coverageClass(row.independent).label }),
+    h("p", { class: "pl-now" }, h("strong", { text: coverageClass(row).label }),
       `: ${groupsText(row.independent)} behind what COP holds here now.`)];
   if (row.groups.length) {
     kids.push(h("ul", { class: "rr-items" }, row.groups.map((g) => h("li", {}, h("span", { text: g.label }),
@@ -200,6 +207,11 @@ function coverageBox(row, method, names) {
     kids.push(h("p", { class: "rr-meta pl-aside", text: "Set aside, never raising the class:" }),
       h("ul", { class: "rr-items" }, row.set_aside.map((g) => h("li", {}, h("span", { text: g.label }),
         h("span", { class: "rr-item-meta", text: `${ASIDE[g.why] || g.why} · carried by ${progNames(g.programs, names)}` })))));
+  }
+  if (notCounted(row).length) {
+    kids.push(h("p", { class: "rr-meta pl-aside", text: "Not counted, the suite's own sources:" }),
+      h("ul", { class: "rr-items" }, notCounted(row).map((g) => h("li", {}, h("span", { text: g.label }),
+        h("span", { class: "rr-item-meta", text: `Carried by ${progNames(g.programs, names)}` })))));
   }
   kids.push(coverageNote(method));
   return h("section", { class: "rr-layer pl-coverage" }, kids);

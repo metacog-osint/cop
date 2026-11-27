@@ -293,11 +293,14 @@
     <p><strong>Coverage.</strong> Each place also gets its row of the coverage table (the doctrine kit's format
       <code>tic-coverage/1</code>), and the <a href="place.html">list of places</a> shows the whole table. A place is
       <b>Several independent sources</b> when 3 or more independent source groups stand behind the items COP holds for
-      it, <b>One or two sources</b> for 1 or 2, and <b>Not monitored</b> for 0. A source group is a source's
-      independence group, else its publisher, so GDELT counts once however many programs read it. Only items read on
-      time count: not a stale copy, not an item whose own source its program could not read, and not an item its
-      program says has ended or that is past its valid-until time. Sources of items resting only on a party's claim or
-      on state media, and state-owned media, are listed but set aside and never raise a place's class. The count is
+      it, <b>One or two sources</b> for 1 or 2, <b>No independent source</b> for 0 when COP still holds items there
+      from sources it sets aside or does not count, and <b>Not monitored</b> for 0 when it holds none. A source group is
+      a source's independence group, else its publisher, so GDELT counts once however many programs read it. Only items
+      read on time count: not a stale copy, not an item whose own source its program could not read, and not an item
+      its program says has ended or that is past its valid-until time. Sources of items resting only on a party's claim
+      or on state media, and state-owned media, are listed but set aside and never raise a place's class. Sources the
+      suite makes itself (a program's own reading, computation or model, such as Vis's weather forecasts) are not about
+      the place: they are listed as not counted and never raise a place's class either. The count is
       made from the sources behind the items COP holds for the place at this snapshot, so a source that watches a
       place but has nothing to report there is missed: each count is a lower bound, and it says nothing about how good
       the sources are. The file is <a href="data/places/coverage.json">coverage.json</a>; the rule is the kit's

@@ -1,5 +1,7 @@
 """Place pages: each area's current reading and its 30- and 90-day windows, drawn only from enough history."""
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -137,6 +139,59 @@ class Place(unittest.TestCase):
         gulf = pl.place_doc(snap, GULF, progs)["coverage"]
         self.assertEqual((gulf["class"], gulf["independent"], gulf["groups"]), ("none", 0, []), "nothing held there")
 
+    def test_a_place_read_only_through_uncounted_sources_has_no_independent_source(self):
+        """Kit 0.6.17: no independent group, but a claim set aside or a suite-made source read there, is
+        no_independent ("No independent source"), not none ("Not monitored")."""
+        def at_hormuz(f):
+            f["geometry"] = {"type": "Point", "coordinates": [56.4, 26.6]}
+            return f
+
+        snap = {"generated_at": "2026-11-26T12:00:00Z",
+                "cop_programs": {p: {"name": p.title(), "state": "fresh"} for p in ("vis", "watchfloor")},
+                "features": [at_hormuz(sourced("watchfloor:claim:IR", "watchfloor", ["example-ministry"],
+                                               countries=["IR"],
+                                               corroboration={"state": "lead", "origins": 1, "party_claim": True}))]}
+        progs = sorted(snap["cop_programs"])
+        gulf = pl.place_doc(snap, GULF, progs)["coverage"]
+        self.assertEqual((gulf["class"], gulf["independent"]), ("no_independent", 0))
+        self.assertEqual([g["id"] for g in gulf["set_aside"]], ["example-ministry"])
+        self.assertEqual(gulf["not_counted"], [])
+        # Only the suite's own source read there: listed as not counted, and the program is named.
+        vis = at_hormuz(sourced("vis:fc:IR", "vis", ["vis"], countries=["IR"]))
+        vis["properties"]["sources"][0]["source_type"] = "derived"
+        snap["features"] = [vis]
+        gulf = pl.place_doc(snap, GULF, progs)["coverage"]
+        self.assertEqual((gulf["class"], gulf["independent"], gulf["set_aside"]), ("no_independent", 0, []))
+        self.assertEqual([(g["id"], g["programs"]) for g in gulf["not_counted"]], [("vis", ["vis"])])
+        self.assertIn("vis", gulf["programs"])
+        snap["features"] = []
+        self.assertEqual(pl.place_doc(snap, GULF, progs)["coverage"]["class"], "none", "nothing read: not monitored")
+
+    def test_the_page_labels_a_whole_row(self):
+        """The page passes the whole row to the kit's coverageClass, so a row with no independent group but sources
+        set aside reads "No independent source"; a row from before kit 0.6.17 (no not_counted) still reads."""
+        js = (ROOT / "site" / "place.js").read_text(encoding="utf-8")
+        self.assertIn("coverageClass(r).label", js)
+        self.assertIn("coverageClass(row).label", js)
+        self.assertNotIn("coverageClass(r.independent)", js)
+        self.assertNotIn("coverageClass(row.independent)", js)
+        self.assertIn('"Not counted"', js)
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "node is needed (CI installs it for npm test)")
+        kit = (ROOT / "site" / "vendor" / "tic-doctrine.js").as_uri()
+        rows = [{"independent": 0, "set_aside": [{"id": "x"}], "not_counted": []},
+                {"independent": 0, "set_aside": [], "not_counted": [{"id": "vis"}]},
+                {"independent": 0, "set_aside": [{"id": "x"}]},
+                {"independent": 0, "set_aside": [], "not_counted": []},
+                {"independent": 2, "set_aside": [{"id": "x"}], "not_counted": []}]
+        script = (f"import({json.dumps(kit)}).then((k) => console.log(JSON.stringify("
+                  f"{json.dumps(rows)}.map((r) => k.coverageClass(r).label))))")
+        out = subprocess.run([node, "--input-type=module", "-e", script], capture_output=True, text=True, timeout=60)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        labels = {c["id"]: c["label"] for c in vocab.load("event_ladder")["coverage"]["classes"]}
+        self.assertEqual(labels["no_independent"], "No independent source")
+        self.assertEqual(json.loads(out.stdout), [labels["no_independent"]] * 3 + [labels["none"], labels["few"]])
+
     def test_the_coverage_table_is_written_through_the_gate(self):
         snap = {"generated_at": "2026-11-26T12:00:00Z", "cop_programs": {"cordon": {"state": "fresh"}},
                 "features": [sourced("cordon:advisory:UA", "cordon", ["us-state-department"]),
@@ -161,6 +216,8 @@ class Place(unittest.TestCase):
         # Only a coverage row's source groups are skipped: an item id anywhere else is still a citation.
         doc = {"places": [ukraine["coverage"]], "top": [{"id": "gdelt:item"}]}
         self.assertEqual(gate.cited_ids(doc), {"gdelt:item"})
+        own = dict(ukraine["coverage"], not_counted=[{"id": "open-meteo-derived", "label": "Vis", "programs": ["vis"]}])
+        self.assertEqual(gate.cited_ids({"places": [own]}), set(), "not_counted groups are sources, not items")
         self.assertFalse(gate.review(pl.JOIN, doc)["may_publish"], "gdelt is not a COP program")
 
     def test_the_page_shows_the_coverage_table(self):
