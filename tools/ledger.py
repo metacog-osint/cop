@@ -8,7 +8,7 @@
 The snapshot carries what every program shows now. The ledger keeps what was: each build compares the snapshot just
 built with the items open after the last build and writes one line per item that is new, changed (its tier or response
 stage moved) or ended, with the full item, in the doctrine kit's history format (tic-history/1, doctrine/kit/docs/
-history-log.md). It is the suite's own historical record, for comparing now with the past (Tom, 13 Nov 2026: an item
+history-log.md). It is the suite's own historical record, for comparing now with the past (13 Nov 2026: an item
 no longer active is not displayed, but every item is kept).
 
 A lane here is a program, or a program's source where its feed says which sources were read. A program counts as read

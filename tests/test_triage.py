@@ -603,7 +603,7 @@ class NewNoticeKinds(unittest.TestCase):
 
 
 class TriageFixes(unittest.TestCase):
-    """D8 and M5 (Tom, 15 Nov 2026; cop-joins.md M1, M2, M3, M5): the three rules and the wider input."""
+    """D8 and M5 (15 Nov 2026; cop-joins.md M1, M2, M3, M5): the three rules and the wider input."""
 
     def test_a_cyclone_at_landfall_counts_while_it_is_active(self):
         # MURASU-26 (GDACS red, India): formed 1 Nov 00:00, last advisory 3 Nov 06:00. An outage on the evening of

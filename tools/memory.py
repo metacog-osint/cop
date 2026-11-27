@@ -4,7 +4,7 @@
     python tools/memory.py --snapshot site/data/today.geojson --assets out/memory --first    no memory yet
     python tools/memory.py --replay out/rates-archive --assets out/memory                    rebuild from archived days
 
-Tom, 21 Nov 2026: when an item drops off COP, COP keeps something to compare the next incoming item against. The suite
+21 Nov 2026: when an item drops off COP, COP keeps something to compare the next incoming item against. The suite
 ledger (tools/ledger.py) already keeps every item in full, line by line, but nothing read it back. This file is the
 compact, readable form: one record per subject (a subject_id where the feed states one, otherwise the item's id with
 its date taken out), holding when it was on the picture, the days its events fell on, and its daily value where the

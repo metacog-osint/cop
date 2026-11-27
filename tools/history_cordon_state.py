@@ -42,7 +42,7 @@ PAGE_THIN_DAYS = 5
 PAGE_RE = re.compile(r"typebox[^>]*>\s*Travel Advisory\s*<br>\s*([A-Z][a-z]+ \d{1,2}, \d{4})", re.S)
 TITLE_H3 = re.compile(r'alertheader-title[^>]*>(.*?)</h3>', re.S)
 # State's link slug (and any earlier spelling) -> the places the advisory covers. The combined Israel, West Bank and
-# Gaza advisory is Palestine's too (Tom, 15 Nov 2026): rows are made for both.
+# Gaza advisory is Palestine's too (15 Nov 2026): rows are made for both.
 SLUGS = {
     "burma": ["MM"], "india": ["IN"], "pakistan": ["PK"], "russia": ["RU"], "iraq": ["IQ"],
     "israel-west-bank-and-gaza": ["IL", "PS"], "israel-the-west-bank-and-gaza": ["IL", "PS"], "iran": ["IR"],

@@ -34,7 +34,7 @@ class Layers(unittest.TestCase):
         self.assertEqual(gate.layer_of("RL-WHO-0b2662db99"), ("relief", "who"))
 
     def test_the_military_lists_are_gone(self):
-        # Tom, 15 Nov 2026: no held classes. Nothing in the module may hold a layer back again.
+        # 15 Nov 2026: no held classes. Nothing in the module may hold a layer back again.
         for name in ("OPEN", "MILITARY", "HELD_DIR", "layer_class"):
             self.assertFalse(hasattr(gate, name), name)
 

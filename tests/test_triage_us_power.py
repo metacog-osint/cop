@@ -1,7 +1,7 @@
 """Outage triage for US state power outages (Blackout's BO-IND-14): python tests/test_triage_us_power.py
 
 Every test replays real recorded items (tests/fixtures/us_power, see its MANIFEST.json): Blackout's own code on
-ODIN's recorded responses, and COP's own archived snapshots. Rules approved by Tom on 13 Nov 2026.
+ODIN's recorded responses, and COP's own archived snapshots. Rules approved 13 Nov 2026.
 """
 
 import json
@@ -209,7 +209,7 @@ class Readings(unittest.TestCase):
 
 
 class Volcanoes(unittest.TestCase):
-    """USGS re-sends each volcano's status daily; only a raise is a new hazard (every country, Tom 13 Nov 2026)."""
+    """USGS re-sends each volcano's status daily; only a raise is a new hazard (every country, 13 Nov 2026)."""
 
     def setUp(self):
         self.snaps = volcano_snapshots()
@@ -363,7 +363,7 @@ def county_snapshot(states=None):
 
 
 class CountyMatch(unittest.TestCase):
-    """Tom, 14 Nov 2026: "build the county-level match". Real items: Blackout's own code on ODIN's recorded
+    """14 Nov 2026: the county-level match. Real items: Blackout's own code on ODIN's recorded
     responses lists 10 California counties (Los Angeles 11,231 of 13,723 meters) and 32 in New York."""
 
     def setUp(self):

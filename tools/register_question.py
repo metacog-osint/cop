@@ -1,4 +1,4 @@
-"""Register one of outage triage's drafted questions in Verdict, with Tom's own probability (D6, Tom, 15 Nov 2026).
+"""Register one of outage triage's drafted questions in Verdict, with the analyst's own probability (D6, 15 Nov 2026).
 
 Every confirmed outage in triage.json carries two drafted questions: the OONI line (question_draft) and a second
 resolver on cause (cause_question_draft: whether Cloudflare Radar, Access Now or two wire services name a government
@@ -174,7 +174,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("verdict_id", help="the drafted question's verdict_id, as triage.json and the page show it")
     ap.add_argument("probability", type=float, help="your probability, between 0 and 1")
-    ap.add_argument("--approved-by", default="Tom Brummer", help="who set the probability (Verdict's approved_by)")
+    ap.add_argument("--approved-by", required=True, help="who set the probability (Verdict's approved_by)")
     ap.add_argument("--triage", default=PUBLISHED, help="triage.json: the published one (default) or a file")
     ap.add_argument("--verdict", default=str(VERDICT), help="your Verdict checkout")
     ap.add_argument("--dry-run", action="store_true", help="show the forecast and its checks; register nothing")

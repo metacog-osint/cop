@@ -117,7 +117,7 @@ test("a pick that passed its valid_until after the build says expired", () => {
 });
 
 test("search by state matches only items placed in that state", () => {
-  // kit 0.5.7 subdivisions (Tom, 15 Nov 2026): a hazard in Hawaii is not one for the whole US.
+  // kit 0.5.7 subdivisions (15 Nov 2026): a hazard in Hawaii is not one for the whole US.
   const fields = index.fields;
   const mk = (id, countries, subs) => fields.map((k) => ({ id, program: "elements", kind: "observation",
     tier: "routine", title: id, countries, subdivisions: subs, point: null, bbox: null, shard: 0 })[k] ?? null);
