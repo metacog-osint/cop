@@ -46,6 +46,7 @@ SCRIPTS = [
     "test_run_all.py",
     "test_country_names.py",
     "test_rarity.py",
+    "test_release_manifest.py",
 ]
 
 
