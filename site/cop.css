@@ -210,6 +210,8 @@ body:has(> .tic-house) .app { top: calc(var(--tic-house-h, 34px) + 56px); }
 .dir-item { display: grid; gap: 1px; margin-top: 5px; }
 .dir-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 8px; }
 .dir-area { color: var(--ink); font-size: 13px; font-weight: 500; }
+a.dir-place { color: var(--ink); text-decoration: underline; text-decoration-color: var(--mut); text-underline-offset: 3px; }
+a.dir-place:hover, a.dir-place:focus-visible { color: var(--acc); text-decoration-color: currentColor; }
 .dir-why { grid-column: 1 / -1; }
 .dir-record { margin-top: 10px; }
 
