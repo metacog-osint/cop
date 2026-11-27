@@ -12,11 +12,12 @@ name: build
 # ledger (release ledger, then ledger-YYYY from 2027: what is new, changed or ended since the last build) and the
 # dropped-items log (what sift() left out as malformed, with reasons).
 #
-# Private archive (the last step): every build's snapshot copies, its outputs in out/, the deployed site/ and history/
+# Private archive (three steps: the snapshot copies straight after the snapshot, the site straight after the deploy,
+# the rest last): every build's snapshot copies, its outputs in out/, the deployed site/ and history/
 # also go to the PRIVATE repo metacog-osint/tic-archive (tools/tic_archive.py), where nothing is replaced or deleted.
 # The releases here replace the day's snapshot, the ledger, triage-log, memory and Hormuz states at each build, each
 # deploy replaces the site, and out/ is gone when the run ends; the archive keeps every version. Needs repo secret
-# TIC_ARCHIVE_TOKEN (contents read and write on tic-archive only); without it that step fails and the rest run.
+# TIC_ARCHIVE_TOKEN (contents read and write on tic-archive only); without it those steps fail and the rest run.
 #
 # The clock: GitHub fired the "every two hours" schedule only every 7 to 14 hours (5-6 Nov 2026), so the hub's
 # tic-dispatch Worker starts this workflow at :20 past every even UTC hour (workflow_dispatch). The schedule stays as a
@@ -58,7 +59,10 @@ jobs:
     needs: gate
     if: needs.gate.outputs.skip != 'yes'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Above the sum of the time limits of the steps from the deploy on (each step after the deploy has its own), so a
+    # step that hangs there fails at its own limit and the private archive steps still run. A normal build takes
+    # under two minutes.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -78,6 +82,21 @@ jobs:
       - name: Snapshot of the program feeds
         id: snapshot
         run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl
+      # Private archive, first lane (tools/tic_archive.py; the lanes are described at the last step): this build's
+      # snapshot copies, before the next step replaces the day's copy in the release snapshots-YYYY-MM, so a build that
+      # stops later (a step that hangs, the job's time limit) has still kept them. A failure here never holds the
+      # build back; the last step turns the run red for it.
+      - name: Private archive of this build's snapshot copies (before the release replaces the day's copy)
+        id: archive_snapshots
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so this build's snapshot copies did not reach the private archive"; exit 1
+          fi
+          python tools/tic_archive.py put --program cop --lane snapshots --src out/archive
       - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
         run: python tools/agent_index.py
       - name: Share card (link-preview image; falls back to site/card-fallback.png, never fails the build)
@@ -387,10 +406,28 @@ jobs:
           fi
           npx --yes wrangler@4.151.3 pages deploy site --project-name cop --branch main \
             --commit-hash "$GITHUB_SHA" --commit-message "build $GITHUB_SHA" --commit-dirty=true
+          echo "deployed=yes" >> "$GITHUB_OUTPUT"
+      # Private archive, second lane: site/ as this deploy published it, straight after the deploy and before the
+      # steps below, so a build that stops later has still kept the site the next deploy replaces. Only when the
+      # deploy ran and succeeded (not when it skipped itself for want of the Cloudflare secrets). A failure here
+      # never holds the build back; the last step turns the run red for it.
+      - name: Private archive of the site as deployed
+        id: archive_site
+        if: ${{ !cancelled() && steps.deploy.outputs.deployed == 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so the site as deployed did not reach the private archive"; exit 1
+          fi
+          python tools/tic_archive.py put --program cop --lane site --src site
       # Archives kept after the deploy (retention, 18 Nov 2026). They run after the site is out so that a failure here
       # never holds the live view back, and each one FAILS THE STEP (red run, GitHub's mail) instead of logging a
       # warning: a ledger or archive upload that did not happen is data not kept. Each runs even when another of them
-      # failed (the `if:`), but only after the deploy step itself succeeded.
+      # failed (the `if:`), but only after the deploy step itself succeeded. Each has its own time limit: a `gh` call
+      # that hangs fails its step at that limit instead of running the job out, so the archive steps still run.
       #
       # One snapshot per 6-hour slot of the UTC day (00, 06, 12, 18), besides the daily copy above: the first build in
       # each slot, named <day>T<HH>Z.snap.json.gz in the month's snapshots release. A slot's file is never replaced:
@@ -398,6 +435,7 @@ jobs:
       - name: Keep the 6-hourly snapshots (first build of each slot)
         id: slots
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -429,6 +467,7 @@ jobs:
       - name: Suite ledger (public release assets, not on the site)
         id: ledger
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -480,6 +519,7 @@ jobs:
       - name: Keep COP's memory (public release memory, not on the site)
         id: memory
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -500,6 +540,7 @@ jobs:
       - name: Lock the direction words (branch direction-log)
         id: direction_log
         if: ${{ !cancelled() }}
+        timeout-minutes: 2
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
@@ -527,13 +568,21 @@ jobs:
           BLOB=$(git hash-object -w "$LOG")
           TREE=$(printf '100644 blob %s\tdirection-log.jsonl\n' "$BLOB" | git mktree)
           COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Direction log: build $GITHUB_SHA")
-          git push origin "$COMMIT:refs/heads/direction-log"
+          # A push that fails leaves out/direction-log.jsonl as the branch holds it, and this build's log, with the
+          # lines that were not locked, apart in out/direction-log-unpushed.jsonl (both kept by the run lane).
+          git push origin "$COMMIT:refs/heads/direction-log" || {
+            mv "$LOG" out/direction-log-unpushed.jsonl
+            if [ -n "$PARENT" ]; then git show "$PARENT:direction-log.jsonl" > "$LOG"; else : > "$LOG"; fi
+            echo "::error::the direction log could not be pushed; this build's lines were not locked (kept in out/direction-log-unpushed.jsonl)"
+            exit 1
+          }
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
       # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not served from the site.
       - name: Dropped items (public, beside the ledger, not on the site)
         id: dropped
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -564,23 +613,29 @@ jobs:
       #              keeps every build's.
       #   run        out/: the suite ledger, triage log, memory and Hormuz stream with their states (each replaced in
       #              its release at every build), the dropped-items log, the daily briefs, the lane and direction logs
-      #              as pushed, the ended lists as fetched, the base rates, and the Undertow joins, whose publishing is
-      #              off and which are kept nowhere else. Left out: out/archive (its own lane), the downloaded copies
-      #              of public releases and other repositories (rates-archive, history-in, history-prev), and the
-      #              history set (history-new, history.tar.gz), which the site lane holds as served.
-      #   site       site/ as deployed: every published file, each replaced by the next deploy. Only when the deploy
-      #              step succeeded.
+      #              as the branches hold them (a direction-log push that failed leaves this build's log apart, in
+      #              direction-log-unpushed.jsonl), the ended lists as fetched, the base rates, and the Undertow
+      #              joins, whose publishing is off and which are kept nowhere else. Left out: out/archive (its own
+      #              lane), the downloaded copies of public releases and other repositories (rates-archive, history-in,
+      #              history-prev), and the packed history set (history.tar.gz). The unpacked set this build made
+      #              (history-new) is left out only when the site lane kept it as served.
+      #   site       site/ as deployed: every published file, each replaced by the next deploy (its own step, straight
+      #              after the deploy, only when the deploy ran and succeeded).
       #   history    history/: the committed layer histories, labels and replays (a build that changes none uploads
       #              nothing).
-      # Only once the snapshot step succeeded (an earlier failure leaves nothing new to keep). These are COP's own
-      # outputs and copies of public files, so nothing is redacted and the archived bytes match the public copy. Each
-      # lane is tried even if another failed; any failure turns the run red after the live site is updated.
-      - name: Private archive (snapshots, build outputs, site and history, to tic-archive)
+      # The snapshots and site lanes run earlier (their steps above), so a build stopped later has kept them; this
+      # step turns the run red if either failed. Only once the snapshot step succeeded (an earlier failure leaves
+      # nothing new to keep). These are COP's own outputs and copies of public files, so nothing is redacted and the
+      # archived bytes match the public copy. Each lane is tried even if another failed; any failure turns the run
+      # red after the live site is updated.
+      - name: Private archive (build outputs and history, to tic-archive; checks the snapshots and site lanes)
         if: ${{ !cancelled() }}
+        timeout-minutes: 5
         env:
           GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
           SNAPSHOT: ${{ steps.snapshot.outcome }}
-          DEPLOYED: ${{ steps.deploy.outcome }}
+          SNAPSHOTS_LANE: ${{ steps.archive_snapshots.outcome }}
+          SITE_LANE: ${{ steps.archive_site.outcome }}
         run: |
           if [ "$SNAPSHOT" != "success" ]; then
             echo "the snapshot step did not succeed, so this build has nothing new to archive"; exit 0
@@ -589,14 +644,17 @@ jobs:
             echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so this build's snapshots, outputs and site did not reach the private archive"; exit 1
           fi
           failed=0
-          python tools/tic_archive.py put --program cop --lane snapshots --src out/archive || failed=1
-          python tools/tic_archive.py put --program cop --lane run --src out --exclude 'archive/*' \
-            --exclude 'rates-archive/*' --exclude 'history-in/*' --exclude 'history-prev/*' \
-            --exclude 'history-new/*' --exclude 'history.tar.gz' || failed=1
-          if [ "$DEPLOYED" = "success" ]; then
-            python tools/tic_archive.py put --program cop --lane site --src site || failed=1
+          [ "$SNAPSHOTS_LANE" = "success" ] || { echo "::error::snapshots lane: $SNAPSHOTS_LANE (its step above)"; failed=1; }
+          [ "$SITE_LANE" != "failure" ] || { echo "::error::site lane: failed (its step above)"; failed=1; }
+          if [ "$SITE_LANE" = "success" ]; then
+            python tools/tic_archive.py put --program cop --lane run --src out --exclude 'archive/*' \
+              --exclude 'rates-archive/*' --exclude 'history-in/*' --exclude 'history-prev/*' \
+              --exclude 'history.tar.gz' --exclude 'history-new/*' || failed=1
           else
-            echo "site: not deployed this build, so not archived"
+            # The site lane did not keep this build's site, so the run lane keeps the history set this build made.
+            python tools/tic_archive.py put --program cop --lane run --src out --exclude 'archive/*' \
+              --exclude 'rates-archive/*' --exclude 'history-in/*' --exclude 'history-prev/*' \
+              --exclude 'history.tar.gz' || failed=1
           fi
           python tools/tic_archive.py put --program cop --lane history --src history || failed=1
           if [ "$failed" != 0 ]; then

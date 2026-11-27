@@ -14,6 +14,7 @@ from __future__ import annotations
 import fnmatch
 import gzip
 import hashlib
+import json
 import os
 import re
 import shlex
@@ -34,7 +35,13 @@ PROGRAM = "cop"
 NOW = "2026-10-31T20:30:00Z"
 DAY = "2026-10-31"
 FIRST, SECOND = "20261031T203000Z", "20261031T223000Z"
-ARCHIVE_STEP = "Private archive (snapshots, build outputs, site and history, to tic-archive)"
+ARCHIVE_STEP = "Private archive (build outputs and history, to tic-archive; checks the snapshots and site lanes)"
+SNAPSHOTS_STEP = "Private archive of this build's snapshot copies (before the release replaces the day's copy)"
+SITE_STEP = "Private archive of the site as deployed"
+ARCHIVE_STEPS = (SNAPSHOTS_STEP, SITE_STEP, ARCHIVE_STEP)
+# Minutes the steps before the deploy take on a normal build, with room: the three longest successful builds of late
+# November 2026 took 91 to 109 s for the whole job.
+PRE_DEPLOY_MINUTES = 5
 LOG_STEP = "Direction log on the site (site/data/direction-log.jsonl, from the branch direction-log)"
 
 # Every release upload in build.yml, as written there (the file arguments), and the files of the offline build that
@@ -90,17 +97,21 @@ def shell_lines(text: str) -> list[str]:
     return [ln.strip() for ln in flat.splitlines() if ln.strip() and not ln.strip().startswith("#")]
 
 
-def uploads() -> list[str]:
-    """The file arguments of every release upload in the build job (direct, or through the steps' `up` helper)."""
+def uploads_in(text: str) -> list[str]:
+    """The file arguments of every release upload in one step (direct, or through the steps' `up` helper)."""
     found = []
     rx = re.compile(r"(?:gh release upload|(?<![\w-])up) (\S+) (.+?)(?:\s+--clobber)?(?=\s+\|\||\s*;|\s+&&|\s*$)")
-    for text in STEPS.values():
-        for line in shell_lines(text):
-            for m in rx.finditer(line):
-                if m.group(1) == '"$@"':
-                    continue            # the helper's own definition
-                found.append(m.group(2).strip())
+    for line in shell_lines(text):
+        for m in rx.finditer(line):
+            if m.group(1) == '"$@"':
+                continue            # the helper's own definition
+            found.append(m.group(2).strip())
     return found
+
+
+def uploads() -> list[str]:
+    """The file arguments of every release upload in the build job."""
+    return [u for text in STEPS.values() for u in uploads_in(text)]
 
 
 def pushes() -> dict[str, str]:
@@ -126,8 +137,45 @@ def arg(argv: list[str], flag: str) -> list[str]:
     return [argv[i + 1] for i, t in enumerate(argv) if t == flag]
 
 
-def put_calls() -> list[list[str]]:
-    return archive_calls(STEPS[ARCHIVE_STEP], "put")
+SITE_ARCHIVED = 'if [ "$SITE_LANE" = "success" ]; then'
+
+
+def run_lane_calls() -> tuple[list[str], list[str]]:
+    """The last step's two run-lane puts: (when the site lane kept this build's site, when it did not)."""
+    flat = shell_lines(STEPS[ARCHIVE_STEP])
+    start = flat.index(SITE_ARCHIVED)
+    rest = flat[start + 1:]
+    els, fi = rest.index("else"), rest.index("fi")
+    (with_site,) = archive_calls("\n".join(rest[:els]), "put")
+    (without_site,) = archive_calls("\n".join(rest[els + 1:fi]), "put")
+    return with_site, without_site
+
+
+def put_calls(site_archived: bool = True) -> list[list[str]]:
+    """Every lane's put as one build runs them: the site lane only when the deploy published the site."""
+    calls = archive_calls(STEPS[SNAPSHOTS_STEP], "put")
+    if site_archived:
+        calls += archive_calls(STEPS[SITE_STEP], "put")
+    with_site, without_site = run_lane_calls()
+    calls.append(with_site if site_archived else without_site)
+    calls += [c for c in archive_calls(STEPS[ARCHIVE_STEP], "put") if lane_of(c) != "run"]
+    return calls
+
+
+def timeout(text: str) -> int | None:
+    m = re.search(r"(?m)^        timeout-minutes: (\d+)$", text)
+    return int(m.group(1)) if m else None
+
+
+def run_block(text: str) -> str:
+    """A step's `run: |` script, as the runner gets it."""
+    body = text.split("        run: |\n", 1)[1]
+    lines = []
+    for ln in body.splitlines():
+        if ln.strip() and not ln.startswith("          "):
+            break
+        lines.append(ln[10:])
+    return "\n".join(lines) + "\n"
 
 
 def lane_of(argv: list[str]) -> str:
@@ -243,49 +291,114 @@ class TestWorkflowLanes(unittest.TestCase):
         self.assertEqual(arg(lanes["site"], "--src"), ["site"])
         self.assertEqual(arg(lanes["history"], "--src"), ["history"])
         self.assertEqual(arg(lanes["run"], "--exclude"),
-                         ["archive/*", "rates-archive/*", "history-in/*", "history-prev/*", "history-new/*",
-                          "history.tar.gz"])
+                         ["archive/*", "rates-archive/*", "history-in/*", "history-prev/*", "history.tar.gz",
+                          "history-new/*"])
         for lane in ("snapshots", "site", "history"):
             self.assertEqual(arg(lanes[lane], "--exclude"), [], lane)
+        # Without a site snapshot, the run lane is the same put but keeps the history set this build made.
+        with_site, without_site = run_lane_calls()
+        self.assertEqual(with_site, without_site + ["--exclude", "history-new/*"])
+        self.assertEqual({lane_of(c) for c in put_calls(site_archived=False)}, {"snapshots", "run", "history"})
 
-    def test_the_last_step_and_loud_on_failure(self):
+    def test_each_archive_step_is_loud_on_failure(self):
         names = list(STEPS)
-        self.assertEqual(names[-1], ARCHIVE_STEP, "the archive step runs after every step that writes what it keeps")
+        self.assertEqual(names[-1], ARCHIVE_STEP, "the last archive step runs after every step that writes what it keeps")
         text = STEPS[ARCHIVE_STEP]
         self.assertIn("if: ${{ !cancelled() }}", text)
-        self.assertIn("GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}", text)
-        self.assertNotIn("github.token", text)
-        self.assertNotIn("|| true", text)
         self.assertNotIn("continue-on-error", text)
-        self.assertIn('[ -z "$GH_TOKEN" ]', text)
         self.assertEqual(text.count("exit 1"), 2)            # token missing; any lane failed
-        self.assertEqual(text.count("|| failed=1"), 4)       # each lane tried even if another failed
+        self.assertEqual(text.count("|| failed=1"), 3)       # the run lane (one of two) and history, each tried
+        # The earlier lanes never hold the build back, and the last step turns the run red when one failed.
+        for name in (SNAPSHOTS_STEP, SITE_STEP):
+            self.assertIn("continue-on-error: true", STEPS[name], name)
+            self.assertEqual(STEPS[name].count("exit 1"), 1, name)       # token missing
+        self.assertIn("SNAPSHOTS_LANE: ${{ steps.archive_snapshots.outcome }}", text)
+        self.assertIn("SITE_LANE: ${{ steps.archive_site.outcome }}", text)
+        self.assertIn("id: archive_snapshots", STEPS[SNAPSHOTS_STEP])
+        self.assertIn("id: archive_site", STEPS[SITE_STEP])
+        flat = shell_lines(text)
+        self.assertIn('[ "$SNAPSHOTS_LANE" = "success" ] || { echo "::error::snapshots lane: $SNAPSHOTS_LANE '
+                      '(its step above)"; failed=1; }', flat)
+        self.assertIn('[ "$SITE_LANE" != "failure" ] || { echo "::error::site lane: failed (its step above)"; '
+                      'failed=1; }', flat)
+        for name in ARCHIVE_STEPS:
+            self.assertIn("GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}", STEPS[name], name)
+            self.assertNotIn("github.token", STEPS[name], name)
+            self.assertNotIn("|| true", STEPS[name], name)
+            self.assertIn('[ -z "$GH_TOKEN" ]', STEPS[name], name)
         self.assertNotIn("TIC_ARCHIVE_TOKEN", step("Deploy site/"))
-        self.assertEqual([n for n in names if "TIC_ARCHIVE_TOKEN" in STEPS[n]], [ARCHIVE_STEP])
+        self.assertEqual([n for n in names if "TIC_ARCHIVE_TOKEN" in STEPS[n]], list(ARCHIVE_STEPS))
 
     def test_lanes_wait_for_the_steps_that_write_them(self):
         text = STEPS[ARCHIVE_STEP]
         self.assertIn("SNAPSHOT: ${{ steps.snapshot.outcome }}", text)
-        self.assertIn("DEPLOYED: ${{ steps.deploy.outcome }}", text)
         self.assertIn("id: snapshot", STEPS["Snapshot of the program feeds"])
         self.assertIn("id: deploy", step("Deploy site/"))
         flat = "\n".join(shell_lines(text))
         gate = flat.index('if [ "$SNAPSHOT" != "success" ]; then')
         self.assertLess(gate, flat.index("[ -z \"$GH_TOKEN\" ]"))
         self.assertLess(gate, flat.index("python tools/tic_archive.py"))
-        self.assertRegex(flat, r'if \[ "\$DEPLOYED" = "success" \]; then\npython tools/tic_archive\.py put '
-                               r'--program cop --lane site ')
+        # The snapshots lane runs only after the snapshot step succeeded (a step's default `if:`).
+        self.assertNotIn("        if:", STEPS[SNAPSHOTS_STEP])
 
     def test_the_run_lane_holds_every_kept_out_file(self):
         (run,) = [c for c in put_calls() if lane_of(c) == "run"]
         excludes = arg(run, "--exclude")
         kept = [p for paths in UPLOADS.values() for lane, p in paths if lane == "run"] + list(PUSHES.values()) \
-            + OUT_ONLY
+            + OUT_ONLY + ["out/direction-log-unpushed.jsonl"]
         for p in kept:
             rel = p[len("out/"):]
             self.assertFalse([g for g in excludes if fnmatch.fnmatch(rel, g)], p)
         for p in NOT_IN_RUN:
             self.assertTrue([g for g in excludes if fnmatch.fnmatch(p[len("out/"):], g)], p)
+
+
+class TestArchiveBeforeReplace(unittest.TestCase):
+    """A build that stops part way (a step that hangs, the job's time limit) has already kept what it replaced in
+    public: run 45677997691 (25 Nov 2026) hung after the deploy until the job was cancelled at its 10-minute limit,
+    when the archive ran only as the last step."""
+
+    def test_the_snapshot_copies_are_kept_before_the_release_replaces_the_day_copy(self):
+        names = list(STEPS)
+        snap = names.index("Snapshot of the program feeds")
+        self.assertEqual(names.index(SNAPSHOTS_STEP), snap + 1, "straight after the snapshot is written")
+        self.assertEqual(arg(archive_calls(STEPS[SNAPSHOTS_STEP], "put")[0], "--src"), ["out/archive"])
+        # Every release upload of out/archive comes after the lane has kept it.
+        for n in names:
+            if any(u.startswith("out/archive/") or u == '"$f"'
+                   for u in uploads_in(STEPS[n])):
+                self.assertGreater(names.index(n), names.index(SNAPSHOTS_STEP), n)
+
+    def test_the_site_is_kept_straight_after_the_deploy(self):
+        names = list(STEPS)
+        deploy = names.index(next(n for n in names if n.startswith("Deploy site/")))
+        self.assertEqual(names.index(SITE_STEP), deploy + 1, "straight after the deploy")
+        self.assertEqual(arg(archive_calls(STEPS[SITE_STEP], "put")[0], "--src"), ["site"])
+
+    def test_the_site_lane_waits_for_a_deploy_that_ran(self):
+        """The deploy step exits 0 without the Cloudflare secrets: that is not a deployed site."""
+        deploy = shell_lines(step("Deploy site/"))
+        skip = next(i for i, ln in enumerate(deploy) if "skipping deploy" in ln)
+        wrangler = next(i for i, ln in enumerate(deploy) if "pages deploy site" in ln)
+        self.assertIn("exit 0", deploy[skip])
+        self.assertEqual(deploy[-1], 'echo "deployed=yes" >> "$GITHUB_OUTPUT"')
+        self.assertLess(skip, wrangler)
+        self.assertEqual(len(deploy) - 1, wrangler + 1, "the output is set right after wrangler returns")
+        self.assertIn("if: ${{ !cancelled() && steps.deploy.outputs.deployed == 'yes' }}", STEPS[SITE_STEP])
+
+    def test_a_hung_step_fails_at_its_own_limit_before_the_job_limit(self):
+        """Each step from the deploy on has a time limit, and the job's limit leaves room for all of them after a
+        normal run of the steps before, so the archive steps always get to run."""
+        names = list(STEPS)
+        deploy = names.index(next(n for n in names if n.startswith("Deploy site/")))
+        after = names[deploy + 1:]
+        missing = [n for n in after if timeout(STEPS[n]) is None]
+        self.assertEqual(missing, [], "a step after the deploy has no timeout-minutes")
+        job = int(re.search(r"(?m)^  build:\n(?:    .*\n)*?    timeout-minutes: (\d+)$", WF).group(1))
+        budget = PRE_DEPLOY_MINUTES + sum(timeout(STEPS[n]) for n in after)
+        self.assertGreaterEqual(job, budget, f"job limit {job} min under {budget} min")
+        self.assertIsNotNone(timeout(STEPS[SNAPSHOTS_STEP]))
+        self.assertLessEqual(timeout(STEPS[SNAPSHOTS_STEP]), 3)
 
 
 class TestDirectionLogOnTheSite(unittest.TestCase):
@@ -396,6 +509,172 @@ class TestEveryBuildFileIsArchived(unittest.TestCase):
         finally:
             for p, data in old.items():
                 (root / p).write_bytes(data)
+
+
+def gzip_header(data: bytes) -> tuple[int, int]:
+    """(flags, mtime) of a gzip member's header."""
+    return data[3], int.from_bytes(data[4:8], "little")
+
+
+class TestOneCopyPerContent(unittest.TestCase):
+    """The archive stores files by their bytes, so a file whose content has not changed must keep its bytes: the
+    day's copy and the slot's copy of one build are one stored file, and an unchanged state is not stored again."""
+
+    def test_the_day_and_slot_copies_are_the_same_bytes(self):
+        root = Build.make()
+        day = (root / f"out/archive/{DAY}.geojson.gz").read_bytes()
+        slot = (root / f"out/archive/{DAY}T18Z.snap.json.gz").read_bytes()
+        self.assertEqual(day, slot)
+        self.assertEqual(gzip_header(day), (0, 0), "a gzip header with a file name or a time")
+        self.assertEqual(gzip.decompress(day), (root / "site/data/today.geojson").read_bytes())
+
+    def test_the_ended_list_copy_has_a_fixed_header(self):
+        import snapshot
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as td:
+            fx, arch = Path(td) / "fx", Path(td) / "archive"
+            fx.mkdir()
+            shutil.copyfile(ROOT / "tests/fixtures/elements.geojson", fx / "elements-ended.geojson")
+            snapshot.fetch_ended(datetime(2026, 10, 31, 20, 30, tzinfo=timezone.utc), Path(td) / "ended", str(fx),
+                                 arch)
+            data = (arch / f"{DAY}.elements-ended.json.gz").read_bytes()
+            self.assertEqual(gzip_header(data), (0, 0), "a gzip header with a file name or a time")
+            self.assertEqual(json.loads(gzip.decompress(data))["cop_fetched_at"], NOW)
+
+    def test_the_snapshots_lane_stores_them_once(self):
+        root = Build.make()
+        with tempfile.TemporaryDirectory() as td:
+            store = Path(td)
+            (snap,) = archive_calls(STEPS[SNAPSHOTS_STEP], "put")
+            self.assertEqual(run_archive(snap, root, store), 0)
+            (index,) = [p for p in store.rglob("*.files.json")]
+            doc = json.loads(index.read_text(encoding="utf-8"))
+            members = {f["path"]: f["member"] for f in doc["files"]}
+            self.assertEqual(members[f"{DAY}.geojson.gz"], members[f"{DAY}T18Z.snap.json.gz"])
+            self.assertEqual(doc["new_files"], doc["file_count"] - 1)
+
+    def test_an_unchanged_hormuz_state_keeps_its_bytes(self):
+        import hormuz_stream
+        state = {"covered_from": "2026-10-01T00:00:00Z", "transits": {}, "reports": {}}
+        with tempfile.TemporaryDirectory() as td:
+            a, b = Path(td) / "a", Path(td) / "b"
+            hormuz_stream.save_state(state, a)
+            with mock.patch("time.time", lambda: 2_000_000_000.0):
+                hormuz_stream.save_state(state, b)
+            one = (a / hormuz_stream.STATE_NAME).read_bytes()
+            self.assertEqual(one, (b / hormuz_stream.STATE_NAME).read_bytes())
+            self.assertEqual(gzip_header(one), (0, 0))
+            self.assertEqual(hormuz_stream.load_state(a), state)
+
+
+class TestRunLaneWithoutTheSite(unittest.TestCase):
+    """A build whose site was not archived (the deploy failed or skipped itself) has still replaced the release's
+    history set when it rebuilt it: the run lane keeps the set this build made."""
+
+    def test_the_history_set_is_kept_by_the_run_lane(self):
+        root = Build.make()
+        with tempfile.TemporaryDirectory() as td:
+            store = Path(td) / "store"
+            calls = put_calls(site_archived=False)
+            self.assertEqual([lane_of(c) for c in calls], ["snapshots", "run", "history"])
+            for argv in calls:
+                self.assertEqual(run_archive(argv, root, store), 0, lane_of(argv))
+            dest = Path(td) / "run"
+            self.assertEqual(run_archive(["restore", "--program", PROGRAM, "--lane", "run", "--dest", str(dest)],
+                                         root, store), 0)
+            got = tree(dest)
+            self.assertEqual(got["history-new/manifest.json"],
+                             hashlib.sha256((root / "out/history-new/manifest.json").read_bytes()).hexdigest())
+            self.assertNotIn("history.tar.gz", got)
+            self.assertFalse([p for p in got if p.startswith(("rates-archive/", "history-in/", "history-prev/",
+                                                              "archive/"))])
+
+
+def posix_bash() -> str | None:
+    """A bash that can run the workflow's scripts with git (the runner's, or Git Bash); None where there is none."""
+    bash = shutil.which("bash")
+    if not bash or not shutil.which("git"):
+        return None
+    try:
+        r = subprocess.run([bash, "-c", "command -v git >/dev/null && echo ok"], capture_output=True, text=True,
+                           timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return bash if r.stdout.strip() == "ok" else None
+
+
+@unittest.skipIf(posix_bash() is None, "needs bash and git (the runner has both)")
+class TestDirectionLogPushThatFails(unittest.TestCase):
+    """The lock step's own script against a local origin: when the push is refused, out/direction-log.jsonl must be
+    the branch's log (the run lane's copy is the locked record) and this build's lines are kept apart."""
+
+    BRANCH_LINE = '{"line": 1}\n'
+    NEW_LINE = '{"line": 2}\n'
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="cop-dlog-"))
+        self.env = {**os.environ, "GITHUB_SHA": "0" * 40, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.com",
+                    "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.com",
+                    "PATH": os.path.dirname(sys.executable) + os.pathsep + os.environ.get("PATH", "")}
+        self.origin, self.work = self.tmp / "origin.git", self.tmp / "work"
+        self.git("init", "-q", "--bare", str(self.origin))
+        self.git("init", "-q", str(self.work))
+        self.git("-C", str(self.work), "remote", "add", "origin", self.origin.as_posix())
+        log = self.work / "seed.jsonl"
+        log.write_text(self.BRANCH_LINE, encoding="utf-8", newline="\n")
+        blob = self.git("-C", str(self.work), "hash-object", "-w", str(log))
+        tree_id = self.git("-C", str(self.work), "mktree", input=f"100644 blob {blob}\tdirection-log.jsonl\n")
+        commit = self.git("-C", str(self.work), "commit-tree", tree_id, "-m", "seed")
+        self.git("-C", str(self.work), "push", "-q", "origin", f"{commit}:refs/heads/direction-log")
+        log.unlink()
+        for rel in ("site/data/direction.json", "out/memory/memory.json.gz"):
+            (self.work / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.work / rel).write_text("{}", encoding="utf-8")
+        # Stands in for tools/direction_log.py: adds one line to the log it is given.
+        (self.work / "tools").mkdir()
+        (self.work / "tools/direction_log.py").write_text(
+            "import sys\nlog = sys.argv[sys.argv.index('--log') + 1]\n"
+            f"open(log, 'a', encoding='utf-8', newline='\\n').write({self.NEW_LINE!r})\n", encoding="utf-8")
+        (self.tmp / "step.sh").write_text(run_block(step("Lock the direction words")), encoding="utf-8",
+                                          newline="\n")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def git(self, *argv, input=None) -> str:
+        # Bytes in and out, so no newline is translated on the way (git mktree reads its lines exactly).
+        r = subprocess.run(["git", *argv], capture_output=True, input=input.encode("utf-8") if input else None,
+                           env=self.env, timeout=60)
+        if r.returncode != 0:
+            raise RuntimeError(f"git {argv[0]}: {r.stderr.decode('utf-8', 'replace')}")
+        return r.stdout.decode("utf-8").strip()
+
+    def run_step(self) -> subprocess.CompletedProcess:
+        return subprocess.run([posix_bash(), "--noprofile", "--norc", "-eo", "pipefail", str(self.tmp / "step.sh")],
+                              cwd=self.work, capture_output=True, text=True, env=self.env, timeout=120)
+
+    def branch_log(self) -> str:
+        return self.git("--git-dir", str(self.origin), "show", "direction-log:direction-log.jsonl") + "\n"
+
+    def test_a_refused_push_leaves_the_branch_log_and_keeps_the_lines_apart(self):
+        hook = self.origin / "hooks" / "pre-receive"
+        hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8", newline="\n")
+        hook.chmod(0o755)
+        r = self.run_step()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("could not be pushed", r.stdout)
+        self.assertEqual(self.branch_log(), self.BRANCH_LINE)
+        self.assertEqual((self.work / "out/direction-log.jsonl").read_text(encoding="utf-8"), self.BRANCH_LINE)
+        self.assertEqual((self.work / "out/direction-log-unpushed.jsonl").read_text(encoding="utf-8"),
+                         self.BRANCH_LINE + self.NEW_LINE)
+
+    def test_a_push_that_lands_leaves_no_unpushed_file(self):
+        r = self.run_step()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(self.branch_log(), self.BRANCH_LINE + self.NEW_LINE)
+        self.assertEqual((self.work / "out/direction-log.jsonl").read_text(encoding="utf-8"),
+                         self.BRANCH_LINE + self.NEW_LINE)
+        self.assertFalse((self.work / "out/direction-log-unpushed.jsonl").exists())
 
 
 if __name__ == "__main__":
