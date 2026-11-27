@@ -9,7 +9,8 @@ Reads three kinds of source, all left as they are (this set is derived and can b
 - COP's suite ledger (release ledger, <day>.jsonl.gz, tic-history/1) and each program's own log (history/log in its
   repository, the same format, config/history.json): every item new, changed or ended, with its time. The table
   `events`. Each change is counted once: a program with its own log has its events from that log from the log's
-  first day, and from COP's ledger only before it (the ledger records the same change again at COP's build).
+  first line, and from COP's ledger only before that time (the ledger records the same change again at COP's build,
+  minutes later). A log that began partway through a day leaves that day's earlier ledger lines in.
 - config/areas.json: the warning problems and Watchfloor's conflict zones, so each row also names the areas it falls
   in (the `zones` column), by the same rules as the direction of concern (tools/direction.py in_area, with Blackout's
   country outages placed by country). A worldwide problem holds only the items of its own layers.
@@ -46,7 +47,7 @@ import json
 import re
 import sys
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from collections import defaultdict
 from pathlib import Path
 
@@ -394,9 +395,9 @@ def collect(archive, ledger=None, logs=None, config=None):
             rows = events_of(folder, f"program-log:{program}", areas, breaks, program)
             events.extend(rows)
             logs_read[program] = len(rows)
-            days = [day for day, _ in log_files(folder)]
-            if days:
-                log_from[program] = min(days)
+            start = log_start(rows, [day for day, _ in log_files(folder)])
+            if start:
+                log_from[program] = start
         else:
             logs_read[program] = None
     if ledger and Path(ledger).is_dir():
@@ -405,11 +406,43 @@ def collect(archive, ledger=None, logs=None, config=None):
             "logs_read": logs_read, "log_from": log_from}
 
 
+def _instant(s):
+    """An ISO time or day as a UTC "YYYY-MM-DDTHH:MM:SSZ" string that sorts as time, or None. A bare day is its start."""
+    if not isinstance(s, str) or not s:
+        return None
+    try:
+        if len(s) == 10:
+            return date.fromisoformat(s).isoformat() + "T00:00:00Z"
+        t = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def log_start(rows, days):
+    """When a program's own log begins: the time of its earliest line, or the start of its first day file when no
+    line carries a time."""
+    times = [t for t in (_instant(r.get("at")) for r in rows) if t]
+    if times:
+        return min(times)
+    return _instant(min(days)) if days else None
+
+
 def ledger_events(rows, log_from):
     """COP's ledger lines, less those a program's own log already holds. COP's ledger records the same change as the
     program's log, minutes later, at COP's build: kept both, one change would count twice. So a program with its own
-    log has its events from that log from the log's first day, and from COP's ledger only for the days before it."""
-    return [r for r in rows if r["program"] not in log_from or r["date"] < log_from[r["program"]]]
+    log has its events from that log from the log's first line, and from COP's ledger only before that time. A ledger
+    line can only repeat a log line written before it, so every ledger line before the log began is kept, including
+    those earlier on the log's first day. A line with no readable time is kept (its day is its only time)."""
+    out = []
+    for r in rows:
+        start = _instant(log_from.get(r["program"]))
+        at = _instant(r.get("at"))
+        if start is None or at is None or at < start:
+            out.append(r)
+    return out
 
 
 def week_of(day):
