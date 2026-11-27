@@ -51,6 +51,8 @@ UPLOADS = {
     "out/archive/*.geojson.gz $(ls out/archive/*-ended.json.gz 2>/dev/null)": [
         ("snapshots", f"out/archive/{DAY}.geojson.gz"), ("snapshots", f"out/archive/{DAY}.elements-ended.json.gz")],
     '"$f"': [("snapshots", f"out/archive/{DAY}T18Z.snap.json.gz")],
+    "out/manifest/manifest.json out/manifest/SHA256SUMS": [
+        ("run", "out/manifest/manifest.json"), ("run", "out/manifest/SHA256SUMS")],
     "out/triage-log/*.gz": [("run", "out/triage-log/state.json.gz"), ("run", f"out/triage-log/{DAY}.jsonl.gz")],
     "out/hormuz-stream/state.json.gz": [("run", "out/hormuz-stream/state.json.gz")],
     '"$NEW"': [("run", f"out/briefs/{DAY}.json")],

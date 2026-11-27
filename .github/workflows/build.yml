@@ -62,7 +62,7 @@ jobs:
     # Above the sum of the time limits of the steps from the deploy on (each step after the deploy has its own), so a
     # step that hangs there fails at its own limit and the private archive steps still run. A normal build takes
     # under two minutes.
-    timeout-minutes: 30
+    timeout-minutes: 32
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -475,6 +475,24 @@ jobs:
             done
             [ -n "$ok" ] || { echo "::error::6-hourly snapshot $name could not be uploaded to $TAG"; exit 1; }
           done
+      # manifest.json and SHA256SUMS in the month's snapshots release: every file's name, size and SHA-256
+      # (tools/release_manifest.py). This run's daily copies are hashed here and must match what GitHub holds; for
+      # the rest GitHub's own digest is listed. Only these two files are replaced.
+      - name: Checksums of the snapshot release (manifest.json, SHA256SUMS)
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          TAG="snapshots-$(date -u +%Y-%m)"
+          LOCAL="${RUNNER_TEMP:-/tmp}/manifest-local"
+          mkdir -p "$LOCAL"
+          cp out/archive/*.geojson.gz "$LOCAL/"
+          cp out/archive/*-ended.json.gz "$LOCAL/" 2>/dev/null || true
+          CHANGED=$(python tools/release_manifest.py release "$TAG" --repo "$GITHUB_REPOSITORY" --local-dir "$LOCAL" --out-dir out/manifest)
+          echo "$TAG checksums: $CHANGED"
+          [ "$CHANGED" = "unchanged" ] || gh release upload "$TAG" out/manifest/manifest.json out/manifest/SHA256SUMS --clobber
       # The suite ledger (tools/ledger.py, the kit's tic-history/1): what is new, changed or ended since the last
       # build, with each full item. The open state (state.json.gz, and state-before-subject-id.json.gz) stays in the
       # release "ledger" for good. The day files (YYYY-MM-DD.jsonl.gz) stay in "ledger" through 2026 and, from 2027, go
