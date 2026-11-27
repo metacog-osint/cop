@@ -1,6 +1,6 @@
 {
   "kit": "tic-doctrine",
-  "version": "0.6.14",
+  "version": "0.6.15",
   "files": {
     "tic.py": "1fcabda0773e35b4b3f92e8fcef6698dae063928a90ef3f196d0ea2e5830f291",
     "vocab/actors.json": "9ece2aa86ac424eab65f0e61eaa6c270873330812993b664fcceb0188684e67f",
@@ -18,7 +18,7 @@
     "geo/points.json": "369b66ee628c6753d43b114770875cb27a2008da200b58bf76932a50b3cff994",
     "geo/seas.json": "c4c7befdf0d997428f79a30a92cd3e1570c626a9cd6476f59439d3bf8d3eaad3",
     "geo/subdivisions.json": "f2bf0186fdbf45563427e2163190f13c85476377e891c09c55d9f56864dc1ecf",
-    "python/tic_doctrine/__init__.py": "368a5b17577d78e5c72b78f89891ea8d557a6d2d2951e3f999a5fe0ade19894b",
+    "python/tic_doctrine/__init__.py": "60a2bef6284698411ce9721314451297cf58418f6b1cf164e6a2968891deaa6f",
     "python/tic_doctrine/confidence.py": "b207b867af218123a2251f6ca5d185cfe54638cf379bd71bfb8cf53740e286f4",
     "python/tic_doctrine/contract.py": "a0626fe4924bbcbef5ae7769d959c40c4d6292fdfb07f4a8966d3f980eb68e3a",
     "python/tic_doctrine/geo.py": "be1aab9bf4b16a69c881073886bc7a6520b03d346076ef007bea48415d03c163",
@@ -39,9 +39,8 @@
     "docs/feed-contract-v2.md": "b5463decc9cc289af3a36de68c9ae04f9e298b67c97698764c2dc4cbd3e33015",
     "docs/history-log.md": "5af37a6976f44e5d2945674e548e6d074cf39b902dc2de903197bdeb8dcf701e",
     "docs/language-key.md": "8dafebd7a7bfc0013fc5025fb071e1317afa0ebdeff4385a1d88d83cbf7979ac",
-    "docs/significance.md": "85003b5df3e67d68277e6ca10c049067f7bddfcaa591bd589c5c4dfd5821b367",
     "docs/sources-and-withholding.md": "a496c66b68700450facf9d65008b35d5b5a3e72f495b8c9fa886c325fdb767cf",
     "LICENSE": "e2fcdaa349fa37ea67fca3787f04878a0579a8fcdcc7f5db615fe15d3f5cf6d7",
-    "README.md": "46ab7afdb65388e1d8dfc5369feda12b8a17dc583c1008257c7dde60dd427030"
+    "README.md": "cef4875ecec60a6b47d8d1f0aedd197705746206a09b17860b5c717c3a3e228d"
   }
 }
