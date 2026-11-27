@@ -79,6 +79,33 @@ const SearchInput = z.object({
     .optional()
     .describe("Also list items past their own valid_until (default false: they are left out and counted). Every " +
       "row says expired true or false."),
+  pmesii_pt: z
+    .array(z.string().max(40))
+    .max(8)
+    .optional()
+    .describe("PMESII-PT operational variables (political, military, economic, social, information, " +
+      "infrastructure, physical_environment, time): items filed under any of them."),
+  ie_aspect: z
+    .array(z.string().max(40))
+    .max(3)
+    .optional()
+    .describe("Aspects of the information environment (informational, physical, human): items filed under any of them."),
+  ascope: z
+    .array(z.string().max(40))
+    .max(6)
+    .optional()
+    .describe("ASCOPE civil considerations (areas, structures, capabilities, organizations, people, events): items " +
+      "filed under any of them."),
+  ncf: z
+    .array(z.string().max(60))
+    .max(12)
+    .optional()
+    .describe("Topic keys: CISA National Critical Functions, e.g. [\"transport_by_vessel\"], [\"provide_pnt\"]. " +
+      "Items that carry any of them, in any program's layer."),
+  group_by: z
+    .enum(T.TAGS)
+    .optional()
+    .describe("Also count every match by the values of one tag (pmesii_pt, ie_aspect, ascope or ncf)."),
   limit: z.number().int().min(1).max(T.LIMIT_MAX).optional().describe(`Items to return, default ${T.LIMIT_DEFAULT}.`),
   offset: z
     .number()
@@ -178,9 +205,11 @@ export function buildServer(data, clock = Date.now) {
   tool(
     "search_items",
     "Search the picture",
-    "Find items in COP's current snapshot by program, country, kind, tier, words in the title, time or distance from " +
-      "a point. Returns compact rows (id, program, title, times, countries, point, link, US-person label), warnings " +
-      "first, then anomalies, then routine items. Use get_item for an item's sources and measurements.",
+    "Find items in COP's current snapshot by program, country, kind, tier, words in the title, time, distance from " +
+      "a point, the doctrine framework tags (PMESII-PT, information-environment aspect, ASCOPE) or the topic key " +
+      "(ncf, CISA National Critical Functions), and optionally count the matches by one tag. Returns compact rows " +
+      "(id, program, title, times, countries, point, link, US-person label, tags), warnings first, then anomalies, " +
+      "then routine items. Use get_item for an item's sources and measurements.",
     SearchInput,
     async (a, now) => T.searchItems(await data.index(), a, now),
   );
@@ -188,7 +217,8 @@ export function buildServer(data, clock = Date.now) {
     "get_item",
     "Get one item",
     "One item in full (feed contract tic-feed/2): every source with publisher, licence and grade, its measurements, " +
-      "baseline, place and links.",
+      "baseline, place and links, plus the same topic in other layers: other programs' items that share one of its " +
+      "ncf topic keys (a shared filing, not a link between events).",
     GetItemInput,
     async (a, now) => {
       const index = await data.index();
