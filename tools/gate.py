@@ -63,14 +63,25 @@ def layer_of(item_id):
     return program, kind
 
 
+def coverage_row(node):
+    """A row of the kit's coverage table (format tic-coverage/1): its groups and set_aside list source groups (a
+    publisher or an independence group, with the programs that carry it), not items."""
+    return (isinstance(node, dict) and isinstance(node.get("place"), str) and isinstance(node.get("independent"), int)
+            and isinstance(node.get("groups"), list) and isinstance(node.get("set_aside"), list))
+
+
 def cited_ids(doc):
-    """Every item id a join's document cites: any string under a key named "id", outside the join and gate blocks."""
+    """Every item id a join's document cites: any string under a key named "id", outside the join and gate blocks and
+    outside a coverage row's source groups (whose ids name publishers, never items)."""
     found = set()
 
     def walk(node, top=False):
         if isinstance(node, dict):
+            groups = coverage_row(node)
             for k, v in node.items():
                 if top and k in ("join", "gate"):
+                    continue
+                if groups and k in ("groups", "set_aside"):
                     continue
                 if k == "id" and isinstance(v, str):
                     found.add(v)

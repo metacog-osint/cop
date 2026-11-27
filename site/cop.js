@@ -6,7 +6,7 @@
 // its own valid_until no longer stands out; one click handler opens the top mark under the cursor and lists the
 // rest; and the sentences that count or describe findings are written from the snapshot, not fixed in the page.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
-import { judgmentChips, asOfDateLabel } from "./vendor/tic-doctrine.js";
+import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -420,6 +420,26 @@ function termsBlock(p) {
   return h("details", { class: "terms" }, h("summary", { text: "Terms in this item" }),
     h("dl", {}, ...found.flatMap((t) => [h("dt", { text: t.term === "z" ? "z (z-score)" : t.term }), h("dd", { text: t.text })])));
 }
+// An event report's place on the kit's event ladder (docs/event-ladder.md): lead, confirmed or verified, each shown
+// with what it means, how it was verified, and the party-claim or state-media label when the item rests only on one.
+// An item without a corroboration member (a measurement, a judgment) is outside the ladder and shows nothing here.
+const claimWord = (p) => { const es = eventState(p); return es && es.claim ? ` · ${es.claim_label.toLowerCase()}` : null; };
+function ladderBlock(p) {
+  const es = eventState(p);
+  if (!es) return null;
+  const c = p.corroboration;
+  // The issuer by its publisher's name where the item's own sources list it, else by the id the feed gives.
+  const issuer = typeof c.official === "string"
+    ? ((p.sources || []).find((s) => s && s.id === c.official) || {}).publisher || c.official : null;
+  const how = es.basis === "origins" && Number.isInteger(c.origins) ? ` (${c.origins} counted)`
+    : es.basis === "official" && issuer ? `: ${issuer}` : "";
+  return h("div", { class: "ladder" },
+    h("p", { class: "ladder-h" }, "Event report: ", h("strong", { text: es.label }), ` · step ${es.step} of 3: lead, confirmed, verified`),
+    h("p", { text: es.meaning }),
+    es.basis_label ? h("p", { text: `Verified by ${es.basis_label}${how}.` }) : null,
+    es.claim ? h("p", {}, h("strong", { text: `${es.claim_label}. ` }), es.claim_meaning) : null,
+    h("p", {}, h("a", { href: es.url, rel: "noopener" }, "How this is set")));
+}
 function renderCard(f) {
   const p = f.properties, prog = PROGS[p.cop_program], pick = PICK_OF.get(p.id);
   const card = $("card");
@@ -456,6 +476,8 @@ function renderCard(f) {
   if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: p.cop_source_stale
     ? `No current data from this ${prog.name} source: its last run could not read it well` : `No current data from ${prog.name}` }));
   for (const c of judgmentChips(p)) badges.append(h("span", { class: "badge", text: c.text }));
+  const es = eventState(p);
+  if (es && es.claim) badges.append(h("span", { class: "badge claim", text: es.claim_label }));
   card.append(badges);
   const facts = h("dl", { class: "facts" });
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
@@ -501,6 +523,8 @@ function renderCard(f) {
     }
   }
   card.append(facts);
+  const lb = ladderBlock(p);
+  if (lb) card.append(lb);
   const tb = termsBlock(p);
   if (tb) card.append(tb);
   card.append(h("p", { class: "caveat" }, "Measured or reported by the program named above, not judged by COP. ",
@@ -530,7 +554,7 @@ function rowFor(f, cls = "row", fly = true) {
       h("span", { class: cls === "pick" ? "pick-title" : "row-title", text: p.title }),
       h("span", { class: cls === "pick" ? "pick-meta" : "row-meta" },
         cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", asOfEl(p, "date"),
-        p.status_class === "claimed" ? " · claimed" : null, p.cop_expired ? " · expired" : null,
+        p.status_class === "claimed" ? " · claimed" : null, claimWord(p), p.cop_expired ? " · expired" : null,
         p.cop_stale ? " · no current data" : null),
       pick && cls === "pick" && otherReadings(pick).length
         ? h("span", { class: "pick-meta", text: `Same GDELT coverage: ${otherReadings(pick).map(readingText).join("; ")}` })

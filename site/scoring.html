@@ -81,6 +81,9 @@
         queues, and one zone gives at most one pick, which names the other program's reading of that zone.</li>
       <li>An item its own program says has ended is never a candidate. Within a program, what changed on the latest
         reading comes before what is merely still there.</li>
+      <li>An event report that rests only on a party's claim or on state media is never a candidate, whatever tier its
+        feed gives it, until it is verified on an origin outside the party and outside state media. It stays on the
+        map, labelled <b>Party claim</b> or <b>State media</b> (see <a href="#ladder">event reports</a> below).</li>
       <li>Strength compares like with like: each scale has its own rule, so a CDC health notice is never ranked as if it
         were a travel advisory. Cordon's FCDO, Canada and NZ SafeTravel advice is a candidate only when its level moved,
         as outage triage counts it, and a CDC notice only for <b>72 hours</b> from its date. The table below lists each
@@ -276,7 +279,7 @@
     </ul>
   </section>
 
-  <section class="doc-box" aria-labelledby="places-h">
+  <section class="doc-box" id="places" aria-labelledby="places-h">
     <h2 id="places-h">Place pages</h2>
     <p>Each <a href="place.html">place page</a> gives, per layer, what its program places in the area now and its
       count a day over the last 30 and 90 closed UTC days, from COP's history set. Items are placed by the same rule
@@ -284,6 +287,40 @@
       on at least 80% of the window's days; otherwise the page says there is too little history. A day the program was
       not read has no value, never a zero. Days whose history carries a note (a change of scope or a capped feed) are
       shaded. No layer is added to another.</p>
+    <p><strong>Coverage.</strong> Each place also gets its row of the coverage table (the doctrine kit's format
+      <code>tic-coverage/1</code>), and the <a href="place.html">list of places</a> shows the whole table. A place is
+      <b>Several independent sources</b> when 3 or more independent source groups stand behind the items COP holds for
+      it, <b>One or two sources</b> for 1 or 2, and <b>Not monitored</b> for 0. A source group is a source's
+      independence group, else its publisher, so GDELT counts once however many programs read it. Only items read on
+      time count: not a stale copy, not an item whose own source its program could not read, and not an item its
+      program says has ended or that is past its valid-until time. Sources of items resting only on a party's claim or
+      on state media, and state-owned media, are listed but set aside and never raise a place's class. The count is
+      made from the sources behind the items COP holds for the place at this snapshot, so a source that watches a
+      place but has nothing to report there is missed: each count is a lower bound, and it says nothing about how good
+      the sources are. The file is <a href="data/places/coverage.json">coverage.json</a>; the rule is the kit's
+      (<a href="https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md#the-coverage-table">the
+      coverage table</a>).</p>
+  </section>
+
+  <section class="doc-box" id="ladder" aria-labelledby="ladder-h">
+    <h2 id="ladder-h">Event reports: lead, confirmed, verified</h2>
+    <p>An event report (an attack, an incident at sea, a security alert, an appeal, an outbreak notice) says how well it
+      is established. Its card on the map shows its state, what that state means and a link to the rule. Measurements
+      and judgments are outside this ladder and show no state.</p>
+    <ul>
+      <li><strong>Lead.</strong> Reported by one origin and screened into the program's scope, but nobody has checked
+        it. Read it as reported, never as fact.</li>
+      <li><strong>Confirmed.</strong> A person has read the report and its source and judged it a real event within
+        scope. It still rests on one origin.</li>
+      <li><strong>Verified.</strong> Checked independently: two or more independent origins, an official source
+        reporting within its own remit, or a published geolocation.</li>
+      <li><strong>Party claim, state media.</strong> An item whose every origin so far is a party to the conflict, or
+        media a state owns or controls, is labelled so. It raises nothing on its own: it is never a pick, and its
+        sources never raise a place's coverage.</li>
+    </ul>
+    <p>The ladder, its earlier names (reported for lead, corroborated for verified) and the rule are the doctrine kit's:
+      <a href="https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md">lead, confirmed,
+      verified</a>.</p>
   </section>
 
   <section class="doc-box" id="lanes" aria-labelledby="lanes-h">

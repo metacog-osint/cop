@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 sys.path.insert(0, str(ROOT / "tools"))
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
+from tic_doctrine import ladder  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
 from tic_doctrine import tips as kittips  # noqa: E402
 
@@ -199,6 +200,13 @@ def not_admitted(props, prog, now=None):
             if not at or (now - at).total_seconds() > rule["within_hours"] * 3600:
                 return rule["why"]
     return None
+
+
+def rests_on_claim(props):
+    """The item rests only on a party's claim or on state media (kit event ladder, docs/event-ladder.md): it is
+    labelled, raises nothing on its own and is never a pick, whatever tier its feed gives it, until it is verified on
+    an origin outside the party and outside state media. Stored and shown as before; only the picks skip it."""
+    return ladder.rests_on_claim(props)
 
 
 def standing(props):
@@ -549,7 +557,7 @@ def build(feeds, reports, previous, now):
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
-                    and not no_longer_current(p, now) and not not_admitted(p, prog, now):
+                    and not no_longer_current(p, now) and not not_admitted(p, prog, now) and not rests_on_claim(p):
                 # What changed comes before what is merely still there (Tom, 21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]

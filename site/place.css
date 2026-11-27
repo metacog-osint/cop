@@ -19,3 +19,7 @@
 .pl-table th, .pl-table td { text-align: left; padding: 3px 8px 3px 0; border-top: 1px solid var(--rule); vertical-align: top; }
 .pl-index { columns: 2 220px; padding-left: 18px; }
 .pl-index li { margin: 4px 0; }
+/* the coverage table (kit format tic-coverage/1) */
+.pl-coverage { margin-top: 18px; }
+.doc-table td.pl-num { font-variant-numeric: tabular-nums; }
+.pl-coverage .pl-aside { margin: 10px 0 2px; }
