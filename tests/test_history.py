@@ -137,11 +137,12 @@ class HistoryTest(unittest.TestCase):
 
     def test_one_change_in_both_logs_counts_once(self):
         """COP's ledger records a change again, minutes later, that the program's own log already holds. From the log's
-        first day the program's events come from its own log only; the ledger still covers the days before it."""
+        first line the program's events come from its own log only; the ledger still covers the time before it."""
         t = Path(self.tmp.name) / "twice"
         write_gz(t / "ledger" / "2026-11-16.jsonl.gz", lines=[
             line("2026-11-16T09:00:00Z", "new", "elements:usgs:0", "elements", countries=("UA",))])
         write_gz(t / "ledger" / "2026-11-17.jsonl.gz", lines=[
+            line("2026-11-17T08:20:00Z", "new", "elements:usgs:2", "elements", countries=("UA",)),
             line("2026-11-17T16:41:23Z", "new", "elements:usgs:1", "elements", countries=("UA",)),
             line("2026-11-17T16:41:23Z", "new", "cordon:alert:ua-1", "cordon", countries=("UA",))])
         write_gz(t / "logs" / "elements" / "log" / "2026" / "11" / "17.jsonl.gz", lines=[
@@ -153,11 +154,35 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual([(e["at"], e["source"]) for e in usgs1], [("2026-11-17T16:30:23Z", "program-log:elements")])
         self.assertEqual([e["source"] for e in evs if e["item_id"] == "elements:usgs:0"], ["cop-ledger"],
                          "a day before the program's log began still comes from COP's ledger")
+        self.assertEqual([(e["at"], e["source"]) for e in evs if e["item_id"] == "elements:usgs:2"],
+                         [("2026-11-17T08:20:00Z", "cop-ledger")],
+                         "the log began at 16:30 that day: the ledger's line from 08:20 is in no log, so it is kept")
         self.assertEqual([e["source"] for e in evs if e["program"] == "cordon"], ["cop-ledger"], "no own log: ledger")
-        self.assertEqual(doc["programs"]["elements"]["events"], 2)
+        self.assertEqual(doc["programs"]["elements"]["events"], 3)
         self.assertEqual(doc["programs"]["elements"]["events_from"],
-                         "its own log from 2026-11-17, COP's ledger before that")
+                         "its own log from 2026-11-17T16:30:23Z, COP's ledger before that")
         self.assertEqual(doc["programs"]["cordon"]["events_from"], "COP's ledger")
+
+    def test_no_ledger_line_before_a_log_began_is_dropped(self):
+        """The stored history: Blackout's log began 22:16Z on 18 Nov, Headwind's 19:31Z on 15 Nov and Vis's 23:33Z on
+        23 Nov, after COP's ledger had logged 32, 8 and 64 of their changes earlier those days. Each is kept; a ledger
+        line at or after the log's first line is the log's own change again and is left out."""
+        rows = [{"program": p, "at": at, "date": at[:10]} for p, at in (
+            ("blackout", "2026-11-18T02:20:49Z"), ("blackout", "2026-11-18T22:20:48Z"),
+            ("headwind", "2026-11-15T10:20:36Z"), ("headwind", "2026-11-15T19:33:39Z"),
+            ("vis", "2026-11-23T10:20:49Z"), ("vis", "2026-11-24T00:20:00Z"),
+            ("cordon", "2026-11-18T02:20:49Z"))]
+        log_from = {"blackout": "2026-11-18T22:16:14Z", "headwind": "2026-11-15T19:31:44Z",
+                    "vis": "2026-11-23T23:33:30Z"}
+        kept = [(r["program"], r["at"]) for r in h.ledger_events(rows, log_from)]
+        self.assertEqual(kept, [("blackout", "2026-11-18T02:20:49Z"), ("headwind", "2026-11-15T10:20:36Z"),
+                                ("vis", "2026-11-23T10:20:49Z"), ("cordon", "2026-11-18T02:20:49Z")])
+        self.assertEqual(h.log_start([{"at": "2026-11-18T22:16:14Z"}, {"at": "2026-11-18T23:00:00+00:00"}],
+                                     ["2026-11-18"]), "2026-11-18T22:16:14Z")
+        self.assertEqual(h.log_start([{"at": None}], ["2026-11-19", "2026-11-18"]), "2026-11-18T00:00:00Z",
+                         "no times: the start of the first day file")
+        self.assertEqual(h.ledger_events([{"program": "vis", "at": None, "date": "2026-11-23"}], log_from),
+                         [{"program": "vis", "at": None, "date": "2026-11-23"}], "a line with no time is kept")
 
     def test_a_worldwide_problem_holds_only_its_own_layers(self):
         """Internet shutdowns is worldwide with one layer, outages: it holds Blackout's outages and nothing else."""
