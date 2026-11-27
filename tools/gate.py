@@ -1,7 +1,7 @@
 """The write path for COP's joins: what a join must state before it is written, and when it may publish.
 
 A join places several programs' public items around one place and time. Until 15 Nov 2026 this module also held
-back any join that read layers it listed as military context (the mosaic gate). Tom retired that rule on 15 Nov 2026:
+back any join that read layers it listed as military context (the mosaic gate). That rule was retired on 15 Nov 2026:
 "We operate exclusively with publicly available information and our objective is to show what can be done with it.
 That doesn't mean we have to spell it out, though." Every layer is now usable in a join. What replaces the lists is a
 rule of voice, kept in each join's own wording: a join shows each layer's measurement side by side, with a base rate
@@ -12,7 +12,7 @@ What this module still checks, so no join decides it for itself:
   inputs     the join declares the layers it reads (JOIN["inputs"]), each one a COP program or Verdict.
   citations  every item id the join's document cites belongs to a declared input. A join that cites a layer it never
              declared is refused, so its stated inputs and its credits can be trusted.
-  publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (Tom's call, per
+  publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (the suite's rule, per
              join).
 
     python tools/gate.py --check        # fail if anything under site/ is a refused or unpublished join (run by the build)

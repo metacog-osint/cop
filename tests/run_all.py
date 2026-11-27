@@ -22,6 +22,7 @@ SCRIPTS = [
     "test_triage_us_power.py",
     "test_triage_ended.py",
     "test_register_question.py",
+    "test_no_names.py",
     "test_rebuild_ended.py",
     "test_three_signal.py",
     "test_hormuz_stream.py",

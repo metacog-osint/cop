@@ -96,7 +96,7 @@ def steady(per_day=1, days=40, at=NOW, start=1000):
 
 
 class Ukmto(unittest.TestCase):
-    """Option D (Tom, 18 Nov 2026): UKMTO's reports are context; attacks count as a notice only on a surge."""
+    """Option D (18 Nov 2026): UKMTO's reports are context; attacks count as a notice only on a surge."""
 
     def test_reports_are_listed_and_a_steady_rate_never_counts(self):
         r = hormuz(ts.read(snapshot(jam(), vis()), ukmto=history(steady())))
@@ -197,7 +197,7 @@ class ThreeSignal(unittest.TestCase):
         self.assertIsNone(r["verdict_draft"])
 
     def test_three_of_four_is_still_partial(self):
-        """Tom, 18 Nov 2026: converged needs all four. 15 Nov at Bahrain (interference, an embassy alert, press, no
+        """18 Nov 2026: converged needs all four. 15 Nov at Bahrain (interference, an embassy alert, press, no
         outage) reads partial."""
         r = hormuz(ts.read(snapshot(jam(), alert(), press(), vis())))
         self.assertEqual((r["reading"], r["signals_present"]), ("partial", ["interference", "notice", "press"]))
@@ -433,7 +433,7 @@ class Published(unittest.TestCase):
         self.assertIn("not a warning", pub["not_a_warning"])
 
     def test_the_voice_rule_no_inference_in_cops_own_words(self):
-        # Tom, 15 Nov 2026: "That doesn't mean we have to spell it out." The record shows what lines up and how often;
+        # 15 Nov 2026: the record need not spell it out. The record shows what lines up and how often;
         # it never names an operation, an intent or a window for one in COP's voice.
         doc = ts.read(snapshot(jam(), navwarn(), outage(), press(), vis()))
         pub = ts.public(doc)

@@ -9,7 +9,7 @@ after the outage. The page shows only the newest reading. This log keeps one ite
 layer showed, the base rate and the replay figure, and a `history` of every reading it has had, so that a reading can
 be scored later against what happened (Verdict, the 12 Dec test) and the replay can be rerun on COP's own outages.
 
-Shape A (recommended to Tom, 18 Nov 2026): the doctrine kit's history log, unchanged (tic-history/1, `history.update()`, as
+Shape A (18 Nov 2026): the doctrine kit's history log, unchanged (tic-history/1, `history.update()`, as
 tools/ledger.py uses it). Lane `cop/triage`. The kit writes `new` when an outage is first read and `ended` when it
 leaves triage, and a `changed` line only when tier or response stage moves, which a reading never does: a reading
 change is kept in the item's own `triage.history` (one entry when the reading or a layer's `found` changes, not on

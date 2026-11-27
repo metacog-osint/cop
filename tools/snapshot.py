@@ -187,7 +187,7 @@ def not_admitted(props, prog, now=None):
     """Why this program's own pick rules leave the item out, or None (like with like). Each rule in the
     program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
     FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
-    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
+    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, 23 Nov 2026). Stored and shown
     as before; only the picks skip it."""
     pid = str(props.get("id") or "")
     for rule in prog.get("pick_admits") or []:
@@ -560,7 +560,7 @@ def build(feeds, reports, previous, now):
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
                     and not no_longer_current(p, now) and not not_admitted(p, prog, now) and not rests_on_claim(p):
-                # What changed comes before what is merely still there (Tom, 21 Nov 2026).
+                # What changed comes before what is merely still there (21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
         if attribution:

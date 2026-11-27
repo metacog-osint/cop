@@ -1,6 +1,6 @@
 # COP layer history: how rebuilt historical data is labelled (`cop-layer-history/1`)
 
-*15 Nov 2026, for the STOP replay (Tom: "ensure all data is labeled properly for effective future use"). Every
+*15 Nov 2026, for the STOP replay (so that all data is labelled for future use). Every
 dataset that rebuilds a layer's past (Elements' hazards, Cordon's notices, Watchfloor's attention, Blackout's
 outages, labelled shutdowns), and every replay run made from them, follows this contract. The point: anyone
 picking a file up later can tell what it is, where every row came from, how far to trust it, what's missing, and

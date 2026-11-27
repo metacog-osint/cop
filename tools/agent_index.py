@@ -40,7 +40,7 @@ SHARDS = 32
 INDEX_WARN_BYTES = 2 * 1024 * 1024
 VERDICT = "https://metacog-osint.github.io/verdict/data/"
 # The hub's site check (Worker tic-sitecheck, 05:10 and 17:10 UTC): does each program's page load and draw in headless
-# Chrome. suite_status carries its last run per program as page_check (18 Nov 2026, Tom's yes).
+# Chrome. suite_status carries its last run per program as page_check (18 Nov 2026).
 SITECHECK = "https://tic-sitecheck.metacog.workers.dev/"
 VERDICT_FILES = {"forecasts": "forecasts.json", "scores": "scores.json", "calendar": "calendar.geojson"}
 PREVIOUS = "https://cop.theintelligence.company/data/agent/verdict.json"

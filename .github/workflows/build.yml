@@ -167,7 +167,7 @@ jobs:
           fi
           gh release upload triage-log out/triage-log/*.gz --clobber \
             || echo "::warning::triage log: upload failed; the next build logs these readings again from the last state"
-      # The three-signal join (published since Tom retired the mosaic gate, 15 Nov 2026): interference, a new notice
+      # The three-signal join (published since the mosaic gate was retired, 15 Nov 2026): interference, a new notice
       # and a connectivity drop in the Strait of Hormuz and the Gulf, with Vis's weather beside them. It replays the
       # archive copies the step above downloaded for how often each signal fires anyway. A failure never fails the
       # build: without three-signal.json the page and the MCP server say the join is unavailable.
@@ -206,7 +206,7 @@ jobs:
           fi
           gh release upload hormuz-stream out/hormuz-stream/state.json.gz --clobber \
             || echo "::warning::hormuz stream: upload failed; the next build merges these reports again from the archive"
-      # COP's memory and the direction of concern (Tom, 21 Nov 2026): one record per subject, kept after it leaves the
+      # COP's memory and the direction of concern (21 Nov 2026): one record per subject, kept after it leaves the
       # picture (tools/memory.py, release "memory"), and each place's layers read against their own last two weeks
       # (tools/direction.py, site/data/direction.json). The first build rebuilds the memory from the archive copies
       # downloaded above. A memory that is listed but cannot be downloaded is never started over. A failure here never

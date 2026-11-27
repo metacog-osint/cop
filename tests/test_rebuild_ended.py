@@ -1,7 +1,7 @@
 """Rebuilding Elements' ended list for archived days from its history log: python tests/test_rebuild_ended.py
 
 Recorded data only (tests/fixtures/rebuild_ended, MANIFEST.json): whole lines of Elements' history log and the ended
-list Elements served on 14 Nov 2026. Rebuilt on Tom's yes, 13 Nov 2026 ("Yes, rebuild them")."""
+list Elements served on 14 Nov 2026. Rebuilt 13 Nov 2026."""
 
 import gzip
 import json

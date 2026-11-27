@@ -3,7 +3,7 @@
     python tools/direction.py --memory out/memory --snapshot site/data/today.geojson \
         --verdict site/data/agent/verdict.json --publish site/data
 
-Tom, 21 Nov 2026: the brag is the areas of increasing or decreasing concern, driven by the changes in each layer's data.
+21 Nov 2026: the point is the areas of increasing or decreasing concern, driven by the changes in each layer's data.
 For each warning problem and each of Watchfloor's zones, every layer's last seven days are compared with the fourteen
 days before, from COP's memory (tools/memory.py), so an item that has left the picture still counts as what came
 before. Each layer is read on its own and shown side by side. Measurements are never added together.
