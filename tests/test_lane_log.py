@@ -129,6 +129,26 @@ class LaneLog(unittest.TestCase):
         self.assertEqual(L.lane_for(self.cfg, "blackout", "blackout:ooni:1")["id"], "blackout-other")
         self.assertEqual(len({x["id"] for x in self.cfg["lanes"]}), len(self.cfg["lanes"]))
 
+    def test_vis_is_scored_outside_the_lane_records(self):
+        """Verdict scores Vis's forecasts against METARs in its own record. Vis's lane links it, quotes none of its
+        figures, and its counts stay those of a lane with nothing logged."""
+        doc = L.records(self.cfg, [], [], None, at("2026-11-25T04:30:00"))
+        vis = next(x for x in doc["lanes"] if x["id"] == "vis")
+        self.assertTrue(vis["text"].startswith("Scored outside the lane records: Verdict scores this lane's stored "
+                                               "forecasts against METAR observations"), vis["text"])
+        self.assertNotIn("No outside check", vis["text"])
+        self.assertNotRegex(vis["text"], r"\d", "no figure from Verdict's record is restated")
+        self.assertEqual(vis["scored_elsewhere"]["record"], "https://verdict.theintelligence.company/#vis-h")
+        self.assertEqual(vis["scored_elsewhere"]["data"], "https://verdict.theintelligence.company/data/vis.json")
+        self.assertEqual((vis["flagged"], vis["scored"], vis["rate_shown"]), (None, 0, False))
+        others = [x for x in doc["lanes"] if x["id"] != "vis"]
+        self.assertTrue(all(x["scored_elsewhere"] is None for x in others), "only Vis's lane is scored elsewhere")
+        html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
+        self.assertIn(vis["scored_elsewhere"]["record"], html)
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertEqual(js.count('h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label)'), 2,
+                         "the card and the lane line both link the record")
+
     def test_the_scoring_page_states_the_config(self):
         html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
         tri = next(x for x in self.cfg["lanes"] if x["id"] == "blackout-outage-triage")

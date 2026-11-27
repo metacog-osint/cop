@@ -199,6 +199,15 @@ test("an item carries its own lane's record line, a prefix lane before its progr
   assert.equal(line.flagged, null);
   assert.match(line.text, /No outside check yet/);
   assert.equal(T.getItem(index, shard(v.shard), v.id, NOW).lane_record, null, "no lanes.json, no line");
+  assert.equal(line.scored_elsewhere, null);
+  const vis = rows.find((x) => x.program === "vis");
+  assert.ok(vis, "the fixtures hold a Vis item");
+  const visLine = T.getItem(index, shard(vis.shard), vis.id, NOW, lanes).lane_record;
+  assert.equal(visLine.lane, "vis");
+  assert.match(visLine.text, /^Scored outside the lane records: Verdict scores/);
+  assert.doesNotMatch(visLine.text, /\d/, "no figure from Verdict's record is restated");
+  assert.equal(visLine.scored_elsewhere.record, "https://verdict.theintelligence.company/#vis-h");
+  assert.equal(visLine.scored, 0);
 });
 
 test("lane records never change the pick order, and a missing file is a tool error", () => {

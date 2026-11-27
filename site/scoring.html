@@ -333,8 +333,12 @@
   <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
     <h2 id="lanes-h">Lane records</h2>
     <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
-      words, the four-signal join, and one lane for each program with no outside check yet. A lane's record says how
-      that kind of item has behaved. It is not a warning and gives no likelihood to any single item.</p>
+      words, the four-signal join, Vis's forecasts, and one lane for each program with no outside check yet. A lane's
+      record says how that kind of item has behaved. It is not a warning and gives no likelihood to any single item.
+      Vis's forecasts are true forecasts, so they are scored outside the lane records: Verdict scores them against
+      METAR observations (routine weather reports from airports) in
+      <a href="https://verdict.theintelligence.company/#vis-h">its own record of Vis's forecasts</a>. COP links that
+      record and restates none of its figures, and they are never added to a lane's counts.</p>
     <ul>
       <li><strong>Logged first.</strong> Each build writes a line for every outage triage reads and every four-signal
         reading of converged or partial (once per area, reading and UTC day) before its outcome can be known, to an

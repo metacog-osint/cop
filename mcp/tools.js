@@ -379,6 +379,8 @@ export function laneLine(lanes, program, id) {
     scored: lane.scored ?? 0,
     method_version: lane.method_version ?? null,
     replay: lane.replay ? lane.replay.text : null,
+    // Another program's own record of this lane's items (Verdict's of Vis's forecasts): a link, never its figures.
+    scored_elsewhere: lane.scored_elsewhere ?? null,
   };
 }
 
@@ -386,8 +388,12 @@ export const LANE_NOTE =
   "A lane is one kind of item from one program. Its record counts what it flagged and, once Verdict scores them, " +
   "how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: no " +
   "rate or skill figure before 30 independently scored items, and the pick order does not change. A replay figure " +
-  "is labelled replay and comes from a labelled past set, not from live items. A record describes how a " +
-  "measurement has behaved; it is not a warning and gives no likelihood to any item, so never present it as one.";
+  "is labelled replay and comes from a labelled past set, not from live items. Vis's lane is scored outside the " +
+  "lane records: Verdict scores Vis's forecasts against METAR observations in its own record (scored_elsewhere " +
+  "links it). COP restates none of its figures: cite them from that record, where rows with too few forecasts " +
+  "are marked as such, never as a lane count, and never add them to one. A record " +
+  "describes how a measurement has behaved; it is not a warning and gives no likelihood to any item, so never " +
+  "present it as one.";
 
 export function laneRecord(lanes, args, now) {
   if (!lanes) {

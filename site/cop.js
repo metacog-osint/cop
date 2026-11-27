@@ -92,6 +92,7 @@ const laneById = (id) => ((lanes && lanes.lanes) || []).find((x) => x.id === id)
 function laneNote(lane, withReplay = true) {
   if (!lane) return null;
   return h("p", { class: "note lane-line" }, h("strong", { text: "Lane record. " }), lane.text,
+    lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : null,
     withReplay && lane.replay ? ` ${lane.replay.text} Credit: ${lane.replay.attribution}.` : null,
     ` ${lanes.not_a_warning} `, h("a", { href: "scoring.html#lanes" }, "How lanes are counted"));
 }
@@ -494,8 +495,9 @@ function renderCard(f) {
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
   const lane = laneFor(p.cop_program, p.id);
-  if (lane) fact("Lane record", lane.replay
-    ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text);
+  // A lane scored in another program's record (Verdict's of Vis's forecasts) links it; COP restates none of its figures.
+  if (lane) fact("Lane record", [lane.replay ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text,
+    ...(lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : [])]);
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
   if (sameVoice.length) {
