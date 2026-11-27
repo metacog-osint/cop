@@ -227,3 +227,5 @@ a.dir-place:hover, a.dir-place:focus-visible { color: var(--acc); text-decoratio
 .card .ladder .ladder-h { margin: 0; font: 500 12px/1.4 var(--mono); color: var(--mut); }
 .ladder-h strong { color: var(--ink); }
 .badge.claim { border-color: var(--late); color: var(--late); }
+.share { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 4px; }
+.share-h { color: var(--mut); font-size: 13px; }
