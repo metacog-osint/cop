@@ -959,6 +959,13 @@ class GdeltVoice(unittest.TestCase):
             item(None),
             item({"type": "MultiPoint", "coordinates": [[-70, 40], [100, -30]]}),   # two places stay two
             item({"type": "Polygon", "coordinates": [[[179, 0], [-179, 0], [-179, 2], [179, 2], [179, 0]]]}),
+            # A label point beside an outline (Context's zones): the outline's place, not the label's.
+            item({"type": "GeometryCollection", "geometries": [
+                {"type": "Point", "coordinates": [55, 55]},
+                {"type": "Polygon", "coordinates": [[[60, 50], [62, 50], [62, 52], [60, 52], [60, 50]]]}]}),
+            item({"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [-5, -5]}]}),
+            item({"type": "Polygon"}),                                     # malformed: no point, no error
+            item({"type": "Point", "coordinates": ["x"]}),
         ]}
         doc = snap.home_points(today, NOW)
         self.assertEqual(set(doc), {"generated_at", "points"})
@@ -967,7 +974,7 @@ class GdeltVoice(unittest.TestCase):
         self.assertEqual(len(across), 1, "a shape across the antimeridian stays there")
         self.assertEqual(across[0][1], 1.0)
         self.assertEqual([p for p in doc["points"] if p not in across],
-                         [[-70.0, 40.0], [4.0, 4.0], [10.0, 20.1], [100.0, -30.0]])
+                         [[-70.0, 40.0], [-5.0, -5.0], [4.0, 4.0], [10.0, 20.1], [61.0, 51.0], [100.0, -30.0]])
         self.assertNotIn("secret", json.dumps(doc), "places only: no id or title")
 
     def test_build_writes_a_small_home_points_file(self):

@@ -686,8 +686,25 @@ def world_shapes(step=0.1):
 def place_points(geometry):
     """One (lon, lat) per separate place in a geometry: each part of a Multi- shape stands alone, so two places far
     apart never average to a spot between them. A part's point is the mean of its vertices, with longitude averaged
-    around the circle so a shape across the antimeridian stays there."""
-    kind, c = geometry["type"], geometry["coordinates"]
+    around the circle so a shape across the antimeridian stays there. A GeometryCollection gives the points of its
+    outlines and lines, its own points only when it has neither (beside an outline they are label points). A shape
+    this cannot read gives no point, never an error: one item must not stop the build."""
+    if not isinstance(geometry, dict):
+        return []
+    kind, c = geometry.get("type"), geometry.get("coordinates")
+    if kind == "GeometryCollection":
+        subs = [g for g in geometry.get("geometries") or [] if isinstance(g, dict)]
+        shapes = [g for g in subs if g.get("type") not in ("Point", "MultiPoint")]
+        return [pt for g in (shapes or subs) for pt in place_points(g)]
+    try:
+        return _part_points(kind, c)
+    except (TypeError, ValueError, IndexError, KeyError):
+        return []
+
+
+def _part_points(kind, c):
+    if not isinstance(c, list):
+        return []
     if kind == "Point":
         parts = [[c]]
     elif kind == "MultiPoint":
