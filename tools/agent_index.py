@@ -240,6 +240,8 @@ def build_programs(registry, health, today, now, sitecheck=None):
         entry["cop"] = None if h is None else {
             k: h.get(k) for k in ("state", "data_as_of", "age_hours", "items", "anomalies", "placed", "from_previous",
                                   "attribution", "licence")}
+        if h is not None and h.get("refresh"):   # its schedule and last update, without the per-source rows
+            entry["cop"]["refresh"] = {k: v for k, v in h["refresh"].items() if k != "lanes"}
         entry["page_check"] = pages.get(p["id"])
         out.append(entry)
     return {

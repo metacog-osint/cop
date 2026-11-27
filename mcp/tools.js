@@ -131,7 +131,9 @@ export function suiteStatus(programs, now) {
       "and shows its last good copy. Planned programs publish nothing yet. page_check is the hub's last site check " +
       "of the program's page (opened in headless Chrome twice a day): ok false means the page failed to load, run " +
       "its scripts or draw its map, whatever its data says; null means the check does not cover that page or was " +
-      "not readable at COP's last build.",
+      "not readable at COP's last build. in_cop.refresh is the program's expected schedule (every_hours, runs, UTC " +
+      "start times), its last update as COP read it and status: on_time, or late when the last update is more than " +
+      "late_after_hours old at COP's build (a run missed), or not_read; the same table is on the page /refresh.html.",
     page_check: programs.page_check ?? null,
     programs: programs.programs.map((p) => ({
       id: p.id,
