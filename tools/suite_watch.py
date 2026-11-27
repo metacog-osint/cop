@@ -3,7 +3,7 @@
     python tools/suite_watch.py [--state watch-state.json]
 
 Exit 0 when everything is current, 1 when something is wrong (so a scheduled run fails and its owner is mailed).
-It checks seven things the picture cannot say about itself:
+It checks these things the picture cannot say about itself:
   1. COP's own snapshot is older than --cop-hours (COP's build stopped).
   2. A program's state in the snapshot is not "fresh" (its feed stopped or failed).
   3. A program's data time is in the future by more than --future-minutes (Elements, 12 Nov 2026: a clock that runs
@@ -21,23 +21,34 @@ It checks seven things the picture cannot say about itself:
   7. A source a program's feed lists in its own health block was not read (health.json's sources.not_read), on
      UNREAD_RUNS runs in a row by the feed's own failure count, or with no count given (since 24 Nov 2026). One
      failed run is left to the next, so a passing timeout does not mail anyone.
+  8. A program's feed has contract lint errors in health.json (since 27 Nov 2026). The items stay in the picture, so
+     the program still reads fresh.
+  9. A program reads fresh but health.json counts no items for it (since 27 Nov 2026). A smaller fall in a count is
+     warned, not failed, by tools/data_quality.py (rows-low).
+  10. Outage triage's triage.json (beside the snapshot, or --triage) cannot be read, or was built from an older
+     snapshot than the one read (since 27 Nov 2026). Read only when the snapshot is an address, or when --triage
+     names a file or address; so are the next two.
+  11. The suite ledger's state.json.gz, an asset of the GitHub release "ledger" (--ledger names the release's API
+     document), was last written more than --ledger-hours ago, 6 h, or the release has none (since 27 Nov 2026).
+  12. COP's MCP server (--mcp) does not answer an MCP initialize request (since 27 Nov 2026).
   A source named in config/watch_accepted.json (a reason, a state, a phrase its detail must hold, and an `until` date)
   is not a problem while it reads exactly as documented and the date has not passed: the run says so on its own line
   ("accepted: ...") and passes. Any other state or detail, or a lapsed date, is a problem again (25 Nov 2026).
 
 Each problem has a stable id made where it is found (the check, the program, the source where there is one:
-`state:vigil`, `dropped:elements`, `unread:blackout:ioda-gatech`, `snapshot-unreadable`, `sitecheck-page:orbit`,
-`verdict-age`), so its wording and numbers can change between runs without making it a new problem.
+`state:vigil`, `dropped:elements`, `unread:blackout:ioda-gatech`, `lint:launch`, `empty:orbit`,
+`snapshot-unreadable`, `sitecheck-page:orbit`, `verdict-age`, `triage-stale`, `ledger-age`, `mcp-down`), so its wording and numbers can change between runs without making it a new problem.
 
 Two in a row, with --state (a JSON file kept between runs). Only problems that one bad read can cause wait for a
-second run: a program's state that is not fresh, and a document (the snapshot, health.json, the site check,
-Verdict's scorecard) that could not be read. Seen for the first time, such a problem is printed as a warning and
+second run: a program's state that is not fresh, a program with no items, a triage.json older than the snapshot, an
+MCP server that does not answer, and a document (the snapshot, health.json, the site check, Verdict's scorecard,
+triage.json, the ledger release) that could not be read. Seen for the first time, such a problem is printed as a warning and
 remembered; the next run fails if it is still there. Everything else fails the run at once: COP's snapshot age, the
-site check's failed pages and its age, Verdict's age, malformed items, a data time in the future, a listed source not
+site check's failed pages and its age, Verdict's age, the ledger's age, malformed items, lint errors, a data time in the future, a listed source not
 read (which already waits for its feed's own second failure) and problems with watch_accepted.json.
   - The record must be usable: a missing or unreadable state file, one of another format, or one written more than
     STATE_HOURS ago (runs are dispatched every 3 h) is no record, and every problem fails at once, as without --state.
-  - A program's state is confirmed only by a newer build. The record keeps the snapshot's generated_at; a run that
+  - A program's state, or its empty count, is confirmed only by a newer build. The record keeps the snapshot's generated_at; a run that
     reads the same build neither confirms nor clears that program's problem: it passes with the warning and carries
     the sighting forward. A build that has stopped is still caught at once by the snapshot's age.
   - A run that could not read the snapshot keeps the programs' sightings from the record, so a run that could not
@@ -67,6 +78,11 @@ VERDICT = "https://verdict.theintelligence.company/data/scores.json"
 VERDICT_HOURS = 48.0
 SITECHECK_HOURS = 14.0  # runs 12 h apart, about a minute each; two hours' grace
 UNREAD_RUNS = 2         # a listed source not read this many runs in a row (the feed's own count) is a problem
+TRIAGE_LATE_MINUTES = 10.0  # triage.json is written by the same build; a read during a deploy can differ
+LEDGER = "https://api.github.com/repos/metacog-osint/cop/releases/tags/ledger"
+LEDGER_HOURS = 6.0      # written by every build, so the same limit as the snapshot's age
+MCP = "https://cop.theintelligence.company/mcp"
+SAME_BUILD = ("state:", "empty:")  # problems of one build: only a newer build confirms them
 STATE_FORMAT = "suite-watch-state/2"
 STATE_HOURS = 4.0       # a record older than this (a little over one 3-hour dispatch gap) is no record
 ACCEPTED = Path(__file__).resolve().parents[1] / "config" / "watch_accepted.json"
@@ -163,6 +179,16 @@ def check_health(health, accepted=(), now=None, notes=None):
             problems.append(Problem(f"{prog.get('name') or prog.get('id')}: {count} malformed "
                                     f"item{'' if count == 1 else 's'} left out of the picture"
                                     + (" (" + "; ".join(examples) + ")" if examples else ""), f"dropped:{pid}"))
+        lint = prog.get("lint")
+        errors = lint.get("errors") if isinstance(lint, dict) else None
+        if isinstance(errors, int) and errors > 0:
+            examples = [e for e in (lint.get("examples") or []) if isinstance(e, str)]
+            problems.append(Problem(f"{prog.get('name') or prog.get('id')}: {errors} contract lint "
+                                    f"error{'' if errors == 1 else 's'} in its feed"
+                                    + (f" (first: {examples[0][:200]})" if examples else ""), f"lint:{pid}"))
+        if prog.get("state") == "fresh" and prog.get("items") == 0:
+            problems.append(Problem(f"{prog.get('name') or prog.get('id')}: reads fresh but has no items",
+                                    f"empty:{pid}", waits=True))
         sources = prog.get("sources")
         for s in (sources.get("not_read") or []) if isinstance(sources, dict) else []:
             if not isinstance(s, dict):
@@ -218,16 +244,65 @@ def check_verdict(doc, now, max_hours=VERDICT_HOURS):
     return []
 
 
-def health_beside(snapshot):
-    """health.json sits beside today.geojson, on the site and in a local build."""
+def check_triage(doc, generated_at, late_minutes=TRIAGE_LATE_MINUTES):
+    """Problems from triage.json: no snapshot time, or one older than the snapshot this run read."""
+    built = when(doc.get("snapshot_generated_at")) if isinstance(doc, dict) else None
+    if built is None:
+        return [Problem("COP: triage.json names no snapshot, so outage triage may be missing", "triage-no-time",
+                        waits=True)]
+    gen = when(generated_at)
+    if gen is not None and gen - built > timedelta(minutes=late_minutes):
+        return [Problem(f"COP: triage.json was built from the snapshot of {doc['snapshot_generated_at']}, older than "
+                        f"the one published ({generated_at})", "triage-stale", waits=True)]
+    return []
+
+
+def check_ledger(doc, now, max_hours=LEDGER_HOURS):
+    """Problems from the ledger release's API document: no state.json.gz, or one written too long ago."""
+    assets = doc.get("assets") if isinstance(doc, dict) else None
+    written = [when(a.get("updated_at")) for a in assets or []
+               if isinstance(a, dict) and a.get("name") == "state.json.gz"]
+    if not written or written[0] is None:
+        return [Problem("COP: the ledger release has no state.json.gz with a time, so the ledger was not checked",
+                        "ledger-no-state")]
+    if now - written[0] > timedelta(hours=max_hours):
+        return [Problem(f"COP: the suite ledger was last written {(now - written[0]).total_seconds() / 3600:.1f} h "
+                        f"ago (limit {max_hours:g} h)", "ledger-age")]
+    return []
+
+
+def check_mcp(url):
+    """Problems from one MCP initialize request: no answer, or an answer that names no server."""
+    body = {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                       "clientInfo": {"name": "suite-watch", "version": "1"}}}
+    try:
+        req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), method="POST",
+                                     headers={"User-Agent": "suite-watch/1", "Content-Type": "application/json",
+                                              "Accept": "application/json, text/event-stream"})
+        text = urllib.request.urlopen(req, timeout=30).read().decode("utf-8")
+    except Exception as e:
+        return [Problem(f"COP: the MCP server did not answer ({type(e).__name__}: {e})", "mcp-down", waits=True)]
+    if '"serverInfo"' not in text:
+        return [Problem(f"COP: the MCP server's answer to initialize names no server ({text[:120]!r})", "mcp-down",
+                        waits=True)]
+    return []
+
+
+def beside(snapshot, name):
+    """A file that sits beside today.geojson, on the site and in a local build."""
     if snapshot.startswith("http"):
-        return snapshot.rsplit("/", 1)[0] + "/health.json"
-    return os.path.join(os.path.dirname(os.path.abspath(snapshot)), "health.json")
+        return snapshot.rsplit("/", 1)[0] + "/" + name
+    return os.path.join(os.path.dirname(os.path.abspath(snapshot)), name)
 
 
 def read_json(where):
     if where.startswith("http"):
-        req = urllib.request.Request(where, headers={"User-Agent": "suite-watch/1"})
+        headers = {"User-Agent": "suite-watch/1"}
+        token = os.environ.get("GH_TOKEN")
+        if token and where.startswith("https://api.github.com/"):
+            headers["Authorization"] = f"Bearer {token}"  # to GitHub's API only, for its higher rate limit
+        req = urllib.request.Request(where, headers=headers)
         return json.loads(urllib.request.urlopen(req, timeout=60).read().decode("utf-8"))
     with open(where, encoding="utf-8") as f:
         return json.loads(f.read())
@@ -273,7 +348,7 @@ def confirm(problems, state, generated_at):
             confirmed.append(p)
         elif p.id not in state["seen"]:
             first.append(p)
-        elif p.id.startswith("state:") and generated_at is not None and generated_at == state["generated_at"]:
+        elif p.id.startswith(SAME_BUILD) and generated_at is not None and generated_at == state["generated_at"]:
             same.append(p)
         else:
             confirmed.append(p)
@@ -285,7 +360,7 @@ def remembered(problems, state, snapshot_read):
     the record when this run could not read the snapshot (a run that could not look is not a clear run)."""
     seen = {p.id for p in problems if getattr(p, "waits", False)}
     if not snapshot_read and state is not None:
-        seen |= {k for k in state["seen"] if k.startswith("state:")}
+        seen |= {k for k in state["seen"] if k.startswith(SAME_BUILD)}
     return seen
 
 
@@ -310,6 +385,12 @@ def main(argv=None):
     ap.add_argument("--verdict", help=f"Verdict's scores.json, file or address (default {VERDICT}, "
                                       "read only when the snapshot is an address)")
     ap.add_argument("--verdict-hours", type=float, default=VERDICT_HOURS)
+    ap.add_argument("--triage", help="COP's triage.json (default: beside the snapshot, read only when the snapshot "
+                                     "is an address)")
+    ap.add_argument("--ledger", help=f"the ledger release's API document, file or address (default {LEDGER}, "
+                                     "read only when the snapshot is an address)")
+    ap.add_argument("--ledger-hours", type=float, default=LEDGER_HOURS)
+    ap.add_argument("--mcp", help=f"COP's MCP server (default {MCP}, asked only when the snapshot is an address)")
     ap.add_argument("--state", help="a JSON file kept between runs; with it a problem that one bad read can cause "
                                     "fails on its second run in a row")
     ap.add_argument("--accepted", default=str(ACCEPTED),
@@ -335,7 +416,7 @@ def main(argv=None):
         problems.append(Problem(f"COP: watch_accepted.json could not be read ({type(e).__name__}: {e}), "
                                 "so no degraded source is accepted", "accepted-unreadable"))
     try:
-        problems += check_health(read_json(a.health or health_beside(a.snapshot)), accepted, now, notes)
+        problems += check_health(read_json(a.health or beside(a.snapshot, "health.json")), accepted, now, notes)
     except Exception as e:
         problems.append(Problem(f"COP: health.json could not be read ({type(e).__name__}: {e}), "
                                 "so malformed items were not checked", "health-unreadable", waits=True))
@@ -353,6 +434,24 @@ def main(argv=None):
         except Exception as e:
             problems.append(Problem(f"Verdict: scores.json could not be read ({type(e).__name__}: {e}), "
                                     "so its age was not checked", "verdict-unreadable", waits=True))
+    live = a.snapshot.startswith("http")
+    triage = a.triage or (beside(a.snapshot, "triage.json") if live else None)
+    if triage:
+        try:
+            problems += check_triage(read_json(triage), generated_at)
+        except Exception as e:
+            problems.append(Problem(f"COP: triage.json could not be read ({type(e).__name__}: {e}), so outage triage "
+                                    "may be missing", "triage-unreadable", waits=True))
+    ledger = a.ledger or (LEDGER if live else None)
+    if ledger:
+        try:
+            problems += check_ledger(read_json(ledger), now, a.ledger_hours)
+        except Exception as e:
+            problems.append(Problem(f"COP: the ledger release could not be read ({type(e).__name__}: {e}), "
+                                    "so its age was not checked", "ledger-unreadable", waits=True))
+    mcp = a.mcp or (MCP if live else None)
+    if mcp:
+        problems += check_mcp(mcp)
     preface = []
     if a.state:
         state = read_state(a.state, now)
