@@ -99,13 +99,39 @@ def place(geometry):
 
 FIELDS = ("id", "program", "kind", "tier", "status_class", "title", "data_as_of", "data_as_of_precision",
           "published_at", "valid_until", "countries", "subdivisions", "point", "bbox", "link", "us_person_data",
-          "stale", "shard")
+          "stale", "pmesii_pt", "ie_aspect", "ascope", "ncf", "shard")
+
+# The kit's framework tags (vocab/frameworks.json: PMESII-PT, the information environment's aspects, ASCOPE) and its
+# topic key (vocab/infrastructure.json: CISA's National Critical Functions, `ncf`), each a list on the item. A list
+# is coded like the columns below: there are a few dozen distinct lists in a snapshot of about 2,000 items.
+TAGS = ("pmesii_pt", "ie_aspect", "ascope", "ncf")
 
 # Columns with a handful of repeated values, stored in each row as a number into the index's `codes` list for that
 # column (15 Nov 2026, when the index passed 600 KB): about 90 KB less, and the server decodes only the rows it
 # returns. Tool output is unchanged. data_as_of_precision ("day", "month" or null; kit 0.5.6) was added coded on
 # 16 Nov 2026: about 4 KB, one small number a row.
-CODED = ("program", "kind", "tier", "status_class", "data_as_of_precision", "us_person_data", "stale")
+CODED = ("program", "kind", "tier", "status_class", "data_as_of_precision", "us_person_data", "stale") + TAGS
+
+
+def tag_vocab():
+    """{tag: [allowed value, ...]} from the vendored kit, so the server can tell a misspelt value from one no item
+    carries today. A tag whose vocabulary file is missing is left out (the server then accepts any value)."""
+    out = {}
+    kit = ROOT / "doctrine" / "kit" / "vocab"
+    try:
+        fw = json.loads((kit / "frameworks.json").read_text(encoding="utf-8"))
+        for k in ("pmesii_pt", "ie_aspect", "ascope"):
+            if isinstance((fw.get(k) or {}).get("values"), dict):
+                out[k] = sorted(fw[k]["values"])
+    except (OSError, ValueError):
+        pass
+    try:
+        inf = json.loads((kit / "infrastructure.json").read_text(encoding="utf-8"))
+        if isinstance(inf.get("ncf"), dict):
+            out["ncf"] = sorted(inf["ncf"])
+    except (OSError, ValueError):
+        pass
+    return out
 
 
 def row(feature, shard):
@@ -131,6 +157,7 @@ def row(feature, shard):
         "link": p.get("link"),
         "us_person_data": p.get("us_person_data"),
         "stale": bool(p.get("cop_stale")),
+        **{k: [v for v in p.get(k) or [] if isinstance(v, str)] for k in TAGS},
         "shard": shard,
     }
 
@@ -157,6 +184,7 @@ def build_index(today, now):
         "language_key": today.get("language_key"),
         "shards": SHARDS,
         "programs": programs,
+        "tag_vocab": tag_vocab(),
         "fields": list(FIELDS),
         "codes": {},
         "rows": [],

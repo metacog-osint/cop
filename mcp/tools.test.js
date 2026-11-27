@@ -539,3 +539,60 @@ test("three-signal gives the reading, the layers' items and the wording, and a m
   assert.throws(() => T.threeSignal(index, threeSignal, { area: "baltic" }, NOW), T.ToolError);
   assert.throws(() => T.threeSignal(index, null, {}, NOW), /not built for this snapshot/);
 });
+
+test("search by the framework tags and the topic key: any value fits, tags combine, values are checked (ideas#488)", () => {
+  for (const k of T.TAGS) assert.ok(index.fields.includes(k), `index carries ${k}`);
+  assert.ok(rows.every((r) => T.TAGS.every((k) => Array.isArray(r[k]))), "every row has each tag as a list");
+  assert.ok(index.tag_vocab && index.tag_vocab.pmesii_pt.includes("infrastructure") && index.tag_vocab.ncf.includes("provide_pnt"));
+  const live = (r) => !T.isExpired(r.valid_until, NOW);
+  const count = (f) => rows.filter((r) => live(r) && f(r)).length;
+  const infra = T.searchItems(index, { pmesii_pt: ["infrastructure"], limit: 50 }, NOW);
+  assert.ok(infra.matched > 0);
+  assert.equal(infra.matched, count((r) => r.pmesii_pt.includes("infrastructure")));
+  assert.ok(infra.items.every((r) => r.pmesii_pt.includes("infrastructure")));
+  const either = T.searchItems(index, { ascope: ["events", "capabilities"] }, NOW);
+  assert.equal(either.matched, count((r) => r.ascope.includes("events") || r.ascope.includes("capabilities")));
+  const both = T.searchItems(index, { pmesii_pt: ["infrastructure"], ie_aspect: ["physical"] }, NOW);
+  assert.equal(both.matched, count((r) => r.pmesii_pt.includes("infrastructure") && r.ie_aspect.includes("physical")));
+  const vessel = T.searchItems(index, { ncf: ["transport_by_vessel"], limit: 50 }, NOW);
+  assert.ok(new Set(vessel.items.map((r) => r.program)).size > 1, "the topic key reaches across layers");
+  assert.throws(() => T.searchItems(index, { pmesii_pt: ["politics"] }, NOW), /Unknown pmesii_pt value "politics"/);
+  assert.equal(T.searchItems(index, { pmesii_pt: ["time"] }, NOW).matched, count((r) => r.pmesii_pt.includes("time")),
+    "a known value no item carries is no error");
+  const plain = { ...index, codes: undefined, rows: rows.map((o) => index.fields.map((k) => o[k])) };
+  for (const args of [{ ncf: ["provide_pnt"] }, { pmesii_pt: ["economic"], ascope: ["areas"] }, { group_by: "ie_aspect" }]) {
+    assert.deepEqual(T.searchItems(plain, args, NOW), T.searchItems(index, args, NOW), JSON.stringify(args));
+  }
+});
+
+test("search can count its matches by one tag, each value an item carries counted once (ideas#488)", () => {
+  const res = T.searchItems(index, { program: ["noisefloor", "cordon"], group_by: "pmesii_pt", limit: 1 }, NOW);
+  assert.equal(res.group_by, "pmesii_pt");
+  const sum = res.groups.reduce((s, g) => s + g.count, 0);
+  assert.ok(sum >= res.matched, "an item under two values counts under each");
+  const infra = res.groups.find((g) => g.value === "infrastructure");
+  assert.equal(infra ? infra.count : 0, T.searchItems(index, { program: ["noisefloor", "cordon"], pmesii_pt: ["infrastructure"] }, NOW).matched);
+  for (let i = 1; i < res.groups.length; i++) assert.ok(res.groups[i - 1].count >= res.groups[i].count, "largest first");
+  assert.match(res.groups_note, /not how serious/);
+  assert.equal(res.returned, 1, "grouping counts every match, not only the page");
+  assert.throws(() => T.searchItems(index, { group_by: "tier" }, NOW), /group_by must be one of/);
+  assert.equal(T.searchItems(index, { limit: 1 }, NOW).groups, undefined, "no groups unless asked");
+});
+
+test("get_item lists the same topic in other layers, never its own program, and says it is no link (ideas#488)", () => {
+  const r = rows.find((x) => x.program === "noisefloor" && x.ncf.includes("transport_by_air") && !T.isExpired(x.valid_until, NOW));
+  assert.ok(r, "the fixtures hold a Noisefloor item filed under transport_by_air");
+  const st = T.getItem(index, shard(r.shard), r.id, NOW).same_topic_in_other_layers;
+  assert.deepEqual(st.ncf, r.ncf);
+  const expect = rows.filter((x) => x.program !== r.program && !T.isExpired(x.valid_until, NOW) && x.ncf.some((v) => r.ncf.includes(v)));
+  assert.equal(st.matched, expect.length);
+  assert.ok(st.matched > 0 && st.items.length === Math.min(st.matched, T.SAME_TOPIC_MAX));
+  assert.ok(st.items.every((x) => x.program !== r.program && x.shared_ncf.length && x.shared_ncf.every((v) => r.ncf.includes(v))));
+  assert.equal(Object.values(st.by_program).reduce((a, b) => a + b, 0), st.matched);
+  assert.match(st.note, /does not mean the events are linked/);
+  assert.doesNotMatch(st.note, /likely|warning of|will happen/);
+  if (st.matched > T.SAME_TOPIC_MAX) assert.match(st.more, /search_items with ncf/);
+  const none = rows.find((x) => !x.ncf.length);
+  const empty = T.getItem(index, shard(none.shard), none.id, NOW).same_topic_in_other_layers;
+  assert.deepEqual([empty.matched, empty.items], [0, []]);
+});
