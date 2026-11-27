@@ -31,6 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 sys.path.insert(0, str(ROOT / "tools"))
+import cells as celltool  # noqa: E402
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
 from tic_doctrine import ladder  # noqa: E402
@@ -554,6 +555,8 @@ def build(feeds, reports, previous, now):
             also = also_in(p, prog)
             if also:
                 p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
+            # COP's grid cell, computed here and never read from a feed (contract 2.1: the grid cell is COP's).
+            p[celltool.FIELD] = celltool.cells_for(item.get("geometry"), p.get("precision_class"))
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
