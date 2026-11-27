@@ -62,7 +62,7 @@ jobs:
     # Above the sum of the time limits of the steps from the deploy on (each step after the deploy has its own), so a
     # step that hangs there fails at its own limit and the private archive steps still run. A normal build takes
     # under two minutes.
-    timeout-minutes: 30
+    timeout-minutes: 32
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -475,8 +475,17 @@ jobs:
             done
             [ -n "$ok" ] || { echo "::error::6-hourly snapshot $name could not be uploaded to $TAG"; exit 1; }
           done
-          # Checksums of every file in the release (tools/release_manifest.py): this run's daily copies are hashed
-          # here and must match what GitHub holds; for the rest GitHub's own digest is listed.
+      # manifest.json and SHA256SUMS in the month's snapshots release: every file's name, size and SHA-256
+      # (tools/release_manifest.py). This run's daily copies are hashed here and must match what GitHub holds; for
+      # the rest GitHub's own digest is listed. Only these two files are replaced.
+      - name: Checksums of the snapshot release (manifest.json, SHA256SUMS)
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          TAG="snapshots-$(date -u +%Y-%m)"
           LOCAL="${RUNNER_TEMP:-/tmp}/manifest-local"
           mkdir -p "$LOCAL"
           cp out/archive/*.geojson.gz "$LOCAL/"
