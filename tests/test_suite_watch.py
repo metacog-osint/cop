@@ -201,7 +201,7 @@ class Watch(unittest.TestCase):
         self.assertIn("malformed items were not checked", out)
 
     def test_health_json_is_read_beside_the_snapshot_on_the_site(self):
-        self.assertEqual(watch.health_beside(watch.SNAPSHOT), "https://cop.theintelligence.company/data/health.json")
+        self.assertEqual(watch.beside(watch.SNAPSHOT, "health.json"), "https://cop.theintelligence.company/data/health.json")
 
     def test_dispatched_runs_never_test(self):
         text = (ROOT / ".github" / "workflows" / "watch.yml").read_text(encoding="utf-8")
@@ -500,6 +500,53 @@ class TwoInARow(unittest.TestCase):
         self.assertIn("python tools/suite_watch.py --state watch-state.json", text)
         self.assertIn('cron: "47 */3 * * *"', text)
         self.assertNotIn("at worst an alert comes one run late", text)
+
+
+class MoreChecks(unittest.TestCase):
+    def prog(self, **extra):
+        return {"programs": [{"id": "launch", "name": "Launch", "state": "fresh", "items": 5,
+                              "lint": {"errors": 0, "warnings": 3, "examples": []}, **extra}]}
+
+    def test_lint_warnings_pass_and_lint_errors_fail_at_once(self):
+        self.assertEqual(watch.check_health(self.prog()), [])
+        [p] = watch.check_health(self.prog(lint={"errors": 2, "examples": ["a: bad date"]}))
+        self.assertEqual((p.id, p.waits), ("lint:launch", False))
+        self.assertIn("2 contract lint errors", p)
+        self.assertIn("a: bad date", p)
+
+    def test_a_fresh_program_with_no_items_waits_for_a_newer_build(self):
+        [p] = watch.check_health(self.prog(items=0))
+        self.assertEqual((p.id, p.waits), ("empty:launch", True))
+        self.assertEqual(watch.check_health(self.prog(items=0, state="stale")), [])
+        seen = {"seen": {"empty:launch"}, "generated_at": "g1"}
+        self.assertEqual(watch.confirm([p], seen, "g1"), ([], [], [p]))
+        self.assertEqual(watch.confirm([p], seen, "g2"), ([p], [], []))
+
+    def test_triage_must_come_from_the_snapshot_read(self):
+        gen = "2026-11-14T20:20:00Z"
+        self.assertEqual(watch.check_triage({"snapshot_generated_at": gen}, gen), [])
+        old = watch.check_triage({"snapshot_generated_at": "2026-11-14T18:20:00Z"}, gen)
+        self.assertEqual([p.id for p in old], ["triage-stale"])
+        self.assertEqual([p.id for p in watch.check_triage({}, gen)], ["triage-no-time"])
+
+    def test_a_stopped_or_missing_ledger_is_a_problem(self):
+        def doc(at):
+            return {"assets": [{"name": "2026-11-14.jsonl.gz", "updated_at": "2026-11-14T20:00:00Z"},
+                               {"name": "state.json.gz", "updated_at": at}]}
+        self.assertEqual(watch.check_ledger(doc("2026-11-14T20:00:00Z"), NOW), [])
+        self.assertEqual([p.id for p in watch.check_ledger(doc("2026-11-14T10:00:00Z"), NOW)], ["ledger-age"])
+        self.assertEqual([p.id for p in watch.check_ledger({"assets": []}, NOW)], ["ledger-no-state"])
+
+    def test_a_server_that_does_not_answer_is_a_waiting_problem(self):
+        [p] = watch.check_mcp("http://127.0.0.1:1/mcp")
+        self.assertEqual((p.id, p.waits), ("mcp-down", True))
+
+    def test_the_new_files_are_read_when_named(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            code, out = run(Path(d), snap(), health(), ["--triage", str(Path(d) / "none.json")])
+            self.assertEqual(code, 1)
+            self.assertIn("triage.json could not be read", out)
 
 
 if __name__ == "__main__":

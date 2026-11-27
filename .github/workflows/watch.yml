@@ -2,8 +2,9 @@ name: watch
 # The suite watchdog. Reads COP's public snapshot and health.json and fails when COP's own build is more than 6 hours
 # old, when a program is not fresh, when a program's data time runs into the future, when the build left a
 # malformed item out of the picture, when a source a feed lists was not read on two runs, when the hub's site check
-# (tic-sitecheck) failed a page or has not run in 14 hours, or when Verdict's scorecard is over 48 hours old
-# (tools/suite_watch.py). A failed run is the alert: GitHub mails the repository owner. It runs apart from build.yml
+# (tic-sitecheck) failed a page or has not run in 14 hours, when Verdict's scorecard is over 48 hours old, when a
+# feed has lint errors or a fresh program has no items, when triage.json is missing or older than the picture, when
+# the suite ledger was not written for 6 hours, or when the MCP server does not answer (tools/suite_watch.py). A failed run is the alert: GitHub mails the repository owner. It runs apart from build.yml
 # because a build that has stopped cannot report itself.
 #
 # The clock: the hub's tic-dispatch Worker starts this every 3 hours (workflow_dispatch); GitHub's own schedule below
@@ -79,6 +80,7 @@ jobs:
       - name: Is every program current?
         env:
           HC_PING_URL: ${{ secrets.HC_PING_URL }}
+          GH_TOKEN: ${{ github.token }}
           TEST_FAILURE: ${{ inputs.test_failure && '--test-failure' || '' }}
         run: python tools/suite_watch.py --state watch-state.json $TEST_FAILURE
       - name: Remember what this run saw
