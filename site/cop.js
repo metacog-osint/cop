@@ -652,6 +652,8 @@ const DIR_MARK = { rising: "▲", edging_up: "△", mixed: "◆", easing: "▼",
 const DIR_ORDER = ["rising", "edging_up", "mixed", "easing", "edging_down", "steady", "building"];
 const DIR_LAYER = { up: "▲ Up", down: "▼ Down", steady: "– Steady", quiet: "– None", thin: "… Building" };
 const dirDay = (day) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+// Each watched area's name opens its place page (place.html): every layer there now, and over 30 and 90 days.
+const placeLink = (x, cls) => h("a", { class: cls, href: `place.html?area=${encodeURIComponent(x.area)}`, text: x.name });
 const dirBadge = (x) => h("span", { class: `dir-word dir-${x.direction}`, text: `${DIR_MARK[x.direction]} ${x.word}` });
 function dirSince(x) {
   if (!x.since || !x.was) return "";
@@ -678,7 +680,7 @@ function renderDirection() {
   if (sec.hidden) return;
   $("direction-note").textContent = `${direction.what} ${direction.not_a_warning}`;
   $("direction-problems").replaceChildren(...direction.problems.map((x) => h("li", { class: "tri dir-card" },
-    h("div", { class: "dir-head" }, h("span", { class: "tri-outage", text: x.name }), dirBadge(x)),
+    h("div", { class: "dir-head" }, placeLink(x, "tri-outage dir-place"), dirBadge(x)),
     h("p", { class: "tri-text", text: dirMoved(x) + dirSince(x) }),
     h("dl", { class: "tri-layers" }, ...x.layers.map(directionLayer)))));
   const areas = [...direction.areas].sort((a, b) => DIR_ORDER.indexOf(a.direction) - DIR_ORDER.indexOf(b.direction));
@@ -686,7 +688,7 @@ function renderDirection() {
   const shown = state.showAllAreas ? areas : moving;
   const rest = areas.length - moving.length;
   $("direction-areas").replaceChildren(...shown.map((x) => h("li", { class: "dir-row" },
-    h("span", { class: "dir-area", text: x.name }), dirBadge(x),
+    placeLink(x, "dir-area dir-place"), dirBadge(x),
     h("span", { class: "row-meta dir-why", text: dirMoved(x) + dirSince(x) }))),
     ...(rest && !state.showAllAreas ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllAreas = true; renderDirection(); } },
       `Show ${rest} steady or building`))] : []));
