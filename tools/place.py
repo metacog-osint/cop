@@ -2,8 +2,8 @@
 
 The trend lines on the page come from the history set (tools/history.py, site/data/history/areas/<area>.json). This
 tool adds only the current reading, from the snapshot COP has already built, placed by the history set's own rule
-(tools/history.py zones_of: direction's circle or country list, or the area's press zone named in the item), so the
-line and today's figure count the same things. It adds no source and makes no reading across layers: each layer is a
+(tools/history.py zones_of: direction's circle or country list, or the area's press zone named in the item; a
+worldwide problem holds only its own layers' items), so the line and today's figure count the same things. It adds no source and makes no reading across layers: each layer is a
 count of what its program placed there, with the program's freshness.
 
 Each area also gets its row of the coverage table (kit format tic-coverage/1, docs/event-ladder.md): how many
@@ -82,16 +82,24 @@ def trends(hist):
 def definition(area):
     """How the area is drawn: a circle, a list of countries, or the whole world."""
     if area.get("worldwide"):
-        return {"kind": "worldwide"}
+        layers = [lay for lay in area.get("layers") or [] if lay in hi.dr.LAYER_NAMES]
+        return {"kind": "worldwide", "layers": layers, "programs": worldwide_programs(area),
+                "counts": "Worldwide, and only this problem's own layers: "
+                          + "; ".join(f"{hi.dr.LAYER_NAMES[lay]} ({hi.dr.LAYER_PROGRAM[lay].capitalize()})"
+                                      for lay in layers)
+                          + ". Other programs' items are not counted here, wherever they are."}
     if area.get("radius_km") and area.get("center"):
         return {"kind": "circle", "center": area["center"], "radius_km": area["radius_km"],
                 "countries": area.get("countries") or []}
     return {"kind": "countries", "countries": area.get("countries") or []}
 
 
+def worldwide_programs(area):
+    """The programs whose layers a worldwide problem reads (config/areas.json layers, direction's LAYER_PROGRAM)."""
+    return sorted({hi.dr.LAYER_PROGRAM[lay] for lay in area.get("layers") or [] if lay in hi.dr.LAYER_PROGRAM})
+
+
 def in_place(p, geometry, area):
-    if area.get("worldwide"):
-        return True
     subject, _ = hi.subject_of(p, p["id"])
     countries = [c for c in (p.get("countries") or []) if isinstance(c, str) and len(c) == 2]
     return bool(hi.zones_of(subject, p["id"], countries, hi.point_of(geometry), [area]))
@@ -111,6 +119,8 @@ def item_row(p):
 def place_doc(snapshot, area, programs, hist=None):
     infos = snapshot.get("cop_programs") or {}
     now = snap.utc(snapshot.get("generated_at"))
+    if area.get("worldwide"):    # only the programs of its own layers: the others would read as "nothing placed here"
+        programs = [k for k in programs if k in worldwide_programs(area)]
     by = {k: [] for k in programs}
     held = []
     for f in snapshot.get("features") or []:

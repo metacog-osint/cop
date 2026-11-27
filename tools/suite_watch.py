@@ -77,14 +77,15 @@ def check(snap, now, cop_hours=6.0, future_minutes=30.0):
 
 def load_accepted(doc):
     """The documented degraded sources in config/watch_accepted.json, as (entries, problems). An entry needs a program,
-    a source, a reason, a phrase its detail holds and an until date; one that lacks any is a problem, never accepted."""
+    a source, the state it is accepted in, a reason, a phrase its detail holds and an until date; one that lacks any
+    is a problem, never accepted."""
     entries = doc.get("accepted") if isinstance(doc, dict) else None
     if not isinstance(entries, list):
         return [], ["COP: watch_accepted.json has no \"accepted\" list, so no degraded source is accepted"]
     good, problems = [], []
     for e in entries:
         ok = (isinstance(e, dict) and all(isinstance(e.get(k), str) and e.get(k).strip()
-                                          for k in ("program", "source", "reason", "detail_has", "until"))
+                                          for k in ("program", "source", "state", "reason", "detail_has", "until"))
               and when(e["until"] + "T00:00:00Z") is not None)
         if ok:
             good.append(e)
@@ -98,7 +99,7 @@ def accepted_by(entries, prog_id, src, now):
     phrase, `until` not yet over), or None."""
     for e in entries:
         end = when(e["until"] + "T00:00:00Z")
-        if (e["program"] == prog_id and e["source"] == src.get("id") and e.get("state", src.get("state")) == src.get("state")
+        if (e["program"] == prog_id and e["source"] == src.get("id") and e["state"] == src.get("state")
                 and e["detail_has"].lower() in str(src.get("detail") or "").lower()
                 and now is not None and end is not None and now < end + timedelta(days=1)):
             return e

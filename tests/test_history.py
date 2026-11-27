@@ -135,6 +135,56 @@ class HistoryTest(unittest.TestCase):
         self.assertEqual(gate.check([self.out]), [])
         self.assertEqual(set(self.doc["join"]["inputs"]), gate.programs() - gate.READ_NOT_DRAWN)
 
+    def test_one_change_in_both_logs_counts_once(self):
+        """COP's ledger records a change again, minutes later, that the program's own log already holds. From the log's
+        first day the program's events come from its own log only; the ledger still covers the days before it."""
+        t = Path(self.tmp.name) / "twice"
+        write_gz(t / "ledger" / "2026-11-16.jsonl.gz", lines=[
+            line("2026-11-16T09:00:00Z", "new", "elements:usgs:0", "elements", countries=("UA",))])
+        write_gz(t / "ledger" / "2026-11-17.jsonl.gz", lines=[
+            line("2026-11-17T16:41:23Z", "new", "elements:usgs:1", "elements", countries=("UA",)),
+            line("2026-11-17T16:41:23Z", "new", "cordon:alert:ua-1", "cordon", countries=("UA",))])
+        write_gz(t / "logs" / "elements" / "log" / "2026" / "11" / "17.jsonl.gz", lines=[
+            line("2026-11-17T16:30:23Z", "new", "elements:usgs:1", "elements", countries=("UA",))])
+        doc = h.build(self.archive, t / "out", t / "ledger", t / "logs", now="2026-11-19T00:30:00Z")
+        ua = json.loads((t / "out" / "place" / "UA" / "2026-11-16.json").read_text(encoding="utf-8"))
+        evs = [dict(zip(ua["events"]["cols"], r)) for r in ua["events"]["rows"]]
+        usgs1 = [e for e in evs if e["item_id"] == "elements:usgs:1"]
+        self.assertEqual([(e["at"], e["source"]) for e in usgs1], [("2026-11-17T16:30:23Z", "program-log:elements")])
+        self.assertEqual([e["source"] for e in evs if e["item_id"] == "elements:usgs:0"], ["cop-ledger"],
+                         "a day before the program's log began still comes from COP's ledger")
+        self.assertEqual([e["source"] for e in evs if e["program"] == "cordon"], ["cop-ledger"], "no own log: ledger")
+        self.assertEqual(doc["programs"]["elements"]["events"], 2)
+        self.assertEqual(doc["programs"]["elements"]["events_from"],
+                         "its own log from 2026-11-17, COP's ledger before that")
+        self.assertEqual(doc["programs"]["cordon"]["events_from"], "COP's ledger")
+
+    def test_a_worldwide_problem_holds_only_its_own_layers(self):
+        """Internet shutdowns is worldwide with one layer, outages: it holds Blackout's outages and nothing else."""
+        areas = h.load_areas()
+        out = h.zones_of("blackout:radar-outage:1755", "blackout:radar-outage:1755", ["MM"], [96.1, 19.7], areas)
+        self.assertIn("shutdowns", out)
+        for subject, countries, xy in (("cordon:alert:mm", ["MM"], [96.1, 19.7]),
+                                       ("elements:usgs:9", ["JP"], [140.0, 36.0]),
+                                       ("blackout:ooni:IR", ["IR"], [53.0, 32.0]),
+                                       ("relief:RL-HAPI-1", ["UA"], [31.0, 49.0])):
+            self.assertNotIn("shutdowns", h.zones_of(subject, subject, countries, xy, areas), subject)
+        shut = json.loads((self.out / "areas" / "shutdowns.json").read_text(encoding="utf-8"))
+        self.assertEqual(shut["layers"], {}, "the fixture's Cordon, Context and Watchfloor items are not shutdowns")
+        self.assertFalse((self.out / "place" / "shutdowns").exists())
+
+    def test_a_country_outage_is_placed_by_country_as_on_the_direction_board(self):
+        """Blackout's country outages are placed by the countries they name, like direction in_area(..., "outages"):
+        an outage for Iraq or Saudi Arabia counts for the Gulf even with its point outside the circle."""
+        gulf = next(a for a in h.load_areas() if a["area"] == "gulf")
+        import direction as dr
+        for k, c, xy in (("blackout:radar-outage:1", "IQ", [43.7, 33.2]), ("blackout:netblocks:2", "SA", [45.1, 23.9])):
+            r = {"c": [c], "xy": xy}
+            self.assertTrue(dr.in_area(k, r, gulf, "outages"))
+            self.assertIn("gulf", h.zones_of(k, k, [c], xy, [gulf]), k)
+        # Not an outage: the circle still decides.
+        self.assertNotIn("gulf", h.zones_of("noisefloor:event:x", "noisefloor:event:x", ["IQ"], [43.7, 33.2], [gulf]))
+
     def test_only_feed_logs_are_read(self):
         self.assertTrue(all(k.startswith("metacog-osint/") for k in h.json.loads(h.CONFIG.read_text())
                             ["program_logs"].values()))

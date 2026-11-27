@@ -73,6 +73,24 @@ class Place(unittest.TestCase):
         self.assertEqual(u["layers"]["cordon"]["state"], "stale", "the program's own freshness is carried")
         self.assertFalse(u["history"]["available"])
 
+    def test_a_worldwide_problem_counts_only_its_own_layers_and_says_so(self):
+        """Internet shutdowns reads one layer, Blackout's outages: other programs' items are not counted there, and the
+        page states what it counts."""
+        shutdowns = next(a for a in hi.load_areas() if a["area"] == "shutdowns")
+        snap = {"generated_at": "2026-11-26T12:00:00Z",
+                "cop_programs": {p: {"name": p.title(), "state": "fresh"} for p in ("blackout", "cordon", "elements")},
+                "features": [feature("blackout:radar-outage:1", "blackout", ["MM"], [96.1, 19.7], "anomaly"),
+                             feature("blackout:ooni:IR", "blackout", ["IR"], [53.0, 32.0], "anomaly"),
+                             feature("cordon:alert:mm", "cordon", ["MM"], [96.1, 19.7]),
+                             feature("elements:usgs:9", "elements", ["JP"], [140.0, 36.0], "anomaly")]}
+        doc = pl.place_doc(snap, shutdowns, ["blackout", "cordon", "elements"])
+        self.assertEqual(list(doc["layers"]), ["blackout"], "only the programs of its own layers")
+        self.assertEqual(doc["layers"]["blackout"]["items"], 1, "an outage, not an OONI measurement")
+        self.assertEqual(doc["definition"]["kind"], "worldwide")
+        self.assertEqual(doc["definition"]["layers"], ["outages"])
+        self.assertIn("Confirmed internet outages (Blackout)", doc["definition"]["counts"])
+        self.assertIn("doc.definition.counts", (ROOT / "site" / "place.js").read_text(encoding="utf-8"))
+
     def test_the_join_is_declared_and_writes_through_the_gate(self):
         snap = {"generated_at": "2026-11-26T12:00:00Z", "cop_programs": {"noisefloor": {"state": "fresh"}},
                 "features": [feature("nf:1", "noisefloor", ["IR"], [56.3, 26.6])]}
