@@ -437,6 +437,20 @@ class Triage(unittest.TestCase):
         self.assertIn("probe_cc=IR", q["rule_draft"])
         self.assertIn("probes cannot report", q["caution"])
 
+    def test_a_source_not_read_inside_a_fresh_feed_is_named(self):
+        snap = snapshot(outage())
+        snap["cop_programs"]["cordon"] |= {"lanes": ["fcdo", "us-state"], "lanes_read": ["fcdo"]}
+        snap["cop_programs"]["elements"] |= {"lanes": ["gdacs"], "lanes_read": ["gdacs"]}
+        pub = tri.public(tri.attach_rates(tri.triage(snap), None))
+        layers = pub["records"][0]["layers"]
+        self.assertEqual(layers["cordon"]["not_read"], ["us-state"])
+        self.assertTrue(layers["cordon"]["showed"].startswith(
+            "Nothing found in the sources read (us-state not read on the last run): no travel"), layers["cordon"])
+        self.assertTrue(layers["elements"]["showed"].startswith("Nothing found: "))
+        self.assertEqual(layers["watchfloor"]["not_read"], [])
+        self.assertEqual(pub["layer_unread"]["cordon"], ["us-state"])
+        self.assertEqual(gate.review(tri.JOIN, pub)["may_publish"], True)
+
     def test_nothing_found_and_no_current_data_are_different_answers(self):
         quiet = one(tri.triage(snapshot(outage())))
         dead = one(tri.triage(snapshot(outage(), states={"cordon": "stale"})))

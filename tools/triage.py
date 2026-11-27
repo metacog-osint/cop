@@ -909,6 +909,17 @@ def layer_state(snapshot, features, pid):
     return "stale" if all(f["properties"].get("cop_stale") for f in mine) else "fresh"
 
 
+def unread_lanes(snapshot, pid):
+    """The sources a program's own health block says were not read on its last run (cop_programs lanes minus
+    lanes_read), or [] when the feed has no per-source block. A fresh feed can still have a dead source, and
+    "Nothing found" from it would then hide that the source was not read."""
+    block = (snapshot.get("cop_programs") or {}).get(pid) or {}
+    lanes, read = block.get("lanes"), block.get("lanes_read")
+    if not isinstance(lanes, list) or not isinstance(read, list):
+        return []
+    return sorted(set(lanes) - set(read))
+
+
 def _rate(title):
     m = re.search(r"(\d+(?:\.\d+)?)%", str(title))
     return float(m.group(1)) if m else None
@@ -1333,6 +1344,7 @@ def triage(snapshot, history=None, ended=None):
     records.sort(key=lambda r: (r["reading"] in ("incomplete", "unconfirmed"),
                                 r["outage"].get("started_at") or r["outage"]["data_as_of"] or ""))
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"), "layer_states": states,
+            "layer_unread": {pid: unread_lanes(snapshot, pid) for pid in LAYERS + ("blackout",)},
             "windows": {"hazard_before_hours": HAZARD_BEFORE_H, "hazard_after_hours": HAZARD_AFTER_H,
                         "hazard_near_km": HAZARD_NEAR_KM, "episodic_lag_hours": EPISODIC_LAG_H,
                         "episodic_kinds": sorted(EPISODIC_GDACS.values()), "state_near_km": STATE_NEAR_KM,
@@ -1476,9 +1488,18 @@ def _ended_note(rows):
             "before this snapshot."]
 
 
-def showed(name, layer):
+def showed(name, layer, unread=()):
     """One plain line on what a layer showed. "Nothing found", "No current data" and "Not covered" are different
-    answers."""
+    answers. unread: the layer's sources not read on its program's last run; "Nothing found" then names them, since
+    it only speaks for the sources that were read."""
+    text = _showed(name, layer)
+    if unread and text.startswith("Nothing found"):
+        text = text.replace("Nothing found", f"Nothing found in the sources read ({', '.join(unread)} not read on the "
+                            "last run)", 1)
+    return text
+
+
+def _showed(name, layer):
     if layer.get("covered") is False:
         text = NOT_COVERED[name]
         if layer.get("country_wide"):
@@ -1606,7 +1627,9 @@ def public(doc):
     for r in doc["records"]:
         rec = {k: r[k] for k in RECORD_KEYS}
         rec["replay_rate"] = r.get("replay_rate")
-        rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
+        unread = doc.get("layer_unread") or {}
+        rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer, unread.get(name)),
+                                "not_read": unread.get(name) or [], **layer}
                          for name, layer in r["layers"].items()}
         rec["question_draft"] = question_draft(r["verdict_draft"])
         rec["cause_question_draft"] = question_draft(r["cause_draft"], CAUSE_NOTE) if r.get("cause_draft") else None
@@ -1614,6 +1637,7 @@ def public(doc):
         records.append(rec)
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
+            "layer_unread": doc.get("layer_unread"),
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
             "replay": doc.get("replay"), "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
             "not_read": doc.get("not_read") or [], "records": records}
