@@ -135,8 +135,6 @@ def strength_label(props, rule):
 # layers, so COP gives them one seat in the picks and joins their readings of one zone on one pick. Each item keeps
 # its own id, sources, licence and attribution: joined, never merged.
 SHARED_GROUPS = ("gdelt",)
-# Context's Z17 (Horn of Africa: DJ, ER, ET, SO) is Watchfloor's Z18 (Ethiopia and Eritrea) plus Z19 (Somalia).
-ZONE_ALIASES = {"CX-WP-Z17": ("Z18", "Z19")}
 _WP = re.compile(r"^([A-Z]+-WP-)([ZT])(\d+)$")
 
 
@@ -147,17 +145,15 @@ def shared_group(props):
 
 
 def voice_keys(props):
-    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone (Context's Z17 gives ["gdelt:Z18",
-    "gdelt:Z19"]), ["gdelt:T3"] for a Watch Topic, ["gdelt:<country>"] for a GDELT item outside every zone, [] for an
-    item of no shared group. Two items are one voice when their keys meet."""
+    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone, ["gdelt:T3"] for a Watch Topic,
+    ["gdelt:<country>"] for a GDELT item outside every zone, [] for an item of no shared group. Two items are one
+    voice when their keys meet."""
     group = shared_group(props)
     if not group:
         return []
     wp = props.get("warning_problem_id")
     m = _WP.match(wp) if isinstance(wp, str) else None
     if m:
-        if wp in ZONE_ALIASES:
-            return [f"{group}:{z}" for z in ZONE_ALIASES[wp]]
         letter, n = m.group(2), int(m.group(3))
         return [f"{group}:{letter}{n:02d}" if letter == "Z" else f"{group}:{letter}{n}"]
     return sorted({f"{group}:{c}" for c in (props.get("countries") or []) if isinstance(c, str)})
