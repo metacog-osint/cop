@@ -52,7 +52,8 @@ def blackout_props(shape):
 
 
 def without_new(p):
-    q = {k: v for k, v in p.items() if k not in NEW_FIELDS}
+    # cop_rarity is COP's reading of `signal`, one of the new fields, so it comes and goes with them.
+    q = {k: v for k, v in p.items() if k not in NEW_FIELDS and k != "cop_rarity"}
     q["sources"] = [{k: v for k, v in s.items() if k != "lane"} for s in p.get("sources") or []]
     return q
 
