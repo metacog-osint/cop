@@ -535,6 +535,173 @@
      }
     ]
    }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     128.333932,
+     51.884395
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "launch",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:05:00Z",
+    "valid_until": "2026-11-01T05:16:00Z",
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "provide_satellite_access"
+    ],
+    "method_version": "launch-1.0",
+    "id": "launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d",
+    "subject_id": "launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d",
+    "event_start": "2026-10-31T23:16:00Z",
+    "last_change": "new",
+    "last_change_at": "2026-10-30T13:37:56Z",
+    "title": "Scheduled launch: Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others (Go), 2026-10-31 23:16 UTC",
+    "summary": "Launch Library 2 lists Soyuz 2.1b/Fregat-M | MKA Kinosputnik, KOEN and others for 2026-10-31 23:16 UTC (status Go for Launch; NET precision Minute) from Cosmodrome Site 1S, Vostochny Cosmodrome, Siberia, Russian Federation. Provider Russian Federal Space Agency (ROSCOSMOS). Mission: Technology, Sun-Synchronous Orbit. A scheduled time is the provider's or press's, not Launch's, and often moves.",
+    "data_as_of": "2026-10-31T20:00:00Z",
+    "countries": [
+     "RU"
+    ],
+    "requirement_ids": [
+     "LA-PIR-3"
+    ],
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "place_basis": "location",
+    "sea_areas": [],
+    "visual": {
+     "type": "table",
+     "url": "https://launch.theintelligence.company/#live"
+    },
+    "sources": [
+     {
+      "id": "ll2-thespacedevs",
+      "publisher": "The Space Devs (Launch Library 2)",
+      "title": "Launch Library 2: upcoming launches",
+      "url": "https://ll.thespacedevs.com/2.3.0/launches/bff2fc91-eddd-4dfc-af26-ac0674cfab4d/",
+      "licence": "Free access stated by The Space Devs; no data licence stated (read 16 Nov 2026)",
+      "grade": "B2",
+      "independence_group": "thespacedevs",
+      "source_type": "aggregator",
+      "accessed_at": "2026-10-31T20:00:00Z"
+     }
+    ],
+    "measures": {
+     "record_id": "upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d",
+     "evidence": [
+      "listed"
+     ],
+     "schedule_sources": [
+      "ll2"
+     ]
+    }
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     111.608,
+     38.849
+    ]
+   },
+   "properties": {
+    "contract": "tic-feed/2",
+    "program": "launch",
+    "kind": "observation",
+    "tier": "routine",
+    "status": "actual",
+    "msg_type": "new",
+    "human_review": "none",
+    "us_person_data": "organizations",
+    "status_class": "reported",
+    "product_category": "current",
+    "published_at": "2026-10-31T20:05:00Z",
+    "valid_until": "2026-11-03T11:28:00Z",
+    "pmesii_pt": [
+     "military",
+     "infrastructure"
+    ],
+    "ascope": [
+     "areas",
+     "capabilities"
+    ],
+    "ie_aspect": [
+     "physical"
+    ],
+    "ncf": [
+     "provide_satellite_access"
+    ],
+    "method_version": "launch-1.0",
+    "id": "launch:upcoming:closure:A6149/26-ZBPE",
+    "subject_id": "launch:upcoming:closure:A6149/26-ZBPE",
+    "event_start": "2026-11-03T04:59:00Z",
+    "event_end": "2026-11-03T05:28:00Z",
+    "last_change": "new",
+    "last_change_at": "2026-10-31T19:36:15Z",
+    "title": "Closure with no listed launch near Taiyuan: window opens 2026-11-03 04:59 UTC",
+    "summary": "Closure notice A6149/26 ZBPE has a window 2026-11-03 04:59-05:28 UTC near Taiyuan, a site with launch history, and no schedule Launch reads lists a launch from that site in it. The site's own history puts a launch in such a window at about 05:08 UTC. Closures are also issued for tests and other activity, and some are cancelled: this says a closure exists and no launch is listed for it, not that a launch is coming.",
+    "data_as_of": "2026-10-31T20:00:00Z",
+    "countries": [
+     "CN"
+    ],
+    "requirement_ids": [
+     "LA-PIR-3"
+    ],
+    "coverage_fraction": 1.0,
+    "precision_class": "point",
+    "place_basis": "location",
+    "sea_areas": [],
+    "visual": {
+     "type": "table",
+     "url": "https://launch.theintelligence.company/#live"
+    },
+    "sources": [
+     {
+      "id": "faa-nms",
+      "publisher": "NOTAMs read through the FAA NOTAM Management Service API",
+      "title": "NOTAMs (NMS-API); not FAA data as published here, and not authoritative for non-US NOTAMs",
+      "url": "https://api-nms.aim.faa.gov/",
+      "licence": "Redistribution allowed (FAA NMS-API terms of service)",
+      "grade": "A2",
+      "independence_group": "faa",
+      "source_type": "official",
+      "accessed_at": "2026-10-31T20:00:00Z"
+     }
+    ],
+    "measures": {
+     "record_id": "upcoming:closure:A6149/26 ZBPE",
+     "evidence": [
+      "closure with no listing"
+     ],
+     "schedule_sources": [
+      "closure"
+     ]
+    }
+   }
   }
  ]
 }

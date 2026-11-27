@@ -15,6 +15,7 @@ const picks = readJson(dir, "picks.json");
 const triage = readJson(dir, "triage.json");
 const threeSignal = readJson(dir, "three-signal.json");
 const direction = readJson(dir, "direction.json");
+const lanes = readJson(dir, "lanes.json");
 const shard = (n) => readJson(dir, `agent/items/${String(n).padStart(2, "0")}.json`);
 const rows = T.rowsOf(index);
 
@@ -83,7 +84,7 @@ test("search: every filter narrows, warnings and anomalies come first, newest fi
   assert.ok(byText.items.every((r) => !("shard" in r)), "shard numbers stay internal");
 });
 
-test("search leaves out items past their valid_until unless asked, and every row says expired (ideas#164)", () => {
+test("search leaves out items past their valid_until unless asked, and every row says expired", () => {
   const vi = index.fields.indexOf("valid_until");
   assert.ok(vi >= 0, "the index carries valid_until");
   const all = T.searchItems(index, { limit: 50, include_expired: true }, NOW);
@@ -183,6 +184,43 @@ test("get_item returns the full item with its sources, or a clear miss", () => {
   assert.throws(() => T.getItem(index, null, "nope:1", NOW), /No item "nope:1"/);
 });
 
+test("an item carries its own lane's record line, a prefix lane before its program's catch-all", () => {
+  const out = rows.find((x) => x.program === "blackout" && /^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  assert.ok(out, "the fixtures hold a Blackout outage");
+  const res = T.getItem(index, shard(out.shard), out.id, NOW, lanes);
+  assert.equal(res.lane_record.lane, "blackout-outage-triage");
+  assert.match(res.lane_record.text, /^This lane: \d+ flagged since 2026-10-31/);
+  assert.match(res.lane_record.replay, /^Replay, not live/);
+  const other = rows.find((x) => x.program === "blackout" && !/^blackout:(outage|radar-anomaly|radar-outage):/.test(x.id));
+  if (other) assert.equal(T.getItem(index, shard(other.shard), other.id, NOW, lanes).lane_record.lane, "blackout-other");
+  const v = rows.find((x) => x.program === "vigil");
+  const line = T.getItem(index, shard(v.shard), v.id, NOW, lanes).lane_record;
+  assert.equal(line.lane, "vigil");
+  assert.equal(line.flagged, null);
+  assert.match(line.text, /No outside check yet/);
+  assert.equal(T.getItem(index, shard(v.shard), v.id, NOW).lane_record, null, "no lanes.json, no line");
+  assert.equal(line.scored_elsewhere, null);
+  const vis = rows.find((x) => x.program === "vis");
+  assert.ok(vis, "the fixtures hold a Vis item");
+  const visLine = T.getItem(index, shard(vis.shard), vis.id, NOW, lanes).lane_record;
+  assert.equal(visLine.lane, "vis");
+  assert.match(visLine.text, /^Scored outside the lane records: Verdict scores/);
+  assert.doesNotMatch(visLine.text, /\d/, "no figure from Verdict's record is restated");
+  assert.equal(visLine.scored_elsewhere.record, "https://verdict.theintelligence.company/#vis-h");
+  assert.equal(visLine.scored, 0);
+});
+
+test("lane records never change the pick order, and a missing file is a tool error", () => {
+  const plain = T.topPicks(index, picks, NOW, direction);
+  const withLanes = T.topPicks(index, picks, NOW, direction, lanes);
+  assert.deepEqual(withLanes.picks.map((p) => p.id), plain.picks.map((p) => p.id));
+  assert.ok(withLanes.picks.every((p) => p.lane_record));
+  assert.throws(() => T.laneRecord(null, {}, NOW), /lane records were not built/);
+  const rec = T.laneRecord(lanes, {}, NOW);
+  assert.equal(rec.lanes.length, lanes.lanes.length);
+  assert.ok(rec.lanes.every((x) => x.rate_shown === false && x.scored === 0));
+});
+
 test("top picks keep COP's order and reasons", () => {
   const res = T.topPicks(index, picks, NOW);
   assert.ok(picks.picks.length > 0, "the fixtures make picks at their own time");
@@ -194,7 +232,7 @@ test("top picks keep COP's order and reasons", () => {
   assert.match(res.note, /not warnings/);
 });
 
-test("a pick in a Rising place comes first and says so; the rest keep their order (ideas#164)", () => {
+test("a pick in a Rising place comes first and says so; the rest keep their order", () => {
   assert.ok(picks.picks.length > 1, "the fixtures make more than one pick");
   const last = picks.picks[picks.picks.length - 1];
   const res = T.topPicks(index, picks, NOW, direction);
@@ -308,7 +346,7 @@ test("upcoming events stay inside the window and can be filtered by origin", () 
 test("Orbit's scheduled launches join Verdict's calendar, in date order, credited to Orbit", () => {
   const res = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
   const launches = res.events.filter((e) => e.origin === "orbit");
-  assert.equal(launches.length, 14);
+  assert.equal(launches.length, 13, "one of Orbit's 14 is also in Launch's feed, and Launch's copy is kept");
   assert.ok(res.events.some((e) => e.origin === "verdict"));
   const cmp = (a, b) => a.date.localeCompare(b.date) || (a.at || "").localeCompare(b.at || "") || a.id.localeCompare(b.id);
   for (let i = 1; i < res.events.length; i++) assert.ok(cmp(res.events[i - 1], res.events[i]) < 0, res.events[i].id);
@@ -320,10 +358,27 @@ test("Orbit's scheduled launches join Verdict's calendar, in date order, credite
   assert.ok(launches.some((e) => e.at === null && e.net_precision === "Day"), "a day-only launch has no time");
   assert.ok(res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")));
   assert.equal(res.orbit.state, "fresh");
-  assert.match(res.note, /origin orbit marks scheduled orbital launches/);
+  assert.match(res.note, /origin orbit is kept for older snapshots/);
   const only = T.upcomingEvents(verdict, events, { days: 30, origin: "orbit" }, NOW);
-  assert.equal(only.count, 14);
+  assert.equal(only.count, 13);
   assert.ok(!only.attribution.includes(verdict.attribution), "Verdict is not credited for Orbit's launches alone");
+});
+
+test("Launch's scheduled launches and closures join the calendar, credited to Launch", () => {
+  const res = T.upcomingEvents(verdict, events, { days: 30, origin: "launch" }, NOW);
+  assert.deepEqual(res.events.map((e) => [e.id, e.kind]), [
+    ["launch:upcoming:ll2:bff2fc91-eddd-4dfc-af26-ac0674cfab4d", "launch"],
+    ["launch:upcoming:closure:A6149/26-ZBPE", "closure"],
+  ]);
+  const closure = res.events[1];
+  assert.equal(closure.net_precision, "closure window");
+  assert.match(closure.note, /not a finding that a launch is coming/);
+  assert.ok(res.attribution.some((a) => a.startsWith("Launch, The Intelligence Company")));
+  assert.ok(!res.attribution.some((a) => a.startsWith("Orbit, The Intelligence Company")), "Orbit has no launch here");
+  assert.equal(res.launch.state, "fresh");
+  assert.match(res.note, /kind closure is a launch-site closure with no listed launch/);
+  const all = T.upcomingEvents(verdict, events, { days: 30 }, NOW);
+  assert.equal(all.events.filter((e) => e.id.endsWith("bff2fc91-eddd-4dfc-af26-ac0674cfab4d")).length, 1);
 });
 
 test("a launch whose stated time has passed is left out", () => {
@@ -337,12 +392,12 @@ test("a launch whose stated time has passed is left out", () => {
 test("each half of the calendar stands without the other, and both missing is refused", () => {
   const noCalendar = { ...verdict, calendar: null, missing: ["calendar"] };
   const res = T.upcomingEvents(noCalendar, events, { days: 30 }, NOW);
-  assert.equal(res.count, 14);
+  assert.equal(res.count, 15);
   assert.deepEqual(res.missing, ["verdict calendar"]);
   assert.equal(res.as_of, events.bus_generated_at);
   assert.throws(() => T.upcomingEvents(noCalendar, events, { origin: "verdict" }, NOW), /could not be fetched/);
   const noEvents = T.upcomingEvents(verdict, null, { days: 30 }, NOW);
-  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit"));
+  assert.ok(noEvents.count > 0 && noEvents.events.every((e) => e.origin !== "orbit" && e.origin !== "launch"));
   assert.deepEqual(noEvents.missing, ["program events"]);
   assert.throws(() => T.upcomingEvents(verdict, null, { origin: "orbit" }, NOW), /were not built/);
   assert.throws(() => T.upcomingEvents(null, null, {}, NOW), /could not be fetched/);
@@ -492,4 +547,61 @@ test("three-signal gives the reading, the layers' items and the wording, and a m
   assert.equal(T.threeSignal(index, threeSignal, { area: "hormuz" }, NOW).count, 1);
   assert.throws(() => T.threeSignal(index, threeSignal, { area: "baltic" }, NOW), T.ToolError);
   assert.throws(() => T.threeSignal(index, null, {}, NOW), /not built for this snapshot/);
+});
+
+test("search by the framework tags and the topic key: any value fits, tags combine, values are checked", () => {
+  for (const k of T.TAGS) assert.ok(index.fields.includes(k), `index carries ${k}`);
+  assert.ok(rows.every((r) => T.TAGS.every((k) => Array.isArray(r[k]))), "every row has each tag as a list");
+  assert.ok(index.tag_vocab && index.tag_vocab.pmesii_pt.includes("infrastructure") && index.tag_vocab.ncf.includes("provide_pnt"));
+  const live = (r) => !T.isExpired(r.valid_until, NOW);
+  const count = (f) => rows.filter((r) => live(r) && f(r)).length;
+  const infra = T.searchItems(index, { pmesii_pt: ["infrastructure"], limit: 50 }, NOW);
+  assert.ok(infra.matched > 0);
+  assert.equal(infra.matched, count((r) => r.pmesii_pt.includes("infrastructure")));
+  assert.ok(infra.items.every((r) => r.pmesii_pt.includes("infrastructure")));
+  const either = T.searchItems(index, { ascope: ["events", "capabilities"] }, NOW);
+  assert.equal(either.matched, count((r) => r.ascope.includes("events") || r.ascope.includes("capabilities")));
+  const both = T.searchItems(index, { pmesii_pt: ["infrastructure"], ie_aspect: ["physical"] }, NOW);
+  assert.equal(both.matched, count((r) => r.pmesii_pt.includes("infrastructure") && r.ie_aspect.includes("physical")));
+  const vessel = T.searchItems(index, { ncf: ["transport_by_vessel"], limit: 50 }, NOW);
+  assert.ok(new Set(vessel.items.map((r) => r.program)).size > 1, "the topic key reaches across layers");
+  assert.throws(() => T.searchItems(index, { pmesii_pt: ["politics"] }, NOW), /Unknown pmesii_pt value "politics"/);
+  assert.equal(T.searchItems(index, { pmesii_pt: ["time"] }, NOW).matched, count((r) => r.pmesii_pt.includes("time")),
+    "a known value no item carries is no error");
+  const plain = { ...index, codes: undefined, rows: rows.map((o) => index.fields.map((k) => o[k])) };
+  for (const args of [{ ncf: ["provide_pnt"] }, { pmesii_pt: ["economic"], ascope: ["areas"] }, { group_by: "ie_aspect" }]) {
+    assert.deepEqual(T.searchItems(plain, args, NOW), T.searchItems(index, args, NOW), JSON.stringify(args));
+  }
+});
+
+test("search can count its matches by one tag, each value an item carries counted once", () => {
+  const res = T.searchItems(index, { program: ["noisefloor", "cordon"], group_by: "pmesii_pt", limit: 1 }, NOW);
+  assert.equal(res.group_by, "pmesii_pt");
+  const sum = res.groups.reduce((s, g) => s + g.count, 0);
+  assert.ok(sum >= res.matched, "an item under two values counts under each");
+  const infra = res.groups.find((g) => g.value === "infrastructure");
+  assert.equal(infra ? infra.count : 0, T.searchItems(index, { program: ["noisefloor", "cordon"], pmesii_pt: ["infrastructure"] }, NOW).matched);
+  for (let i = 1; i < res.groups.length; i++) assert.ok(res.groups[i - 1].count >= res.groups[i].count, "largest first");
+  assert.match(res.groups_note, /not how serious/);
+  assert.equal(res.returned, 1, "grouping counts every match, not only the page");
+  assert.throws(() => T.searchItems(index, { group_by: "tier" }, NOW), /group_by must be one of/);
+  assert.equal(T.searchItems(index, { limit: 1 }, NOW).groups, undefined, "no groups unless asked");
+});
+
+test("get_item lists the same topic in other layers, never its own program, and says it is no link", () => {
+  const r = rows.find((x) => x.program === "noisefloor" && x.ncf.includes("transport_by_air") && !T.isExpired(x.valid_until, NOW));
+  assert.ok(r, "the fixtures hold a Noisefloor item filed under transport_by_air");
+  const st = T.getItem(index, shard(r.shard), r.id, NOW).same_topic_in_other_layers;
+  assert.deepEqual(st.ncf, r.ncf);
+  const expect = rows.filter((x) => x.program !== r.program && !T.isExpired(x.valid_until, NOW) && x.ncf.some((v) => r.ncf.includes(v)));
+  assert.equal(st.matched, expect.length);
+  assert.ok(st.matched > 0 && st.items.length === Math.min(st.matched, T.SAME_TOPIC_MAX));
+  assert.ok(st.items.every((x) => x.program !== r.program && x.shared_ncf.length && x.shared_ncf.every((v) => r.ncf.includes(v))));
+  assert.equal(Object.values(st.by_program).reduce((a, b) => a + b, 0), st.matched);
+  assert.match(st.note, /does not mean the events are linked/);
+  assert.doesNotMatch(st.note, /likely|warning of|will happen/);
+  if (st.matched > T.SAME_TOPIC_MAX) assert.match(st.more, /search_items with ncf/);
+  const none = rows.find((x) => !x.ncf.length);
+  const empty = T.getItem(index, shard(none.shard), none.id, NOW).same_topic_in_other_layers;
+  assert.deepEqual([empty.matched, empty.items], [0, []]);
 });

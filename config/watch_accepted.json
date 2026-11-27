@@ -1,0 +1,13 @@
+{
+  "note": "Sources the suite watchdog (tools/suite_watch.py) treats as documented, not as a problem, while they read exactly as described here. An entry holds only while its source's state is the one named, its detail holds the phrase, and the until date has not passed; anything else is a problem again. Each run prints an 'accepted:' line for every entry it used. Add an entry only for a degraded state that its program has decided to keep, with the reason.",
+  "accepted": [
+    {
+      "program": "vigil",
+      "source": "threatcluster",
+      "state": "stale",
+      "detail_has": "under its floor",
+      "until": "2026-12-31",
+      "reason": "ThreatCluster retired its 90-day victims file on 22 Nov 2026 and now publishes a capped free file (25 rows a day) under non-commercial terms. Vigil keeps the capped file with credit, and its row-count floor reads degraded on purpose, which is how its feed says why claims lack a country."
+    }
+  ]
+}

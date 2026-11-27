@@ -87,6 +87,29 @@ class DirectionLog(unittest.TestCase):
         with self.assertRaises(SystemExit):
             log.read_log(self.path)
 
+    def test_a_correction_is_appended_once_and_leaves_the_layer_out_of_the_followup(self):
+        fix = [{"week": "2026-11-23", "area": "gulf", "layer": "press", "why": "The zone's scope changed."}]
+        log.update(self.path, reading("2026-11-23T00:21:00Z"), memory(), CONFIG, at("2026-11-23T00:30:00"))
+        call_line = self.path.read_text(encoding="utf-8").splitlines()[0]
+        log.update(self.path, reading("2026-11-27T00:21:00Z"), memory(), CONFIG, at("2026-11-27T00:30:00"), fix)
+        log.update(self.path, reading("2026-11-28T00:21:00Z"), memory(), CONFIG, at("2026-11-28T00:30:00"), fix)
+        rows = self.rows()
+        self.assertEqual([r["type"] for r in rows], ["call", "correction"], "appended once")
+        self.assertEqual(self.path.read_text(encoding="utf-8").splitlines()[0], call_line, "the call is never changed")
+        self.assertEqual((rows[1]["area"], rows[1]["layer"], rows[1]["action"]), ("gulf", "press", "left_out_of_followup"))
+        log.update(self.path, reading("2026-12-03T00:21:00Z"), memory(), CONFIG, at("2026-12-03T00:30:00"), fix)
+        fu = [r for r in self.rows() if r["type"] == "followup"][0]
+        self.assertEqual(fu["layers"], [])
+        self.assertEqual(fu["left_out"], [{"layer": "press", "why": "The zone's scope changed."}])
+
+    def test_a_correction_for_a_place_or_layer_never_called_is_not_written(self):
+        fix = [{"week": "2026-11-23", "area": "nowhere", "layer": "press", "why": "x"},
+               {"week": "2026-11-23", "area": "gulf", "layer": "interference", "why": "x"},
+               {"week": "2026-11-30", "area": "gulf", "layer": "press", "why": "x"}]
+        log.update(self.path, reading("2026-11-23T00:21:00Z"), memory(), CONFIG, at("2026-11-23T00:30:00"), fix)
+        log.update(self.path, reading("2026-11-27T00:21:00Z"), memory(), CONFIG, at("2026-11-27T00:30:00"), fix)
+        self.assertEqual([r["type"] for r in self.rows()], ["call"])
+
     def test_the_log_holds_no_memory(self):
         log.update(self.path, reading("2026-11-23T00:21:00Z"), memory(), CONFIG, at("2026-11-23T00:30:00"))
         row = json.loads(self.path.read_text(encoding="utf-8").splitlines()[0])

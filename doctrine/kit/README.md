@@ -14,7 +14,7 @@ drawn on one map (COP) and scored (Verdict).
 | `python/tic_doctrine/` | Likelihood, confidence, contract checks, the tradecraft linter, register checks, source health, withholding counts, tips between programs, the history log (standard library only) |
 | `js/tic-doctrine.js` | The same likelihood, confidence, lifeline, ladder and tip-matching logic for web pages (ES module, no dependencies) |
 | `vocab/programs.json` | The suite registry: every program, its feed, and the datasets it owns |
-| `docs/` | The contract, the reader's language key, the confidence rubric, the sources-and-withholding page, the history log format |
+| `docs/` | The contract, the reader's language key, the confidence rubric, the sources-and-withholding page, the history log format, the significance method for closures and official warnings (draft) |
 | `templates/doctrine/` | A program's registers: requirements, indicators and warning problems, assumptions, function map, sources, method |
 | `tools/` | `sync.py` copies the kit into a program as `doctrine/kit/`; `build_js.py` and `build_schema.py` regenerate from `vocab/` |
 
@@ -40,7 +40,7 @@ runs. A stale producer gives stale tips, drawn grey.
 countries their points fall in, or through `boxes` in `interests.json` (`[west, south, east, north]` per area, one box
 or a list). Matching uses bounding boxes, so a very large warning area can land in two neighbouring areas, and boxes do
 not cross the 180° meridian. A registry entry stays `planned` (with a `status_note`) until its program publishes real
-data at its address. Vis went live on 8 Nov 2026 (0.4.2), Blackout on 12 Nov 2026 (0.4.3); 0.4.4 (13 Nov 2026) adds Blackout's Cloudflare Radar data and its eleven provider status feeds to its entry. 0.4.5 (13 Nov 2026) adds Blackout's routing, power and context lanes (Radar BGP, the IAEA's Zaporizhzhya updates, ODIN, EIA-930, NASA Black Marble, Access Now STOP, Citizen Lab test lists) to its `owns`, and each new source's licence, as Blackout's `doctrine/sources.json` states it, to its `terms`. Headwind went live on 13 Nov 2026 (0.4.6): its `terms` are its feed's own licence line and its `owns` lists what it collects today. 0.4.7 (13 Nov 2026) adds Blackout's base rates for US state outages from ORNL's EAGLE-I outage history to its `owns`, and that history's licence (CC BY 4.0, as its figshare record states) to its `terms`. Orbit went live on 13 Nov 2026 (0.4.8), the same way: launches, scheduled launches, reentries and catalog changes from GCAT and Launch Library 2. Launch went live on 14 Nov 2026 (0.4.9): FAA space-operations TFRs and the scheduled launches that coincide with a closure area, beside Tom's launch closure history.
+data at its address. Vis went live on 8 Nov 2026 (0.4.2), Blackout on 12 Nov 2026 (0.4.3); 0.4.4 (13 Nov 2026) adds Blackout's Cloudflare Radar data and its eleven provider status feeds to its entry. 0.4.5 (13 Nov 2026) adds Blackout's routing, power and context lanes (Radar BGP, the IAEA's Zaporizhzhya updates, ODIN, EIA-930, NASA Black Marble, Access Now STOP, Citizen Lab test lists) to its `owns`, and each new source's licence, as Blackout's `doctrine/sources.json` states it, to its `terms`. Headwind went live on 13 Nov 2026 (0.4.6): its `terms` are its feed's own licence line and its `owns` lists what it collects today. 0.4.7 (13 Nov 2026) adds Blackout's base rates for US state outages from ORNL's EAGLE-I outage history to its `owns`, and that history's licence (CC BY 4.0, as its figshare record states) to its `terms`. Orbit went live on 13 Nov 2026 (0.4.8), the same way: launches, scheduled launches, reentries and catalog changes from GCAT and Launch Library 2. Launch went live on 14 Nov 2026 (0.4.9): FAA space-operations TFRs and the scheduled launches that coincide with a closure area, beside its launch and reentry closure history.
 
 ```
 python doctrine/kit/tic.py tips doctrine                  # against the bus
@@ -66,7 +66,7 @@ read and deployed by hand once a week until the IMF permits automated pulls.
 linter's midnight-UTC check and `asOfDateLabel()` in the browser module, so a date-only item is shown as a date and
 not as the evening before; Undertow's `terms` now say what it quotes with credit (Meta, OpenAI, TikTok, EEAS).
 0.5.7 (15 Nov 2026): optional item field `subdivisions` (ISO 3166-2 codes such as `US-HI`, each one's country also
-in `countries`), so a consumer can tell a notice in Hawaii from one for all of the United States (Tom, 15 Nov 2026);
+in `countries`), so a consumer can tell a notice in Hawaii from one for all of the United States (15 Nov 2026);
 `geo.subdivision_at(lat, lon)` and `geo.subdivisions_for_geometry(geom)` name the US state from Natural Earth's 1:10m
 outlines (`geo/subdivisions.json`, built by `tools/build_subdivisions.py`; right to about 1 km at a state line).
 0.5.8 (15 Nov 2026): the registry names Launch's history source as Launch's charted notices, not a person.
@@ -86,7 +86,7 @@ with its value before in `was`, so a program whose ids stay the same across read
 `data_as_of`) logs every reading without reporting the one before as ended. Programs that do not pass it see no
 change.
 
-**0.6.0 (18 Nov 2026): feed contract revision 2.1.** Step 2 of the feed-contract migration (Tom's decisions D1 to D8,
+**0.6.0 (18 Nov 2026): feed contract revision 2.1.** Step 2 of the feed-contract migration (the suite's decisions D1 to D8,
 18 Nov 2026). Additive: the contract string stays `tic-feed/2`, every new field is optional, and every feed that
 passed 0.5.12 passes 0.6.0 with the same errors (checked on the 16 feeds in the registry, COP's among them, read
 live on 18 Nov 2026).
@@ -169,6 +169,45 @@ traffic by network). `terms` already credits Cloudflare Radar data CC BY-NC 4.0.
 
 **0.6.9 (20 Nov 2026): Relief's registry row matches relief-0.3.** `status_note` and `owns` name the HDX HAPI and ReliefWeb lanes (IPC stays planned); `terms` adds the HAPI and ReliefWeb terms. Registry text only.
 
+**0.6.10 (21 Nov 2026): Wake's licence in the program register.** `terms` now says "Wake code GNU AGPL-3.0" (it read "code MIT"), matching Wake's LICENSE. Registry text only.
+
+**0.6.11 (24 Nov 2026): neutral attributions.** Dated notes in the schema, vocabularies, templates, docs and tools no longer name a person: each keeps its date ("(15 Nov 2026)"), and a rule or decision is "the suite's". Wording only; no field, value or rule changes.
+
+**0.6.17 (27 Nov 2026): "No independent source" in the coverage table, and earlier ladder names keep passing.**
+- A place whose only sources are set aside (state media, a party's claim) or are the suite's own is now class
+  `no_independent`, "No independent source", not `none`, "Not monitored": something was read there.
+  `ladder.coverage_place()` lists the suite's own sources under a new `not_counted` member and names their programs in
+  `programs` (before, an item whose sources were all the suite's own left its program out).
+  `ladder.coverage_class(independent, uncounted=0)` and the browser module's `coverageClass(independent, uncounted)` or
+  `coverageClass(row)` give the class; called with a count alone they answer as before.
+- The two ladder rules added in 0.6.13 (a party's claim or state media is verified only on origins; such an item keeps
+  tier routine until verified) are notes, not errors, for an item that uses the 0.6.2 names `reported` and
+  `corroborated`, so a feed that passed under 0.6.12 passes with the same errors. Under the names `lead` and
+  `verified` they stay errors.
+- `corroboration.state` or `basis` given as a list or an object is reported as an error instead of stopping the
+  linter.
+- The actor vocabulary's note (and the schema built from it) states its rule plainly instead of quoting.
+
+**0.6.15 (27 Nov 2026): the draft significance note stays in the kit repo.** `tools/sync.py` no longer copies
+`docs/significance.md` (a draft that no program reads) into programs, so a program's `KIT.json` doesn't list it.
+No other file changes.
+
+**0.6.14 (27 Nov 2026): the coverage table counts only outside sources.** `ladder.coverage_place()` no longer
+counts sources the suite makes itself (`source_type` suite_program, derived, model or machine summary, listed in
+`vocab/event_ladder.json`). A program citing another program's reading, or its own model or summary, does not add an
+independent source for a place.
+
+**0.6.13 (27 Nov 2026): the event ladder and the coverage table.** [`docs/event-ladder.md`](docs/event-ladder.md)
+defines, in one place, the states lead, confirmed and verified for event reports, the promotion rule `ladder-1`, the
+rule that a party's claims and state media never verify or raise an item alone, and the coverage-table format
+`tic-coverage/1` (several independent sources, one or two, not monitored). The `corroboration` member takes the new
+state names, `confirmed_at`, `verified_at`, `geolocation` and `state_media`; `reported` and `corroborated` still pass
+as the earlier names of lead and verified, with a note. New: `vocab/event_ladder.json`, `ladder.py`
+(`state_of`, `rests_on_claim`, `coverage_place`, `coverage_class`), and `eventState()` and `coverageClass()` in the
+browser module.
+
+**0.6.12 (24 Nov 2026): zone list rebuilt from Watchfloor's catalog at 3ab3a28.** The retired zone `17_Horn_of_Africa` keeps its reason without a name. Text only; keys, countries and map points unchanged.
+
 **Tests:** `python tests/test_kit.py`, `python tests/test_history.py` and `node tests/test_js.mjs`.
 
 **Claims.** The methods are aligned with the principles of ICD 203, 206 and 208. Those directives bind US Intelligence
@@ -176,3 +215,7 @@ Community elements only; this is an independent, non-commercial research effort,
 released doctrine is cited.
 
 Code: MIT. Vocabulary files restate public US government and allied publications, credited in each file.
+
+## AI assistance
+
+This repository is built with AI coding assistance (Anthropic's Claude Code). The Intelligence Company is responsible for everything published here.

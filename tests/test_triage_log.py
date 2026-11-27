@@ -3,7 +3,7 @@
 The line format is the doctrine kit's (tic-history/1, tested in the kit and in tests/test_ledger.py). These tests
 cover what is the triage log's own: one item per outage and place, a reading's history that grows only when the
 reading or a layer's finding changes, ends only on a build that read Blackout, the gate's check on what it cites, the
-voice rule (no probability, no cause, tier routine), the files, and that the log is never published.
+voice rule (no probability, no cause, tier routine), the files, and that the log is never served from the site.
 """
 
 import copy

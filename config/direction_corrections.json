@@ -1,0 +1,17 @@
+{
+  "about": "Layers of a locked direction call that cannot be compared with their follow-up week. tools/direction_log.py appends one correction line per entry (once) and leaves that layer out of the call's follow-up. The call line itself is never changed.",
+  "corrections": [
+    {
+      "week": "2026-11-23",
+      "area": "gulf",
+      "layer": "press",
+      "why": "Watchfloor widened the Iran zone's violence count to nine countries on 18 Nov 2026. The call's press baseline mixed the old and new scope, so its press up came from the scope change, not a change in coverage."
+    },
+    {
+      "week": "2026-11-23",
+      "area": "iran-red-sea",
+      "layer": "press",
+      "why": "Watchfloor widened the Iran zone's violence count to nine countries on 18 Nov 2026. The call's press baseline mixed the old and new scope, so its press up came from the scope change, not a change in coverage."
+    }
+  ]
+}

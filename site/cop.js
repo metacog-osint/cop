@@ -6,7 +6,8 @@
 // its own valid_until no longer stands out; one click handler opens the top mark under the cursor and lists the
 // rest; and the sentences that count or describe findings are written from the snapshot, not fixed in the page.
 import * as ml from "./vendor/maplibre-gl/maplibre-gl.mjs";
-import { judgmentChips, asOfDateLabel } from "./vendor/tic-doctrine.js";
+import { judgmentChips, asOfDateLabel, eventState } from "./vendor/tic-doctrine.js";
+import { withCountryNames } from "./country-names.js";
 
 const T = window.TicTime;
 const $ = (id) => document.getElementById(id);
@@ -67,14 +68,48 @@ try { triage = await getJSON("data/triage.json"); } catch { triage = null; }
 // The three-signal join (published since 15 Nov 2026), built after triage. The picture stands without it too.
 let threeSignal = null;
 try { threeSignal = await getJSON("data/three-signal.json"); } catch { threeSignal = null; }
+// The Hormuz weekly stream (join 0.1). Without the file the page leaves the section out.
+let hormuzStream = null;
+try { hormuzStream = await getJSON("data/hormuz-stream.json"); } catch { hormuzStream = null; }
 // Direction of concern (21 Nov 2026), read from COP's memory. The picture stands without it too.
 let direction = null;
 try { direction = await getJSON("data/direction.json"); } catch { direction = null; }
+// Lane records: each lane's counts, from the locked lane log. The picture stands without them too.
+let lanes = null;
+try { lanes = await getJSON("data/lanes.json"); } catch { lanes = null; }
+// The lane an item belongs to (mirrors tools/lane_log.py lane_for): prefix lanes before a program's catch-all.
+function laneFor(program, id) {
+  for (const lane of (lanes && lanes.lanes) || []) {
+    const m = lane.match;
+    if (!m || m.program !== program) continue;
+    if (m.id_prefixes && !m.id_prefixes.some((x) => String(id).startsWith(x))) continue;
+    return lane;
+  }
+  return null;
+}
+const laneById = (id) => ((lanes && lanes.lanes) || []).find((x) => x.id === id) || null;
+// One record line, counts only. A lane record describes how a measurement has behaved; it is never a warning.
+function laneNote(lane, withReplay = true) {
+  if (!lane) return null;
+  return h("p", { class: "note lane-line" }, h("strong", { text: "Lane record. " }), lane.text,
+    lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : null,
+    withReplay && lane.replay ? ` ${lane.replay.text} Credit: ${lane.replay.attribution}.` : null,
+    ` ${lanes.not_a_warning} `, h("a", { href: "scoring.html#lanes" }, "How lanes are counted"));
+}
 const CFG = health.config;
 const PROGS = {};
 for (const p of CFG.programs) PROGS[p.id] = { ...p };
 for (const hp of health.programs) Object.assign(PROGS[hp.id], { state: hp.state, health: hp });
+// A bare country code in a program's title or summary ("Elpro GmbH (DE)") reads as the country's name, for the
+// item's own countries only (country-names.js). Shown text only: ids, links and the data files are unchanged.
+for (const f of today.features) {
+  const p = f.properties;
+  p.title = withCountryNames(p.title, p.countries);
+  p.summary = withCountryNames(p.summary, p.countries);
+}
 const BY_ID = new Map(today.features.map((f) => [f.properties.id, f]));
+// A join's row (triage, for example) names its countries, or is an item of the picture that does.
+const rowTitle = (row) => withCountryNames(row.title, row.countries || (BY_ID.get(row.id) || { properties: {} }).properties.countries);
 const PICKS = picksDoc.picks;
 const PICK_OF = new Map(PICKS.map((p) => [p.id, p]));
 // Watchfloor and Context both read GDELT, so COP counts them as one voice per zone (15 Nov 2026): a pick of that voice
@@ -371,7 +406,7 @@ function closeCard() {
   document.querySelectorAll("[data-id][aria-current]").forEach((e) => e.removeAttribute("aria-current"));
   writeHash();
 }
-// Terms explained where they appear (Tom, 23 Nov 2026, ideas#264): programs write their own item text, so the card
+// Terms explained where they appear (23 Nov 2026): programs write their own item text, so the card
 // looks for the terms it uses and explains each in a <details>, which a phone can open (no hover). The numbers stay.
 const TERMS = [
   { re: /\bz\s?[-−]?\d/, term: "z", text: "A z-score says how far a value sits from its own usual level, in units of that measure's usual day-to-day spread. 0 is usual; above +2 or below −2 is unusual." },
@@ -395,6 +430,26 @@ function termsBlock(p) {
   if (!found.length) return null;
   return h("details", { class: "terms" }, h("summary", { text: "Terms in this item" }),
     h("dl", {}, ...found.flatMap((t) => [h("dt", { text: t.term === "z" ? "z (z-score)" : t.term }), h("dd", { text: t.text })])));
+}
+// An event report's place on the kit's event ladder (docs/event-ladder.md): lead, confirmed or verified, each shown
+// with what it means, how it was verified, and the party-claim or state-media label when the item rests only on one.
+// An item without a corroboration member (a measurement, a judgment) is outside the ladder and shows nothing here.
+const claimWord = (p) => { const es = eventState(p); return es && es.claim ? ` · ${es.claim_label.toLowerCase()}` : null; };
+function ladderBlock(p) {
+  const es = eventState(p);
+  if (!es) return null;
+  const c = p.corroboration;
+  // The issuer by its publisher's name where the item's own sources list it, else by the id the feed gives.
+  const issuer = typeof c.official === "string"
+    ? ((p.sources || []).find((s) => s && s.id === c.official) || {}).publisher || c.official : null;
+  const how = es.basis === "origins" && Number.isInteger(c.origins) ? ` (${c.origins} counted)`
+    : es.basis === "official" && issuer ? `: ${issuer}` : "";
+  return h("div", { class: "ladder" },
+    h("p", { class: "ladder-h" }, "Event report: ", h("strong", { text: es.label }), ` · step ${es.step} of 3: lead, confirmed, verified`),
+    h("p", { text: es.meaning }),
+    es.basis_label ? h("p", { text: `Verified by ${es.basis_label}${how}.` }) : null,
+    es.claim ? h("p", {}, h("strong", { text: `${es.claim_label}. ` }), es.claim_meaning) : null,
+    h("p", {}, h("a", { href: es.url, rel: "noopener" }, "How this is set")));
 }
 function renderCard(f) {
   const p = f.properties, prog = PROGS[p.cop_program], pick = PICK_OF.get(p.id);
@@ -432,11 +487,17 @@ function renderCard(f) {
   if (p.cop_stale) badges.append(h("span", { class: "badge stale", text: p.cop_source_stale
     ? `No current data from this ${prog.name} source: its last run could not read it well` : `No current data from ${prog.name}` }));
   for (const c of judgmentChips(p)) badges.append(h("span", { class: "badge", text: c.text }));
+  const es = eventState(p);
+  if (es && es.claim) badges.append(h("span", { class: "badge claim", text: es.claim_label }));
   card.append(badges);
   const facts = h("dl", { class: "facts" });
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
+  const lane = laneFor(p.cop_program, p.id);
+  // A lane scored in another program's record (Verdict's of Vis's forecasts) links it; COP restates none of its figures.
+  if (lane) fact("Lane record", [lane.replay ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text,
+    ...(lane.scored_elsewhere ? [" ", h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label), "."] : [])]);
   const voicePick = pick || READING_OF.get(p.id);
   const sameVoice = voicePick ? [voicePick.id, ...otherReadings(voicePick).map((r) => r.id)].filter((id) => id !== p.id) : [];
   if (sameVoice.length) {
@@ -474,6 +535,8 @@ function renderCard(f) {
     }
   }
   card.append(facts);
+  const lb = ladderBlock(p);
+  if (lb) card.append(lb);
   const tb = termsBlock(p);
   if (tb) card.append(tb);
   card.append(h("p", { class: "caveat" }, "Measured or reported by the program named above, not judged by COP. ",
@@ -503,7 +566,7 @@ function rowFor(f, cls = "row", fly = true) {
       h("span", { class: cls === "pick" ? "pick-title" : "row-title", text: p.title }),
       h("span", { class: cls === "pick" ? "pick-meta" : "row-meta" },
         cls === "pick" ? dotFor(p.cop_program, p) : null, prog.name, " · ", asOfEl(p, "date"),
-        p.status_class === "claimed" ? " · claimed" : null, p.cop_expired ? " · expired" : null,
+        p.status_class === "claimed" ? " · claimed" : null, claimWord(p), p.cop_expired ? " · expired" : null,
         p.cop_stale ? " · no current data" : null),
       pick && cls === "pick" && otherReadings(pick).length
         ? h("span", { class: "pick-meta", text: `Same GDELT coverage: ${otherReadings(pick).map(readingText).join("; ")}` })
@@ -599,6 +662,7 @@ function renderPanel() {
   renderDirection();
   renderTriage();
   renderThreeSignal();
+  renderHormuzStream();
   renderHealth();
   renderBar();
   renderCredits();
@@ -616,14 +680,16 @@ const TRIAGE_LISTS = { elements: "significant", cordon: "recent", watchfloor: "u
 function triageItem(row) {
   const ended = row.ended_at ? h("span", { class: "row-meta" }, " (ended ", timeEl(row.ended_at), ")") : null;
   return BY_ID.has(row.id)
-    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, row.title, ended)
-    : h("span", { class: "tri-item" }, row.title, ended);
+    ? h("button", { type: "button", class: "tri-item", "data-id": row.id, onclick: () => select(row.id) }, rowTitle(row), ended)
+    : h("span", { class: "tri-item" }, rowTitle(row), ended);
 }
 // Where concern is moving: never colour alone, so each word carries its own mark.
 const DIR_MARK = { rising: "▲", edging_up: "△", mixed: "◆", easing: "▼", edging_down: "▽", steady: "–", building: "…" };
 const DIR_ORDER = ["rising", "edging_up", "mixed", "easing", "edging_down", "steady", "building"];
 const DIR_LAYER = { up: "▲ Up", down: "▼ Down", steady: "– Steady", quiet: "– None", thin: "… Building" };
 const dirDay = (day) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+// Each watched area's name opens its place page (place.html): every layer there now, and over 30 and 90 days.
+const placeLink = (x, cls) => h("a", { class: cls, href: `place.html?area=${encodeURIComponent(x.area)}`, text: x.name });
 const dirBadge = (x) => h("span", { class: `dir-word dir-${x.direction}`, text: `${DIR_MARK[x.direction]} ${x.word}` });
 function dirSince(x) {
   if (!x.since || !x.was) return "";
@@ -650,7 +716,7 @@ function renderDirection() {
   if (sec.hidden) return;
   $("direction-note").textContent = `${direction.what} ${direction.not_a_warning}`;
   $("direction-problems").replaceChildren(...direction.problems.map((x) => h("li", { class: "tri dir-card" },
-    h("div", { class: "dir-head" }, h("span", { class: "tri-outage", text: x.name }), dirBadge(x)),
+    h("div", { class: "dir-head" }, placeLink(x, "tri-outage dir-place"), dirBadge(x)),
     h("p", { class: "tri-text", text: dirMoved(x) + dirSince(x) }),
     h("dl", { class: "tri-layers" }, ...x.layers.map(directionLayer)))));
   const areas = [...direction.areas].sort((a, b) => DIR_ORDER.indexOf(a.direction) - DIR_ORDER.indexOf(b.direction));
@@ -658,12 +724,14 @@ function renderDirection() {
   const shown = state.showAllAreas ? areas : moving;
   const rest = areas.length - moving.length;
   $("direction-areas").replaceChildren(...shown.map((x) => h("li", { class: "dir-row" },
-    h("span", { class: "dir-area", text: x.name }), dirBadge(x),
+    placeLink(x, "dir-area dir-place"), dirBadge(x),
     h("span", { class: "row-meta dir-why", text: dirMoved(x) + dirSince(x) }))),
     ...(rest && !state.showAllAreas ? [h("li", {}, h("button", { type: "button", class: "chip", onclick: () => { state.showAllAreas = true; renderDirection(); } },
       `Show ${rest} steady or building`))] : []));
   const r = direction.record;
   $("direction-record").textContent = r ? recordLine(r) : "";
+  const dl = laneById("cop-direction");
+  $("direction-lane").replaceChildren(...(dl ? [laneNote(dl)] : []));
 }
 function recordLine(r) {
   const parts = [`Forecast record: ${r.registered} registered, ${r.resolved} resolved, ${r.on_called_side} of ${r.called} on the side called`
@@ -683,8 +751,8 @@ function triageRecord(r) {
   });
   return h("li", { class: "tri" },
     BY_ID.has(r.outage.id)
-      ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, r.outage.title)
-      : h("span", { class: "tri-outage", text: r.outage.title }),
+      ? h("button", { type: "button", class: "tri-outage", "data-id": r.outage.id, onclick: () => select(r.outage.id) }, rowTitle(r.outage))
+      : h("span", { class: "tri-outage", text: rowTitle(r.outage) }),
     h("div", { class: "row-meta" }, r.outage_kind === "power" ? "ODIN reading at " : "Began ",
       timeEl(r.outage.started_at || r.outage.data_as_of), r.outage.source ? ` · ${r.outage.source}` : null),
     h("div", { class: "badges" },
@@ -744,6 +812,8 @@ function renderTriage() {
     ? "No current data from Blackout, so there is nothing to triage. That is not the same as no outages."
     : "No outages in Blackout's current data.";
   list.replaceChildren(...(triage.records.length ? triage.records.map(triageRecord) : [h("li", { class: "empty", text: none })]));
+  const tl = laneById("blackout-outage-triage");
+  if (tl) foot.append(laneNote(tl, false));
   const b = triage.base_rates;
   if (b) {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
@@ -840,7 +910,7 @@ function threeSignalRecord(r) {
     ...(r.caveats || []).map((t) => h("p", { class: "tri-caveat", text: t })),
     triageQuestion(r.question_draft));
 }
-// UKMTO's reports in the circle (join 0.4, Tom's option D): context beside the reading, credited to UKMTO via Wake.
+// UKMTO's reports in the circle (join 0.4, option D): context beside the reading, credited to UKMTO via Wake.
 // Its attacks add to the notice only on a surge against their own rate; the record says which, in its caveats.
 function ukmtoContext(uk) {
   if (!uk) return null;
@@ -868,6 +938,46 @@ function renderThreeSignal() {
   }
   $("three-signal-note").textContent = `${threeSignal.what} ${threeSignal.not_a_warning}`;
   list.replaceChildren(...threeSignal.records.map(threeSignalRecord));
+  const sl = laneById("cop-three-signal");
+  $("three-signal-lane").replaceChildren(...(sl ? [laneNote(sl)] : []));
+}
+// The Hormuz weekly stream (join 0.1): transits and UKMTO's Attack reports side by side, never divided, each against
+// its own history. Dates are whole UTC weeks, so they are shown as dates and not moved to the viewer's zone.
+function streamBase(n, base) {
+  if (!base || !base.enough) return "history too short";
+  return `median ${base.median}, 90th pct ${base.p90}${n > base.p90 ? ", above" : ""}`;
+}
+function streamSeverity(s) {
+  const coded = ["L0", "L1", "L2", "L3", "L4"].filter((k) => s[k]).map((k) => `${k}: ${s[k]}`);
+  if (s.not_coded) coded.push(`not coded yet: ${s.not_coded}`);
+  return coded.join(", ") || "none";
+}
+function streamRow(w) {
+  const t = w.transits;
+  const flags = [!w.record_whole ? "record not whole" : "", w.still_filling ? "may still grow" : ""].filter(Boolean);
+  return h("tr", {},
+    h("th", { scope: "row" }, `${w.week} to ${w.week_to}`, flags.length ? h("span", { class: "row-meta", text: ` (${flags.join(", ")})` }) : null),
+    h("td", { text: t ? `${t.per_day} a day (90-day median ${t.median_90d}; year-ago median ${t.median_year_ago})` : "no data yet" }),
+    h("td", { text: `${w.attacks} (${streamBase(w.attacks, w.attacks_base)})` }),
+    h("td", { text: w.share_within_150km === null ? "no Attack reports"
+      : `${Math.round(w.share_within_150km * 100)}%, ${w.attacks_within_150km} of ${w.attacks}` }),
+    h("td", { text: streamSeverity(w.severity) + (w.casualty_reports ? `; casualties in ${w.casualty_reports}` : "") }));
+}
+function renderHormuzStream() {
+  const sec = $("hormuz-stream-sec");
+  sec.hidden = !hormuzStream || !visibleProgram("wake");
+  if (sec.hidden) return;
+  const d = hormuzStream.data_to || {};
+  $("hormuz-stream-note").replaceChildren(`${hormuzStream.what} ${hormuzStream.not_a_warning} Built `,
+    timeEl(hormuzStream.generated_at), `. Transits to ${d.transits || "no data yet"} (a whole UTC day); latest report `,
+    timeEl(d.reports), `. ${hormuzStream.reports_coded} of ${hormuzStream.reports_held} reports coded.`);
+  const head = ["Week (UTC)", "Transits (PortWatch)", "Attack reports (UKMTO)", "Within 150 km of the strait", "Severity"];
+  $("hormuz-stream").replaceChildren(h("table", { class: "stream" },
+    h("thead", {}, h("tr", {}, ...head.map((t) => h("th", { scope: "col", text: t })))),
+    h("tbody", {}, ...hormuzStream.weeks.slice().reverse().map(streamRow))));
+  $("hormuz-stream-foot").replaceChildren(
+    ...Object.values(hormuzStream.limits).map((t) => h("p", { class: "tri-caveat", text: t })),
+    h("p", { class: "tri-rate", text: `Sources: ${hormuzStream.credit.transits}; ${hormuzStream.credit.reports}.` }));
 }
 function renderHealth() {
   $("health").replaceChildren(...health.programs.map((hp) => {
@@ -962,7 +1072,7 @@ function readHash() {
   state.view = m ? { zoom: +m[1], center: [+m[3], +m[2]] } : null;
 }
 let hashTimer;
-// Browser title per view (ideas#300): the selected item's title, else the active preset, else the home title.
+// Browser title per view: the selected item's title, else the active preset, else the home title.
 const HOME_TITLE = document.title;
 function updateTitle() {
   const f = state.selected && BY_ID.get(state.selected);

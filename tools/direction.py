@@ -346,15 +346,21 @@ def read_traffic(snapshot, area):
             break
     m = (p or {}).get("measures") or {}
     pct, z, n = m.get("change_90d_pct"), m.get("z_90d"), m.get("n_total_7d")
-    if pct is None or z is None or n is None:
+    if p is None or n is None:
         return base | {"state": "thin", "text": "No current transit count."}
+    lag = "A condition, not counted: PortWatch's counts lag by up to 16 days."
+    if pct is None or z is None:
+        # A count with no usable comparison (a strait whose 90-day baseline is zero or too short) is still a count.
+        return base | {"state": "thin", "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
+                       "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}. Its 90-day baseline is too "
+                               f"thin to compare against. {lag}",
+                       "label": "Condition: no baseline", "condition": True}
     # Fewer ships through a strait is the direction of concern here, so a fall reads as "up".
     state = "up" if pct <= -TRAFFIC_PCT and z <= -TRAFFIC_Z else "down" if pct >= TRAFFIC_PCT and z >= TRAFFIC_Z else "steady"
-    side = f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above"
+    side = ("level with" if round(abs(pct)) == 0 else f"{abs(pct):.0f}% below" if pct < 0 else f"{pct:.0f}% above")
     return base | {"state": state, "recent": n, "usual": m.get("baseline_90d_median"), "id": p["id"],
                    "text": f"{n:g} a day in the week to {_when(p['data_as_of'][:10])}, {side} its 90-day median of "
-                           f"{m.get('baseline_90d_median'):g}. A condition, not counted: PortWatch's counts lag by up to "
-                           "16 days.",
+                           f"{m.get('baseline_90d_median'):g}. {lag}",
                    "label": {"up": "Condition: fewer ships", "down": "Condition: more ships"}.get(state, "Condition: steady"),
                    "condition": True}
 
@@ -506,7 +512,7 @@ def build(mem, snapshot, config, verdict=None):
             "record": record(verdict)}
 
 
-RISING = ("rising",)   # the words that move a pick to the front (ideas#164); Edging up is named, never reordered
+RISING = ("rising",)   # the words that move a pick to the front; Edging up is named, never reordered
 
 
 def pick_places(doc, snapshot, picks, config):
