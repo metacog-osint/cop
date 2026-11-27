@@ -494,6 +494,8 @@ function renderCard(f) {
   const fact = (k, v) => facts.append(h("dt", { text: k }), h("dd", {}, v));
   if (pick) fact("Why it's here", `Pick ${pick.n}: ${pick.reason}.`);
   else if (p.cop_strength_text) fact("Size", p.cop_strength_text[0].toUpperCase() + p.cop_strength_text.slice(1));
+  // Comparable rarity (tools/rarity.py): this layer's own figure, never added to another layer's.
+  if (p.cop_rarity && p.cop_rarity.text) fact("Rarity", p.cop_rarity.text);
   const lane = laneFor(p.cop_program, p.id);
   // A lane scored in another program's record (Verdict's of Vis's forecasts) links it; COP restates none of its figures.
   if (lane) fact("Lane record", [lane.replay ? `${lane.text} ${lane.replay.text} Credit: ${lane.replay.attribution}.` : lane.text,

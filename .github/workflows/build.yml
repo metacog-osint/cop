@@ -67,10 +67,20 @@ jobs:
         run: python tests/run_all.py
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
+      # Comparable rarity (tools/rarity.py) ranks each item's signal within COP's own history of its subject, held in
+      # the last build's memory (release "memory"). Read only here; the memory step below adds this build. Without it
+      # the snapshot still builds and each item says COP's history was not read.
+      - name: Last build's memory, for comparable rarity (read only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out/memory-last
+          gh release download memory --dir out/memory-last --pattern memory.json.gz --clobber \
+            || echo "::warning::memory could not be read; this build gives no rarity from COP's history"
       # The snapshot also fetches each program's list of recently ended items (config "ended": Elements'
       # data/ended.geojson) to out/ended/, not drawn and not served from the site, and keeps a daily copy beside the archive.
       - name: Snapshot of the program feeds
-        run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl
+        run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl --memory out/memory-last/memory.json.gz
       - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
         run: python tools/agent_index.py
       - name: Share card (link-preview image; falls back to site/card-fallback.png, never fails the build)

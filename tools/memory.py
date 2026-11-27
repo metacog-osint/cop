@@ -8,7 +8,8 @@ Tom, 21 Nov 2026: when an item drops off COP, COP keeps something to compare the
 ledger (tools/ledger.py) already keeps every item in full, line by line, but nothing read it back. This file is the
 compact, readable form: one record per subject (a subject_id where the feed states one, otherwise the item's id with
 its date taken out), holding when it was on the picture, the days its events fell on, and its daily value where the
-subject is a series. A record is never removed.
+subject is a series. A record is never removed. Every subject whose item carries a `signal` also keeps its
+`signal.value` per data day in `sv`, apart from the series values, for comparable rarity (tools/rarity.py).
 
 A series can change what it counts (Watchfloor's Iran zone went from two countries to nine on 18 Nov 2026). config/
 series_scopes.json names the day each new scope starts. Every value of such a series is stamped with its scope in `vs`
@@ -308,6 +309,12 @@ def fold(mem: dict, snapshot: dict) -> dict:
             stated = _dig(p, "measures.zone_scope")
             if isinstance(stated, str) and stated:
                 r.setdefault("fs", {})[data_day] = stated
+        # Every subject's signal value per data day, for comparable rarity (tools/rarity.py). Kept apart from `v`, the
+        # series the direction of concern reads, so adding it changes no direction word.
+        sig = p.get("signal") if isinstance(p.get("signal"), dict) else {}
+        sv = sig.get("value")
+        if data_day and isinstance(sv, (int, float)) and not isinstance(sv, bool) and sv == sv and abs(sv) != float("inf"):
+            r.setdefault("sv", {})[data_day] = sv
     mem["updated_at"] = at
     return stamp_scopes(mem)
 

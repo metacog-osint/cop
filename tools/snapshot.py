@@ -36,6 +36,8 @@ from tic_doctrine import history  # noqa: E402
 from tic_doctrine import ladder  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
 from tic_doctrine import tips as kittips  # noqa: E402
+import memory as mem_tool  # noqa: E402
+import rarity as rarity_tool  # noqa: E402
 
 CONFIG = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
 # Each program's name, family, feed, site and freshness windows come from the suite registry in the doctrine kit
@@ -783,6 +785,19 @@ def fetch_ended(now, out, fixtures=None, archive=None, dropped=None):
     return lines
 
 
+def read_memory(path):
+    """COP's memory from the last build, or None when none was given or it cannot be read (never fails the build)."""
+    if not path:
+        return None
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
+            mem = json.load(fh)
+        return mem if isinstance(mem, dict) and isinstance(mem.get("subjects"), dict) else None
+    except (OSError, ValueError, EOFError) as e:
+        print(f"::warning::memory {path} unreadable ({e}); comparable rarity says COP's history was not read")
+        return None
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=str(ROOT / "site" / "data"))
@@ -795,6 +810,8 @@ def main(argv=None):
                                           "(tools/dropped.py keeps them with the ledger); removed when there are none")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
     ap.add_argument("--dead", action="append", default=[], help="treat this program's feed as failed (tests)")
+    ap.add_argument("--memory", help="COP's memory from the last build (memory.json.gz), read only, for each item's "
+                                     "comparable rarity; without it, items say COP's history was not read")
     a = ap.parse_args(argv)
 
     now = utc(a.now) if a.now else datetime.now(timezone.utc).replace(microsecond=0)
@@ -811,6 +828,10 @@ def main(argv=None):
         if any(f is None for f in feeds.values()) else None
 
     today, picks, health, countries = build(feeds, reports, previous, now)
+    mem = read_memory(a.memory)
+    counts = rarity_tool.add(today["features"], mem, {p["id"]: p["name"] for p in CONFIG["programs"]}, mem_tool.key)
+    print(f"rarity: {counts['cop']} from COP's history, {counts['program']} the program's own, {counts['none']} none"
+          + ("" if mem is not None else " (COP's memory was not read)"))
     out = Path(a.out)
     write_json(out / "today.geojson", today)
     write_json(out / "picks.json", picks, compact=False)

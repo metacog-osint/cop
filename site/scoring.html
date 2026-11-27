@@ -330,6 +330,26 @@
       verified</a>.</p>
   </section>
 
+  <section class="doc-box" id="rarity" aria-labelledby="rarity-h">
+    <h2 id="rarity-h">Rarity</h2>
+    <p>A tier or a size means something different in each layer, so neither compares across programs. Where an item
+      carries the one number its tier rests on (its <code>signal</code>), its card gives a rarity that reads the same in
+      every layer: how often this subject has been at least this unusual.</p>
+    <ul>
+      <li><strong>COP's own history.</strong> COP keeps each subject's signal once per data day. Today's reading is
+        ranked against the subject's earlier days, in the direction the feed names as unusual (higher, lower, or
+        further from its usual value either way). With <em>k</em> earlier days at least as extreme among <em>n</em>,
+        the share is (<em>k</em>&nbsp;+&nbsp;1)&nbsp;/&nbsp;(<em>n</em>&nbsp;+&nbsp;1), shown as "about 1 day in N".
+        COP's figure is used from <strong id="rarity-min">60</strong> earlier days.</li>
+      <li><strong>Before that, the program's own figure.</strong> With fewer days, a program's own share from its own
+        baseline stands in, and the card says it is the program's. With neither, the card says why there is none.</li>
+      <li><strong>No direction, no figure.</strong> A signal whose feed names no direction (a level with no stated tail)
+        gets no figure from COP.</li>
+      <li><strong>Per layer.</strong> A rarity is never added across layers, and it changes no tier and no pick. It
+        describes a measurement; it is not a warning and gives no likelihood.</li>
+    </ul>
+  </section>
+
   <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
     <h2 id="lanes-h">Lane records</h2>
     <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
