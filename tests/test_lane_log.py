@@ -1,4 +1,4 @@
-"""The lane log and lane records (ideas#330): logged once before the outcome, chained, segmented by method version,
+"""The lane log and lane records: logged once before the outcome, chained, segmented by method version,
 counts only, and never a rate before the minimum scored."""
 import json
 import sys
@@ -86,7 +86,12 @@ class LaneLog(unittest.TestCase):
         doc = L.records(self.cfg, self.lines(), [], replay_mod.load(), at("2026-11-25T04:30:00"))
         self.assertNotIn('"join"', json.dumps(doc), "not a join: the gate check must not read it as one")
         row = next(x for x in doc["lanes"] if x["id"] == "blackout-outage-triage")
-        self.assertEqual(row["text"], "This lane: 2 flagged since 2026-11-25 (1 open, 1 unconfirmed); none scored yet.")
+        # The split is triage's reading when logged, never a scored outcome: "unconfirmed" is a scored outcome's word
+        # on the scoring page, so triage's single-source dip is called a dip here.
+        self.assertEqual(row["text"], "This lane: 2 flagged since 2026-11-25; triage read 1 as open, 1 as a single-source "
+                                      "dip (readings when logged, not outcomes); none scored yet.")
+        self.assertNotIn("unconfirmed", row["text"])
+        self.assertEqual(row["by_reading"], {"open": 1, "unconfirmed": 1}, "the data keeps triage's own reading names")
         self.assertTrue(row["replay"]["text"].startswith("Replay, not live"))
         self.assertIn("natural on 15.9% of shutdowns and 5.8% of ordinary days", row["replay"]["text"])
         self.assertEqual(row["replay"]["attribution"], "Access Now, #KeepItOn STOP")
@@ -98,6 +103,14 @@ class LaneLog(unittest.TestCase):
         quiet = next(x for x in doc["lanes"] if x["id"] == "elements")
         self.assertIsNone(quiet["flagged"])
         self.assertEqual(quiet["text"], L.NO_CHECK)
+
+    def test_the_public_record_carries_no_queue_references(self):
+        """lanes.json is served on the site and through MCP: it describes the lanes for readers, with no issue numbers
+        from the private work queue."""
+        doc = L.records(L.load_config(), [], [], replay_mod.load(), at("2026-11-25T04:30:00"))
+        text = json.dumps(doc, ensure_ascii=False)
+        self.assertNotRegex(text, r"ideas#|#\d{2,}")
+        self.assertNotRegex(L.CONFIG.read_text(encoding="utf-8"), r"ideas#")
 
     def test_the_direction_lane_reads_the_direction_log(self):
         calls = [{"type": "call", "rule": "1", "week": "2026-11-23", "word": w, "scored": s}
@@ -115,6 +128,26 @@ class LaneLog(unittest.TestCase):
         self.assertEqual(L.lane_for(self.cfg, "blackout", "blackout:outage:1")["id"], "blackout-outage-triage")
         self.assertEqual(L.lane_for(self.cfg, "blackout", "blackout:ooni:1")["id"], "blackout-other")
         self.assertEqual(len({x["id"] for x in self.cfg["lanes"]}), len(self.cfg["lanes"]))
+
+    def test_vis_is_scored_outside_the_lane_records(self):
+        """Verdict scores Vis's forecasts against METARs in its own record. Vis's lane links it, quotes none of its
+        figures, and its counts stay those of a lane with nothing logged."""
+        doc = L.records(self.cfg, [], [], None, at("2026-11-25T04:30:00"))
+        vis = next(x for x in doc["lanes"] if x["id"] == "vis")
+        self.assertTrue(vis["text"].startswith("Scored outside the lane records: Verdict scores this lane's stored "
+                                               "forecasts against METAR observations"), vis["text"])
+        self.assertNotIn("No outside check", vis["text"])
+        self.assertNotRegex(vis["text"], r"\d", "no figure from Verdict's record is restated")
+        self.assertEqual(vis["scored_elsewhere"]["record"], "https://verdict.theintelligence.company/#vis-h")
+        self.assertEqual(vis["scored_elsewhere"]["data"], "https://verdict.theintelligence.company/data/vis.json")
+        self.assertEqual((vis["flagged"], vis["scored"], vis["rate_shown"]), (None, 0, False))
+        others = [x for x in doc["lanes"] if x["id"] != "vis"]
+        self.assertTrue(all(x["scored_elsewhere"] is None for x in others), "only Vis's lane is scored elsewhere")
+        html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")
+        self.assertIn(vis["scored_elsewhere"]["record"], html)
+        js = (ROOT / "site" / "cop.js").read_text(encoding="utf-8")
+        self.assertEqual(js.count('h("a", { href: lane.scored_elsewhere.record }, lane.scored_elsewhere.label)'), 2,
+                         "the card and the lane line both link the record")
 
     def test_the_scoring_page_states_the_config(self):
         html = (ROOT / "site" / "scoring.html").read_text(encoding="utf-8")

@@ -67,7 +67,7 @@
         { "id_prefix": ["cordon:fcdo:", "cordon:canada:", "cordon:safetravel:"], "last_change": ["raised", "lowered"],
           "why": "FCDO, Canada and NZ SafeTravel advice is a candidate only when its level moved (raised or lowered), as outage triage counts it; a text update is not" },
         { "id_prefix": ["cordon:cdc:"], "within_hours": 72,
-          "why": "A CDC travel health notice is a candidate for 72 hours from its date (Tom, 23 Nov 2026)" }
+          "why": "A CDC travel health notice is a candidate for 72 hours from its date (23 Nov 2026)" }
       ],
       "color": { "fill": "#56B4E9", "outline_light": "#174A68", "outline_dark": "#C6E7FA" }
     },

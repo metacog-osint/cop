@@ -6,3 +6,5 @@
   Strict-Transport-Security: max-age=31536000
 /data/*
   Cache-Control: no-cache
+/data/history/*
+  Access-Control-Allow-Origin: *

@@ -45,6 +45,31 @@ class Direction(unittest.TestCase):
     def test_ship_transits_are_a_condition_and_never_count(self):
         self.assertEqual(d.word_for([l("up", "traffic"), l("steady"), l("steady")]), "steady")
 
+    def test_a_transit_count_without_a_baseline_is_still_given(self):
+        area = {"chokepoint": "kerch"}
+        item = {"id": "wake:chokepoint:kerch:2026-11-15", "data_as_of": "2026-11-15T00:00:00Z",
+                "measures": {"n_total_7d": 0.4, "change_90d_pct": None, "z_90d": None, "baseline_90d_median": 0}}
+        snap = {"features": [{"properties": item}]}
+        got = d.read_traffic(snap, area)
+        self.assertEqual(got["state"], "thin")
+        self.assertIn("0.4 a day", got["text"])
+        self.assertIn("too thin to compare", got["text"])
+        self.assertNotIn("No current transit count", got["text"])
+        self.assertTrue(got["condition"])
+        for gone in ({"features": []}, {"features": [{"properties": item | {"cop_stale": True}}]}):
+            self.assertEqual(d.read_traffic(gone, area)["text"], "No current transit count.",
+                             "a missing or stale item has no current count")
+
+    def test_a_count_that_rounds_to_its_median_reads_level(self):
+        def line(pct):
+            item = {"id": "wake:chokepoint:x:2026-11-22", "data_as_of": "2026-11-22T00:00:00Z",
+                    "measures": {"n_total_7d": 27, "change_90d_pct": pct, "z_90d": -0.1, "baseline_90d_median": 27.14}}
+            return d.read_traffic({"features": [{"properties": item}]}, {"chokepoint": "x"})["text"]
+        self.assertIn("level with its 90-day median", line(-0.5))
+        self.assertNotIn("0% below", line(-0.5))
+        self.assertIn("12% below", line(-12.0))
+        self.assertIn("3% above", line(3.2))
+
     def test_one_alert_under_two_ids_counts_once(self):
         a = d._same("cordon:alert:UA:1", {"c": ["UA"], "t": "Security Alert: Kyiv"})
         b = d._same("cordon:alert:UA:2", {"c": ["UA"], "t": "Security  alert: kyiv"})

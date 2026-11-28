@@ -12,6 +12,13 @@ name: build
 # ledger (release ledger, then ledger-YYYY from 2027: what is new, changed or ended since the last build) and the
 # dropped-items log (what sift() left out as malformed, with reasons).
 #
+# Private archive (three steps: the snapshot copies straight after the snapshot, the site straight after the deploy,
+# the rest last): every build's snapshot copies, its outputs in out/, the deployed site/ and history/
+# also go to the PRIVATE repo metacog-osint/tic-archive (tools/tic_archive.py), where nothing is replaced or deleted.
+# The releases here replace the day's snapshot, the ledger, triage-log, memory and Hormuz states at each build, each
+# deploy replaces the site, and out/ is gone when the run ends; the archive keeps every version. Needs repo secret
+# TIC_ARCHIVE_TOKEN (contents read and write on tic-archive only); without it those steps fail and the rest run.
+#
 # The clock: GitHub fired the "every two hours" schedule only every 7 to 14 hours (5-6 Nov 2026), so the hub's
 # tic-dispatch Worker starts this workflow at :20 past every even UTC hour (workflow_dispatch). The schedule stays as a
 # fallback, and the gate job skips a scheduled run when a build succeeded in the last 45 minutes, so the two clocks
@@ -52,7 +59,10 @@ jobs:
     needs: gate
     if: needs.gate.outputs.skip != 'yes'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Above the sum of the time limits of the steps from the deploy on (each step after the deploy has its own), so a
+    # step that hangs there fails at its own limit and the private archive steps still run. A normal build takes
+    # under two minutes.
+    timeout-minutes: 32
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -67,10 +77,36 @@ jobs:
         run: python tests/run_all.py
       - name: Kit copy is intact
         run: python doctrine/kit/tic.py kitcheck
+      # Comparable rarity (tools/rarity.py) ranks each item's signal within COP's own history of its subject, held in
+      # the last build's memory (release "memory"). Read only here; the memory step below adds this build. Without it
+      # the snapshot still builds and each item says COP's history was not read.
+      - name: Last build's memory, for comparable rarity (read only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out/memory-last
+          gh release download memory --dir out/memory-last --pattern memory.json.gz --clobber \
+            || echo "::warning::memory could not be read; this build gives no rarity from COP's history"
       # The snapshot also fetches each program's list of recently ended items (config "ended": Elements'
-      # data/ended.geojson) to out/ended/, not published and not drawn, and keeps a daily copy beside the archive.
+      # data/ended.geojson) to out/ended/, not drawn and not served from the site, and keeps a daily copy beside the archive.
       - name: Snapshot of the program feeds
-        run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl
+        id: snapshot
+        run: python tools/snapshot.py --archive out/archive --dropped-out out/dropped.jsonl --memory out/memory-last/memory.json.gz
+      # Private archive, first lane (tools/tic_archive.py; the lanes are described at the last step): this build's
+      # snapshot copies, before the next step replaces the day's copy in the release snapshots-YYYY-MM, so a build that
+      # stops later (a step that hangs, the job's time limit) has still kept them. A failure here never holds the
+      # build back; the last step turns the run red for it.
+      - name: Private archive of this build's snapshot copies (before the release replaces the day's copy)
+        id: archive_snapshots
+        continue-on-error: true
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so this build's snapshot copies did not reach the private archive"; exit 1
+          fi
+          python tools/tic_archive.py put --program cop --lane snapshots --src out/archive
       - name: Files for the MCP server (site/data/agent/; Verdict keeps its last copy if a fetch fails)
         run: python tools/agent_index.py
       - name: Share card (link-preview image; falls back to site/card-fallback.png, never fails the build)
@@ -106,7 +142,7 @@ jobs:
       # the release "triage-log", like the suite ledger, never in site/. The first build ever replays the archived
       # days downloaded above (one reading a day, marked backfill) before logging this build. A failure never fails the
       # build; that build is just not logged.
-      - name: Triage log (kept as release assets, not published)
+      - name: Triage log (public release assets, not on the site)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -131,7 +167,7 @@ jobs:
           fi
           gh release upload triage-log out/triage-log/*.gz --clobber \
             || echo "::warning::triage log: upload failed; the next build logs these readings again from the last state"
-      # The three-signal join (published since Tom retired the mosaic gate, 15 Nov 2026): interference, a new notice
+      # The three-signal join (published since the mosaic gate was retired, 15 Nov 2026): interference, a new notice
       # and a connectivity drop in the Strait of Hormuz and the Gulf, with Vis's weather beside them. It replays the
       # archive copies the step above downloaded for how often each signal fires anyway. A failure never fails the
       # build: without three-signal.json the page and the MCP server say the join is unavailable.
@@ -139,7 +175,38 @@ jobs:
         run: |
           python tools/three_signal.py --snapshot site/data/today.geojson --archive out/rates-archive --publish site/data \
             || { rm -f site/data/three-signal.json; echo "::warning::three-signal join failed; the page and the MCP server say it is unavailable"; }
-      # COP's memory and the direction of concern (Tom, 21 Nov 2026): one record per subject, kept after it leaves the
+      # The Red River Valley view: what this snapshot holds for North Dakota and Minnesota, by layer. It adds
+      # no source. A failure never fails the build: without red-river.json the page says the view was not built.
+      - name: Red River Valley view (site/data/red-river.json)
+        run: |
+          python tools/red_river.py --snapshot site/data/today.geojson --publish site/data             || { rm -f site/data/red-river.json; echo "::warning::Red River view failed; its page says it was not built"; }
+      # The Hormuz weekly stream (join 0.1): PortWatch transits and UKMTO's Attack reports by week, from Wake's
+      # items. Every report is kept in the release "hormuz-stream". A state that is listed but cannot be downloaded is
+      # never started over. A failure never fails the build: without the file the page leaves the section out.
+      - name: Hormuz weekly stream (site/data/hormuz-stream.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          skip() { rm -f site/data/hormuz-stream.json; echo "::warning::hormuz stream: $1; not updated on this build"; exit 0; }
+          mkdir -p out/hormuz-stream
+          HAVE=no
+          if gh release view hormuz-stream >/dev/null 2>&1; then
+            HAVE=yes
+            ASSETS=$(gh release view hormuz-stream --json assets --jq '.assets[].name') || skip "the asset list could not be read"
+            if echo "$ASSETS" | grep -qx "state.json.gz"; then
+              gh release download hormuz-stream --dir out/hormuz-stream --pattern state.json.gz --clobber || skip "the state could not be downloaded"
+            fi
+          fi
+          python tools/hormuz_stream.py --snapshot site/data/today.geojson --archive out/rates-archive \
+            --state out/hormuz-stream --publish site/data || skip "the join failed"
+          if [ "$HAVE" = no ]; then
+            gh release create hormuz-stream --title "COP Hormuz weekly stream" \
+              --notes "Every UKMTO report and weekly PortWatch transit count the Hormuz stream has read, via Wake. Not a warning or a forecast." \
+              || echo "::warning::hormuz stream: the release could not be created"
+          fi
+          gh release upload hormuz-stream out/hormuz-stream/state.json.gz --clobber \
+            || echo "::warning::hormuz stream: upload failed; the next build merges these reports again from the archive"
+      # COP's memory and the direction of concern (21 Nov 2026): one record per subject, kept after it leaves the
       # picture (tools/memory.py, release "memory"), and each place's layers read against their own last two weeks
       # (tools/direction.py, site/data/direction.json). The first build rebuilds the memory from the archive copies
       # downloaded above. A memory that is listed but cannot be downloaded is never started over. A failure here never
@@ -206,7 +273,7 @@ jobs:
           fi
           python tools/lane_log.py --log "$LOG" --direction-log "$DLOG" --publish site/data --no-append \
             || skip "the record could not be written"
-      # The Undertow sanctions join (join 0.1, published off until Tom turns it on): a Headwind list change naming an
+      # The Undertow sanctions join (join 0.1, published off until the owner turns it on): a Headwind list change naming an
       # organisation Undertow's publishers name, matched exactly against config/undertow-names.json. While off it
       # writes out/undertow-sanctions/ only. A failure never fails the build.
       - name: Undertow sanctions join (out/undertow-sanctions/)
@@ -215,7 +282,7 @@ jobs:
             --list-changes https://headwind.theintelligence.company/data/list-changes.json \
             --out out/undertow-sanctions --publish site/data \
             || echo "::warning::Undertow sanctions join failed"
-      # The Undertow election join (join 0.1, published off until Tom turns it on): an Undertow item whose activity or
+      # The Undertow election join (join 0.1, published off until the owner turns it on): an Undertow item whose activity or
       # disclosure period overlaps the 90 days before a national vote, on Verdict's calendar, in a country it states as
       # a target. While off it writes out/undertow-elections/ only. A failure never fails the build.
       - name: Undertow election join (out/undertow-elections/)
@@ -262,6 +329,80 @@ jobs:
             gh release upload "$TAG" "$NEW" || fallback "the upload failed; today's brief waits for the next build"
             echo "daily brief: kept $(basename "$NEW") in $TAG"
           fi
+      # History across programs (tools/history.py): what every layer showed per day, country, area and subject, as a
+      # Parquet set plus small per-place files for the MCP server's history tool and the place pages. Rebuilt once a
+      # UTC day, by the first build after midnight, from closed days only: COP's daily snapshots, its ledger and the
+      # programs' own logs (history/log in each repository named in config/history.json, read with a sparse clone).
+      # The set is derived and is kept in the release history as one history.tar.gz, replaced at each rebuild; every
+      # other build serves that copy. Never fails the build: without it the page and the tool say it is absent.
+      - name: History across programs (site/data/history; rebuilt once a UTC day, kept in the release history)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          warn() { echo "::warning::history: $1"; }
+          TODAY=$(date -u +%F)
+          mkdir -p out/history-prev site/data/history
+          BUILT=""
+          if gh release view history >/dev/null 2>&1 \
+             && gh release download history --dir out/history-prev --pattern history.tar.gz --clobber; then
+            tar -xzf out/history-prev/history.tar.gz -C site/data/history \
+              && BUILT=$(python -c "import json; print(json.load(open('site/data/history/manifest.json'))['built_at'][:10])") \
+              || warn "the kept copy could not be unpacked"
+          fi
+          if [ "$BUILT" = "$TODAY" ]; then echo "history: built $BUILT, serving the kept copy"; exit 0; fi
+          T0=$(date +%s)
+          pip install --quiet --disable-pip-version-check pyarrow==26.0.1 || { warn "pyarrow could not be installed; serving the copy built $BUILT"; exit 0; }
+          IN=out/history-in
+          mkdir -p "$IN/snapshots" "$IN/ledger" "$IN/logs"
+          for TAG in $(gh release list --limit 200 --json tagName --jq '.[].tagName | select(startswith("snapshots-"))'); do
+            gh release download "$TAG" --dir "$IN/snapshots" --pattern "????-??-??.geojson.gz" --clobber \
+              || { warn "$TAG could not be downloaded; serving the copy built $BUILT"; exit 0; }
+          done
+          for TAG in $(gh release list --limit 200 --json tagName --jq '.[].tagName | select(test("^ledger(-[0-9]{4})?$"))'); do
+            gh release download "$TAG" --dir "$IN/ledger" --pattern "????-??-??.jsonl.gz" --clobber \
+              || { warn "$TAG could not be downloaded; serving the copy built $BUILT"; exit 0; }
+          done
+          for P in $(python -c "import json; print(' '.join(json.load(open('config/history.json'))['program_logs']))"); do
+            REPO=$(python -c "import json,sys; print(json.load(open('config/history.json'))['program_logs'][sys.argv[1]])" "$P")
+            git clone -q --depth 1 --filter=blob:none --sparse "https://github.com/$REPO.git" "$IN/repo-$P" \
+              && git -C "$IN/repo-$P" sparse-checkout set --no-cone history/log \
+              && [ -d "$IN/repo-$P/history/log" ] && mkdir -p "$IN/logs/$P" && mv "$IN/repo-$P/history/log" "$IN/logs/$P/log" \
+              || warn "$P's own log could not be read; its events come from COP's ledger only"
+          done
+          python tools/history.py --archive "$IN/snapshots" --ledger "$IN/ledger" --logs "$IN/logs" \
+            --publish out/history-new --before "$TODAY" || { warn "the tool failed; serving the copy built $BUILT"; exit 0; }
+          tar -czf out/history.tar.gz -C out/history-new .
+          echo "history: rebuilt in $(( $(date +%s) - T0 )) s, $(du -sh out/history-new | cut -f1) on disk, archive $(du -h out/history.tar.gz | cut -f1)"
+          rm -rf site/data/history && cp -r out/history-new site/data/history
+          gh release view history >/dev/null 2>&1 || gh release create history --title "COP history across programs" \
+            --notes "What every layer of COP showed per day, country, area and subject (tools/history.py, cop-history/1): a Parquet set and the per-place files the site serves at /data/history/. Derived from COP's daily snapshots, its ledger and the programs' own logs, and rebuilt from them once a UTC day; history.tar.gz is replaced at each rebuild." \
+            || { warn "the release could not be created; the new set is served but not kept"; exit 0; }
+          gh release upload history out/history.tar.gz --clobber || warn "the new set is served but was not kept; the next build rebuilds it"
+      # Place pages (tools/place.py): each watched area's current reading per layer, and its 30- and 90-day windows
+      # from the history set above. It adds no source. A failure never fails the build: the page says so.
+      - name: Place pages (site/data/places)
+        run: |
+          python tools/place.py --snapshot site/data/today.geojson --history site/data/history/areas --publish site/data \
+            || { rm -rf site/data/places; echo "::warning::place pages failed; the page says they were not built"; }
+      # The direction log on the site (site/data/direction-log.jsonl): byte for byte direction-log.jsonl on the branch
+      # direction-log as earlier builds locked it, so a reader can take it from the site as well as from this
+      # repository. The lines this build locks (the step after the deploy) reach the site with the next build, so the
+      # copy can be one build behind the branch: it only ever holds a beginning of the branch's log, never other lines.
+      # When the branch cannot be read the live site's copy is kept. A failure never fails the build.
+      - name: Direction log on the site (site/data/direction-log.jsonl, from the branch direction-log)
+        run: |
+          rc=0
+          git ls-remote --exit-code --heads origin direction-log >/dev/null || rc=$?
+          if [ "$rc" = 2 ]; then echo "direction log: no branch yet, so none on the site"; exit 0; fi
+          if [ "$rc" = 0 ] && git fetch --quiet origin +refs/heads/direction-log:refs/remotes/origin/direction-log \
+             && git show refs/remotes/origin/direction-log:direction-log.jsonl > site/data/direction-log.jsonl; then
+            echo "direction log: $(wc -l < site/data/direction-log.jsonl) lines on the site"
+          elif curl -sf -o site/data/direction-log.jsonl https://cop.theintelligence.company/data/direction-log.jsonl; then
+            echo "::warning::direction log: the branch could not be read; the live site's copy is kept"
+          else
+            rm -f site/data/direction-log.jsonl
+            echo "::warning::direction log: neither the branch nor the live copy could be read; none on the site this build"
+          fi
       - name: Join check (stops the deploy if a refused or unpublished join sits in site/, functions/ or mcp/)
         run: python tools/gate.py --check
       - name: Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages
@@ -273,12 +414,39 @@ jobs:
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "Cloudflare secrets not set; skipping deploy"; exit 0
           fi
-          npx --yes wrangler@4.151.3 pages deploy site --project-name cop --branch main \
-            --commit-hash "$GITHUB_SHA" --commit-message "build $GITHUB_SHA" --commit-dirty=true
+          # Cloudflare's API fails now and then with nothing wrong here ("An unknown error occurred ... [code: 8000000]"),
+          # which failed the run and mailed an alert. Try three times, 20 s and 60 s apart.
+          deployed=no
+          for wait in 0 20 60; do
+            if [ "$wait" != 0 ]; then echo "::warning::Cloudflare deploy failed; trying again in ${wait} s"; sleep "$wait"; fi
+            if npx --yes wrangler@4.151.3 pages deploy site --project-name cop --branch main \
+                 --commit-hash "$GITHUB_SHA" --commit-message "build $GITHUB_SHA" --commit-dirty=true; then
+              deployed=yes; break
+            fi
+          done
+          if [ "$deployed" != yes ]; then echo "::error::Cloudflare Pages deploy failed three times"; exit 1; fi
+          echo "deployed=yes" >> "$GITHUB_OUTPUT"
+      # Private archive, second lane: site/ as this deploy published it, straight after the deploy and before the
+      # steps below, so a build that stops later has still kept the site the next deploy replaces. Only when the
+      # deploy ran and succeeded (not when it skipped itself for want of the Cloudflare secrets). A failure here
+      # never holds the build back; the last step turns the run red for it.
+      - name: Private archive of the site as deployed
+        id: archive_site
+        if: ${{ !cancelled() && steps.deploy.outputs.deployed == 'yes' }}
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so the site as deployed did not reach the private archive"; exit 1
+          fi
+          python tools/tic_archive.py put --program cop --lane site --src site
       # Archives kept after the deploy (retention, 18 Nov 2026). They run after the site is out so that a failure here
       # never holds the live view back, and each one FAILS THE STEP (red run, GitHub's mail) instead of logging a
       # warning: a ledger or archive upload that did not happen is data not kept. Each runs even when another of them
-      # failed (the `if:`), but only after the deploy step itself succeeded.
+      # failed (the `if:`), but only after the deploy step itself succeeded. Each has its own time limit: a `gh` call
+      # that hangs fails its step at that limit instead of running the job out, so the archive steps still run.
       #
       # One snapshot per 6-hour slot of the UTC day (00, 06, 12, 18), besides the daily copy above: the first build in
       # each slot, named <day>T<HH>Z.snap.json.gz in the month's snapshots release. A slot's file is never replaced:
@@ -286,6 +454,7 @@ jobs:
       - name: Keep the 6-hourly snapshots (first build of each slot)
         id: slots
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -306,6 +475,24 @@ jobs:
             done
             [ -n "$ok" ] || { echo "::error::6-hourly snapshot $name could not be uploaded to $TAG"; exit 1; }
           done
+      # manifest.json and SHA256SUMS in the month's snapshots release: every file's name, size and SHA-256
+      # (tools/release_manifest.py). This run's daily copies are hashed here and must match what GitHub holds; for
+      # the rest GitHub's own digest is listed. Only these two files are replaced.
+      - name: Checksums of the snapshot release (manifest.json, SHA256SUMS)
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          TAG="snapshots-$(date -u +%Y-%m)"
+          LOCAL="${RUNNER_TEMP:-/tmp}/manifest-local"
+          mkdir -p "$LOCAL"
+          cp out/archive/*.geojson.gz "$LOCAL/"
+          cp out/archive/*-ended.json.gz "$LOCAL/" 2>/dev/null || true
+          CHANGED=$(python tools/release_manifest.py release "$TAG" --repo "$GITHUB_REPOSITORY" --local-dir "$LOCAL" --out-dir out/manifest)
+          echo "$TAG checksums: $CHANGED"
+          [ "$CHANGED" = "unchanged" ] || gh release upload "$TAG" out/manifest/manifest.json out/manifest/SHA256SUMS --clobber
       # The suite ledger (tools/ledger.py, the kit's tic-history/1): what is new, changed or ended since the last
       # build, with each full item. The open state (state.json.gz, and state-before-subject-id.json.gz) stays in the
       # release "ledger" for good. The day files (YYYY-MM-DD.jsonl.gz) stay in "ledger" through 2026 and, from 2027, go
@@ -314,9 +501,10 @@ jobs:
       # asset list first: an asset that is listed but cannot be downloaded stops the step, so a failed download never
       # starts the ledger over or overwrites a day's earlier lines. A failed UPLOAD fails the step (three tries, the day
       # file first, then the state), since a build that is not logged and not retried is a gap.
-      - name: Suite ledger (kept as release assets, not published)
+      - name: Suite ledger (public release assets, not on the site)
         id: ledger
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -336,14 +524,14 @@ jobs:
             fi
           else
             gh release create ledger --title "COP suite ledger" \
-              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Day files for 2027 on are in the releases ledger-YYYY; the state stays here. Not published." \
+              --notes "Every item COP's picture has carried: one line per item that is new, changed or ended at each build (tic-history/1), one file per UTC day, and the items open now (state.json.gz). Day files for 2027 on are in the releases ledger-YYYY; the state stays here. Public with the repository; not served from the site." \
               || skip "the release could not be created"
             ASSETS=""
             FIRST="--first"
           fi
           if [ "$DAYTAG" != ledger ]; then
             gh release view "$DAYTAG" >/dev/null 2>&1 || gh release create "$DAYTAG" --title "COP suite ledger $DAY" \
-              --notes "COP suite ledger day files for ${DAY%%-*}: one YYYY-MM-DD.jsonl.gz per UTC day (tic-history/1). The open state, state.json.gz, is in the release ledger. Not published." \
+              --notes "COP suite ledger day files for ${DAY%%-*}: one YYYY-MM-DD.jsonl.gz per UTC day (tic-history/1). The open state, state.json.gz, is in the release ledger. Public with the repository; not served from the site." \
               || skip "the release $DAYTAG could not be created"
             ASSETS_DAY=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name') || skip "the asset list of $DAYTAG could not be read"
           else
@@ -365,16 +553,17 @@ jobs:
           up ledger out/ledger/state.json.gz --clobber || fail "the new state could not be uploaded; the next build logs these changes again from the last state (the day file already holds them once)"
       # COP's memory: the current file, plus one copy per month that is never replaced. A failed upload fails the step,
       # as for the ledger: the next build folds this one in again from the last copy kept.
-      - name: Keep COP's memory (release memory, not published)
+      - name: Keep COP's memory (public release memory, not on the site)
         id: memory
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           [ -f out/memory/memory.json.gz ] || { echo "no memory from this build"; exit 0; }
           up() { for i in 1 2 3; do gh release upload "$@" && return 0; sleep $((i * 10)); done; return 1; }
           gh release view memory >/dev/null 2>&1 || gh release create memory --title "COP memory" \
-            --notes "One record per subject COP's picture has carried, kept after it leaves, and each place's daily direction word (tools/memory.py, tools/direction.py). Not published on the site."
+            --notes "One record per subject COP's picture has carried, kept after it leaves, and each place's daily direction word (tools/memory.py, tools/direction.py). Public with the repository; not served from the site."
           MONTH="memory-$(date -u +%Y-%m).json.gz"
           if ! gh release view memory --json assets --jq '.assets[].name' | grep -qx "$MONTH"; then
             cp out/memory/memory.json.gz "out/memory/$MONTH"
@@ -388,6 +577,7 @@ jobs:
       - name: Lock the direction words (branch direction-log)
         id: direction_log
         if: ${{ !cancelled() }}
+        timeout-minutes: 2
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
@@ -415,13 +605,21 @@ jobs:
           BLOB=$(git hash-object -w "$LOG")
           TREE=$(printf '100644 blob %s\tdirection-log.jsonl\n' "$BLOB" | git mktree)
           COMMIT=$(git commit-tree "$TREE" ${PARENT:+-p "$PARENT"} -m "Direction log: build $GITHUB_SHA")
-          git push origin "$COMMIT:refs/heads/direction-log"
+          # A push that fails leaves out/direction-log.jsonl as the branch holds it, and this build's log, with the
+          # lines that were not locked, apart in out/direction-log-unpushed.jsonl (both kept by the run lane).
+          git push origin "$COMMIT:refs/heads/direction-log" || {
+            mv "$LOG" out/direction-log-unpushed.jsonl
+            if [ -n "$PARENT" ]; then git show "$PARENT:direction-log.jsonl" > "$LOG"; else : > "$LOG"; fi
+            echo "::error::the direction log could not be pushed; this build's lines were not locked (kept in out/direction-log-unpushed.jsonl)"
+            exit 1
+          }
       # The dropped-items log (tools/dropped.py, retention audit C2): the features snapshot.py's sift() left out as
       # malformed, each with its reason and the item as published, in <day>.dropped.jsonl.gz beside the ledger's day file
-      # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not published.
-      - name: Dropped items (kept beside the ledger, not published)
+      # (same release rule as above). A feed keeps a bad item for days, so a row is written once a day. Not served from the site.
+      - name: Dropped items (public, beside the ledger, not on the site)
         id: dropped
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -434,7 +632,7 @@ jobs:
             ASSETS=$(gh release view "$DAYTAG" --json assets --jq '.assets[].name')
           else
             gh release create "$DAYTAG" --title "COP suite ledger ${DAY%%-*}" \
-              --notes "COP suite ledger day files (tic-history/1) and the dropped-items logs for ${DAY%%-*}. Not published."
+              --notes "COP suite ledger day files (tic-history/1) and the dropped-items logs for ${DAY%%-*}. Public with the repository; not served from the site."
             ASSETS=""
           fi
           if echo "$ASSETS" | grep -qx "$DAY.dropped.jsonl.gz"; then
@@ -444,3 +642,58 @@ jobs:
           [ -f "out/ledger-dropped/$DAY.dropped.jsonl.gz" ] || exit 0
           up "$DAYTAG" "out/ledger-dropped/$DAY.dropped.jsonl.gz" --clobber \
             || { echo "::error::the dropped-items log for $DAY could not be uploaded to $DAYTAG"; exit 1; }
+      # The private archive (tools/tic_archive.py, the PRIVATE repo metacog-osint/tic-archive): what a build writes
+      # that this public repository replaces at the next build, or keeps only in the runner's out/ folder, one lane each
+      # (release cop-<lane>-YYYY-MM; a snapshot per build, only files whose content changed uploaded, nothing replaced):
+      #   snapshots  out/archive: this build's snapshot copies (the day's copy, the 6-hour slot's, each ended list's).
+      #              The release snapshots-YYYY-MM keeps the day's last build and the first of each slot; this lane
+      #              keeps every build's.
+      #   run        out/: the suite ledger, triage log, memory and Hormuz stream with their states (each replaced in
+      #              its release at every build), the dropped-items log, the daily briefs, the lane and direction logs
+      #              as the branches hold them (a direction-log push that failed leaves this build's log apart, in
+      #              direction-log-unpushed.jsonl), the ended lists as fetched, the base rates, and the Undertow
+      #              joins, whose publishing is off and which are kept nowhere else. Left out: out/archive (its own
+      #              lane), the downloaded copies of public releases and other repositories (rates-archive, history-in,
+      #              history-prev), and the packed history set (history.tar.gz). The unpacked set this build made
+      #              (history-new) is left out only when the site lane kept it as served.
+      #   site       site/ as deployed: every published file, each replaced by the next deploy (its own step, straight
+      #              after the deploy, only when the deploy ran and succeeded).
+      #   history    history/: the committed layer histories, labels and replays (a build that changes none uploads
+      #              nothing).
+      # The snapshots and site lanes run earlier (their steps above), so a build stopped later has kept them; this
+      # step turns the run red if either failed. Only once the snapshot step succeeded (an earlier failure leaves
+      # nothing new to keep). These are COP's own outputs and copies of public files, so nothing is redacted and the
+      # archived bytes match the public copy. Each lane is tried even if another failed; any failure turns the run
+      # red after the live site is updated.
+      - name: Private archive (build outputs and history, to tic-archive; checks the snapshots and site lanes)
+        if: ${{ !cancelled() }}
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ secrets.TIC_ARCHIVE_TOKEN }}
+          SNAPSHOT: ${{ steps.snapshot.outcome }}
+          SNAPSHOTS_LANE: ${{ steps.archive_snapshots.outcome }}
+          SITE_LANE: ${{ steps.archive_site.outcome }}
+        run: |
+          if [ "$SNAPSHOT" != "success" ]; then
+            echo "the snapshot step did not succeed, so this build has nothing new to archive"; exit 0
+          fi
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::secret TIC_ARCHIVE_TOKEN is not set, so this build's snapshots, outputs and site did not reach the private archive"; exit 1
+          fi
+          failed=0
+          [ "$SNAPSHOTS_LANE" = "success" ] || { echo "::error::snapshots lane: $SNAPSHOTS_LANE (its step above)"; failed=1; }
+          [ "$SITE_LANE" != "failure" ] || { echo "::error::site lane: failed (its step above)"; failed=1; }
+          if [ "$SITE_LANE" = "success" ]; then
+            python tools/tic_archive.py put --program cop --lane run --src out --exclude 'archive/*' \
+              --exclude 'rates-archive/*' --exclude 'history-in/*' --exclude 'history-prev/*' \
+              --exclude 'history.tar.gz' --exclude 'history-new/*' || failed=1
+          else
+            # The site lane did not keep this build's site, so the run lane keeps the history set this build made.
+            python tools/tic_archive.py put --program cop --lane run --src out --exclude 'archive/*' \
+              --exclude 'rates-archive/*' --exclude 'history-in/*' --exclude 'history-prev/*' \
+              --exclude 'history.tar.gz' || failed=1
+          fi
+          python tools/tic_archive.py put --program cop --lane history --src history || failed=1
+          if [ "$failed" != 0 ]; then
+            echo "::error::a lane did not reach the private archive this build (see above)"; exit 1
+          fi

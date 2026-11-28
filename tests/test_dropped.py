@@ -158,14 +158,14 @@ class WorkflowLedger(unittest.TestCase):
 
     def test_archive_steps_run_after_the_deploy_and_gate_on_it(self):
         i_deploy = WF.index("pages deploy site")
-        for name in ("Keep the 6-hourly snapshots", "Suite ledger (kept as release assets, not published)",
-                     "Dropped items (kept beside the ledger, not published)"):
+        for name in ("Keep the 6-hourly snapshots", "Suite ledger (public release assets, not on the site)",
+                     "Dropped items (public, beside the ledger, not on the site)"):
             self.assertGreater(WF.index(f"- name: {name}"), i_deploy, name)
             self.assertIn("steps.deploy.outcome == 'success'", self.step(name), name)
         self.assertIn("id: deploy", self.step("Deploy site/ and functions/ (the MCP server at /mcp) to Cloudflare Pages"))
 
     def test_a_failed_ledger_upload_fails_the_step(self):
-        s = self.step("Suite ledger (kept as release assets, not published)")
+        s = self.step("Suite ledger (public release assets, not on the site)")
         self.assertNotIn("upload failed; the next build logs", s)
         self.assertNotIn("|| echo", s)
         self.assertIn('fail() { echo "::error::suite ledger: $1"; exit 1; }', s)
@@ -174,7 +174,7 @@ class WorkflowLedger(unittest.TestCase):
         self.assertLess(s.index('"out/ledger/$DAY.jsonl.gz" --clobber'), s.index("out/ledger/state.json.gz --clobber"))
 
     def test_the_release_rolls_per_year_and_the_state_stays_in_ledger(self):
-        s = self.step("Suite ledger (kept as release assets, not published)")
+        s = self.step("Suite ledger (public release assets, not on the site)")
         self.assertIn('if [ "${DAY%%-*}" -le 2026 ]; then DAYTAG=ledger; else DAYTAG="ledger-${DAY%%-*}"; fi', s)
         self.assertIn('gh release view "$DAYTAG" >/dev/null 2>&1 || gh release create "$DAYTAG"', s)
         self.assertIn("gh release download ledger --dir out/ledger --pattern state.json.gz", s)   # the state stays in ledger

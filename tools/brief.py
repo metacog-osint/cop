@@ -4,7 +4,7 @@ Once a UTC day, at the first build at or after BRIEF_HOUR (12:00 UTC, 6 AM CST),
 the snapshot it has just built: up to four sentences on what changed, each the strongest new or changed measurement
 of one program, read against that program's own baseline, and one sentence on a dated event ahead. Every sentence
 links to the item behind it and names its source publisher. A brief is never replaced: a day that already has one
-keeps it, and every past brief stays on the page and in the feed (Tom, 23 Nov 2026, ideas#259).
+keeps it, and every past brief stays on the page and in the feed (since 23 Nov 2026).
 
 What a sentence may say (the voice rule, as for COP's joins): the item's own title, the baseline its program measured
 it against, and who published the data. Never a cause, an intent, a likelihood or a warning in COP's voice. Vis
@@ -32,6 +32,8 @@ ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location("snapshot", ROOT / "tools" / "snapshot.py")
 snap = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(snap)
+sys.path.insert(0, str(ROOT / "tools"))
+from country_names import with_country_names  # noqa: E402
 
 CONTRACT = "cop-brief/1"
 SITE = "https://cop.theintelligence.company"
@@ -230,14 +232,20 @@ def _source(s):
     return f"source: {names}; via {s['program_name']}" if names else f"via {s['program_name']}"
 
 
+def _title(s):
+    """The sentence's title as shown: a bare code of one of the item's countries reads as its name. The stored
+    title stays the program's own, so a later brief still knows the item was said."""
+    return with_country_names(s["title"], s.get("countries"))
+
+
 def plain(s):
     """The sentence as text (feed summaries, tests). The page renders the same parts with links and times."""
     if s["kind"] == "changed":
-        body = s["title"] + (f", {s['against']}" if s.get("against") else "")
+        body = _title(s) + (f", {s['against']}" if s.get("against") else "")
         return f"{body} ({_source(s)})."
     when = f"{s['at'][:16].replace('T', ' ')} UTC" if s.get("at") else s.get("date")
     note = f" {s['note'].rstrip('.')}." if s.get("note") else ""
-    return f"Ahead: {s['title']}, {when} ({_source(s)}).{note}"
+    return f"Ahead: {_title(s)}, {when} ({_source(s)}).{note}"
 
 
 def _esc(v):
@@ -253,7 +261,7 @@ def _time_html(s):
 
 def sentence_html(s):
     src = _esc(_source(s))
-    title = f'<a href="{_esc(s["link"])}">{_esc(s["title"])}</a>'
+    title = f'<a href="{_esc(s["link"])}">{_esc(_title(s))}</a>'
     if s["kind"] == "changed":
         body = title + (f", {_esc(s['against'])}" if s.get("against") else "")
         return f'{body} <span class="brief-src">({src})</span>.'

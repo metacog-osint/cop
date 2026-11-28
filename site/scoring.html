@@ -81,6 +81,9 @@
         queues, and one zone gives at most one pick, which names the other program's reading of that zone.</li>
       <li>An item its own program says has ended is never a candidate. Within a program, what changed on the latest
         reading comes before what is merely still there.</li>
+      <li>An event report that rests only on a party's claim or on state media is never a candidate, whatever tier its
+        feed gives it, until it is verified on an origin outside the party and outside state media. It stays on the
+        map, labelled <b>Party claim</b> or <b>State media</b> (see <a href="#ladder">event reports</a> below).</li>
       <li>Strength compares like with like: each scale has its own rule, so a CDC health notice is never ranked as if it
         were a travel advisory. Cordon's FCDO, Canada and NZ SafeTravel advice is a candidate only when its level moved,
         as outage triage counts it, and a CDC notice only for <b>72 hours</b> from its date. The table below lists each
@@ -133,6 +136,10 @@
       <li><strong>A failed feed</strong> keeps its last good items, drawn grey and marked "no current data", never
         picked. A program that reports each source's health has the items of a source it could not read treated the
         same way, one source at a time.</li>
+      <li><strong>Refresh times.</strong> <a href="refresh.html">A page of refresh times</a> gives each program's
+        expected schedule, its last update and whether it is late on its own schedule (late when the last update is
+        more than two expected intervals plus half an hour old), with each source it reads and the program's own state
+        for that source.</li>
       <li><strong>Expiry.</strong> An item past its own valid-until time stops standing out: it leaves the default
         view, shows where routine items show, and its card says "Expired" with the time.</li>
     </ul>
@@ -244,6 +251,17 @@
       join looks for; it is not a warning, and the call is the analyst's.</p>
     <h3>Base rate <span class="live-tag">live</span></h3>
     <div id="three-rates" class="doc-live"><p>Reading three-signal.json…</p></div>
+    <h3>Hormuz weekly stream</h3>
+    <p>Each Monday-to-Sunday UTC week shows PortWatch's transits through the strait beside UKMTO's Attack reports in the
+      same <b>900 km</b> circle, dated by incident, and the share within <b>150 km</b> of 26.55 N, 56.45 E. The two
+      series are never divided: PortWatch does not count a ship crossing with AIS off. A week's Attack count is set
+      against the median and 90th percentile of earlier whole weeks once <b>4</b> are settled, and a week counts as
+      settled <b>7 days</b> after it ends, because UKMTO can publish late. Severity (L0 to L4, casualties separate) is
+      shown only where an item states a code, and otherwise as not coded yet. Codes are Wake's reading of UKMTO's
+      text by rule v0: struck or harmed is collide; no harm but a change of course is careen; joining an escort is
+      conjoin; contact with no harm and no change is intersect; too little said is undetermined. A second action after
+      the first is kept apart and never changes the outcome. It carries no probability and names no one.
+      <a href="data/hormuz-stream.json">hormuz-stream.json</a></p>
   </section>
 
   <section class="doc-box" id="brief" aria-labelledby="brief-h">
@@ -265,11 +283,91 @@
     </ul>
   </section>
 
+  <section class="doc-box" id="places" aria-labelledby="places-h">
+    <h2 id="places-h">Place pages</h2>
+    <p>Each <a href="place.html">place page</a> gives, per layer, what its program places in the area now and its
+      count a day over the last 30 and 90 closed UTC days, from COP's history set. Items are placed by the same rule
+      as the direction of concern: the area's circle or its countries, with Blackout's country outages and Cordon's
+      embassy alerts placed by the country they name. The worldwide problem (internet shutdowns) counts only its own
+      layer, Blackout's confirmed internet outages, wherever they are. Each new, changed or ended item is counted once:
+      from its program's own log where the program keeps one, else from COP's ledger. A line is drawn only when the program was read
+      on at least 80% of the window's days; otherwise the page says there is too little history. A day the program was
+      not read has no value, never a zero. Days whose history carries a note (a change of scope or a capped feed) are
+      shaded. No layer is added to another.</p>
+    <p><strong>Coverage.</strong> Each place also gets its row of the coverage table (the doctrine kit's format
+      <code>tic-coverage/1</code>), and the <a href="place.html">list of places</a> shows the whole table. A place is
+      <b>Several independent sources</b> when 3 or more independent source groups stand behind the items COP holds for
+      it, <b>One or two sources</b> for 1 or 2, <b>No independent source</b> for 0 when COP still holds items there
+      from sources it sets aside or does not count, and <b>Not monitored</b> for 0 when it holds none. A source group is
+      a source's independence group, else its publisher, so GDELT counts once however many programs read it. Only items
+      read on time count: not a stale copy, not an item whose own source its program could not read, and not an item
+      its program says has ended or that is past its valid-until time. Sources of items resting only on a party's claim
+      or on state media, and state-owned media, are listed but set aside and never raise a place's class. A source that
+      is a program's own reading or computation, a model or a machine summary (a weather model Vis reads, or an AI
+      summary, for example) is not a report about the place: it is listed as not counted and never raises a place's
+      class either. The count is
+      made from the sources behind the items COP holds for the place at this snapshot, so a source that watches a
+      place but has nothing to report there is missed: each count is a lower bound, and it says nothing about how good
+      the sources are. The file is <a href="data/places/coverage.json">coverage.json</a>; the rule is the kit's
+      (<a href="https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md#the-coverage-table">the
+      coverage table</a>).</p>
+    <p><strong>Coverage by layer.</strong> Each row also gives every program's own class for the place, counted the same
+      way from that program's items alone, and the list of places shows them as a grid. A layer can be thin where the
+      layers together read several: a place with no interference or maritime source shows it there. A layer with no
+      item for the place from a source read on time reads Not monitored, which includes a program that watches the place
+      and has nothing to report there, so it too is a lower bound. Layers are never added to one another.</p>
+  </section>
+
+  <section class="doc-box" id="ladder" aria-labelledby="ladder-h">
+    <h2 id="ladder-h">Event reports: lead, confirmed, verified</h2>
+    <p>An event report (an attack, an incident at sea, a security alert, an appeal, an outbreak notice) says how well it
+      is established. Its card on the map shows its state, what that state means and a link to the rule. Measurements
+      and judgments are outside this ladder and show no state.</p>
+    <ul>
+      <li><strong>Lead.</strong> Reported by one origin and screened into the program's scope, but nobody has checked
+        it. Read it as reported, never as fact.</li>
+      <li><strong>Confirmed.</strong> A person has read the report and its source and judged it a real event within
+        scope. It still rests on one origin.</li>
+      <li><strong>Verified.</strong> Checked independently: two or more independent origins, an official source
+        reporting within its own remit, or a published geolocation.</li>
+      <li><strong>Party claim, state media.</strong> An item whose every origin so far is a party to the conflict, or
+        media a state owns or controls, is labelled so. It raises nothing on its own: it is never a pick, and its
+        sources never raise a place's coverage.</li>
+    </ul>
+    <p>The ladder, its earlier names (reported for lead, corroborated for verified) and the rule are the doctrine kit's:
+      <a href="https://github.com/metacog-osint/tic-doctrine/blob/main/docs/event-ladder.md">lead, confirmed,
+      verified</a>.</p>
+  </section>
+
+  <section class="doc-box" id="rarity" aria-labelledby="rarity-h">
+    <h2 id="rarity-h">Rarity</h2>
+    <p>A tier or a size means something different in each layer, so neither compares across programs. Where an item
+      carries the one number its tier rests on (its <code>signal</code>), its card gives a rarity that reads the same in
+      every layer: how often this subject has been at least this unusual.</p>
+    <ul>
+      <li><strong>COP's own history.</strong> COP keeps each subject's signal once per data day. Today's reading is
+        ranked against the subject's earlier days, in the direction the feed names as unusual (higher, lower, or
+        further from its usual value either way). With <em>k</em> earlier days at least as extreme among <em>n</em>,
+        the share is (<em>k</em>&nbsp;+&nbsp;1)&nbsp;/&nbsp;(<em>n</em>&nbsp;+&nbsp;1), shown as "about 1 day in N".
+        COP's figure is used from <strong id="rarity-min">60</strong> earlier days.</li>
+      <li><strong>Before that, the program's own figure.</strong> With fewer days, a program's own share from its own
+        baseline stands in, and the card says it is the program's. With neither, the card says why there is none.</li>
+      <li><strong>No direction, no figure.</strong> A signal whose feed names no direction (a level with no stated tail)
+        gets no figure from COP.</li>
+      <li><strong>Per layer.</strong> A rarity is never added across layers, and it changes no tier and no pick. It
+        describes a measurement; it is not a warning and gives no likelihood.</li>
+    </ul>
+  </section>
+
   <section class="doc-box" id="lanes" aria-labelledby="lanes-h">
     <h2 id="lanes-h">Lane records</h2>
     <p>A lane is one kind of item from one program: Blackout's internet outages read through triage, COP's direction
-      words, the four-signal join, and one lane for each program with no outside check yet. A lane's record says how
-      that kind of item has behaved. It is not a warning and gives no likelihood to any single item.</p>
+      words, the four-signal join, Vis's forecasts, and one lane for each program with no outside check yet. A lane's
+      record says how that kind of item has behaved. It is not a warning and gives no likelihood to any single item.
+      Vis's forecasts are true forecasts, so they are scored outside the lane records: Verdict scores them against
+      METAR observations (routine weather reports from airports) in
+      <a href="https://verdict.theintelligence.company/#vis-h">its own record of Vis's forecasts</a>. COP links that
+      record and restates none of its figures, and they are never added to a lane's counts.</p>
     <ul>
       <li><strong>Logged first.</strong> Each build writes a line for every outage triage reads and every four-signal
         reading of converged or partial (once per area, reading and UTC day) before its outcome can be known, to an
@@ -277,13 +375,36 @@
         direction words keep their own locked log (branch <code>direction-log</code>).</li>
       <li><strong>Scored by Verdict.</strong> Once a lane's horizon has passed (14 days for an outage), Verdict counts
         each item as confirmed by the lane's named second source, withdrawn by its own source, or left unconfirmed.
-        Until then the record shows how many were flagged and "none scored yet".</li>
+        Until then the record shows how many were flagged, how the lane's tool read them when they were logged (a
+        reading, such as triage's single-source dip, is not an outcome), and "none scored yet".</li>
       <li><strong>Counts only.</strong> No rate or skill figure before 30 independently scored items, and the pick
         order does not change. A change of method starts a new count; counts from two methods are never added.</li>
       <li><strong>Replay is labelled.</strong> Outage triage also shows how it read Access Now's documented 2025
         shutdowns (#KeepItOn STOP) against the same countries' ordinary days. That is a past labelled set, never live
         results.</li>
     </ul>
+  </section>
+
+  <section class="doc-box" id="cells" aria-labelledby="cells-h">
+    <h2 id="cells-h">Grid cells</h2>
+    <p>Every item on COP's snapshot carries <code>cop_cells</code>: the cells of one worldwide grid that its place
+      covers, so items from different layers can be read together by place as well as by country. The grid is
+      <a href="https://h3geo.org/">H3</a> at resolution 2, cells of about 87,000 km&sup2; (some 158 km a side), the grid
+      Noisefloor's regions already use. COP computes the cells itself as it reads each feed; no program sends them.</p>
+    <ul>
+      <li><strong>A point</strong> gets the one cell it lies in, the same cell H3's own software gives. A set of points
+        gets the cell of each.</li>
+      <li><strong>An area or a line</strong> gets every cell it overlaps, by its outline as the map draws it. An outline
+        that only runs along a cell's edge, such as another program's own H3 cell, does not take the neighbouring cells:
+        for this test each cell is shrunk by 0.2%, about 300 m.</li>
+      <li><strong>A point that stands for a wider place gets no cell.</strong> An item placed only by its country, its
+        province or state, or a zone, is drawn at a label point, and that point is not a place: such items carry an
+        empty list, so a join by cell never meets them there. They still join by <code>countries</code>.</li>
+      <li><strong>No place, no cell.</strong> An item with no geometry carries an empty list.</li>
+    </ul>
+    <p>The cell outlines are stored with COP's code (<code>tools/data/h3-res2.json</code>, written from h3-py, the H3
+      project's Python library), and a test checks COP's cells against H3's on 3,000 points. A cell says where an item
+      is; it is not a measurement and adds nothing to any tier, pick or direction.</p>
   </section>
 
   <section id="sources" aria-labelledby="sources-h">

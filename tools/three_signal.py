@@ -24,7 +24,7 @@ holds RATE_MIN_DAYS such days, each signal counts as it fires and the record say
 Vis is context, not a signal: its 72-hour weather forecast for the area is listed beside the reading (the worst
 stoplight among its points there). It never adds to the count and never removes a signal.
 
-Published since 15 Nov 2026, when Tom retired the mosaic gate (COP's CLAUDE.md). The voice rule that replaced it
+Published since 15 Nov 2026, when the mosaic gate was retired (COP's CLAUDE.md). The voice rule that replaced it
 applies here: the record shows each layer's items, how close they fall in time and how often each fires anyway
 (the archive replay), and never states what the pattern means. The build runs it after outage triage and writes
 site/data/three-signal.json for the page and the MCP server's three_signal tool.
@@ -60,7 +60,7 @@ QUESTION_DAYS = 7    # the Verdict question's window
 OONI_MOVE_POINTS = 5 # an OONI rate that moved this much against the archive is listed as context
 NAVWARN_BLIND_DAYS = 14  # Cordon's newest navigation warning anywhere older than this: that feed has stopped moving,
                          # so "no new warning" means nothing (found 12 Nov 2026: newest was dated 10 May 2024)
-# Join 0.3 (Tom's yes of 18 Nov 2026 to gaps 1, 2 and 7 of the private planning notes).
+# Join 0.3 (18 Nov 2026: gaps 1, 2 and 7).
 WATCHFLOOR_Z = 3.0       # press: violent-event articles at or above this z-score (Watchfloor's own, robust since 17 Nov)
 RENEWAL_BEFORE_D = 7     # an EASA revision first seen this many days before the previous version's expiry ...
 RENEWAL_AFTER_H = 48     # ... or up to this many hours after it, with a later expiry, is a scheduled renewal
@@ -68,7 +68,7 @@ RATE_DAYS = 30           # trailing archived days for each signal's base rate in
 RATE_MIN_DAYS = 14       # days with every layer current needed before a base rate changes what counts
 RATE_SATURATED = 0.5     # a signal present on more than this share of those days counts only when it rises ...
 RATE_PERCENTILE = 0.9    # ... above this percentile of its own daily item counts (nearest rank)
-# Join 0.4 (Tom's option D, 18 Nov 2026, the private planning notes): UKMTO's reports in
+# Join 0.4 (option D, 18 Nov 2026): UKMTO's reports in
 # the circle, read from Wake's items, are context; its Attack reports count toward the notice only when their number
 # in the look-back is above its own RATE_PERCENTILE over the RATE_DAYS days before (the test 0.3 applies to a
 # saturated signal), measured on UKMTO's own series, never pooled with Cordon's notices.

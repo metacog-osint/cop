@@ -3,18 +3,20 @@
     python tools/memory.py --snapshot site/data/today.geojson --assets out/memory            one build
     python tools/memory.py --snapshot site/data/today.geojson --assets out/memory --first    no memory yet
     python tools/memory.py --replay out/rates-archive --assets out/memory                    rebuild from archived days
+    python tools/memory.py --backfill-sv out/snapshots --assets out/memory --dry-run         add earlier `sv` values
 
-Tom, 21 Nov 2026: when an item drops off COP, COP keeps something to compare the next incoming item against. The suite
+21 Nov 2026: when an item drops off COP, COP keeps something to compare the next incoming item against. The suite
 ledger (tools/ledger.py) already keeps every item in full, line by line, but nothing read it back. This file is the
 compact, readable form: one record per subject (a subject_id where the feed states one, otherwise the item's id with
 its date taken out), holding when it was on the picture, the days its events fell on, and its daily value where the
-subject is a series. A record is never removed.
+subject is a series. A record is never removed. Every subject whose item carries a `signal` also keeps its
+`signal.value` per data day in `sv`, apart from the series values, for comparable rarity (tools/rarity.py).
 
 A series can change what it counts (Watchfloor's Iran zone went from two countries to nine on 18 Nov 2026). config/
 series_scopes.json names the day each new scope starts. Every value of such a series is stamped with its scope in `vs`
 and kept; current_series() hands readers only the newest scope, so a change of scope starts a new series. Since 24 Nov
 2026 Watchfloor's feed states each zone's scope itself (measures.zone_scope, a hash of what the zone counts; catalog
-2026-11-24.1, ideas#241). Memory keeps it per value in `fs`, and a new stated scope starts a new series with no entry in
+2026-11-24.1). Memory keeps it per value in `fs`, and a new stated scope starts a new series with no entry in
 series_scopes.json. A listed entry may name the zone_scope that continues it, so its values stay one series.
 
 An absence counts only when the program was read. A day a program's feed failed is not a gap in its subjects' runs.
@@ -26,7 +28,9 @@ that never happened. The files have held about 17 Notable and 2 Major jamming ev
 Files, in --assets (the build keeps them as an asset of the release "memory", not in the repository or on the site):
     memory.json.gz
 
-Not published. Anything drawn from it for the page goes through a join (tools/direction.py and tools/gate.py).
+Not served from the site: this tool refuses the deployed folders. Its release assets are public, as every release of
+this public repository is. Anything drawn from it for the page goes through a join (tools/direction.py and
+tools/gate.py).
 """
 
 import argparse
@@ -89,7 +93,7 @@ def continues(mem: dict, k: str) -> str | None:
     When a feed starts stating subject_id (contract 2.1: Context and Vis on 24 Nov 2026), its subjects get new keys
     (context:zone:01_Ukraine_Conflict) while their history sits under the key their dated item ids gave before
     (context:01_Ukraine_Conflict). The old key is still what key() makes of the item's id, so it can be found again.
-    Only a record of the same program, itself keyed from its id and begun no later, counts (ideas#205)."""
+    Only a record of the same program, itself keyed from its id and begun no later, counts."""
     r = mem["subjects"].get(k)
     if not r or not r.get("id"):
         return None
@@ -306,6 +310,12 @@ def fold(mem: dict, snapshot: dict) -> dict:
             stated = _dig(p, "measures.zone_scope")
             if isinstance(stated, str) and stated:
                 r.setdefault("fs", {})[data_day] = stated
+        # Every subject's signal value per data day, for comparable rarity (tools/rarity.py). Kept apart from `v`, the
+        # series the direction of concern reads, so adding it changes no direction word.
+        sig = p.get("signal") if isinstance(p.get("signal"), dict) else {}
+        sv = sig.get("value")
+        if data_day and isinstance(sv, (int, float)) and not isinstance(sv, bool) and sv == sv and abs(sv) != float("inf"):
+            r.setdefault("sv", {})[data_day] = sv
     mem["updated_at"] = at
     return stamp_scopes(mem)
 
@@ -433,7 +443,7 @@ def _folder(assets) -> Path:
     folder = Path(assets).resolve()
     for d in gate.DEPLOYED:
         if folder == (ROOT / d).resolve() or (ROOT / d).resolve() in folder.parents:
-            raise SystemExit(f"memory: {folder} is deployed; the memory is not published")
+            raise SystemExit(f"memory: {folder} is deployed; the memory is not served from the site")
     return folder
 
 
@@ -475,6 +485,65 @@ def replay(archive, into: dict | None = None) -> dict:
     return mem
 
 
+def _signal_value(p: dict):
+    sig = p.get("signal") if isinstance(p.get("signal"), dict) else {}
+    v = sig.get("value")
+    ok = isinstance(v, (int, float)) and not isinstance(v, bool) and v == v and abs(v) != float("inf")
+    return v if ok else None
+
+
+def backfill_sv(mem: dict, archive) -> dict:
+    """Add `sv` values from the archived daily snapshots in `archive` (YYYY-MM-DD.geojson.gz, as releases
+    snapshots-YYYY-MM hold them), so a subject's signal history starts before `sv` was kept. Additive only: a value
+    the memory already holds for a subject and data day is never replaced, and nothing but `sv` changes (not `v`,
+    spans, days or updated_at). Snapshots are read oldest first with fold's rules (a program read that day, no stale
+    item), so the last build of a data day wins among the archived ones. A value for an older key goes to the record
+    that continues it (continues()), where rarity looks it up. An item whose subject the memory does not hold is left
+    out and counted. Returns counts per program: subjects gaining, values added, items left out, and subjects with at
+    least rarity.MIN_READINGS values afterwards."""
+    import rarity
+    files = sorted(Path(archive).glob("????-??-??.geojson.gz"))
+    if not files:
+        raise SystemExit(f"memory: no archived snapshots in {archive}")
+    subjects = mem["subjects"]
+    newer = {old: k for k in subjects if (old := continues(mem, k))}
+    found: dict = {}
+    left_out: dict = {}
+    for path in files:
+        snap = _read(path)
+        read = programs_read(snap)
+        for f in snap.get("features") or []:
+            p = f.get("properties") or {}
+            program = p.get("cop_program") or p.get("program")
+            if program not in read or p.get("cop_stale") or not p.get("id"):
+                continue
+            v, day = _signal_value(p), day_of(p.get("data_as_of"))
+            if v is None or not day:
+                continue
+            k = key(p)
+            k = newer.get(k, k)
+            if k not in subjects:
+                left_out[program] = left_out.get(program, 0) + 1
+                continue
+            found.setdefault(k, {})[day] = v            # a later snapshot of the same data day wins
+    counts: dict = {}
+    for k, days in found.items():
+        r = subjects[k]
+        sv = r.setdefault("sv", {})
+        new = {d: v for d, v in days.items() if d not in sv}
+        sv.update(new)
+        c = counts.setdefault(r.get("p"), {"subjects": 0, "values": 0, "left_out": 0, "enough": 0})
+        if new:
+            c["subjects"] += 1
+            c["values"] += len(new)
+    for r in subjects.values():
+        if r.get("sv") and r.get("p") in counts and len(r["sv"]) >= rarity.MIN_READINGS:
+            counts[r["p"]]["enough"] += 1
+    for program, n in left_out.items():
+        counts.setdefault(program, {"subjects": 0, "values": 0, "left_out": 0, "enough": 0})["left_out"] = n
+    return counts
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--snapshot", help="the snapshot just built")
@@ -482,8 +551,25 @@ def main(argv=None) -> int:
     ap.add_argument("--first", action="store_true", help="there is no memory yet: start from nothing")
     ap.add_argument("--replay", help="rebuild from this folder of archived daily snapshots")
     ap.add_argument("--events", default=NOISEFLOOR_EVENTS, help="Noisefloor's daily event files, a URL base or folder")
+    ap.add_argument("--backfill-sv", help="add earlier `sv` values from this folder of archived daily snapshots")
+    ap.add_argument("--dry-run", action="store_true", help="with --backfill-sv: report, write nothing")
     a = ap.parse_args(argv)
     folder = _folder(a.assets)
+    if a.backfill_sv:
+        mem = load(folder)
+        if mem is None:
+            raise SystemExit(f"memory: no {NAME} in {folder} to add to")
+        counts = backfill_sv(mem, a.backfill_sv)
+        import rarity
+        for program, c in sorted(counts.items(), key=lambda kv: str(kv[0])):
+            print(f"{program}: {c['subjects']} subjects gain {c['values']} values; {c['left_out']} items with no "
+                  f"record left out; {c['enough']} subjects hold {rarity.MIN_READINGS}+ values")
+        if a.dry_run:
+            print("dry run: nothing written")
+            return 0
+        path = save(folder, mem)
+        print(f"memory {mem['updated_at']}: sv added, {path.stat().st_size / 1024:.0f} KB")
+        return 0
     if a.replay:
         if load(folder) is not None:
             raise SystemExit(f"memory: {folder} already holds a memory; a replay starts from an empty folder")

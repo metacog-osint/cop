@@ -1,0 +1,13 @@
+/* Refresh times (refresh.html). Builds on cop.css, scoring.css and place.css. */
+.rf-meta { color: var(--mut); font-size: 13px; }
+.doc-table.rf-table td, .doc-table.rf-lanes td { font-size: 13px; }
+.doc-table.rf-lanes td:last-child { min-width: 14em; }
+.doc-table.rf-table time, .doc-table.rf-lanes time { white-space: nowrap; }
+.rf-status { font-weight: 600; white-space: nowrap; }
+.rf-on_time, .rf-lane-fresh { color: var(--fresh); }
+.rf-late, .rf-lane-late { color: var(--late); font-weight: 600; }
+.rf-not_read, .rf-lane-stale, .rf-lane-failing, .rf-lane-never { color: var(--stale); font-weight: 600; }
+.rf-unknown, .rf-lane-up { color: var(--mut); }
+.rf-program { margin: 6px 0; border-bottom: 1px solid var(--rule); padding: 4px 0; }
+.rf-program summary { cursor: pointer; }
+.doc-table.rf-table td:nth-child(2) { min-width: 13em; }

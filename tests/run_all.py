@@ -11,6 +11,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SCRIPTS = [
     "test_snapshot.py",
+    "test_cells.py",
+    "test_refresh.py",
     "test_agent_index.py",
     "test_gate.py",
     "test_suite_watch.py",
@@ -20,8 +22,10 @@ SCRIPTS = [
     "test_triage_us_power.py",
     "test_triage_ended.py",
     "test_register_question.py",
+    "test_no_names.py",
     "test_rebuild_ended.py",
     "test_three_signal.py",
+    "test_hormuz_stream.py",
     "test_undertow_sanctions.py",
     "test_undertow_elections.py",
     "test_ledger.py",
@@ -35,6 +39,14 @@ SCRIPTS = [
     "test_direction_log.py",
     "test_lane_log.py",
     "test_brief.py",
+    "test_red_river.py",
+    "test_place.py",
+    "test_history.py",
+    "test_archive_lanes.py",
+    "test_run_all.py",
+    "test_country_names.py",
+    "test_rarity.py",
+    "test_release_manifest.py",
 ]
 
 

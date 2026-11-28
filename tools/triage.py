@@ -6,12 +6,12 @@ that hour, including "nothing found" and "no current data", which are different 
 the pattern and drafts the Verdict question. It never states a probability: that is the analyst's.
 
 US state power outages (Blackout's BO-IND-14: a state where ODIN's reporting utilities show more than 50,000 meters
-out) are read against Elements for that state, not the whole country (rules approved by Tom, 13 Nov 2026): NWS
+out) are read against Elements for that state, not the whole country (rules approved 13 Nov 2026): NWS
 alerts by their own county codes, point hazards within STATE_NEAR_KM of the state, and warnings for hazards that
 take power lines down counted at Elements' Severe level. Cordon and Watchfloor carry nothing at US-state level, so
 they answer "Not covered" and such an outage reads natural, open or incomplete. Where Blackout's
-item lists the counties with meters out (us_counties, Blackout 2ea3a4d; Tom, 14 Nov 2026, "build the county-level
-match"), Elements is read for those counties instead of the whole state: NWS alerts by shared county codes, point
+item lists the counties with meters out (us_counties, Blackout 2ea3a4d; county-level match,
+14 Nov 2026), Elements is read for those counties instead of the whole state: NWS alerts by shared county codes, point
 hazards within STATE_NEAR_KM of an outage county's internal point, areas over one; a hazard elsewhere in the state
 is listed and not counted. An item without the list keeps the state rule. Its drafted
 question asks whether the state is still over the line 24 hours later, in the exact form Verdict settles from
@@ -24,8 +24,8 @@ EAGLE-I.
 
 PUBLISHED since step 5 (JOIN["published"]): the build runs it after the snapshot, and --publish writes the public
 document, triage.json, which the COP page and the MCP server show. The public document carries the drafted
-Verdict question (Tom, 13 Nov 2026) as "question_draft", labelled a draft that is not registered and has no
-probability; registering one stays Tom's. Every write goes through tools/gate.py, which classes the join
+Verdict question (13 Nov 2026) as "question_draft", labelled a draft that is not registered and has no
+probability; registering one stays a person's act. Every write goes through tools/gate.py, which classes the join
 from the layers it declares and the items it cites. It reads hazards, outages, travel and embassy notices and press
 attention; Cordon's navigation warnings and conflict-zone airspace bulletins are left out, because they place
 military activity and would make this join a held one. Its notices are the State Department's advisories, embassy
@@ -62,14 +62,14 @@ PUBLISHED = "https://cop.theintelligence.company/data/today.geojson"
 UA = "tic-cop/0.1 (+https://cop.theintelligence.company)"
 
 # The gate decides the review class from these inputs. "published" was turned on in step 5 (13 Nov 2026) on the
-# convergence branch; it reaches the site only when Tom merges that branch to main.
+# convergence branch; it reaches the site only when that branch is merged to main.
 JOIN = {"id": "outage-triage", "version": "0.9", "published": True,
         "inputs": ["blackout", "elements", "watchfloor", "cordon:advisory", "cordon:alert", "cordon:posture",
                    "cordon:fcdo", "cordon:canada", "cordon:safetravel"]}
 # The Cordon kinds triage reads, all on the gate's open list. CDC (kind cdc) is open there too but not read here.
 NOTICE_KINDS = {"advisory", "alert", "posture", "fcdo", "canada", "safetravel"}
 # Travel advice that is re-dated for every edit (contacts, a natural-disaster section, an air-traffic note): it
-# counts only when Cordon marks the item anomaly, i.e. Cordon saw its level or its advice change (Tom, 14 Nov
+# counts only when Cordon marks the item anomaly, i.e. Cordon saw its level or its advice change (14 Nov
 # 2026). Measured on the 14 Nov snapshot: 16 of the 17 FCDO and Canada items dated in the 48-hour window were
 # such edits. Cordon's anomaly is not direction-aware, so the level is still compared with the archive.
 # SafeTravel (14 Nov 2026) the same: MFAT dates its advice by the day of any page update, and Cordon marks it
@@ -82,13 +82,13 @@ FCDO_STATEMENTS = ("avoid_all_travel_to_whole_country", "avoid_all_but_essential
 # MFAT SafeTravel's levels, lowest first, as Cordon names them (cordon/safetravel.py ORDER).
 SAFETRAVEL_LEVELS = ("normal", "low", "medium", "high", "avoid")
 LAYERS = ("elements", "cordon", "watchfloor")
-# Windows, all measured from the outage's own time (its data_as_of). PROVISIONAL (Tom, 12 Nov 2026): first picks, not
+# Windows, all measured from the outage's own time (its data_as_of). PROVISIONAL (12 Nov 2026): first picks, not
 # validated; look at them again when the base rates are rerun on a deeper archive (about 28 Nov 2026).
 HAZARD_BEFORE_H = 72     # a hazard that BEGAN this long before the outage counts; one already running is standing
                          # context (a volcano alert in Hawaii says nothing about an outage in the US)
 HAZARD_AFTER_H = 6       # reports of a hazard trail the event a little
 HAZARD_NEAR_KM = 300     # a hazard with no country (an offshore earthquake) counts within this of the country
-# Episodic hazards (D8, Tom, 15 Nov 2026; cop-joins.md M2): a cyclone or flood counts while it is active, from its
+# Episodic hazards (D8, 15 Nov 2026; cop-joins.md M2): a cyclone or flood counts while it is active, from its
 # GDACS "from" to its "to" plus this lag, not only when it began in the 72 hours. GDACS dates a cyclone from its
 # formation: MURASU-26 (red, India) formed 1 Nov, last advisory 3 Nov 06:00, and read "standing" on 4 and 5 Nov.
 # Standing kinds (drought, volcano status) keep the "began in the window" rule.
@@ -109,7 +109,7 @@ EVENT_WORDS = ("holiday", "independence day", "national day", "summit", "anniver
 # attention: listed, not counted.
 ATTENTION_BASELINE = "wf-28d"
 OONI_WINDOW_H = 72       # the Verdict question's window, in whole UTC hours from the outage's start hour
-# The OONI question settles on OONI's own hourly counts for the country (since 18 Nov 2026; Tom chose option (b)),
+# The OONI question settles on OONI's own hourly counts for the country (since 18 Nov 2026; option (b)),
 # not on Blackout's BO-IND-3 reading, which exists only for the six countries Blackout reads OONI for, so a question
 # settled on it could only resolve No anywhere else. The lines are Blackout's own outage-window lines
 # (blackout/ooni.py outage_window), so both programs mean the same thing by rising blocking; the baseline is the
@@ -125,7 +125,7 @@ CONFIRMED_OUTAGE = "BO-IND-1"   # Blackout: a drop seen by more than one signal
 OONI_BLOCKING = "BO-IND-3"      # Blackout: OONI rate at or above its fixed threshold
 POWER_OUTAGE = "BO-IND-14"      # Blackout: a US state with more than 50,000 meters out at ODIN's reporting utilities
 
-# US state power outages (Tom, 13 Nov 2026). The 72- and 6-hour windows above apply unchanged.
+# US state power outages (13 Nov 2026). The 72- and 6-hour windows above apply unchanged.
 STATE_NEAR_KM = 100      # a point hazard counts for a state within this of it (its nearest county internal point)
 # NWS warnings (VTEC phenomenon, significance W) for hazards that take power lines down. For a state power outage they
 # count at Elements' Severe level, which Elements files as routine; anything Elements rates anomaly counts as well.
@@ -141,11 +141,11 @@ POWER_STILL_OUT_H = 24   # the drafted question: still over the line this long a
 POWER_CHECK_H = 2        # ...for an hour or more inside a window this long (EAGLE-I's rule needs 4 runs, an hour)
 EAGLEI_DOI = "10.6084/m9.figshare.24237376"
 # Volcano alert levels, ground alert first, then the aviation colour. USGS re-sends each volcano's status every day;
-# a re-send at the same or a lower level is not a new hazard (Tom, 13 Nov 2026, for every country).
+# a re-send at the same or a lower level is not a new hazard (13 Nov 2026, for every country).
 VOLCANO_ALERT = {"NORMAL": 0, "UNASSIGNED": 0, "ADVISORY": 1, "WATCH": 2, "WARNING": 3}
 VOLCANO_COLOUR = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
 
-# The reading once called "deliberate" is "tension context" (D8, Tom, 15 Nov 2026; cop-joins.md M1): it names what
+# The reading once called "deliberate" is "tension context" (D8, 15 Nov 2026; cop-joins.md M1): it names what
 # the layers showed, not a cause. "Deliberate" stays Blackout's own word, for its likely-shutdown judgment (BO-H-1A).
 TENSION = "tension context"
 READINGS = {
@@ -156,7 +156,7 @@ READINGS = {
     TENSION: "No active hazard, and a security or demonstration notice was issued or raised in the two days before "
              "the outage, or press attention was unusual for this country against its own last 28 days. That is the "
              "context the outage sits in, not its cause; the base rate below says how often it is there anyway.",
-    # Reworded on Tom's yes, 18 Nov 2026: the STOP replay found open less often on shutdown days (62%) than on
+    # Reworded 18 Nov 2026: the STOP replay found open less often on shutdown days (62%) than on
     # ordinary days (84%), so "nothing that tells one kind of outage from another" said more than the layers know.
     "open": "No active hazard, no fresh notice and no unusual attention. These layers show none of the context this "
             "triage looks for. The replay rates below say how often that is so on shutdown days and on ordinary "
@@ -378,7 +378,7 @@ def item_rate(p):
 
 def _interval(p):
     """(start, end) of what an item describes, from its own fields. An NWS alert starts at its onset: its data_as_of
-    moves with every update of the same warning (Tom, 13 Nov 2026). event_start and event_end (revision 2.1) come
+    moves with every update of the same warning (13 Nov 2026). event_start and event_end (revision 2.1) come
     first when the item states them."""
     m = p.get("measures") if isinstance(p.get("measures"), dict) else {}
     at = utc(p.get("data_as_of"))
@@ -909,6 +909,17 @@ def layer_state(snapshot, features, pid):
     return "stale" if all(f["properties"].get("cop_stale") for f in mine) else "fresh"
 
 
+def unread_lanes(snapshot, pid):
+    """The sources a program's own health block says were not read on its last run (cop_programs lanes minus
+    lanes_read), or [] when the feed has no per-source block. A fresh feed can still have a dead source, and
+    "Nothing found" from it would then hide that the source was not read."""
+    block = (snapshot.get("cop_programs") or {}).get(pid) or {}
+    lanes, read = block.get("lanes"), block.get("lanes_read")
+    if not isinstance(lanes, list) or not isinstance(read, list):
+        return []
+    return sorted(set(lanes) - set(read))
+
+
 def _rate(title):
     m = re.search(r"(\d+(?:\.\d+)?)%", str(title))
     return float(m.group(1)) if m else None
@@ -960,7 +971,7 @@ def eaglei_rate(br):
 
 def power_question(st, name, at, br):
     """The drafted Verdict question for a state power outage: still over the line 24 hours after ODIN's reading,
-    settled by EAGLE-I with the rule Verdict already reads (Tom, 13 Nov 2026)."""
+    settled by EAGLE-I with the rule Verdict already reads (13 Nov 2026)."""
     base = at.replace(second=0, microsecond=0)
     start = base + timedelta(hours=POWER_STILL_OUT_H)
     end = start + timedelta(hours=POWER_CHECK_H)
@@ -1078,12 +1089,12 @@ def power_record(f, features, states, history=None, ended_info=None):
     }
 
 
-# The Blackout kinds triage reads (M5, Tom, 15 Nov 2026; cop-joins.md M5). IODA's country-level drops, Cloudflare
+# The Blackout kinds triage reads (M5, 15 Nov 2026; cop-joins.md M5). IODA's country-level drops, Cloudflare
 # Radar's verified traffic anomalies (one network or a country) and Radar's Outage Center entries that name a
 # country. A Radar entry that names no place (a platform outage) cannot be placed, so it is listed, not triaged.
 INPUT_KINDS = {"outage": "IODA", "radar-anomaly": "Cloudflare Radar (verified anomaly)",
                "radar-outage": "Cloudflare Radar Outage Center"}
-# Blackout kinds that report an outage but that triage does not read (ideas#164, 24 Nov 2026): NetBlocks' reports,
+# Blackout kinds that report an outage but that triage does not read (since 24 Nov 2026): NetBlocks' reports,
 # which Blackout parses from its public posts. They are listed per country so a reader asking about a country is told
 # a report exists there, never that there is no outage.
 NOT_READ_KINDS = {"netblocks": "NetBlocks (its public posts, via Blackout)"}
@@ -1333,6 +1344,7 @@ def triage(snapshot, history=None, ended=None):
     records.sort(key=lambda r: (r["reading"] in ("incomplete", "unconfirmed"),
                                 r["outage"].get("started_at") or r["outage"]["data_as_of"] or ""))
     return {"join": JOIN, "snapshot_generated_at": snapshot.get("generated_at"), "layer_states": states,
+            "layer_unread": {pid: unread_lanes(snapshot, pid) for pid in LAYERS + ("blackout",)},
             "windows": {"hazard_before_hours": HAZARD_BEFORE_H, "hazard_after_hours": HAZARD_AFTER_H,
                         "hazard_near_km": HAZARD_NEAR_KM, "episodic_lag_hours": EPISODIC_LAG_H,
                         "episodic_kinds": sorted(EPISODIC_GDACS.values()), "state_near_km": STATE_NEAR_KM,
@@ -1476,9 +1488,18 @@ def _ended_note(rows):
             "before this snapshot."]
 
 
-def showed(name, layer):
+def showed(name, layer, unread=()):
     """One plain line on what a layer showed. "Nothing found", "No current data" and "Not covered" are different
-    answers."""
+    answers. unread: the layer's sources not read on its program's last run; "Nothing found" then names them, since
+    it only speaks for the sources that were read."""
+    text = _showed(name, layer)
+    if unread and text.startswith("Nothing found"):
+        text = text.replace("Nothing found", f"Nothing found in the sources read ({', '.join(unread)} not read on the "
+                            "last run)", 1)
+    return text
+
+
+def _showed(name, layer):
     if layer.get("covered") is False:
         text = NOT_COVERED[name]
         if layer.get("country_wide"):
@@ -1606,7 +1627,9 @@ def public(doc):
     for r in doc["records"]:
         rec = {k: r[k] for k in RECORD_KEYS}
         rec["replay_rate"] = r.get("replay_rate")
-        rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer), **layer}
+        unread = doc.get("layer_unread") or {}
+        rec["layers"] = {name: {"name": LAYER_NAMES[name], "showed": showed(name, layer, unread.get(name)),
+                                "not_read": unread.get(name) or [], **layer}
                          for name, layer in r["layers"].items()}
         rec["question_draft"] = question_draft(r["verdict_draft"])
         rec["cause_question_draft"] = question_draft(r["cause_draft"], CAUSE_NOTE) if r.get("cause_draft") else None
@@ -1614,6 +1637,7 @@ def public(doc):
         records.append(rec)
     return {"join": doc["join"], "what": WHAT, "not_a_warning": NOT_A_WARNING, "readings": READINGS,
             "power_readings": POWER_READINGS, "snapshot_generated_at": doc["snapshot_generated_at"], "layer_states": doc["layer_states"],
+            "layer_unread": doc.get("layer_unread"),
             "windows": doc["windows"], "baseline_given": doc["baseline_given"], "base_rates": doc["base_rates"],
             "replay": doc.get("replay"), "ended_items": doc.get("ended_items"), "inputs": doc.get("inputs"), "unplaced": doc.get("unplaced"),
             "not_read": doc.get("not_read") or [], "records": records}

@@ -1,0 +1,33 @@
+/* Place pages (place.html). Builds on cop.css, scoring.css and red-river.css (its layer boxes and item lists). */
+.pl-figure { margin: 18px 0 8px; }
+.pl-map { height: 340px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.pl-map.map-off { display: none; }
+.pl-figure figcaption { margin-top: 6px; }
+.pl-now { margin: 4px 0 8px; }
+.pl-trend { margin-top: 12px; }
+.doc-main .pl-trend h4 { margin: 0 0 2px; font: 600 14px/1.35 var(--sans); color: var(--ink); text-transform: none; letter-spacing: 0; }
+.pl-chart { display: block; width: 100%; height: auto; margin: 4px 0; overflow: visible; }
+.pl-line { fill: none; stroke: var(--acc); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.pl-dot { fill: var(--acc); stroke: var(--panel); stroke-width: 2; }
+.pl-axis { stroke: var(--rule); stroke-width: 1; }
+.pl-tick { fill: var(--mut); font: 11px var(--sans); }
+.pl-noted { fill: var(--rule); opacity: 0.55; }
+.pl-hit { fill: transparent; }
+.pl-hit:hover { fill: var(--rule); opacity: 0.35; }
+.pl-table summary { cursor: pointer; font-size: 13px; color: var(--mut); }
+.pl-table table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.pl-table th, .pl-table td { text-align: left; padding: 3px 8px 3px 0; border-top: 1px solid var(--rule); vertical-align: top; }
+.pl-index { columns: 2 220px; padding-left: 18px; }
+.pl-index li { margin: 4px 0; }
+/* the coverage table (kit format tic-coverage/1) */
+.pl-coverage { margin-top: 18px; }
+.doc-table td.pl-num { font-variant-numeric: tabular-nums; }
+.pl-coverage .pl-aside { margin: 10px 0 2px; }
+/* coverage by layer: one program's own class per place */
+.pl-layers h3 { margin: 16px 0 2px; }
+.doc-table.pl-grid th, .doc-table.pl-grid td { padding: 4px 8px; white-space: nowrap; }
+.doc-table.pl-grid td { font-size: 13px; }
+.doc-table.pl-grid tbody th { position: sticky; left: 0; background: var(--panel); }
+.pl-grid .pl-cov-several { font-weight: 600; color: var(--ink); }
+.pl-grid .pl-cov-none, .pl-grid .pl-na { color: var(--mut); }
+@media (max-width: 600px) { .doc-table.pl-grid tbody th { white-space: normal; min-width: 7em; max-width: 9em; } }

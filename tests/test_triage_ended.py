@@ -4,7 +4,7 @@ Elements' feed carries active items only, so a warning that ran out before COP's
 72-hour window (measured 1-14 Nov 2026: the live feed still held a power-line warning in 19% of the state-times when
 one had begun in the window). Every test replays recorded items (tests/fixtures/us_power, MANIFEST.json): Elements'
 own ended list of 02:33 UTC 14 Nov, COP's archived snapshot of 20:21 UTC 13 Nov and Blackout's recorded New York and
-California readings of 14:40 UTC 13 Nov. Built on Tom's yes, 13 Nov 2026.
+California readings of 14:40 UTC 13 Nov. Built 13 Nov 2026.
 """
 
 import gzip

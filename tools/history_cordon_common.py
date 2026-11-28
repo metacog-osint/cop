@@ -23,7 +23,7 @@ UA = "history-rebuild/1 (python urllib)"
 MIN_GAP_S = float(os.environ.get("COP_HISTORY_GAP", "1.5"))   # seconds between requests
 WAYBACK = "https://web.archive.org"
 
-# Access Now's 2025 STOP countries, in the order Tom asked for: (ISO alpha-2, name, FCDO slug, embassy host or None).
+# Access Now's 2025 STOP countries, in the order chosen: (ISO alpha-2, name, FCDO slug, embassy host or None).
 # Palestine is State's "Israel, the West Bank and Gaza" (State's page and the embassy at jr.usembassy.gov), FCDO's
 # "palestine" (renamed from "the-occupied-palestinian-territories" in 2025-26) and Canada's "West Bank and Gaza".
 COUNTRIES = [

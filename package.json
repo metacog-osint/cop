@@ -5,7 +5,7 @@
   "type": "module",
   "description": "COP's MCP server (functions/mcp.js, mcp/). The site itself has no build step and no Node dependencies.",
   "scripts": {
-    "test": "node --test \"mcp/*.test.js\""
+    "test": "node --test \"mcp/*.test.js\" \"tests/*.test.js\""
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",

@@ -437,6 +437,20 @@ class Triage(unittest.TestCase):
         self.assertIn("probe_cc=IR", q["rule_draft"])
         self.assertIn("probes cannot report", q["caution"])
 
+    def test_a_source_not_read_inside_a_fresh_feed_is_named(self):
+        snap = snapshot(outage())
+        snap["cop_programs"]["cordon"] |= {"lanes": ["fcdo", "us-state"], "lanes_read": ["fcdo"]}
+        snap["cop_programs"]["elements"] |= {"lanes": ["gdacs"], "lanes_read": ["gdacs"]}
+        pub = tri.public(tri.attach_rates(tri.triage(snap), None))
+        layers = pub["records"][0]["layers"]
+        self.assertEqual(layers["cordon"]["not_read"], ["us-state"])
+        self.assertTrue(layers["cordon"]["showed"].startswith(
+            "Nothing found in the sources read (us-state not read on the last run): no travel"), layers["cordon"])
+        self.assertTrue(layers["elements"]["showed"].startswith("Nothing found: "))
+        self.assertEqual(layers["watchfloor"]["not_read"], [])
+        self.assertEqual(pub["layer_unread"]["cordon"], ["us-state"])
+        self.assertEqual(gate.review(tri.JOIN, pub)["may_publish"], True)
+
     def test_nothing_found_and_no_current_data_are_different_answers(self):
         quiet = one(tri.triage(snapshot(outage())))
         dead = one(tri.triage(snapshot(outage(), states={"cordon": "stale"})))
@@ -603,7 +617,7 @@ class NewNoticeKinds(unittest.TestCase):
 
 
 class TriageFixes(unittest.TestCase):
-    """D8 and M5 (Tom, 15 Nov 2026; cop-joins.md M1, M2, M3, M5): the three rules and the wider input."""
+    """D8 and M5 (15 Nov 2026; cop-joins.md M1, M2, M3, M5): the three rules and the wider input."""
 
     def test_a_cyclone_at_landfall_counts_while_it_is_active(self):
         # MURASU-26 (GDACS red, India): formed 1 Nov 00:00, last advisory 3 Nov 06:00. An outage on the evening of
@@ -720,7 +734,7 @@ class TriageFixes(unittest.TestCase):
         self.assertIn("Cloudflare Radar", tri.public(tri.attach_rates(doc, None))["what"])
 
     def test_a_netblocks_report_is_listed_as_not_read_never_triaged(self):
-        # ideas#164: Iceland had a NetBlocks report while triage said no outage there.
+        # Iceland had a NetBlocks report while triage said no outage there.
         nb = item("blackout", "blackout:netblocks:3n2totkhmic2i", ["IS"], "anomaly", "2026-11-12T01:45:32Z",
                   title="Iceland: NetBlocks report (Confirmed)")
         doc = tri.triage(snapshot(nb))

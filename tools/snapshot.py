@@ -31,10 +31,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "doctrine" / "kit" / "python"))
 sys.path.insert(0, str(ROOT / "tools"))
+import cells as celltool  # noqa: E402
+import refresh as refreshtool  # noqa: E402
 from tic_doctrine import contract  # noqa: E402
 from tic_doctrine import history  # noqa: E402
+from tic_doctrine import ladder  # noqa: E402
 from tic_doctrine import lint as kitlint  # noqa: E402
 from tic_doctrine import tips as kittips  # noqa: E402
+import memory as mem_tool  # noqa: E402
+import rarity as rarity_tool  # noqa: E402
 
 CONFIG = json.loads((ROOT / "config" / "programs.json").read_text(encoding="utf-8"))
 # Each program's name, family, feed, site and freshness windows come from the suite registry in the doctrine kit
@@ -132,8 +137,6 @@ def strength_label(props, rule):
 # layers, so COP gives them one seat in the picks and joins their readings of one zone on one pick. Each item keeps
 # its own id, sources, licence and attribution: joined, never merged.
 SHARED_GROUPS = ("gdelt",)
-# Context's Z17 (Horn of Africa: DJ, ER, ET, SO) is Watchfloor's Z18 (Ethiopia and Eritrea) plus Z19 (Somalia).
-ZONE_ALIASES = {"CX-WP-Z17": ("Z18", "Z19")}
 _WP = re.compile(r"^([A-Z]+-WP-)([ZT])(\d+)$")
 
 
@@ -144,17 +147,15 @@ def shared_group(props):
 
 
 def voice_keys(props):
-    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone (Context's Z17 gives ["gdelt:Z18",
-    "gdelt:Z19"]), ["gdelt:T3"] for a Watch Topic, ["gdelt:<country>"] for a GDELT item outside every zone, [] for an
-    item of no shared group. Two items are one voice when their keys meet."""
+    """The shared voices an item speaks for: ["gdelt:Z07"] for a zone, ["gdelt:T3"] for a Watch Topic,
+    ["gdelt:<country>"] for a GDELT item outside every zone, [] for an item of no shared group. Two items are one
+    voice when their keys meet."""
     group = shared_group(props)
     if not group:
         return []
     wp = props.get("warning_problem_id")
     m = _WP.match(wp) if isinstance(wp, str) else None
     if m:
-        if wp in ZONE_ALIASES:
-            return [f"{group}:{z}" for z in ZONE_ALIASES[wp]]
         letter, n = m.group(2), int(m.group(3))
         return [f"{group}:{letter}{n:02d}" if letter == "Z" else f"{group}:{letter}{n}"]
     return sorted({f"{group}:{c}" for c in (props.get("countries") or []) if isinstance(c, str)})
@@ -174,7 +175,7 @@ def reading(props):
 
 def no_longer_current(props, now=None):
     """The program itself says this has ended (Elements' GDACS items, measures.current false), or the item is past its
-    own valid_until (ideas#164: 21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
+    own valid_until (21 items were on 23 Nov, 4 Wake anomalies among them): never a pick. Stored and shown
     as before; only the picks skip it."""
     if dig(props, "measures.current") is False:
         return True
@@ -183,10 +184,10 @@ def no_longer_current(props, now=None):
 
 
 def not_admitted(props, prog, now=None):
-    """Why this program's own pick rules leave the item out, or None (ideas#164: like with like). Each rule in the
+    """Why this program's own pick rules leave the item out, or None (like with like). Each rule in the
     program's "pick_admits" names the ids it covers by prefix and either the last_change values it admits (Cordon:
     FCDO, Canada and SafeTravel advice only when its level moved, the rule COP's outage reading uses) or how many hours from
-    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, Tom 23 Nov 2026). Stored and shown
+    the item's own date it stays a candidate (Cordon: a CDC notice for 72 hours, 23 Nov 2026). Stored and shown
     as before; only the picks skip it."""
     pid = str(props.get("id") or "")
     for rule in prog.get("pick_admits") or []:
@@ -199,6 +200,13 @@ def not_admitted(props, prog, now=None):
             if not at or (now - at).total_seconds() > rule["within_hours"] * 3600:
                 return rule["why"]
     return None
+
+
+def rests_on_claim(props):
+    """The item rests only on a party's claim or on state media (kit event ladder, docs/event-ladder.md): it is
+    labelled, raises nothing on its own and is never a pick, whatever tier its feed gives it, until it is verified on
+    an origin outside the party and outside state media. Stored and shown as before; only the picks skip it."""
+    return ladder.rests_on_claim(props)
 
 
 def standing(props):
@@ -546,11 +554,13 @@ def build(feeds, reports, previous, now):
             also = also_in(p, prog)
             if also:
                 p["cop_also"] = "," + ",".join(also) + ","   # a string, so MapLibre can test it
+            # COP's grid cell, computed here and never read from a feed (contract 2.1: the grid cell is COP's).
+            p[celltool.FIELD] = celltool.cells_for(item.get("geometry"), p.get("precision_class"))
             feature = {"type": "Feature", "geometry": item.get("geometry"), "properties": p}
             features.append(feature)
             if p.get("tier") == "anomaly" and item.get("geometry") and state != "stale" and not src_off \
-                    and not no_longer_current(p, now) and not not_admitted(p, prog, now):
-                # What changed comes before what is merely still there (Tom, 21 Nov 2026).
+                    and not no_longer_current(p, now) and not not_admitted(p, prog, now) and not rests_on_claim(p):
+                # What changed comes before what is merely still there (21 Nov 2026).
                 ranked.append((standing(p), 99 if rule is None else rule, -(rank or 0), order, feature))
         candidates[pid] = [f for *_, f in sorted(ranked, key=lambda r: r[:4])]
         if attribution:
@@ -569,6 +579,8 @@ def build(feeds, reports, previous, now):
                 f"{d['id'] or 'item ' + str(d['index'] + 1) + ' of the feed'}: {d['reason']}" for d in dropped[:3]]},
             # Contract revision 2.1 (kit 0.6.0): items carrying each new field, and what the feed's header states.
             "coverage": coverage(items), "revision": rev,
+            # When it is expected to update, when it last did, and whether it is late (tools/refresh.py).
+            "refresh": refreshtool.clock(pid, feed, now, covered),
         })
 
     # Picks: each program's strongest placed anomaly first, one program at a time, at most max_picks. Watchfloor and
@@ -624,7 +636,8 @@ def build(feeds, reports, previous, now):
                "pick_admits": [r["why"] for r in p.get("pick_admits") or []]} for p in CONFIG["programs"]]
     health_doc = {"generated_at": iso(now), "programs": health, "config": {
         "programs": public, "presets": CONFIG["presets"], "basemaps": CONFIG["basemaps"],
-        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]}}
+        "stale_color": CONFIG["stale_color"], "max_picks": CONFIG["max_picks"]},
+        "refresh": {"cop": refreshtool.cop_clock(now), "method": refreshtool.method()}}
     return today, {"generated_at": iso(now), "picks": picks}, health_doc, countries
 
 
@@ -671,8 +684,25 @@ def world_shapes(step=0.1):
 def place_points(geometry):
     """One (lon, lat) per separate place in a geometry: each part of a Multi- shape stands alone, so two places far
     apart never average to a spot between them. A part's point is the mean of its vertices, with longitude averaged
-    around the circle so a shape across the antimeridian stays there."""
-    kind, c = geometry["type"], geometry["coordinates"]
+    around the circle so a shape across the antimeridian stays there. A GeometryCollection gives the points of its
+    outlines and lines, its own points only when it has neither (beside an outline they are label points). A shape
+    this cannot read gives no point, never an error: one item must not stop the build."""
+    if not isinstance(geometry, dict):
+        return []
+    kind, c = geometry.get("type"), geometry.get("coordinates")
+    if kind == "GeometryCollection":
+        subs = [g for g in geometry.get("geometries") or [] if isinstance(g, dict)]
+        shapes = [g for g in subs if g.get("type") not in ("Point", "MultiPoint")]
+        return [pt for g in (shapes or subs) for pt in place_points(g)]
+    try:
+        return _part_points(kind, c)
+    except (TypeError, ValueError, IndexError, KeyError):
+        return []
+
+
+def _part_points(kind, c):
+    if not isinstance(c, list):
+        return []
     if kind == "Point":
         parts = [[c]]
     elif kind == "MultiPoint":
@@ -721,6 +751,16 @@ def write_json(path, obj, compact=True):
     tmp.replace(path)
 
 
+def write_gz_json(path, obj):
+    """A gzip copy of obj with a fixed header (no file name, time 0), so the same object gives the same bytes under
+    any name and at any time: the day's copy and the slot's copy of one build are one file to an archive that stores
+    files by content."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    with open(path, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as fh:
+        fh.write(data)
+
+
 def slot_name(now):
     """The archive name of the 6-hour slot `now` falls in: <day>T<00|06|12|18>Z.snap.json.gz. Not .geojson.gz, so the
     readers that glob the daily copies (<day>.geojson.gz) never see it."""
@@ -767,12 +807,23 @@ def fetch_ended(now, out, fixtures=None, archive=None, dropped=None):
         data["cop_fetched_at"] = iso(now)
         write_json(dest, data)
         if archive:
-            archive.mkdir(parents=True, exist_ok=True)
-            with gzip.open(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", "wt", encoding="utf-8") as fh:
-                json.dump(data, fh, ensure_ascii=False, separators=(",", ":"))
+            write_gz_json(archive / f"{now:%Y-%m-%d}.{pid}-ended.json.gz", data)
         lines.append(f"{pid} ended items: {len(data['features'])}, generated {data.get('generated_at')}"
                      + (f"; {len(left_out)} malformed left out" if left_out else ""))
     return lines
+
+
+def read_memory(path):
+    """COP's memory from the last build, or None when none was given or it cannot be read (never fails the build)."""
+    if not path:
+        return None
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as fh:
+            mem = json.load(fh)
+        return mem if isinstance(mem, dict) and isinstance(mem.get("subjects"), dict) else None
+    except (OSError, ValueError, EOFError) as e:
+        print(f"::warning::memory {path} unreadable ({e}); comparable rarity says COP's history was not read")
+        return None
 
 
 def main(argv=None):
@@ -782,11 +833,13 @@ def main(argv=None):
     ap.add_argument("--previous", default=None, help=f"last published snapshot, URL or file (live default: {PREVIOUS})")
     ap.add_argument("--archive", help="also write a gzip copy of today's snapshot here, named by its UTC day")
     ap.add_argument("--ended-out", default=str(ROOT / "out" / "ended"),
-                    help="where each program's ended-items file goes (<program>.geojson; not published, not drawn)")
+                    help="where each program's ended-items file goes (<program>.geojson; not drawn, not served from the site)")
     ap.add_argument("--dropped-out", help="write the malformed items this build left out, with reasons, as JSON lines "
                                           "(tools/dropped.py keeps them with the ledger); removed when there are none")
     ap.add_argument("--now", help="pretend the time is this ISO UTC instant (tests)")
     ap.add_argument("--dead", action="append", default=[], help="treat this program's feed as failed (tests)")
+    ap.add_argument("--memory", help="COP's memory from the last build (memory.json.gz), read only, for each item's "
+                                     "comparable rarity; without it, items say COP's history was not read")
     a = ap.parse_args(argv)
 
     now = utc(a.now) if a.now else datetime.now(timezone.utc).replace(microsecond=0)
@@ -803,6 +856,10 @@ def main(argv=None):
         if any(f is None for f in feeds.values()) else None
 
     today, picks, health, countries = build(feeds, reports, previous, now)
+    mem = read_memory(a.memory)
+    counts = rarity_tool.add(today["features"], mem, {p["id"]: p["name"] for p in CONFIG["programs"]}, mem_tool.key)
+    print(f"rarity: {counts['cop']} from COP's history, {counts['program']} the program's own, {counts['none']} none"
+          + ("" if mem is not None else " (COP's memory was not read)"))
     out = Path(a.out)
     write_json(out / "today.geojson", today)
     write_json(out / "picks.json", picks, compact=False)
@@ -812,11 +869,8 @@ def main(argv=None):
     write_json(out / "home-points.json", home_points(today, now))
     if a.archive:
         arch = Path(a.archive)
-        arch.mkdir(parents=True, exist_ok=True)
-        with gzip.open(arch / f"{now:%Y-%m-%d}.geojson.gz", "wt", encoding="utf-8") as fh:
-            json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
-        with gzip.open(arch / slot_name(now), "wt", encoding="utf-8") as fh:  # first run of each slot is kept by the workflow
-            json.dump(today, fh, ensure_ascii=False, separators=(",", ":"))
+        write_gz_json(arch / f"{now:%Y-%m-%d}.geojson.gz", today)
+        write_gz_json(arch / slot_name(now), today)  # first run of each slot is kept by the workflow
     ended_dropped = []
     for line in fetch_ended(now, Path(a.ended_out), a.fixtures, Path(a.archive) if a.archive else None, ended_dropped):
         print(line)

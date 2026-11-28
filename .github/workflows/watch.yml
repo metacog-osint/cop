@@ -1,17 +1,24 @@
 name: watch
 # The suite watchdog. Reads COP's public snapshot and health.json and fails when COP's own build is more than 6 hours
-# old, when a program is not fresh, when a program's data time runs into the future, or when the build left a
-# malformed item out of the picture, or when the hub's site check (tic-sitecheck) failed a page or has not run in
-# 14 hours (tools/suite_watch.py). A failed run is
-# the alert: GitHub mails the repository owner. It runs apart from build.yml because a build that has stopped
-# cannot report itself.
+# old, when a program is not fresh, when a program's data time runs into the future, when the build left a
+# malformed item out of the picture, when a source a feed lists was not read on two runs, when the hub's site check
+# (tic-sitecheck) failed a page or has not run in 14 hours, when Verdict's scorecard is over 48 hours old, when a
+# feed has lint errors or a fresh program has no items, when triage.json is missing or older than the picture, when
+# the suite ledger was not written for 6 hours, or when the MCP server does not answer (tools/suite_watch.py). A failed run is the alert: GitHub mails the repository owner. It runs apart from build.yml
+# because a build that has stopped cannot report itself.
 #
-# The clock: GitHub fires schedules late (every 7 to 14 hours, measured 5-6 Nov 2026), so this is a slow check
-# until the hub's tic-dispatch Worker also starts it (workflow_dispatch is here for that).
+# The clock: the hub's tic-dispatch Worker starts this every 3 hours (workflow_dispatch); GitHub's own schedule below
+# fires late and unevenly (5.7 to 16.7 hours apart, measured 16-26 Nov 2026) and is the fallback.
 #
 # Optional: repo secret HC_PING_URL, a Healthchecks.io check address. With it, each run pings the check (and its
-# /fail address on a problem), so Healthchecks.io can say when this watchdog itself has stopped. Without it nothing
-# is sent anywhere. Tom sets the secret; the address is never written in a file.
+# /fail address on a failed run), so Healthchecks.io can say when this watchdog itself has stopped. Without it nothing
+# is sent anywhere. The secret is set by the repository owner; the address is never written in a file.
+#
+# Two in a row: a program's state that is not fresh, or a document that could not be read, fails the run only when
+# the run before saw it too, from an older build, so one bad read between two good ones sends no alert. Every other
+# problem fails at once. The record of what the last run saw is kept in the Actions cache between runs
+# (watch-state-*). A missing or unreadable record, or one over 4 hours old, means every problem fails at once, as
+# before the rule, so a lost cache can make an alert early, never late or missing.
 #
 # To test the alerts: Actions > watch > Run workflow, tick test_failure (or
 # gh workflow run watch.yml -f test_failure=true). The run fails with a line that says it is a test.
@@ -31,7 +38,7 @@ concurrency:
   group: watch
   cancel-in-progress: true
 jobs:
-  # Data quality (ideas#245, from the database review of 24 Nov 2026): seven rules on the bus, report only. It never
+  # Data quality (from the database review of 24 Nov 2026): seven rules on the bus, report only. It never
   # fails the run and never touches an item; hits are warnings in the run's summary (tools/data_quality.py says each
   # rule and its finding). Item counts per program and source are kept between runs in the Actions cache
   # (dq-state-*) for the rows-low rule; a missing cache only means no norm yet.
@@ -64,8 +71,21 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
+      - name: What the last run saw
+        uses: actions/cache/restore@v6
+        with:
+          path: watch-state.json
+          key: watch-state-${{ github.run_id }}
+          restore-keys: watch-state-
       - name: Is every program current?
         env:
           HC_PING_URL: ${{ secrets.HC_PING_URL }}
+          GH_TOKEN: ${{ github.token }}
           TEST_FAILURE: ${{ inputs.test_failure && '--test-failure' || '' }}
-        run: python tools/suite_watch.py $TEST_FAILURE
+        run: python tools/suite_watch.py --state watch-state.json $TEST_FAILURE
+      - name: Remember what this run saw
+        if: always() && hashFiles('watch-state.json') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: watch-state.json
+          key: watch-state-${{ github.run_id }}

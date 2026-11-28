@@ -8,7 +8,7 @@
 The snapshot carries what every program shows now. The ledger keeps what was: each build compares the snapshot just
 built with the items open after the last build and writes one line per item that is new, changed (its tier or response
 stage moved) or ended, with the full item, in the doctrine kit's history format (tic-history/1, doctrine/kit/docs/
-history-log.md). It is the suite's own historical record, for comparing now with the past (Tom, 13 Nov 2026: an item
+history-log.md). It is the suite's own historical record, for comparing now with the past (13 Nov 2026: an item
 no longer active is not displayed, but every item is kept).
 
 A lane here is a program, or a program's source where its feed says which sources were read. A program counts as read
@@ -39,9 +39,10 @@ Files, in --assets (the build keeps them as release assets, not in the repositor
 The workflow keeps state.json.gz in the release `ledger` for good; the day files stay there through 2026 and from 2027 go
 to one release a year, `ledger-YYYY`. tools/dropped.py keeps the malformed items beside each day file.
 
-Not published. The ledger holds every layer side by side, the military-context ones included, so it stays out of
+Not served from the site. The ledger holds every layer side by side, the military-context ones included, so it stays out of
 site/, functions/ and mcp/ (this tool refuses those folders), like the daily snapshot copies it sits beside. Anything
-drawn from it for the page or the MCP server is a join and goes through tools/gate.py.
+drawn from it for the page or the MCP server is a join and goes through tools/gate.py. Its release assets are public,
+as every release of this public repository is.
 
 Without the last state, every item would be logged as new again. So a run with no state.json.gz stops unless --first
 says this is the first run.
@@ -71,7 +72,7 @@ READ_STATES = ("fresh", "late")
 KEYED_ON = "subject_id, else id"              # kit history.key(), from kit 0.6.0
 BEFORE_KEYING = "state-before-subject-id.json.gz"
 # COP's own marks on an item change with the rest of the picture, not with the item: no change at all.
-VOLATILE = ("published_at", "cop_pick", "cop_stale", "cop_strength", "cop_strength_text")
+VOLATILE = ("published_at", "cop_pick", "cop_stale", "cop_strength", "cop_strength_text", "cop_cells")
 
 
 def program_of(feature: dict) -> str | None:
@@ -167,7 +168,7 @@ def _folder(assets) -> Path:
     folder = Path(assets).resolve()
     for d in gate.DEPLOYED:
         if folder == (ROOT / d).resolve() or (ROOT / d).resolve() in folder.parents:
-            raise SystemExit(f"ledger: {folder} is deployed; the ledger is not published")
+            raise SystemExit(f"ledger: {folder} is deployed; the ledger is not served from the site")
     return folder
 
 

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Places · COP · The Intelligence Company</title>
+<meta name="description" content="One page per place COP watches: what each layer shows there now, and its 30- and 90-day lines from COP's own history.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23142235'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23e3a83b' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23e3a83b'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+<link rel="stylesheet" href="shared/tic-time.css">
+<link rel="stylesheet" href="cop.css">
+<link rel="stylesheet" href="scoring.css">
+<link rel="stylesheet" href="red-river.css">
+<link rel="stylesheet" href="place.css">
+</head>
+<body class="doc">
+<a class="skip" href="#main">Skip to the place</a>
+<header class="bar">
+  <a class="brand" href="./" aria-label="COP, the map">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="10.5" class="mark-ring"/><circle cx="16" cy="16" r="3.5" class="mark-dot"/></svg>
+    <span class="brand-name">COP</span>
+    <span class="brand-sub">The Intelligence Company</span>
+  </a>
+  <p class="bar-times" id="bar-times" aria-live="polite">Reading the picture…</p>
+  <nav class="bar-nav" aria-label="Site">
+    <a href="./">Map</a>
+    <a href="place.html">Places</a>
+    <span id="time-settings"></span>
+  </nav>
+</header>
+
+<main class="doc-main" id="main">
+  <h1 id="title">Places</h1>
+  <p class="doc-lede" id="lede">What each of COP's layers shows for a place it watches: the count now, and the count a day
+    over the last 30 and 90 days from COP's own history. Each line is one program's count of what it placed there. The
+    page adds no reading of its own, never adds layers together, and an empty or short line is not an all-clear. Each
+    place also says how many independent sources stand behind what COP holds for it now: a lower bound, never a
+    measure of how well it is watched.</p>
+  <div id="body"><p class="note">Loading…</p></div>
+  <footer class="credits" id="credits"></footer>
+</main>
+<script src="shared/tic-time.js"></script>
+<script type="module" src="place.js"></script>
+</body>
+</html>

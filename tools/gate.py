@@ -1,7 +1,7 @@
 """The write path for COP's joins: what a join must state before it is written, and when it may publish.
 
 A join places several programs' public items around one place and time. Until 15 Nov 2026 this module also held
-back any join that read layers it listed as military context (the mosaic gate). Tom retired that rule on 15 Nov 2026:
+back any join that read layers it listed as military context (the mosaic gate). That rule was retired on 15 Nov 2026:
 "We operate exclusively with publicly available information and our objective is to show what can be done with it.
 That doesn't mean we have to spell it out, though." Every layer is now usable in a join. What replaces the lists is a
 rule of voice, kept in each join's own wording: a join shows each layer's measurement side by side, with a base rate
@@ -12,7 +12,7 @@ What this module still checks, so no join decides it for itself:
   inputs     the join declares the layers it reads (JOIN["inputs"]), each one a COP program or Verdict.
   citations  every item id the join's document cites belongs to a declared input. A join that cites a layer it never
              declared is refused, so its stated inputs and its credits can be trusted.
-  publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (Tom's call, per
+  publish    a join reaches site/, functions/ or mcp/ only when its own "published" switch is on (the suite's rule, per
              join).
 
     python tools/gate.py --check        # fail if anything under site/ is a refused or unpublished join (run by the build)
@@ -63,14 +63,28 @@ def layer_of(item_id):
     return program, kind
 
 
+COVERAGE_GROUP_KEYS = ("groups", "set_aside", "not_counted")
+
+
+def coverage_row(node):
+    """A row of the kit's coverage table (format tic-coverage/1): its groups, set_aside and not_counted (kit 0.6.17)
+    list source groups (a publisher or an independence group, with the programs that carry it), not items."""
+    return (isinstance(node, dict) and isinstance(node.get("place"), str) and isinstance(node.get("independent"), int)
+            and isinstance(node.get("groups"), list) and isinstance(node.get("set_aside"), list))
+
+
 def cited_ids(doc):
-    """Every item id a join's document cites: any string under a key named "id", outside the join and gate blocks."""
+    """Every item id a join's document cites: any string under a key named "id", outside the join and gate blocks and
+    outside a coverage row's source groups (whose ids name publishers, never items)."""
     found = set()
 
     def walk(node, top=False):
         if isinstance(node, dict):
+            groups = coverage_row(node)
             for k, v in node.items():
                 if top and k in ("join", "gate"):
+                    continue
+                if groups and k in COVERAGE_GROUP_KEYS:
                     continue
                 if k == "id" and isinstance(v, str):
                     found.add(v)

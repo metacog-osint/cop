@@ -1,4 +1,4 @@
-// COP's MCP server: eleven read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
+// COP's MCP server: twelve read-only tools over COP's merged snapshot (the bus) and Verdict's ledger, served by
 // functions/mcp.js at https://cop.theintelligence.company/mcp.
 //
 // Built on the official MCP TypeScript SDK v2 (@modelcontextprotocol/server). Its createMcpHandler serves
@@ -28,7 +28,8 @@ How to use these tools well:
 10. three_signal is COP's own reading of the Strait of Hormuz and the Gulf, four signals since join 0.3: whether GPS interference (Noisefloor), a new notice (Cordon: a navigation warning naming military activity, a new airspace bulletin or a revision that is not a scheduled renewal, or a US embassy security alert), a confirmed internet outage (Blackout) and unusual press reporting of violence in an area country (Watchfloor) fall in the area within 48 hours of each other, with Vis's weather forecast beside them as context. UKMTO's reports in the circle (via Wake) are context too (context.ukmto, since join 0.4): give UKMTO as the source and its report type in its own words, never as COP's finding of who or why; its Attack reports count toward the notice only when context.ukmto.counts is true, a surge above their own 90th percentile over the last 30 days. A signal that fires on most archived days counts only when it rises above its own rate there (signals_at_usual_rate lists those that did not). A reading (converged, partial, none or incomplete) says which signals are present and how close together they fall. It is not a warning, a forecast or a finding of cause, and it carries no probability: report what each layer shows and the base rate (how often each signal fires anyway in the archive), and do not state what the pattern means. question_draft is a drafted question, not a registered Verdict forecast.
 11. Relief's items are the publishers' own records: an IFRC emergency appeal or DREF allocation (hazard, amounts in Swiss francs, people targeted, dates) or a WHO Disease Outbreak News notice (title, date, country, link). Tier is always "routine": Relief makes no anomaly, warning or forecast, so never present an item as one. An IFRC appeal shows where the Red Cross and Red Crescent asked for money, not every place in need; crises led by others may have no appeal. place_context's Poisson figure (tail_probability) is a measurement of how often the country's appeal starts in the last 90 days have occurred against its own ten-year rate, not a warning or a prediction. A WHO notice usually comes weeks after the first report. Never quote WHO notice text: give its title, date, country and link only.
 12. direction is COP's direction of concern: for each warning problem and each of Watchfloor's conflict zones, whether each layer (GPS interference, security notices, confirmed internet outages, press reports of violence, UKMTO's attack reports) moved in the last 7 days against its own 14 days before, and a word that counts the layers moving (Rising, Easing, Mixed, Edging up, Edging down, Steady, Building a baseline). Measurements are never added together. Quote the word with the layers it names and each layer's own text; it is not a warning, a forecast or a finding of cause, and it carries no probability. Ship transits are a condition beside the reading, never counted. top_picks lists a pick in a place read as Rising first and says so in its reason.
-13. lane_record gives each lane's record: a lane is one kind of item from one program (Blackout's internet outages read through triage, COP's direction words, the three-signal join, and one lane per program with no outside check yet). It counts what the lane flagged since its logging began and, once Verdict scores them, how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: there is no rate or skill figure before 30 independently scored items, and the record never changes the pick order. get_item and top_picks carry the line of the item's own lane as lane_record. A replay figure comes from a labelled past set (Access Now's documented 2025 shutdowns, #KeepItOn STOP; credit "Access Now, #KeepItOn STOP") and is always called replay. A record describes how a measurement has behaved; it is not a warning and gives no likelihood to any single item.
+13. lane_record gives each lane's record: a lane is one kind of item from one program (Blackout's internet outages read through triage, COP's direction words, the three-signal join, Vis's forecasts, which Verdict scores against METAR observations in its own record, linked as scored_elsewhere and never added to a lane's counts, and one lane per program with no outside check yet). It counts what the lane flagged since its logging began and, once Verdict scores them, how many a second source confirmed, how many were withdrawn and how many stayed unconfirmed. Counts only: there is no rate or skill figure before 30 independently scored items, and the record never changes the pick order. get_item and top_picks carry the line of the item's own lane as lane_record. A replay figure comes from a labelled past set (Access Now's documented 2025 shutdowns, #KeepItOn STOP; credit "Access Now, #KeepItOn STOP") and is always called replay. A record describes how a measurement has behaved; it is not a warning and gives no likelihood to any single item.
+14. history gives what every layer showed for one place (an ISO country code or a direction-board area key) over up to 31 days: each program's readings as runs of days with the same reading, and its new, changed and ended items, from COP's daily snapshots (since 31 Oct 2026), its ledger and the programs' own logs. days_read says on how many of those days the program was read: a day read with nothing for the place is an absence, a day not read is not. Rows with a note are not comparable with rows outside their period (a change of scope or a named break); compare rows within one method_version. Id churn is left out by default. The full set is Parquet, listed in files.
 Start with suite_status to see what each program covers and how fresh it is, then search_items or top_picks.`;
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -78,6 +79,33 @@ const SearchInput = z.object({
     .optional()
     .describe("Also list items past their own valid_until (default false: they are left out and counted). Every " +
       "row says expired true or false."),
+  pmesii_pt: z
+    .array(z.string().max(40))
+    .max(8)
+    .optional()
+    .describe("PMESII-PT operational variables (political, military, economic, social, information, " +
+      "infrastructure, physical_environment, time): items filed under any of them."),
+  ie_aspect: z
+    .array(z.string().max(40))
+    .max(3)
+    .optional()
+    .describe("Aspects of the information environment (informational, physical, human): items filed under any of them."),
+  ascope: z
+    .array(z.string().max(40))
+    .max(6)
+    .optional()
+    .describe("ASCOPE civil considerations (areas, structures, capabilities, organizations, people, events): items " +
+      "filed under any of them."),
+  ncf: z
+    .array(z.string().max(60))
+    .max(12)
+    .optional()
+    .describe("Topic keys: CISA National Critical Functions, e.g. [\"transport_by_vessel\"], [\"provide_pnt\"]. " +
+      "Items that carry any of them, in any program's layer."),
+  group_by: z
+    .enum(T.TAGS)
+    .optional()
+    .describe("Also count every match by the values of one tag (pmesii_pt, ie_aspect, ascope or ncf)."),
   limit: z.number().int().min(1).max(T.LIMIT_MAX).optional().describe(`Items to return, default ${T.LIMIT_DEFAULT}.`),
   offset: z
     .number()
@@ -104,6 +132,18 @@ const ThreeSignalInput = z.object({
 
 const DirectionInput = z.object({
   area: z.string().regex(/^[a-z0-9-]{1,40}$/).optional().describe("A place key (gulf, ukraine, taiwan). Default: every place."),
+});
+
+const HistoryInput = z.object({
+  place: z
+    .string()
+    .regex(/^([A-Za-z]{2}|[a-z0-9-]{3,40})$/)
+    .describe("A two-letter ISO country code (IR, UA, US) or an area key from the direction board (gulf, ukraine)."),
+  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("First UTC day, YYYY-MM-DD. Default: days before today."),
+  days: z.number().int().min(1).max(T.HISTORY_DAYS_MAX).optional().describe("How many days, default 7 (a week)."),
+  program: z.string().regex(/^[a-z]{2,20}$/).optional().describe("Only this program's layer."),
+  include_churn: z.boolean().optional().describe("Also list ledger lines that are only id churn. Default false."),
+  limit: z.number().int().min(1).max(100).optional().describe("Readings and events listed per program, default 20."),
 });
 
 const LaneInput = z.object({
@@ -165,9 +205,11 @@ export function buildServer(data, clock = Date.now) {
   tool(
     "search_items",
     "Search the picture",
-    "Find items in COP's current snapshot by program, country, kind, tier, words in the title, time or distance from " +
-      "a point. Returns compact rows (id, program, title, times, countries, point, link, US-person label), warnings " +
-      "first, then anomalies, then routine items. Use get_item for an item's sources and measurements.",
+    "Find items in COP's current snapshot by program, country, kind, tier, words in the title, time, distance from " +
+      "a point, the doctrine framework tags (PMESII-PT, information-environment aspect, ASCOPE) or the topic key " +
+      "(ncf, CISA National Critical Functions), and optionally count the matches by one tag. Returns compact rows " +
+      "(id, program, title, times, countries, point, link, US-person label, tags), warnings first, then anomalies, " +
+      "then routine items. Use get_item for an item's sources and measurements.",
     SearchInput,
     async (a, now) => T.searchItems(await data.index(), a, now),
   );
@@ -175,7 +217,8 @@ export function buildServer(data, clock = Date.now) {
     "get_item",
     "Get one item",
     "One item in full (feed contract tic-feed/2): every source with publisher, licence and grade, its measurements, " +
-      "baseline, place and links.",
+      "baseline, place and links, plus the same topic in other layers: other programs' items that share one of its " +
+      "ncf topic keys (a shared filing, not a link between events).",
     GetItemInput,
     async (a, now) => {
       const index = await data.index();
@@ -260,6 +303,23 @@ export function buildServer(data, clock = Date.now) {
     LaneInput,
     async (a, now) => T.laneRecord(await lanesOf(data), a, now),
   );
+  tool(
+    "history",
+    "History of a place",
+    "What every layer showed for one place over a range of days (a week by default): each program's readings day by " +
+      "day from COP's daily snapshots, and what was new, changed or ended, with method versions and the periods " +
+      "that cannot be compared marked. For comparing the present with the past. Measurements, not warnings.",
+    HistoryInput,
+    async (a, now) => {
+      const place = T.historyPlaceKey(a.place);
+      const { from, to } = T.historyRange(a, now);
+      const manifest = typeof data.history === "function" ? await data.history() : null;
+      const docs = manifest
+        ? await Promise.all(T.historyWeeks(from, to).map((w) => data.historyPlace(place, w)))
+        : [];
+      return T.history(await data.index(), manifest, docs, a, now);
+    },
+  );
   return server;
 }
 
@@ -280,7 +340,7 @@ const HELP = `This is COP's MCP server, for AI agents (Model Context Protocol, S
 Add it to an MCP client with this address: ${SITE}/mcp
 Claude Code: claude mcp add --transport http cop ${SITE}/mcp
 
-Eleven read-only tools over COP's current snapshot and Verdict's forecast ledger. Public information only; no sign-in.
+Twelve read-only tools over COP's current snapshot, its history and Verdict's forecast ledger. Public information only; no sign-in.
 The map itself is at ${SITE}/
 `;
 
