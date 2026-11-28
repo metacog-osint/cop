@@ -167,7 +167,7 @@ button.tri-item { cursor: pointer; }
 .pin[aria-current="true"] { outline: 3px solid var(--acc); outline-offset: 1px; }
 
 .maplibregl-ctrl-attrib { font-size: 11px; }
-.fallback-note { position: absolute; z-index: 15; top: 12px; right: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+.fallback-note, .map-off { position: absolute; z-index: 15; top: 12px; right: 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
   padding: 5px 9px; font-size: 12px; color: var(--mut); }
 
 /* phones: the panel becomes a bottom sheet with peek, half and full heights */

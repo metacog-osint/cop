@@ -250,10 +250,26 @@ async function applyStyle(target) {
   if (target) target.setStyle(style);
   return style;
 }
-const map = new ml.Map({
-  container: "map", style: await applyStyle(null), center: [20, 25], zoom: 1.4, dragRotate: false, pitchWithRotate: false,
-  attributionControl: { compact: true, customAttribution: `Findings: ${CFG.programs.map((p) => p.name).join(", ")} (credits under Sources) · Land: Natural Earth` },
-});
+// Without WebGL MapLibre throws here, and a throw at the top level stopped the whole script, so the panel stayed on
+// "Loading today's picture…". On failure the page gets a stand-in map that draws nothing, and the panel, list and
+// cards carry on, with a note where the map would be.
+function noMap(err) {
+  console.warn("COP map could not start:", err);
+  document.querySelector(".app").append(h("p", { class: "map-off", role: "status",
+    text: "The map could not start in this browser (it needs WebGL). The panel and the list still work." }));
+  const self = { noMap: true, touchZoomRotate: { disableRotation() {} } };
+  for (const k of ["addControl", "addSource", "addLayer", "setFilter", "setStyle", "on", "once", "jumpTo", "easeTo", "fitBounds"]) self[k] = () => self;
+  return Object.assign(self, { getSource: () => undefined, getLayer: () => undefined, loaded: () => false,
+    queryRenderedFeatures: () => [], getCanvas: () => ({ style: {} }), getZoom: () => 1.4, getCenter: () => ({ lat: 25, lng: 20 }) });
+}
+const map = await (async () => {
+  try {
+    return new ml.Map({
+      container: "map", style: await applyStyle(null), center: [20, 25], zoom: 1.4, dragRotate: false, pitchWithRotate: false,
+      attributionControl: { compact: true, customAttribution: `Findings: ${CFG.programs.map((p) => p.name).join(", ")} (credits under Sources) · Land: Natural Earth` },
+    });
+  } catch (err) { return noMap(err); }
+})();
 map.touchZoomRotate.disableRotation();
 // Time to the first fully drawn map, for checking load speed (readable in the console as copReadyMs).
 map.once("idle", () => { window.copReadyMs = Math.round(performance.now()); });
@@ -361,6 +377,7 @@ function placeOf(f) {
 function drawPins() {
   pins.forEach((m) => m.remove());
   pins = [];
+  if (map.noMap) return;  // pins are map markers; with no map the panel lists the picks
   for (const p of PICKS) {
     const f = BY_ID.get(p.id);
     const at = placeOf(f);
@@ -1117,7 +1134,7 @@ function writeHash() {
   hashTimer = setTimeout(() => {
     const c = map.getCenter();
     const q = new URLSearchParams();
-    q.set("map", `${map.getZoom().toFixed(2)}/${c.lat.toFixed(2)}/${c.lng.toFixed(2)}`);
+    if (!map.noMap) q.set("map", `${map.getZoom().toFixed(2)}/${c.lat.toFixed(2)}/${c.lng.toFixed(2)}`);
     if (state.preset !== "all") q.set("p", state.preset);
     if (state.routine) q.set("r", "1");
     if (state.selected) q.set("i", state.selected);
